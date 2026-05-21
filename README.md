@@ -123,48 +123,26 @@ npm run dev
 npm run build
 ```
 
-## API 接口
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | /api/auth/register | 用户注册 |
-| POST | /api/auth/login | 用户登录 |
-| GET | /api/auth/profile | 获取用户资料 |
-| PUT | /api/auth/profile | 更新用户资料 |
-| GET | /api/articles | 获取文章列表 |
-| POST | /api/articles | 创建文章 |
-| GET | /api/articles/:id | 获取文章详情 |
-| PUT | /api/articles/:id | 更新文章 |
-| DELETE | /api/articles/:id | 删除文章 |
-| POST | /api/articles/:id/like | 点赞文章 |
-| DELETE | /api/articles/:id/like | 取消点赞 |
-| POST | /api/articles/:id/comments | 添加评论 |
-| DELETE | /api/comments/:id | 删除评论 |
-| GET | /api/categories | 获取分类列表 |
-| POST | /api/categories | 创建分类 |
-| GET | /api/announcements | 获取公告 |
-| PUT | /api/announcements | 更新公告 |
-
 ## 配置说明
 
 ### 后端配置 (backend/config.json)
 
 ```json
 {
-  "server": {
-    "port": "8080"
-  },
-  "database": {
-    "dsn": "user:password@tcp(host:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
-  },
-  "jwt": {
-    "secret": "your-jwt-secret-key"
-  },
-  "webdav": {
-    "url": "https://your-webdav-server.com",
-    "username": "your-username",
-    "password": "your-password"
-  }
+    "port": "3620",
+    "jwt_secret": "your-secret-key-change-this-in-production",
+    "webdav": {
+        "url": "http://localhost:5005",
+        "username": "webdav_user",
+        "password": "webdav_pass"
+    },
+    "database": {
+        "host": "localhost",
+        "port": "3306",
+        "username": "root",
+        "password": "123456",
+        "dbname": "forum"
+    }
 }
 ```
 
