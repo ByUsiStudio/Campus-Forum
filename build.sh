@@ -1,78 +1,48 @@
-cd backend
-go mod tidy
-echo "正在编译Windows的AMD64版校园论坛服务端...."
-export CGO_ENABLED=0
-export GOOS=windows
-export GOARCH=amd64
-go build -o ../build/forum.exe .
-echo "编译成功"
+set -euo pipefail
 
-echo "正在编译Windows的ARM64版校园论坛服务端...."
-export CGO_ENABLED=0
-export GOOS=windows
-export GOARCH=arm64
-go build -o ../build/forum-arm64.exe .
-echo "编译成功"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR/backend"
 
-echo "正在编译Linux的AMD64版校园论坛服务端...."
-export CGO_ENABLED=0
-export GOOS=linux
-export GOARCH=amd64
-go build -o ../build/forum-amd64 .
-echo "编译成功"
+if [ -z "${1:-}" ]; then
+    echo "错误：请提供版本号，例如: ./build.sh 1.0.0"
+    exit 1
+fi
+VERSION="$1"
 
-echo "正在编译MacOS的AMD64版校园论坛服务端...."
-export CGO_ENABLED=0
-export GOOS=darwin
-export GOARCH=amd64
-go build -o ../build/forum-apple-amd64 .
-echo "编译成功"
+mkdir -p ../build
+rm -rf ../build/web || true
 
-echo "正在编译MacOS的ARM64版校园论坛服务端...."
-export CGO_ENABLED=0
-export GOOS=darwin
-export GOARCH=arm64
-go build -o ../build/forum-apple-arm64 .
-echo "编译成功"
+compile() {
+    local target="$1"
+    local os="$2"
+    local arch="$3"
+    local output="$4"
+    echo "编译: $target -> $output"
+    (
+        export CGO_ENABLED=0
+        export GOOS="$os"
+        export GOARCH="$arch"
+        go build -o "$output" . 
+    ) || { echo "❌ $target 编译失败"; exit 1; }
+    echo "✅ 编译成功"
+}
 
-echo "正在编译Linux的ARM64版校园论坛服务端...."
-export CGO_ENABLED=0
-export GOOS=linux
-export GOARCH=arm64
-go build -o ../build/forum-arm64 .
-echo "编译成功"
+compile "Windows-AMD64" windows amd64 ../build/server-windows-amd64.exe
+compile "Windows-ARM64" windows arm64 ../build/server-windows-arm64.exe
+compile "Linux-AMD64" linux amd64 ../build/server-linux-amd64
+compile "Linux-ARM64" linux arm64 ../build/server-linux-arm64
+compile "Android-ARM64" android arm64 ../build/server-android-arm64
 
-echo "正在编译Linux的ARMv7版校园论坛服务端...."
-export CGO_ENABLED=0
-export GOOS=linux
-export GOARCH=arm
-export GOARM=7
-go build -o ../build/forum-armv7 .
-echo "编译成功"
-
-echo "正在编译Linux的Mipsle版校园论坛服务端...."
-export CGO_ENABLED=0
-export GOOS=linux
-export GOARCH=mipsle
-go build -o ../build/forum-mips .
-echo "编译成功"
-
-echo "正在编译Android的ARM64版校园论坛服务端...."
-export CGO_ENABLED=0
-export GOOS=android
-export GOARCH=arm64
-go build -o ../build/forum-android .
-echo "编译成功"
 cd ../frontend
-npm install
+npm ci
 npm run build
-echo " "
-echo "正在转移编译产物中...."
-rm -rvf ../build/web
+
 mv dist ../build/web
-echo "正在打包编译后产物中..."
+
 cd ../build
-zip -r ../forum_v$1.zip .
-echo " "
-echo "正在运行测试，如果想退出测试，那么请 Ctrl + C"
+zip -qr "../forum_v${VERSION}.zip" .
+
+echo ""
+echo "✅ 构建完成: forum_v${VERSION}.zip"
+echo "⚠️  PHP测试服务器已启动于 0.0.0.0:8000 (按 Ctrl+C 退出)"
 php -S 0.0.0.0:8000 -t ./web
