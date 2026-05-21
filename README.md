@@ -92,7 +92,7 @@ docker-compose up -d
 
 服务启动后将提供以下端口：
 - 前端：http://localhost
-- 后端 API：http://localhost:8080
+- 后端 API：http://localhost:3620
 
 ### 手动部署
 
@@ -129,7 +129,7 @@ npm run build
 
 ```json
 {
-    "port": "3620",
+    "port": 3620,
     "jwt_secret": "your-secret-key-change-this-in-production",
     "webdav": {
         "url": "http://localhost:5005",
