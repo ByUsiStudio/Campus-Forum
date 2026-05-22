@@ -109,6 +109,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import ImageViewer from '../components/ImageViewer.vue'
+import { confirm as showConfirm, prompt as showPrompt, success as showSuccess } from '../utils/modal'
 
 export default {
   name: 'Article',
@@ -180,37 +181,63 @@ export default {
     }
     
     const deleteArticle = async () => {
-      if (!confirm('确定要删除这篇文章吗？')) return
-      
-      if (currentUser.value?.role !== 'admin') {
-        const reason = prompt('请输入删除原因（管理员将审核）：')
-        if (!reason) return
+      try {
+        const confirmed = await showConfirm('确定要删除这篇文章吗？', {
+          title: '确认删除',
+          icon: 'mdi-alert-circle',
+          iconColor: 'error'
+        })
         
-        try {
-          await api.delete(`/articles/${article.value.id}`, { data: { reason } })
-          alert('删除申请已提交，等待管理员审核')
-          router.push('/')
-        } catch (error) {
-          console.error('提交删除申请失败', error)
+        if (!confirmed) return
+        
+        if (currentUser.value?.role !== 'admin') {
+          const reason = await showPrompt('请输入删除原因（管理员将审核）：', {
+            title: '删除原因',
+            inputLabel: '删除原因',
+            placeholder: '请说明删除原因...',
+            rows: 3
+          })
+          
+          if (!reason) return
+          
+          try {
+            await api.delete(`/articles/${article.value.id}`, { data: { reason } })
+            await showSuccess('删除申请已提交，等待管理员审核')
+            router.push('/')
+          } catch (error) {
+            console.error('提交删除申请失败', error)
+          }
+        } else {
+          try {
+            await api.delete(`/articles/${article.value.id}`)
+            router.push('/')
+          } catch (error) {
+            console.error('删除失败', error)
+          }
         }
-      } else {
-        try {
-          await api.delete(`/articles/${article.value.id}`)
-          router.push('/')
-        } catch (error) {
-          console.error('删除失败', error)
-        }
+      } catch (error) {
+        // 用户取消
       }
     }
     
     const deleteComment = async (commentId) => {
-      if (!confirm('确定要删除这条评论吗？')) return
-      
       try {
-        await api.delete(`/comments/${commentId}`)
-        comments.value = comments.value.filter(c => c.id !== commentId)
+        const confirmed = await showConfirm('确定要删除这条评论吗？', {
+          title: '确认删除',
+          icon: 'mdi-alert-circle',
+          iconColor: 'error'
+        })
+        
+        if (!confirmed) return
+        
+        try {
+          await api.delete(`/comments/${commentId}`)
+          comments.value = comments.value.filter(c => c.id !== commentId)
+        } catch (error) {
+          console.error('删除评论失败', error)
+        }
       } catch (error) {
-        console.error('删除评论失败', error)
+        // 用户取消
       }
     }
     

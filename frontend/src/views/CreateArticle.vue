@@ -100,6 +100,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import MarkdownIt from 'markdown-it'
+import { alert as showAlert, error as showError } from '../utils/modal'
 
 const md = new MarkdownIt({
   html: true,
@@ -176,7 +177,7 @@ export default {
           insertAtCursor(markdownImage)
         } catch (error) {
           console.error('上传图片失败', error)
-          alert('上传失败')
+          await showError('上传失败')
         } finally {
           setTimeout(() => {
             uploadProgress.value = 0
@@ -210,7 +211,7 @@ export default {
           insertAtCursor(videoHtml)
         } catch (error) {
           console.error('上传视频失败', error)
-          alert('上传失败')
+          await showError('上传失败')
         } finally {
           setTimeout(() => {
             uploadProgress.value = 0
@@ -235,11 +236,11 @@ export default {
     
     const submitArticle = async () => {
       if (!form.value.title.trim()) {
-        alert('请输入标题')
+        await showAlert('请输入标题')
         return
       }
       if (!form.value.content.trim()) {
-        alert('请输入内容')
+        await showAlert('请输入内容')
         return
       }
       
@@ -255,7 +256,7 @@ export default {
         router.push(`/article/${response.data.article.id}`)
       } catch (error) {
         console.error('提交失败', error)
-        alert('提交失败')
+        await showError('提交失败')
       } finally {
         submitting.value = false
       }

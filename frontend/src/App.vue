@@ -23,6 +23,27 @@
         <router-view />
       </v-container>
     </v-main>
+
+    <!-- 全局弹窗 -->
+    <AppModal
+      :show="modalState.show"
+      :type="modalState.type"
+      :title="modalState.title"
+      :message="modalState.message"
+      :icon="modalState.icon"
+      :icon-color="modalState.iconColor"
+      :confirm-text="modalState.confirmText"
+      :cancel-text="modalState.cancelText"
+      :confirm-color="modalState.confirmColor"
+      :input-value="modalState.inputValue"
+      :input-label="modalState.inputLabel"
+      :input-type="modalState.inputType"
+      :input-placeholder="modalState.inputPlaceholder"
+      :input-rows="modalState.inputRows"
+      @update:show="modalState.show = $event"
+      @confirm="handleConfirm"
+      @cancel="handleCancel"
+    />
   </v-app>
 </template>
 
@@ -30,9 +51,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from './api'
+import AppModal from './components/AppModal.vue'
+import { modalState, handleConfirm, handleCancel } from './utils/modal'
 
 export default {
   name: 'App',
+  components: {
+    AppModal
+  },
   setup() {
     const router = useRouter()
     const token = ref(localStorage.getItem('token'))
@@ -89,7 +115,10 @@ export default {
       token,
       user,
       isAdmin,
-      logout
+      logout,
+      modalState,
+      handleConfirm,
+      handleCancel
     }
   }
 }
