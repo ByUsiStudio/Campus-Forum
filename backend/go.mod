@@ -14,7 +14,6 @@ require (
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/gorm v1.31.1
 )
-
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
@@ -64,3 +63,4 @@ require (
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
+

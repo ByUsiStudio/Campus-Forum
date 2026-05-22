@@ -30,10 +30,15 @@ body {
 
 .markdown-body img {
   max-width: 100%;
+  max-height: 60vh;
   height: auto;
+  width: auto;
   border-radius: 8px;
   cursor: pointer;
   transition: transform 0.2s ease;
+  display: block;
+  margin: 1em auto;
+  object-fit: contain;
 }
 
 .markdown-body img:hover {

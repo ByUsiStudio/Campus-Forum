@@ -60,6 +60,9 @@ func main() {
 	r.Use(middleware.Logger())
 	r.Use(middleware.CORS())
 
+	// 设置最大请求体大小为 20G（适用于视频上传）
+	r.MaxMultipartMemory = 20480 << 20 // 20G
+
 	// WebDAV代理路由
 	r.Any("/proxy/webdav/*path", utils.ProxyWebDAVHandler)
 
