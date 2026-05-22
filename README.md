@@ -108,6 +108,8 @@ cd backend
 go run main.go
 ```
 
+> **API 文档**：启动后访问 http://localhost:3620/swagger/index.html 查看完整的 API 文档
+
 #### 前端启动
 
 ```bash

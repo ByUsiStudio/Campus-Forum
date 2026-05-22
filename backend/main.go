@@ -9,6 +9,8 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Config struct {
@@ -60,6 +62,9 @@ func main() {
 
 	// WebDAV代理路由
 	r.Any("/proxy/webdav/*path", utils.ProxyWebDAVHandler)
+
+	// Swagger文档
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// API路由
 	api := r.Group("/api")
@@ -123,7 +128,7 @@ func main() {
 
 	utils.Section("服务启动")
 	utils.Info("服务器地址: http://localhost:%s", config.Port)
-	utils.Info("API 文档: http://localhost:%s/api", config.Port)
+	utils.Info("API 文档: http://localhost:%s/swagger/index.html", config.Port)
 	utils.Section("")
 
 	r.Run(":" + config.Port)
