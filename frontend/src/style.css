@@ -32,6 +32,19 @@ body {
   max-width: 100%;
   height: auto;
   border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.markdown-body img:hover {
+  transform: scale(1.02);
+}
+
+.markdown-body video {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
 }
 
 .markdown-body pre {
@@ -114,4 +127,47 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
+}
+
+/* Lightbox / Image Viewer Modal */
+.lightbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  cursor: pointer;
+}
+
+.lightbox-overlay img {
+  max-width: 95%;
+  max-height: 95%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: white;
+  font-size: 32px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.2);
 }

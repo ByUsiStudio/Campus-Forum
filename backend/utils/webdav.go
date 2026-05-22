@@ -53,7 +53,7 @@ func UploadToWebDAV(file *multipart.FileHeader, remotePath string) error {
 		return fmt.Errorf("WebDAV上传失败: %d - %s", resp.StatusCode, string(body))
 	}
 
-	utils.Info("WebDAV上传成功: %s, 状态码: %d", remotePath, resp.StatusCode)
+	Info("WebDAV上传成功: %s, 状态码: %d", remotePath, resp.StatusCode)
 
 	return nil
 }

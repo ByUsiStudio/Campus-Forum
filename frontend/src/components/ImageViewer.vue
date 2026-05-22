@@ -1,10 +1,15 @@
 <template>
-  <div class="image-viewer-mask" @click="close">
-    <img :src="url" class="image-viewer-img" @click.stop>
+  <div class="lightbox-overlay" @click="close">
+    <button class="lightbox-close" @click="close">
+      <v-icon>mdi-close</v-icon>
+    </button>
+    <img :src="url" @click.stop>
   </div>
 </template>
 
 <script>
+import { onMounted, onBeforeUnmount } from 'vue'
+
 export default {
   name: 'ImageViewer',
   props: {
@@ -13,41 +18,28 @@ export default {
       required: true
     }
   },
+  emits: ['close'],
   setup(props, { emit }) {
     const close = () => {
       emit('close')
     }
-    
-    // ESC键关闭
+
     const handleKeydown = (e) => {
       if (e.key === 'Escape') {
         close()
       }
     }
-    
-    // 添加事件监听
-    window.addEventListener('keydown', handleKeydown)
-    
-    // 清理函数
-    const cleanup = () => {
+
+    onMounted(() => {
+      window.addEventListener('keydown', handleKeydown)
+    })
+
+    onBeforeUnmount(() => {
       window.removeEventListener('keydown', handleKeydown)
-    }
-    
-    // Vue 3 composition API 清理
-    if (typeof window !== 'undefined') {
-      setTimeout(() => {
-        // 确保清理
-      }, 0)
-    }
-    
+    })
+
     return {
-      close,
-      cleanup
-    }
-  },
-  beforeUnmount() {
-    if (this.cleanup) {
-      this.cleanup()
+      close
     }
   }
 }
