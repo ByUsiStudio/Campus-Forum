@@ -1,55 +1,97 @@
 <template>
-  <div class="create-article">
-    <h2>{{ isEdit ? '编辑文章' : '发布新文章' }}</h2>
-    
-    <form @submit.prevent="submitArticle">
-      <div class="form-group">
-        <label>标题</label>
-        <input type="text" v-model="form.title" required>
-      </div>
+  <div>
+    <v-card class="pa-6" max-width="900" style="margin: 0 auto;">
+      <v-card-title class="text-h5 mb-4" style="color: rgb(var(--v-theme-primary));">
+        {{ isEdit ? '编辑文章' : '发布新文章' }}
+      </v-card-title>
       
-      <div class="form-group">
-        <label>分区</label>
-        <select v-model="form.category_id" required>
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-            {{ cat.name }}
-          </option>
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label>内容 (支持Markdown)</label>
-        <div class="editor-toolbar">
-          <button type="button" @click="insertImage" class="toolbar-btn">插入图片</button>
-          <button type="button" @click="insertVideo" class="toolbar-btn">插入视频</button>
+      <v-form @submit.prevent="submitArticle">
+        <v-text-field
+          v-model="form.title"
+          label="标题"
+          variant="outlined"
+          required
+          class="mb-4"
+        ></v-text-field>
+        
+        <v-select
+          v-model="form.category_id"
+          :items="categories"
+          item-title="name"
+          item-value="id"
+          label="分区"
+          variant="outlined"
+          class="mb-4"
+        ></v-select>
+        
+        <div class="mb-2">
+          <v-btn-toggle class="mb-2">
+            <v-btn size="small" variant="outlined" @click="insertImage">
+              <v-icon start>mdi-image</v-icon>
+              插入图片
+            </v-btn>
+            <v-btn size="small" variant="outlined" @click="insertVideo">
+              <v-icon start>mdi-video</v-icon>
+              插入视频
+            </v-btn>
+          </v-btn-toggle>
         </div>
-        <textarea v-model="form.content" rows="20" required placeholder="使用Markdown语法编写文章..."></textarea>
-      </div>
-      
-      <div class="form-group" v-if="uploadProgress > 0">
-        <div class="progress-bar">
-          <div class="progress-fill" :style="{ width: uploadProgress + '%' }">
-            {{ uploadProgress }}%
-          </div>
+        
+        <v-textarea
+          v-model="form.content"
+          label="内容 (支持Markdown)"
+          variant="outlined"
+          rows="20"
+          required
+          placeholder="使用Markdown语法编写文章..."
+          class="mb-4"
+        ></v-textarea>
+        
+        <v-progress-linear
+          v-if="uploadProgress > 0"
+          :model-value="uploadProgress"
+          color="primary"
+          height="20"
+          class="mb-4"
+        >
+          {{ uploadProgress }}%
+        </v-progress-linear>
+        
+        <div class="d-flex gap-4">
+          <v-btn
+            type="submit"
+            color="primary"
+            size="large"
+            :loading="submitting"
+          >
+            {{ submitting ? '提交中...' : (isEdit ? '更新文章' : '发布文章') }}
+          </v-btn>
+          <v-btn
+            variant="outlined"
+            size="large"
+            @click="showPreview = true"
+          >
+            预览
+          </v-btn>
         </div>
-      </div>
-      
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary" :disabled="submitting">
-          {{ submitting ? '提交中...' : (isEdit ? '更新文章' : '发布文章') }}
-        </button>
-        <button type="button" @click="preview" class="btn btn-secondary">预览</button>
-      </div>
-    </form>
+      </v-form>
+    </v-card>
     
-    <!-- 预览模态框 -->
-    <div v-if="showPreview" class="preview-modal" @click="closePreview">
-      <div class="preview-content" @click.stop>
-        <h3>{{ form.title }}</h3>
-        <div class="markdown-body" v-html="previewHtml"></div>
-        <button @click="closePreview" class="btn btn-secondary">关闭</button>
-      </div>
-    </div>
+    <!-- 预览对话框 -->
+    <v-dialog v-model="showPreview" max-width="800" scrollable>
+      <v-card>
+        <v-card-title class="text-h6">{{ form.title }}</v-card-title>
+        <v-divider></v-divider>
+        <v-card-text class="pa-4">
+          <div class="markdown-body" v-html="previewHtml"></div>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showPreview = false">关闭</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -180,6 +222,7 @@ export default {
     
     const insertAtCursor = (text) => {
       const textarea = document.querySelector('textarea')
+      if (!textarea) return
       const start = textarea.selectionStart
       const end = textarea.selectionEnd
       const content = form.value.content
@@ -218,14 +261,6 @@ export default {
       }
     }
     
-    const preview = () => {
-      showPreview.value = true
-    }
-    
-    const closePreview = () => {
-      showPreview.value = false
-    }
-    
     onMounted(() => {
       const id = route.query.id
       if (id) {
@@ -246,72 +281,8 @@ export default {
       uploadProgress,
       submitArticle,
       insertImage,
-      insertVideo,
-      preview,
-      closePreview
+      insertVideo
     }
   }
 }
 </script>
-
-<style scoped>
-.create-article {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.create-article h2 {
-  margin-bottom: 30px;
-  color: #059669;
-}
-
-.editor-toolbar {
-  margin-bottom: 10px;
-  display: flex;
-  gap: 10px;
-}
-
-.toolbar-btn {
-  padding: 6px 12px;
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.form-actions {
-  display: flex;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-.preview-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.preview-content {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-  max-width: 800px;
-  max-height: 80vh;
-  overflow-y: auto;
-  width: 90%;
-}
-
-.preview-content h3 {
-  margin-bottom: 20px;
-}
-</style>

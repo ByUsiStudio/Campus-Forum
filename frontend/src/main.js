@@ -3,6 +3,45 @@ import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import './style.css'
 
+// Vuetify
+import 'vuetify/styles'
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
+import '@mdi/font/css/materialdesignicons.css'
+
+const vuetify = createVuetify({
+  components,
+  directives,
+  theme: {
+    defaultTheme: 'light',
+    themes: {
+      light: {
+        colors: {
+          primary: '#6750A4',
+          secondary: '#625B71',
+          error: '#B3261E',
+          background: '#FEF7FF',
+          surface: '#FFFFFF',
+          surfaceVariant: '#E7E0EC',
+          onPrimary: '#FFFFFF',
+          onSecondary: '#FFFFFF',
+          onBackground: '#1C1B1F',
+          onSurface: '#1C1B1F',
+        }
+      }
+    }
+  },
+  defaults: {
+    VBtn: {
+      variant: 'flat',
+    },
+    VCard: {
+      elevation: 1,
+    }
+  }
+})
+
 // 导入组件
 import Home from './views/Home.vue'
 import Login from './views/Login.vue'
@@ -50,5 +89,6 @@ router.beforeEach((to, from, next) => {
 })
 
 const app = createApp(App)
+app.use(vuetify)
 app.use(router)
 app.mount('#app')

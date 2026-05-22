@@ -1,51 +1,126 @@
 <template>
-  <div class="profile-container" v-if="user">
-    <div class="profile-header">
-      <div class="avatar-section">
-        <img :src="user.avatar" :alt="user.display_name" class="avatar-large">
-        <button @click="changeAvatar" class="btn btn-secondary">更换头像</button>
-      </div>
-      <div class="info-section">
-        <h2>{{ user.display_name }}</h2>
-        <p>用户名：{{ user.username }}</p>
-        <p>QQ号：{{ user.qq_number }}</p>
-        <p>角色：{{ user.role === 'admin' ? '管理员' : '普通用户' }}</p>
-        <p>注册时间：{{ formatDate(user.created_at) }}</p>
-      </div>
-    </div>
+  <div v-if="user">
+    <v-row>
+      <v-col cols="12" md="4">
+        <v-card class="pa-6 text-center">
+          <v-avatar size="150" class="mb-4">
+            <v-img :src="user.avatar" :alt="user.display_name"></v-img>
+          </v-avatar>
+          <v-btn variant="outlined" color="primary" @click="changeAvatar" block>
+            <v-icon start>mdi-camera</v-icon>
+            更换头像
+          </v-btn>
+        </v-card>
+      </v-col>
+      
+      <v-col cols="12" md="8">
+        <v-card class="pa-6 mb-4">
+          <v-card-title class="text-h5 mb-4">{{ user.display_name }}</v-card-title>
+          <v-list density="compact">
+            <v-list-item>
+              <template v-slot:prepend>
+                <v-icon>mdi-account</v-icon>
+              </template>
+              <v-list-item-title>用户名：{{ user.username }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item>
+              <template v-slot:prepend>
+                <v-icon>mdi-qqchat</v-icon>
+              </template>
+              <v-list-item-title>QQ号：{{ user.qq_number }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item>
+              <template v-slot:prepend>
+                <v-icon>mdi-shield-account</v-icon>
+              </template>
+              <v-list-item-title>
+                角色：{{ user.role === 'admin' ? '管理员' : '普通用户' }}
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item>
+              <template v-slot:prepend>
+                <v-icon>mdi-calendar</v-icon>
+              </template>
+              <v-list-item-title>注册时间：{{ formatDate(user.created_at) }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-card>
+        
+        <v-card class="pa-6 mb-4">
+          <v-card-subtitle class="text-h6 pa-0 mb-4">编辑资料</v-card-subtitle>
+          <v-form @submit.prevent="updateProfile">
+            <v-text-field
+              v-model="editForm.display_name"
+              label="显示名称"
+              variant="outlined"
+              class="mb-4"
+            ></v-text-field>
+            <v-btn type="submit" color="primary">保存修改</v-btn>
+          </v-form>
+        </v-card>
+      </v-col>
+    </v-row>
     
-    <div class="profile-edit">
-      <h3>编辑资料</h3>
-      <form @submit.prevent="updateProfile">
-        <div class="form-group">
-          <label>显示名称</label>
-          <input type="text" v-model="editForm.display_name">
-        </div>
-        <button type="submit" class="btn btn-primary">保存修改</button>
-      </form>
-    </div>
-    
-    <div class="my-articles">
-      <h3>我的文章</h3>
-      <div v-if="myArticles.length === 0" class="empty">暂无文章</div>
-      <div v-for="article in myArticles" :key="article.id" class="article-item">
-        <div class="article-info">
-          <router-link :to="'/article/' + article.id" class="article-title">{{ article.title }}</router-link>
-          <div class="article-meta">
-            <span>{{ formatDate(article.created_at) }}</span>
-            <span>❤️ {{ article.like_count }}</span>
-            <span>👁️ {{ article.view_count }}</span>
-          </div>
-        </div>
-        <div class="article-actions">
-          <router-link :to="'/create?id=' + article.id" class="btn btn-secondary">编辑</router-link>
-          <button @click="deleteArticle(article.id)" class="btn btn-danger">删除</button>
-        </div>
+    <v-card class="pa-6 mt-4">
+      <v-card-title class="text-h6 mb-4">我的文章</v-card-title>
+      
+      <div v-if="myArticles.length === 0" class="text-center pa-8 text-medium-emphasis">
+        暂无文章
       </div>
-    </div>
+      
+      <v-list v-else lines="two">
+        <v-list-item
+          v-for="article in myArticles"
+          :key="article.id"
+          class="px-0"
+        >
+          <template v-slot:prepend>
+            <v-avatar color="primary" size="50" class="mr-4">
+              <v-img v-if="article.user.avatar" :src="article.user.avatar"></v-img>
+              <span v-else class="text-h6">{{ article.user.display_name?.[0] || 'U' }}</span>
+            </v-avatar>
+          </template>
+          
+          <v-list-item-title class="font-weight-bold">
+            <router-link :to="'/article/' + article.id" class="text-decoration-none">
+              {{ article.title }}
+            </router-link>
+          </v-list-item-title>
+          <v-list-item-subtitle>
+            <v-icon size="small">mdi-clock</v-icon>
+            {{ formatDate(article.created_at) }}
+            <v-icon size="small" class="ml-2">mdi-heart</v-icon>
+            {{ article.like_count }}
+            <v-icon size="small" class="ml-2">mdi-eye</v-icon>
+            {{ article.view_count }}
+          </v-list-item-subtitle>
+          
+          <template v-slot:append>
+            <v-btn
+              variant="text"
+              size="small"
+              :to="'/create?id=' + article.id"
+              color="primary"
+            >
+              编辑
+            </v-btn>
+            <v-btn
+              variant="text"
+              size="small"
+              color="error"
+              @click="deleteArticle(article.id)"
+            >
+              删除
+            </v-btn>
+          </template>
+        </v-list-item>
+      </v-list>
+    </v-card>
   </div>
   
-  <div v-else class="loading">加载中...</div>
+  <div v-else class="d-flex justify-center align-center" style="min-height: 50vh;">
+    <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+  </div>
 </template>
 
 <script>
@@ -76,7 +151,6 @@ export default {
         const response = await api.get('/articles', {
           params: { page: 1, page_size: 50 }
         })
-        // 过滤出当前用户的文章
         if (user.value) {
           myArticles.value = response.data.articles.filter(
             a => a.user_id === user.value.id
@@ -114,7 +188,6 @@ export default {
         try {
           const response = await api.post('/upload/avatar', formData)
           user.value.avatar = response.data.url
-          // 更新本地存储
           const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
           storedUser.avatar = response.data.url
           localStorage.setItem('user', JSON.stringify(storedUser))
@@ -177,95 +250,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.profile-container {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-}
-
-.profile-header {
-  display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 30px;
-  padding-bottom: 30px;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 30px;
-}
-
-.avatar-section {
-  text-align: center;
-}
-
-.avatar-large {
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-bottom: 15px;
-  border: 3px solid #10b981;
-}
-
-.info-section h2 {
-  margin-bottom: 15px;
-  color: #1e293b;
-}
-
-.info-section p {
-  margin-bottom: 10px;
-  color: #4b5563;
-}
-
-.profile-edit {
-  padding-bottom: 30px;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 30px;
-}
-
-.profile-edit h3 {
-  margin-bottom: 20px;
-}
-
-.my-articles h3 {
-  margin-bottom: 20px;
-}
-
-.article-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.article-info {
-  flex: 1;
-}
-
-.article-title {
-  font-size: 16px;
-  font-weight: 500;
-  text-decoration: none;
-  color: #1e293b;
-}
-
-.article-meta {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #6b7280;
-  display: flex;
-  gap: 15px;
-}
-
-.article-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.empty {
-  text-align: center;
-  padding: 40px;
-  color: #6b7280;
-}
-</style>

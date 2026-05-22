@@ -1,25 +1,49 @@
 <template>
-  <div class="login-container">
-    <div class="login-box">
-      <h2>登录论坛</h2>
-      <div v-if="error" class="error-message">{{ error }}</div>
-      <form @submit.prevent="handleLogin">
-        <div class="form-group">
-          <label>用户名</label>
-          <input type="text" v-model="form.username" required>
+  <div class="d-flex justify-center align-center" style="min-height: 80vh;">
+    <v-card width="100%" max-width="400" class="pa-6">
+      <v-card-title class="text-h5 text-center pb-4" style="color: rgb(var(--v-theme-primary));">
+        登录论坛
+      </v-card-title>
+      
+      <v-card-text>
+        <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
+        
+        <v-form @submit.prevent="handleLogin">
+          <v-text-field
+            v-model="form.username"
+            label="用户名"
+            variant="outlined"
+            required
+            prepend-inner-icon="mdi-account"
+            class="mb-4"
+          ></v-text-field>
+          
+          <v-text-field
+            v-model="form.password"
+            label="密码"
+            variant="outlined"
+            type="password"
+            required
+            prepend-inner-icon="mdi-lock"
+            class="mb-4"
+          ></v-text-field>
+          
+          <v-btn
+            type="submit"
+            color="primary"
+            block
+            size="large"
+            :loading="loading"
+          >
+            {{ loading ? '登录中...' : '登录' }}
+          </v-btn>
+        </v-form>
+        
+        <div class="text-center mt-4 text-body-2">
+          还没有账号？ <router-link to="/register" class="text-primary">立即注册</router-link>
         </div>
-        <div class="form-group">
-          <label>密码</label>
-          <input type="password" v-model="form.password" required>
-        </div>
-        <button type="submit" class="btn btn-primary" :disabled="loading">
-          {{ loading ? '登录中...' : '登录' }}
-        </button>
-      </form>
-      <div class="register-link">
-        还没有账号？ <router-link to="/register">立即注册</router-link>
-      </div>
-    </div>
+      </v-card-text>
+    </v-card>
   </div>
 </template>
 
@@ -82,38 +106,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 80vh;
-}
-
-.login-box {
-  background: white;
-  padding: 40px;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.login-box h2 {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #059669;
-}
-
-.register-link {
-  text-align: center;
-  margin-top: 20px;
-  font-size: 14px;
-}
-
-.register-link a {
-  color: #10b981;
-  text-decoration: none;
-}
-</style>

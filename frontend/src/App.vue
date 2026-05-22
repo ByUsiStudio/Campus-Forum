@@ -1,23 +1,29 @@
 <template>
-  <div>
-    <div class="header">
-      <div class="header-content">
-        <router-link to="/" class="logo">校园论坛</router-link>
+  <v-app>
+    <v-app-bar elevation="1" color="surface">
+      <v-app-bar-title>
+        <router-link to="/" class="logo-link">校园论坛</router-link>
+      </v-app-bar-title>
+
+      <template v-slot:append>
         <div class="nav-links">
-          <router-link to="/">首页</router-link>
-          <router-link v-if="!token" to="/login">登录</router-link>
-          <router-link v-if="!token" to="/register">注册</router-link>
-          <router-link v-if="token" to="/create">写文章</router-link>
-          <router-link v-if="token" to="/profile">个人中心</router-link>
-          <router-link v-if="isAdmin" to="/admin">管理后台</router-link>
-          <a v-if="token" href="#" @click.prevent="logout">退出</a>
+          <v-btn variant="text" to="/" color="primary">首页</v-btn>
+          <v-btn variant="text" to="/login" v-if="!token" color="primary">登录</v-btn>
+          <v-btn variant="text" to="/register" v-if="!token" color="primary">注册</v-btn>
+          <v-btn variant="text" to="/create" v-if="token" color="primary">写文章</v-btn>
+          <v-btn variant="text" to="/profile" v-if="token" color="primary">个人中心</v-btn>
+          <v-btn variant="text" to="/admin" v-if="isAdmin" color="error">管理后台</v-btn>
+          <v-btn variant="text" v-if="token" @click="logout" color="secondary">退出</v-btn>
         </div>
-      </div>
-    </div>
-    <div class="container">
-      <router-view />
-    </div>
-  </div>
+      </template>
+    </v-app-bar>
+
+    <v-main>
+      <v-container fluid>
+        <router-view />
+      </v-container>
+    </v-main>
+  </v-app>
 </template>
 
 <script>
@@ -75,3 +81,18 @@ export default {
   }
 }
 </script>
+
+<style>
+.logo-link {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+
+.nav-links {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+</style>

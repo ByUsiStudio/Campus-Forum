@@ -7,33 +7,51 @@
     
     <!-- 主内容 -->
     <div class="main-content">
-      <div class="announcement" v-if="announcement.content">
-        <div class="announcement-title">公告</div>
+      <v-alert v-if="announcement.content" type="info" variant="tonal" class="mb-4">
+        <div class="announcement-title font-weight-bold mb-2">公告</div>
         <div class="markdown-body" v-html="announcement.content_html"></div>
-      </div>
+      </v-alert>
       
-      <div class="filters">
-        <select v-model="selectedCategory" @change="loadArticles">
-          <option value="">全部分区</option>
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-            {{ cat.name }}
-          </option>
-        </select>
+      <div class="d-flex align-center gap-4 mb-4">
+        <v-select
+          v-model="selectedCategory"
+          :items="categoryOptions"
+          label="选择分区"
+          variant="outlined"
+          density="compact"
+          hide-details
+          @update:model-value="loadArticles"
+          style="max-width: 200px;"
+        ></v-select>
       </div>
       
       <ArticleList :articles="articles" />
       
-      <div class="pagination" v-if="totalPages > 1">
-        <button @click="prevPage" :disabled="page === 1">上一页</button>
-        <span>第 {{ page }} / {{ totalPages }} 页</span>
-        <button @click="nextPage" :disabled="page === totalPages">下一页</button>
+      <div class="d-flex justify-center align-center gap-4 mt-4" v-if="totalPages > 1">
+        <v-btn 
+          @click="prevPage" 
+          :disabled="page === 1" 
+          variant="outlined"
+          color="primary"
+        >
+          上一页
+        </v-btn>
+        <span class="text-body-2">第 {{ page }} / {{ totalPages }} 页</span>
+        <v-btn 
+          @click="nextPage" 
+          :disabled="page === totalPages" 
+          variant="outlined"
+          color="primary"
+        >
+          下一页
+        </v-btn>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import api from '../api'
 import Sidebar from '../components/Sidebar.vue'
 import ArticleList from '../components/ArticleList.vue'
@@ -50,7 +68,14 @@ export default {
     const announcement = ref({ content: '', content_html: '' })
     const page = ref(1)
     const totalPages = ref(1)
-    const selectedCategory = ref('')
+    const selectedCategory = ref(null)
+    
+    const categoryOptions = computed(() => {
+      return [
+        { title: '全部分区', value: null },
+        ...categories.value.map(cat => ({ title: cat.name, value: cat.id }))
+      ]
+    })
     
     const loadArticles = async () => {
       try {
@@ -114,6 +139,7 @@ export default {
       page,
       totalPages,
       selectedCategory,
+      categoryOptions,
       loadArticles,
       prevPage,
       nextPage
@@ -123,49 +149,7 @@ export default {
 </script>
 
 <style scoped>
-.filters {
-  margin-bottom: 20px;
-}
-
-.filters select {
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-}
-
-.announcement {
-  background: #fef3c7;
-  border-left: 4px solid #f59e0b;
-  padding: 15px;
-  margin-bottom: 20px;
-  border-radius: 8px;
-}
-
-.announcement-title {
-  font-weight: bold;
-  margin-bottom: 10px;
-  color: #92400e;
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-top: 30px;
-  align-items: center;
-}
-
-.pagination button {
-  padding: 8px 16px;
-  border: 1px solid #d1d5db;
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.pagination button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.main-content {
+  min-width: 0;
 }
 </style>

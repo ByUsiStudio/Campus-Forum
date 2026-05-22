@@ -1,41 +1,81 @@
 <template>
-  <div class="register-container">
-    <div class="register-box">
-      <h2>{{ isInit ? '初始化系统' : '注册新账号' }}</h2>
-      <div v-if="error" class="error-message">{{ error }}</div>
-      <div v-if="success" class="success-message">{{ success }}</div>
+  <div class="d-flex justify-center align-center" style="min-height: 80vh;">
+    <v-card width="100%" max-width="450" class="pa-6">
+      <v-card-title class="text-h5 text-center pb-4" style="color: rgb(var(--v-theme-primary));">
+        {{ isInit ? '初始化系统' : '注册新账号' }}
+      </v-card-title>
       
-      <form @submit.prevent="handleRegister">
-        <div class="form-group">
-          <label>用户名</label>
-          <input type="text" v-model="form.username" required>
+      <v-card-text>
+        <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
+        <v-alert v-if="success" type="success" variant="tonal" class="mb-4">{{ success }}</v-alert>
+        
+        <v-form @submit.prevent="handleRegister">
+          <v-text-field
+            v-model="form.username"
+            label="用户名"
+            variant="outlined"
+            required
+            prepend-inner-icon="mdi-account"
+            class="mb-4"
+          ></v-text-field>
+          
+          <v-text-field
+            v-model="form.qq_number"
+            label="QQ号"
+            variant="outlined"
+            required
+            prepend-inner-icon="mdi-qqchat"
+            class="mb-4"
+            hint="头像将默认使用QQ头像"
+          ></v-text-field>
+          
+          <v-text-field
+            v-model="form.display_name"
+            label="显示名称"
+            variant="outlined"
+            required
+            prepend-inner-icon="mdi-card-account-details"
+            class="mb-4"
+          ></v-text-field>
+          
+          <v-text-field
+            v-model="form.password"
+            label="密码"
+            variant="outlined"
+            type="password"
+            required
+            minlength="6"
+            prepend-inner-icon="mdi-lock"
+            class="mb-4"
+          ></v-text-field>
+          
+          <v-text-field
+            v-if="!isInit"
+            v-model="confirmPassword"
+            label="确认密码"
+            variant="outlined"
+            type="password"
+            required
+            prepend-inner-icon="mdi-lock-check"
+            class="mb-4"
+          ></v-text-field>
+          
+          <v-btn
+            type="submit"
+            color="primary"
+            block
+            size="large"
+            :loading="loading"
+          >
+            {{ loading ? '处理中...' : (isInit ? '初始化系统' : '注册') }}
+          </v-btn>
+        </v-form>
+        
+        <div class="text-center mt-4 text-body-2" v-if="!isInit">
+          已有账号？ <router-link to="/login" class="text-primary">立即登录</router-link>
         </div>
-        <div class="form-group">
-          <label>QQ号</label>
-          <input type="text" v-model="form.qq_number" required>
-          <small>头像将默认使用QQ头像</small>
-        </div>
-        <div class="form-group">
-          <label>显示名称</label>
-          <input type="text" v-model="form.display_name" required>
-        </div>
-        <div class="form-group">
-          <label>密码</label>
-          <input type="password" v-model="form.password" required minlength="6">
-        </div>
-        <div class="form-group" v-if="!isInit">
-          <label>确认密码</label>
-          <input type="password" v-model="confirmPassword" required>
-        </div>
-        <button type="submit" class="btn btn-primary" :disabled="loading">
-          {{ loading ? '处理中...' : (isInit ? '初始化系统' : '注册') }}
-        </button>
-      </form>
-      
-      <div class="login-link" v-if="!isInit">
-        已有账号？ <router-link to="/login">立即登录</router-link>
-      </div>
-    </div>
+      </v-card-text>
+    </v-card>
   </div>
 </template>
 
@@ -125,43 +165,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.register-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 80vh;
-}
-
-.register-box {
-  background: white;
-  padding: 40px;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 450px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.register-box h2 {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #059669;
-}
-
-.register-box small {
-  color: #6b7280;
-  font-size: 12px;
-}
-
-.login-link {
-  text-align: center;
-  margin-top: 20px;
-  font-size: 14px;
-}
-
-.login-link a {
-  color: #10b981;
-  text-decoration: none;
-}
-</style>

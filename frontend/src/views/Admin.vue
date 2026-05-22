@@ -1,99 +1,203 @@
 <template>
-  <div class="admin-container" v-if="isAdmin">
-    <h2>管理后台</h2>
-    
-    <div class="admin-tabs">
-      <button @click="activeTab = 'deletions'" :class="{ active: activeTab === 'deletions' }">
-        删除审核 ({{ deletionRequests.length }})
-      </button>
-      <button @click="activeTab = 'categories'" :class="{ active: activeTab === 'categories' }">
-        分区管理
-      </button>
-      <button @click="activeTab = 'sidebar'" :class="{ active: activeTab === 'sidebar' }">
-        侧边栏配置
-      </button>
-      <button @click="activeTab = 'announcement'" :class="{ active: activeTab === 'announcement' }">
-        公告管理
-      </button>
-    </div>
-    
-    <!-- 删除审核 -->
-    <div v-if="activeTab === 'deletions'" class="tab-content">
-      <h3>文章删除申请</h3>
-      <div v-if="deletionRequests.length === 0" class="empty">暂无待审核申请</div>
-      <div v-for="req in deletionRequests" :key="req.id" class="deletion-item">
-        <div class="deletion-info">
-          <h4>{{ req.article.title }}</h4>
-          <p>申请人：{{ req.user.display_name }}</p>
-          <p>删除原因：{{ req.reason }}</p>
-          <p>申请时间：{{ formatDate(req.created_at) }}</p>
-        </div>
-        <div class="deletion-actions">
-          <button @click="approveDeletion(req.id)" class="btn btn-primary">批准删除</button>
-          <button @click="rejectDeletion(req.id)" class="btn btn-secondary">拒绝</button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 分区管理 -->
-    <div v-if="activeTab === 'categories'" class="tab-content">
-      <h3>分区管理</h3>
-      <div class="category-form">
-        <input type="text" v-model="categoryForm.name" placeholder="分区名称">
-        <input type="text" v-model="categoryForm.description" placeholder="描述">
-        <input type="number" v-model="categoryForm.sort_order" placeholder="排序">
-        <button @click="addCategory" class="btn btn-primary">添加分区</button>
-      </div>
+  <div v-if="isAdmin">
+    <v-card class="pa-6">
+      <v-card-title class="text-h5 mb-4" style="color: rgb(var(--v-theme-primary));">
+        管理后台
+      </v-card-title>
       
-      <div class="category-list">
-        <div v-for="cat in categories" :key="cat.id" class="category-item">
-          <div class="category-info">
-            <strong>{{ cat.name }}</strong>
-            <span>{{ cat.description }}</span>
-            <span>排序：{{ cat.sort_order }}</span>
+      <v-tabs v-model="activeTab" color="primary" class="mb-4">
+        <v-tab value="deletions">
+          <v-badge :content="deletionRequests.length" color="error" :model-value="deletionRequests.length > 0">
+            删除审核
+          </v-badge>
+        </v-tab>
+        <v-tab value="categories">分区管理</v-tab>
+        <v-tab value="sidebar">侧边栏配置</v-tab>
+        <v-tab value="announcement">公告管理</v-tab>
+      </v-tabs>
+      
+      <v-window v-model="activeTab">
+        <!-- 删除审核 -->
+        <v-window-item value="deletions">
+          <div v-if="deletionRequests.length === 0" class="text-center pa-8 text-medium-emphasis">
+            暂无待审核申请
           </div>
-          <div class="category-actions">
-            <button @click="editCategory(cat)" class="btn btn-secondary">编辑</button>
-            <button @click="deleteCategory(cat.id)" class="btn btn-danger">删除</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 侧边栏配置 -->
-    <div v-if="activeTab === 'sidebar'" class="tab-content">
-      <h3>侧边栏配置</h3>
-      <p class="info">配置侧边栏链接列表（支持JSON格式）</p>
-      
-      <div class="sidebar-items">
-        <div v-for="(item, index) in sidebarItems" :key="index" class="sidebar-item">
-          <input v-model="item.title" placeholder="标题">
-          <input v-model="item.link" placeholder="链接">
-          <input v-model="item.icon" placeholder="图标(emoji)">
-          <button @click="removeSidebarItem(index)" class="btn-danger">删除</button>
-        </div>
-        <button @click="addSidebarItem" class="btn btn-secondary">添加链接</button>
-        <button @click="saveSidebarConfig" class="btn btn-primary" style="margin-top: 20px;">保存配置</button>
-      </div>
-    </div>
-    
-    <!-- 公告管理 -->
-    <div v-if="activeTab === 'announcement'" class="tab-content">
-      <h3>公告管理</h3>
-      <div class="form-group">
-        <label>公告内容（支持Markdown）</label>
-        <textarea v-model="announcementContent" rows="10" placeholder="输入公告内容..."></textarea>
-      </div>
-      <button @click="saveAnnouncement" class="btn btn-primary">保存公告</button>
-      
-      <div class="preview" v-if="announcementContent">
-        <h4>预览</h4>
-        <div class="markdown-body" v-html="previewHtml"></div>
-      </div>
-    </div>
+          
+          <v-card v-for="req in deletionRequests" :key="req.id" class="mb-4 pa-4" variant="outlined">
+            <v-card-text>
+              <div class="d-flex justify-space-between align-start">
+                <div>
+                  <div class="text-h6 mb-2">{{ req.article.title }}</div>
+                  <v-list-item-subtitle class="mb-1">
+                    <v-icon size="small">mdi-account</v-icon>
+                    申请人：{{ req.user.display_name }}
+                  </v-list-item-subtitle>
+                  <v-list-item-subtitle class="mb-1">
+                    <v-icon size="small">mdi-delete</v-icon>
+                    删除原因：{{ req.reason }}
+                  </v-list-item-subtitle>
+                  <v-list-item-subtitle>
+                    <v-icon size="small">mdi-clock</v-icon>
+                    申请时间：{{ formatDate(req.created_at) }}
+                  </v-list-item-subtitle>
+                </div>
+                <div class="d-flex gap-2">
+                  <v-btn color="primary" variant="flat" @click="approveDeletion(req.id)">
+                    批准删除
+                  </v-btn>
+                  <v-btn color="secondary" variant="outlined" @click="rejectDeletion(req.id)">
+                    拒绝
+                  </v-btn>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-window-item>
+        
+        <!-- 分区管理 -->
+        <v-window-item value="categories">
+          <v-card variant="outlined" class="pa-4 mb-4">
+            <v-card-title class="text-subtitle-1 pa-0 mb-4">添加新分区</v-card-title>
+            <v-form @submit.prevent="addCategory">
+              <v-row>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model="categoryForm.name"
+                    label="分区名称"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model="categoryForm.description"
+                    label="描述"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" md="2">
+                  <v-text-field
+                    v-model="categoryForm.sort_order"
+                    label="排序"
+                    type="number"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" md="2">
+                  <v-btn type="submit" color="primary" block>添加</v-btn>
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-card>
+          
+          <v-list>
+            <v-list-item v-for="cat in categories" :key="cat.id">
+              <template v-slot:prepend>
+                <v-avatar color="primary" size="40">
+                  <span>{{ cat.sort_order }}</span>
+                </v-avatar>
+              </template>
+              
+              <v-list-item-title class="font-weight-bold">{{ cat.name }}</v-list-item-title>
+              <v-list-item-subtitle>{{ cat.description || '无描述' }}</v-list-item-subtitle>
+              
+              <template v-slot:append>
+                <v-btn variant="text" size="small" color="primary" @click="editCategory(cat)">
+                  编辑
+                </v-btn>
+                <v-btn variant="text" size="small" color="error" @click="deleteCategory(cat.id)">
+                  删除
+                </v-btn>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-window-item>
+        
+        <!-- 侧边栏配置 -->
+        <v-window-item value="sidebar">
+          <v-card-text class="pa-0">
+            <p class="text-body-2 text-medium-emphasis mb-4">
+              配置侧边栏链接列表
+            </p>
+            
+            <div v-for="(item, index) in sidebarItems" :key="index" class="d-flex gap-2 mb-3 align-center">
+              <v-text-field
+                v-model="item.title"
+                label="标题"
+                variant="outlined"
+                density="compact"
+                hide-details
+                class="flex-grow-1"
+              ></v-text-field>
+              <v-text-field
+                v-model="item.link"
+                label="链接"
+                variant="outlined"
+                density="compact"
+                hide-details
+                class="flex-grow-1"
+              ></v-text-field>
+              <v-text-field
+                v-model="item.icon"
+                label="图标"
+                variant="outlined"
+                density="compact"
+                hide-details
+                style="max-width: 120px;"
+              ></v-text-field>
+              <v-btn icon variant="text" color="error" @click="removeSidebarItem(index)">
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
+            </div>
+            
+            <div class="d-flex gap-2 mt-4">
+              <v-btn variant="outlined" @click="addSidebarItem">
+                <v-icon start>mdi-plus</v-icon>
+                添加链接
+              </v-btn>
+              <v-btn color="primary" @click="saveSidebarConfig">
+                <v-icon start>mdi-content-save</v-icon>
+                保存配置
+              </v-btn>
+            </div>
+          </v-card-text>
+        </v-window-item>
+        
+        <!-- 公告管理 -->
+        <v-window-item value="announcement">
+          <v-card-text class="pa-0">
+            <v-textarea
+              v-model="announcementContent"
+              label="公告内容（支持Markdown）"
+              variant="outlined"
+              rows="10"
+              placeholder="输入公告内容..."
+              class="mb-4"
+            ></v-textarea>
+            
+            <v-btn color="primary" @click="saveAnnouncement" class="mb-4">
+              <v-icon start>mdi-content-save</v-icon>
+              保存公告
+            </v-btn>
+            
+            <v-card v-if="announcementContent" variant="outlined" class="pa-4">
+              <v-card-title class="text-subtitle-1 pa-0 mb-2">预览</v-card-title>
+              <div class="markdown-body" v-html="previewHtml"></div>
+            </v-card>
+          </v-card-text>
+        </v-window-item>
+      </v-window>
+    </v-card>
   </div>
   
-  <div v-else class="error-message">无权限访问</div>
+  <v-alert v-else type="error" variant="tonal">
+    无权限访问
+  </v-alert>
 </template>
 
 <script>
@@ -309,136 +413,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.admin-container {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-}
-
-.admin-tabs {
-  display: flex;
-  gap: 10px;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 30px;
-  padding-bottom: 10px;
-}
-
-.admin-tabs button {
-  padding: 8px 20px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.admin-tabs button.active {
-  color: #10b981;
-  border-bottom: 2px solid #10b981;
-}
-
-.tab-content {
-  padding: 20px 0;
-}
-
-.deletion-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  margin-bottom: 15px;
-}
-
-.deletion-info h4 {
-  margin-bottom: 10px;
-}
-
-.deletion-info p {
-  margin-bottom: 5px;
-  color: #6b7280;
-  font-size: 14px;
-}
-
-.deletion-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.category-form {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.category-form input {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-}
-
-.category-form input[type="number"] {
-  width: 80px;
-}
-
-.category-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.category-info {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-}
-
-.category-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.sidebar-items {
-  max-width: 600px;
-}
-
-.sidebar-item {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-  align-items: center;
-}
-
-.sidebar-item input {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-}
-
-.preview {
-  margin-top: 30px;
-  padding: 20px;
-  background: #f9fafb;
-  border-radius: 8px;
-}
-
-.info {
-  color: #6b7280;
-  margin-bottom: 15px;
-  font-size: 14px;
-}
-
-.empty {
-  text-align: center;
-  padding: 40px;
-  color: #6b7280;
-}
-</style>

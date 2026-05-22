@@ -1,51 +1,107 @@
 <template>
-  <div class="article-container" v-if="article">
-    <div class="article-header">
-      <h1>{{ article.title }}</h1>
-      <div class="article-meta">
-        <span>作者：{{ article.user.display_name }}</span>
-        <span>分区：{{ article.category.name }}</span>
-        <span>发布时间：{{ formatDate(article.created_at) }}</span>
-        <span>阅读：{{ article.view_count }}</span>
-      </div>
-      <div class="article-actions" v-if="canEdit">
-        <router-link :to="'/create?id=' + article.id" class="btn btn-secondary">编辑</router-link>
-        <button @click="deleteArticle" class="btn btn-danger">删除</button>
-      </div>
-    </div>
+  <div v-if="article">
+    <v-card class="pa-6 mb-4" v-if="article">
+      <v-card-title class="text-h4 mb-2">{{ article.title }}</v-card-title>
+      
+      <v-card-subtitle class="d-flex flex-wrap gap-3 mb-4">
+        <v-chip size="small" color="primary" variant="tonal">
+          <v-icon start size="small">mdi-account</v-icon>
+          {{ article.user.display_name }}
+        </v-chip>
+        <v-chip size="small" color="secondary" variant="tonal">
+          <v-icon start size="small">mdi-folder</v-icon>
+          {{ article.category.name }}
+        </v-chip>
+        <v-chip size="small" variant="text">
+          <v-icon start size="small">mdi-clock</v-icon>
+          {{ formatDate(article.created_at) }}
+        </v-chip>
+        <v-chip size="small" variant="text">
+          <v-icon start size="small">mdi-eye</v-icon>
+          {{ article.view_count }}
+        </v-chip>
+      </v-card-subtitle>
+      
+      <v-card-actions v-if="canEdit">
+        <v-btn variant="outlined" color="primary" :to="'/create?id=' + article.id">
+          <v-icon start>mdi-pencil</v-icon>
+          编辑
+        </v-btn>
+        <v-btn variant="outlined" color="error" @click="deleteArticle">
+          <v-icon start>mdi-delete</v-icon>
+          删除
+        </v-btn>
+      </v-card-actions>
+    </v-card>
     
-    <div class="article-content markdown-body" v-html="article.content_html" @click="handleImageClick"></div>
+    <v-card class="pa-6 mb-4">
+      <div class="article-content markdown-body" v-html="article.content_html" @click="handleImageClick"></div>
+    </v-card>
     
-    <div class="article-footer">
-      <button @click="toggleLike" class="btn-like" :class="{ liked: liked }">
+    <v-card class="pa-4 mb-4">
+      <v-btn
+        @click="toggleLike"
+        :color="liked ? 'primary' : 'default'"
+        :variant="liked ? 'flat' : 'outlined'"
+      >
+        <v-icon start>mdi-thumb-up</v-icon>
         {{ article.like_count }} 点赞
-      </button>
-    </div>
+      </v-btn>
+    </v-card>
     
-    <div class="comments-section">
-      <h3>评论 ({{ comments.length }})</h3>
-      <div class="comment-form" v-if="token">
-        <textarea v-model="commentContent" placeholder="写下你的评论..." rows="3"></textarea>
-        <button @click="submitComment" class="btn btn-primary">发表评论</button>
+    <v-card class="pa-6">
+      <v-card-title class="text-h6 mb-4">
+        评论 ({{ comments.length }})
+      </v-card-title>
+      
+      <div v-if="token" class="mb-6">
+        <v-textarea
+          v-model="commentContent"
+          label="写下你的评论..."
+          variant="outlined"
+          rows="3"
+          hide-details
+          class="mb-3"
+        ></v-textarea>
+        <v-btn color="primary" @click="submitComment">发表评论</v-btn>
       </div>
       
-      <div class="comments-list">
-        <div v-for="comment in comments" :key="comment.id" class="comment-item">
-          <div class="comment-header">
-            <span>{{ comment.user.display_name }}</span>
-            <span>{{ formatDate(comment.created_at) }}</span>
-          </div>
-          <div class="comment-content">{{ comment.content }}</div>
-          <button v-if="canDeleteComment(comment)" @click="deleteComment(comment.id)" class="btn-delete">删除</button>
-        </div>
-      </div>
-    </div>
+      <v-list lines="two">
+        <v-list-item v-for="comment in comments" :key="comment.id" class="px-0">
+          <template v-slot:prepend>
+            <v-avatar color="primary" size="40">
+              <v-img :src="comment.user.avatar"></v-img>
+            </v-avatar>
+          </template>
+          
+          <v-list-item-title>{{ comment.user.display_name }}</v-list-item-title>
+          <v-list-item-subtitle>{{ formatDate(comment.created_at) }}</v-list-item-subtitle>
+          
+          <v-list-item-content class="mt-2">
+            {{ comment.content }}
+          </v-list-item-content>
+          
+          <template v-slot:append v-if="canDeleteComment(comment)">
+            <v-btn
+              variant="text"
+              color="error"
+              size="small"
+              @click="deleteComment(comment.id)"
+            >
+              删除
+            </v-btn>
+          </template>
+        </v-list-item>
+      </v-list>
+    </v-card>
     
     <!-- 图片查看器 -->
     <ImageViewer v-if="showImageViewer" :url="currentImageUrl" @close="closeImageViewer" />
   </div>
   
-  <div v-else class="loading">加载中...</div>
+  <div v-else class="d-flex justify-center align-center" style="min-height: 50vh;">
+    <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+  </div>
 </template>
 
 <script>
@@ -211,88 +267,7 @@ export default {
 </script>
 
 <style scoped>
-.article-container {
-  background: white;
-  border-radius: 12px;
-  padding: 30px;
-}
-
-.article-header {
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 20px;
-  margin-bottom: 20px;
-}
-
-.article-header h1 {
-  margin-bottom: 15px;
-  color: #1e293b;
-}
-
-.article-meta {
-  display: flex;
-  gap: 20px;
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.article-actions {
-  margin-top: 15px;
-  display: flex;
-  gap: 10px;
-}
-
 .article-content {
   min-height: 300px;
-  margin-bottom: 30px;
-}
-
-.article-footer {
-  border-top: 1px solid #e5e7eb;
-  padding-top: 20px;
-}
-
-.btn-like {
-  padding: 8px 20px;
-  border: 1px solid #d1d5db;
-  background: white;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.btn-like.liked {
-  background: #10b981;
-  color: white;
-  border-color: #10b981;
-}
-
-.comments-section {
-  margin-top: 40px;
-}
-
-.comments-section h3 {
-  margin-bottom: 20px;
-}
-
-.comment-form {
-  margin-bottom: 30px;
-}
-
-.comment-form textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  margin-bottom: 10px;
-  resize: vertical;
-}
-
-.btn-delete {
-  background: none;
-  border: none;
-  color: #ef4444;
-  cursor: pointer;
-  font-size: 12px;
-  margin-top: 5px;
 }
 </style>

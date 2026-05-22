@@ -1,34 +1,62 @@
 <template>
   <div class="sidebar-component">
-    <div class="user-info" v-if="user">
-      <img :src="user.avatar" :alt="user.display_name" class="avatar">
-      <div class="user-name">{{ user.display_name }}</div>
-      <router-link to="/profile" class="profile-link">个人中心</router-link>
-    </div>
-    <div class="user-info" v-else>
-      <div class="login-prompt">
-        <router-link to="/login" class="btn btn-primary">登录</router-link>
-        <router-link to="/register" class="btn btn-secondary">注册</router-link>
-      </div>
-    </div>
+    <v-card class="mb-4">
+      <v-card-text v-if="user" class="text-center pa-4">
+        <v-avatar size="80" class="mb-3">
+          <v-img :src="user.avatar" :alt="user.display_name"></v-img>
+        </v-avatar>
+        <div class="text-h6 mb-1">{{ user.display_name }}</div>
+        <v-btn variant="text" size="small" to="/profile" color="primary">
+          个人中心
+        </v-btn>
+      </v-card-text>
+      <v-card-text v-else class="text-center pa-4">
+        <div class="d-flex gap-2 justify-center">
+          <v-btn variant="flat" color="primary" to="/login" size="small">
+            登录
+          </v-btn>
+          <v-btn variant="outlined" color="primary" to="/register" size="small">
+            注册
+          </v-btn>
+        </div>
+      </v-card-text>
+    </v-card>
     
-    <div class="sidebar-nav">
-      <h3>导航</h3>
-      <ul>
-        <li v-for="item in sidebarItems" :key="item.link">
-          <a :href="item.link">
-            <span class="icon">{{ item.icon }}</span>
-            {{ item.title }}
-          </a>
-        </li>
-      </ul>
-    </div>
+    <v-card class="mb-4">
+      <v-card-title class="text-subtitle-2 pa-3 pb-0">导航</v-card-title>
+      <v-list density="compact" class="pt-0">
+        <v-list-item
+          v-for="item in sidebarItems"
+          :key="item.link"
+          :href="item.link"
+          :to="item.link"
+          color="primary"
+        >
+          <template v-slot:prepend>
+            <v-icon size="small">{{ getIcon(item.icon) }}</v-icon>
+          </template>
+          <v-list-item-title>{{ item.title }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-card>
     
-    <div class="sidebar-stats">
-      <h3>统计信息</h3>
-      <div class="stats-item">总文章数：{{ stats.totalArticles }}</div>
-      <div class="stats-item">总用户数：{{ stats.totalUsers }}</div>
-    </div>
+    <v-card>
+      <v-card-title class="text-subtitle-2 pa-3 pb-0">统计信息</v-card-title>
+      <v-list density="compact" class="pt-0">
+        <v-list-item>
+          <template v-slot:prepend>
+            <v-icon size="small" color="primary">mdi-file-document</v-icon>
+          </template>
+          <v-list-item-title>总文章数：{{ stats.totalArticles }}</v-list-item-title>
+        </v-list-item>
+        <v-list-item>
+          <template v-slot:prepend>
+            <v-icon size="small" color="primary">mdi-account-group</v-icon>
+          </template>
+          <v-list-item-title>总用户数：{{ stats.totalUsers }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-card>
   </div>
 </template>
 
@@ -59,9 +87,8 @@ export default {
         sidebarItems.value = response.data.items || []
       } catch (error) {
         console.error('加载侧边栏配置失败', error)
-        // 默认配置
         sidebarItems.value = [
-          { title: '首页', link: '/', icon: '🏠' }
+          { title: '首页', link: '/', icon: 'mdi-home' }
         ]
       }
     }
@@ -70,12 +97,18 @@ export default {
       try {
         const response = await api.get('/articles', { params: { page: 1, page_size: 1 } })
         stats.value.totalArticles = response.data.total
-        
-        // 这里简单获取用户数，实际应该有个专门的API
         stats.value.totalUsers = 1
       } catch (error) {
         console.error('加载统计失败', error)
       }
+    }
+    
+    const getIcon = (icon) => {
+      if (!icon) return 'mdi-link'
+      // 如果是emoji
+      if (icon.match(/[\u{1F600}-\u{1F64F}]/u)) return icon
+      // 否则当作MDI图标
+      return icon.startsWith('mdi-') ? icon : `mdi-${icon}`
     }
     
     onMounted(() => {
@@ -87,7 +120,8 @@ export default {
     return {
       user,
       sidebarItems,
-      stats
+      stats,
+      getIcon
     }
   }
 }
@@ -97,78 +131,6 @@ export default {
 .sidebar-component {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.user-info {
-  text-align: center;
-  padding: 20px;
-  background: #f9fafb;
-  border-radius: 8px;
-}
-
-.avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  margin-bottom: 10px;
-  object-fit: cover;
-}
-
-.user-name {
-  font-size: 16px;
-  font-weight: 500;
-  margin-bottom: 10px;
-}
-
-.login-prompt {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-
-.profile-link {
-  display: inline-block;
-  margin-top: 10px;
-  color: #10b981;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.sidebar-nav h3,
-.sidebar-stats h3 {
-  margin-bottom: 15px;
-  font-size: 16px;
-  color: #1e293b;
-}
-
-.sidebar-nav ul {
-  list-style: none;
-  padding: 0;
-}
-
-.sidebar-nav li {
-  margin-bottom: 10px;
-}
-
-.sidebar-nav a {
-  text-decoration: none;
-  color: #4b5563;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px;
-  border-radius: 6px;
-}
-
-.icon {
-  font-size: 18px;
-}
-
-.stats-item {
-  padding: 8px 0;
-  color: #6b7280;
-  font-size: 14px;
-  border-bottom: 1px solid #e5e7eb;
+  gap: 0;
 }
 </style>

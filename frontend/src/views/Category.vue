@@ -5,13 +5,30 @@
     </div>
     
     <div class="main-content">
-      <h2>{{ categoryName }}</h2>
+      <v-card class="pa-6 mb-4">
+        <v-card-title class="text-h5">{{ categoryName }}</v-card-title>
+      </v-card>
+      
       <ArticleList :articles="articles" />
       
-      <div class="pagination" v-if="totalPages > 1">
-        <button @click="prevPage" :disabled="page === 1">上一页</button>
-        <span>第 {{ page }} / {{ totalPages }} 页</span>
-        <button @click="nextPage" :disabled="page === totalPages">下一页</button>
+      <div class="d-flex justify-center align-center gap-4 mt-4" v-if="totalPages > 1">
+        <v-btn 
+          @click="prevPage" 
+          :disabled="page === 1" 
+          variant="outlined"
+          color="primary"
+        >
+          上一页
+        </v-btn>
+        <span class="text-body-2">第 {{ page }} / {{ totalPages }} 页</span>
+        <v-btn 
+          @click="nextPage" 
+          :disabled="page === totalPages" 
+          variant="outlined"
+          color="primary"
+        >
+          下一页
+        </v-btn>
       </div>
     </div>
   </div>
@@ -87,3 +104,9 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.main-content {
+  min-width: 0;
+}
+</style>
