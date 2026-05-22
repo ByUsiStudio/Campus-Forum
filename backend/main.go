@@ -105,7 +105,6 @@ func main() {
 			protected.DELETE("/categories/:id", middleware.AdminOnly(), controllers.DeleteCategory)
 
 			// 侧边栏配置
-			protected.GET("/sidebar-config", controllers.GetSidebarConfig)
 			protected.PUT("/sidebar-config", middleware.AdminOnly(), controllers.UpdateSidebarConfig)
 
 			// 删除审核
@@ -114,7 +113,6 @@ func main() {
 			protected.POST("/deletion-requests/:id/reject", middleware.AdminOnly(), controllers.RejectDeletion)
 
 			// 公告
-			protected.GET("/announcement", controllers.GetAnnouncement)
 			protected.PUT("/announcement", middleware.AdminOnly(), controllers.UpdateAnnouncement)
 		}
 
