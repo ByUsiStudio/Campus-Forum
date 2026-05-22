@@ -45,8 +45,7 @@ export default {
     const logout = () => {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      token.value = null
-      user.value = null
+      window.dispatchEvent(new Event('user-logout'))
       router.push('/login')
     }
     
@@ -70,6 +69,20 @@ export default {
         user.value = JSON.parse(storedUser)
       }
       loadUser()
+
+      // 监听登录/登出事件
+      window.addEventListener('user-updated', () => {
+        const storedUser = localStorage.getItem('user')
+        if (storedUser) {
+          user.value = JSON.parse(storedUser)
+        }
+        token.value = localStorage.getItem('token')
+      })
+
+      window.addEventListener('user-logout', () => {
+        user.value = null
+        token.value = null
+      })
     })
     
     return {

@@ -85,6 +85,9 @@ export default {
         localStorage.setItem('token', token)
         localStorage.setItem('user', JSON.stringify(user))
         
+        // 通知 App.vue 更新状态
+        window.dispatchEvent(new Event('user-updated'))
+        
         router.push('/')
       } catch (err) {
         error.value = err.response?.data?.error || '登录失败'
