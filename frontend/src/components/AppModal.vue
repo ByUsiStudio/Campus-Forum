@@ -1,6 +1,7 @@
 <template>
   <v-dialog
-    v-model="show"
+    :model-value="show"
+    @update:model-value="$emit('update:show', $event)"
     :max-width="maxWidth"
     :persistent="persistent"
     scrollable
@@ -24,7 +25,7 @@
         <div v-if="type === 'prompt'" class="prompt-content">
           <span>{{ message }}</span>
           <v-text-field
-            v-model="inputValue"
+            v-model="internalValue"
             :label="inputLabel || '输入内容'"
             :type="inputType || 'text'"
             :placeholder="inputPlaceholder"
