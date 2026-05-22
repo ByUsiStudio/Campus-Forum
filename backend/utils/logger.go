@@ -102,7 +102,7 @@ func Request(method, path string, statusCode int, duration time.Duration) {
 	}
 
 	now := time.Now().Format("2006-01-02 15:04:05")
-	fmt.Printf("%s[%s]%s %s%-7s%s %s%s%s %s%dms%s\n",
+	fmt.Printf("%s[%s]%s %s%-7s%s %s%s%s %s%d%s %s%dms%s\n",
 		Gray, now, Reset,
 		Cyan, method, Reset,
 		Yellow, path, Reset,
