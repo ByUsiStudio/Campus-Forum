@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"fmt"
-	"forum/utils"
 	"io"
 	"mime/multipart"
 	"net/http"
