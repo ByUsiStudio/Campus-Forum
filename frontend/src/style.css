@@ -45,6 +45,7 @@ body {
   transform: scale(1.02);
 }
 
+/* 原生 video 标签样式（备用） */
 .markdown-body video {
   max-width: 100%;
   height: auto;

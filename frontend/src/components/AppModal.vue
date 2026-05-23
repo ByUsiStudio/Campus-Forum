@@ -167,13 +167,13 @@ export default {
     })
     
     const handleConfirm = () => {
-      emit('update:show', false)
       emit('confirm', internalValue.value)
+      emit('update:show', false)
     }
     
     const handleCancel = () => {
-      emit('update:show', false)
       emit('cancel')
+      emit('update:show', false)
     }
     
     return {

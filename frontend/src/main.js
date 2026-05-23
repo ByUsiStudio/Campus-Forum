@@ -51,6 +51,7 @@ import CreateArticle from './views/CreateArticle.vue'
 import Profile from './views/Profile.vue'
 import Admin from './views/Admin.vue'
 import Category from './views/Category.vue'
+import VideoPlayerPage from './views/VideoPlayerPage.vue'
 
 const routes = [
     { path: '/', component: Home, name: 'Home' },
@@ -60,7 +61,8 @@ const routes = [
     { path: '/create', component: CreateArticle, name: 'CreateArticle' },
     { path: '/profile', component: Profile, name: 'Profile' },
     { path: '/admin', component: Admin, name: 'Admin' },
-    { path: '/category/:id', component: Category, name: 'Category' }
+    { path: '/category/:id', component: Category, name: 'Category' },
+    { path: '/video', component: VideoPlayerPage, name: 'VideoPlayer' }
 ]
 
 const router = createRouter({

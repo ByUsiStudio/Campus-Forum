@@ -41,7 +41,7 @@
       :input-placeholder="modalState.inputPlaceholder"
       :input-rows="modalState.inputRows"
       @update:show="modalState.show = $event"
-      @confirm="handleConfirm"
+      @confirm="(value) => handleConfirm(value)"
       @cancel="handleCancel"
     />
   </v-app>
