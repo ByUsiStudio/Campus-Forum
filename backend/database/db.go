@@ -41,6 +41,7 @@ func AutoMigrate() {
 		&models.Follow{},
 		&models.ChatMessage{},
 		&models.ChatSession{},
+		&models.SiteConfig{},
 	)
 	if err != nil {
 		utils.Error("数据库迁移失败: %v", err)

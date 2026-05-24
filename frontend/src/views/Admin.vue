@@ -18,6 +18,7 @@
           </v-badge>
         </v-tab>
         <v-tab value="announcement">公告管理</v-tab>
+        <v-tab value="siteconfig">网站配置</v-tab>
         <v-tab value="notifications">通知管理</v-tab>
       </v-tabs>
       
@@ -376,6 +377,47 @@
           </v-card-text>
         </v-window-item>
         
+        <!-- 网站配置 -->
+        <v-window-item value="siteconfig">
+          <v-card-text class="pa-0">
+            <v-alert type="info" variant="tonal" class="mb-4">
+              <v-icon start>mdi-information</v-icon>
+              修改网站标题后，用户将在浏览器标签页和PWA安装提示中看到新的标题
+            </v-alert>
+            
+            <v-text-field
+              v-model="siteConfigForm.siteTitle"
+              label="网站标题"
+              variant="outlined"
+              hint="显示在浏览器标签页和PWA安装提示中的标题"
+              persistent-hint
+              class="mb-4"
+              prepend-inner-icon="mdi-format-title"
+            ></v-text-field>
+            
+            <v-btn color="primary" @click="saveSiteConfig">
+              <v-icon start>mdi-content-save</v-icon>
+              保存网站配置
+            </v-btn>
+            
+            <v-divider class="my-6"></v-divider>
+            
+            <v-card variant="outlined" class="pa-4">
+              <v-card-title class="text-subtitle-1 pa-0 mb-4">
+                <v-icon start>mdi-image</v-icon>
+                网站图标预览
+              </v-card-title>
+              <div class="d-flex align-center gap-4">
+                <img src="/xylt.svg" alt="网站图标" style="width: 64px; height: 64px;" />
+                <div>
+                  <div class="text-body-1 font-weight-bold">xylt.svg</div>
+                  <div class="text-caption text-medium-emphasis">当前网站图标</div>
+                </div>
+              </div>
+            </v-card>
+          </v-card-text>
+        </v-window-item>
+        
         <!-- 通知管理 -->
         <v-window-item value="notifications">
           <v-card variant="outlined" class="pa-4 mb-4">
@@ -615,6 +657,11 @@ export default {
     // 公告
     const announcementContent = ref('')
     
+    // 网站配置
+    const siteConfigForm = ref({
+      siteTitle: ''
+    })
+    
     // 通知管理
     const notifications = ref([])
     const notificationForm = ref({
@@ -783,6 +830,25 @@ export default {
         notifications.value = response.data.notifications || []
       } catch (error) {
         console.error('加载通知失败', error)
+      }
+    }
+    
+    const loadSiteConfig = async () => {
+      try {
+        const response = await api.get('/site-config')
+        siteConfigForm.value.siteTitle = response.data.site_title || ''
+      } catch (error) {
+        console.error('加载网站配置失败', error)
+      }
+    }
+    
+    const saveSiteConfig = async () => {
+      try {
+        await api.put('/site-config', { site_title: siteConfigForm.value.siteTitle })
+        showSuccess('网站配置保存成功')
+      } catch (error) {
+        console.error('保存网站配置失败', error)
+        showError('保存失败')
       }
     }
     
@@ -1116,6 +1182,7 @@ export default {
       if (newTab === 'categories') loadCategories()
       if (newTab === 'sidebar') loadSidebarConfig()
       if (newTab === 'announcement') loadAnnouncement()
+      if (newTab === 'siteconfig') loadSiteConfig()
       if (newTab === 'notifications') loadNotifications()
     })
     
@@ -1158,6 +1225,8 @@ export default {
       notificationForm,
       notificationTypes,
       notificationTargets,
+      siteConfigForm,
+      saveSiteConfig,
       banDialog,
       showEditRoleDialog,
       confirmEditRole,

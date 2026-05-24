@@ -114,7 +114,7 @@
                 <v-icon start size="small">mdi-reply</v-icon>
                 回复 ({{ comment.reply_count }})
               </v-btn>
-              <v-btn variant="text" size="small" color="error" @click="deleteComment(comment.id)" v-if="canDeleteComment(comment)">
+              <v-btn variant="text" size="small" color="error" @click="deleteComment(comment.id, comment)" v-if="canDeleteComment(comment)">
                 <v-icon start size="small">mdi-delete</v-icon>
                 删除
               </v-btn>
@@ -154,7 +154,7 @@
                         <v-icon start size="x-small">mdi-thumb-up</v-icon>
                         {{ reply.like_count }}
                       </v-btn>
-                      <v-btn variant="text" size="small" color="error" @click="deleteComment(reply.id)" v-if="canDeleteComment(reply)" density="compact">
+                      <v-btn variant="text" size="small" color="error" @click="deleteComment(reply.id, reply)" v-if="canDeleteComment(reply)" density="compact">
                         <v-icon start size="x-small">mdi-delete</v-icon>
                         删除
                       </v-btn>
@@ -492,7 +492,12 @@ export default {
       }
     }
     
-    const deleteComment = async (commentId) => {
+    const deleteComment = async (commentId, comment) => {
+      // 双重检查权限
+      if (!canDeleteComment(comment)) {
+        console.error('无权限删除该评论')
+        return
+      }
       try {
         const confirmed = await showConfirm('确定要删除这条评论吗？', {
           title: '确认删除',
@@ -530,7 +535,9 @@ export default {
     
     const canDeleteComment = (comment) => {
       if (!currentUser.value) return false
-      return currentUser.value.id === comment.user_id || currentUser.value.role === 'admin'
+      const currentUserId = Number(currentUser.value.id)
+      const commentUserId = Number(comment.user_id)
+      return currentUserId === commentUserId || currentUser.value.role === 'admin'
     }
     
     const handleContentClick = (event) => {

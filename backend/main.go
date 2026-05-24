@@ -120,6 +120,9 @@ func main() {
 			// 公告
 			protected.PUT("/announcement", middleware.AdminOnly(), controllers.UpdateAnnouncement)
 
+			// 网站配置
+			protected.PUT("/site-config", middleware.AdminOnly(), controllers.UpdateSiteConfig)
+
 			// 通知相关
 			protected.GET("/notifications", controllers.GetNotifications)
 			protected.GET("/notifications/unread-count", controllers.GetUnreadCount)
@@ -163,6 +166,7 @@ func main() {
 		api.GET("/categories", controllers.GetCategories)
 		api.GET("/announcement", controllers.GetAnnouncement)
 		api.GET("/sidebar-config", controllers.GetSidebarConfig)
+		api.GET("/site-config", controllers.GetSiteConfig)
 	}
 
 	// WebSocket路由
