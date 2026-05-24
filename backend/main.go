@@ -101,6 +101,8 @@ func main() {
 			// 评论相关
 			protected.POST("/articles/:id/comments", controllers.CreateComment)
 			protected.DELETE("/comments/:id", controllers.DeleteComment)
+			protected.POST("/comments/:id/like", controllers.LikeComment)
+			protected.DELETE("/comments/:id/like", controllers.UnlikeComment)
 
 			// 分区相关
 			protected.POST("/categories", middleware.AdminOnly(), controllers.CreateCategory)
@@ -117,6 +119,25 @@ func main() {
 
 			// 公告
 			protected.PUT("/announcement", middleware.AdminOnly(), controllers.UpdateAnnouncement)
+
+			// 通知相关
+			protected.GET("/notifications", controllers.GetNotifications)
+			protected.GET("/notifications/unread-count", controllers.GetUnreadCount)
+			protected.POST("/notifications/:id/read", controllers.MarkNotificationRead)
+			protected.POST("/notifications/read-all", controllers.MarkAllNotificationsRead)
+			protected.POST("/notifications", middleware.AdminOnly(), controllers.CreateNotification)
+			protected.GET("/notifications/admin", middleware.AdminOnly(), controllers.GetAdminNotifications)
+			protected.DELETE("/notifications/:id", middleware.AdminOnly(), controllers.DeleteNotification)
+
+			// 后台管理
+			protected.GET("/admin/statistics", middleware.AdminOnly(), controllers.GetStatistics)
+			protected.GET("/admin/users", middleware.AdminOnly(), controllers.GetAllUsers)
+			protected.PUT("/admin/users/:id/role", middleware.AdminOnly(), controllers.UpdateUserRole)
+			protected.DELETE("/admin/users/:id", middleware.AdminOnly(), controllers.DeleteUser)
+			protected.GET("/admin/articles", middleware.AdminOnly(), controllers.GetAllArticles)
+			protected.PUT("/admin/articles/:id/status", middleware.AdminOnly(), controllers.UpdateArticleStatus)
+			protected.GET("/admin/comments", middleware.AdminOnly(), controllers.GetAllComments)
+			protected.DELETE("/admin/comments/:id", middleware.AdminOnly(), controllers.DeleteCommentAdmin)
 		}
 
 		// 公开路由

@@ -66,33 +66,78 @@
         <v-btn color="primary" @click="submitComment">发表评论</v-btn>
       </div>
       
-      <v-list lines="two">
-        <v-list-item v-for="comment in comments" :key="comment.id" class="px-0">
-          <template v-slot:prepend>
-            <v-avatar color="primary" size="40">
-              <v-img :src="comment.user.avatar"></v-img>
-            </v-avatar>
-          </template>
-          
-          <v-list-item-title>{{ comment.user.display_name }}</v-list-item-title>
-          <v-list-item-subtitle>{{ formatDate(comment.created_at) }}</v-list-item-subtitle>
-          
-          <v-list-item-content class="mt-2">
-            {{ comment.content }}
-          </v-list-item-content>
-          
-          <template v-slot:append v-if="canDeleteComment(comment)">
-            <v-btn
-              variant="text"
-              color="error"
-              size="small"
-              @click="deleteComment(comment.id)"
-            >
-              删除
-            </v-btn>
-          </template>
-        </v-list-item>
-      </v-list>
+      <div v-for="comment in comments" :key="comment.id" class="comment-item mb-4">
+        <div class="d-flex gap-3">
+          <v-avatar color="primary" size="40">
+            <v-img :src="comment.user.avatar"></v-img>
+          </v-avatar>
+          <div class="flex-grow-1">
+            <div class="d-flex align-center gap-2">
+              <span class="font-weight-bold">{{ comment.user.display_name }}</span>
+              <span class="text-caption text-medium-emphasis">{{ formatDate(comment.created_at) }}</span>
+            </div>
+            <div class="mt-1">{{ comment.content }}</div>
+            <div class="d-flex gap-4 mt-2">
+              <v-btn variant="text" size="small" @click="toggleCommentLike(comment)" :color="commentLiked[comment.id] ? 'primary' : 'default'">
+                <v-icon start size="small">mdi-thumb-up</v-icon>
+                {{ comment.like_count }} 点赞
+              </v-btn>
+              <v-btn variant="text" size="small" @click="showReplyForm(comment.id)" v-if="token">
+                <v-icon start size="small">mdi-reply</v-icon>
+                回复 ({{ comment.reply_count }})
+              </v-btn>
+              <v-btn variant="text" size="small" color="error" @click="deleteComment(comment.id)" v-if="canDeleteComment(comment)">
+                <v-icon start size="small">mdi-delete</v-icon>
+                删除
+              </v-btn>
+            </div>
+            
+            <!-- 回复表单 -->
+            <div v-if="replyingTo === comment.id" class="mt-3">
+              <v-textarea
+                v-model="replyContent"
+                :placeholder="'回复 ' + comment.user.display_name + '...'"
+                variant="outlined"
+                rows="2"
+                hide-details
+                class="mb-2"
+              ></v-textarea>
+              <div class="d-flex gap-2">
+                <v-btn size="small" color="primary" @click="submitReply(comment.id)">发送</v-btn>
+                <v-btn size="small" variant="text" @click="cancelReply">取消</v-btn>
+              </div>
+            </div>
+            
+            <!-- 回复列表 -->
+            <div v-if="comment.replies && comment.replies.length > 0" class="replies-list mt-3 ml-4 pl-3 border-left">
+              <div v-for="reply in comment.replies" :key="reply.id" class="reply-item mb-3">
+                <div class="d-flex gap-2">
+                  <v-avatar color="primary" size="32">
+                    <v-img :src="reply.user.avatar"></v-img>
+                  </v-avatar>
+                  <div class="flex-grow-1">
+                    <div class="d-flex align-center gap-2">
+                      <span class="font-weight-bold text-body-2">{{ reply.user.display_name }}</span>
+                      <span class="text-caption text-medium-emphasis">{{ formatDate(reply.created_at) }}</span>
+                    </div>
+                    <div class="mt-1 text-body-2">{{ reply.content }}</div>
+                    <div class="d-flex gap-3 mt-1">
+                      <v-btn variant="text" size="small" @click="toggleCommentLike(reply)" :color="commentLiked[reply.id] ? 'primary' : 'default'" density="compact">
+                        <v-icon start size="x-small">mdi-thumb-up</v-icon>
+                        {{ reply.like_count }}
+                      </v-btn>
+                      <v-btn variant="text" size="small" color="error" @click="deleteComment(reply.id)" v-if="canDeleteComment(reply)" density="compact">
+                        <v-icon start size="x-small">mdi-delete</v-icon>
+                        删除
+                      </v-btn>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </v-card>
     
     <ImageViewer v-if="showImageViewer" :url="currentImageUrl" @close="closeImageViewer" />
@@ -125,6 +170,9 @@ export default {
     const comments = ref([])
     const liked = ref(false)
     const commentContent = ref('')
+    const commentLiked = ref({})
+    const replyingTo = ref(null)
+    const replyContent = ref('')
     const showImageViewer = ref(false)
     const currentImageUrl = ref('')
     const token = ref(localStorage.getItem('token'))
@@ -153,6 +201,7 @@ export default {
         article.value = response.data.article
         comments.value = response.data.comments
         liked.value = response.data.liked || false
+        commentLiked.value = response.data.comment_liked || {}
         
         // 只使用 article.content 中的数据，不使用 content_html
         renderedHtml.value = md.render(article.value.content)
@@ -235,6 +284,37 @@ export default {
       }
     }
     
+    const toggleCommentLike = async (comment) => {
+      if (!token.value) {
+        router.push('/login')
+        return
+      }
+      
+      try {
+        if (commentLiked.value[comment.id]) {
+          await api.delete(`/comments/${comment.id}/like`)
+          comment.like_count--
+          commentLiked.value[comment.id] = false
+        } else {
+          await api.post(`/comments/${comment.id}/like`)
+          comment.like_count++
+          commentLiked.value[comment.id] = true
+        }
+      } catch (error) {
+        console.error('评论点赞失败', error)
+      }
+    }
+    
+    const showReplyForm = (commentId) => {
+      replyingTo.value = commentId
+      replyContent.value = ''
+    }
+    
+    const cancelReply = () => {
+      replyingTo.value = null
+      replyContent.value = ''
+    }
+    
     const submitComment = async () => {
       if (!commentContent.value.trim()) return
       
@@ -242,10 +322,39 @@ export default {
         const response = await api.post(`/articles/${article.value.id}/comments`, {
           content: commentContent.value
         })
-        comments.value.unshift(response.data.comment)
+        // 新评论添加到列表
+        comments.value.unshift({
+          ...response.data.comment,
+          replies: []
+        })
         commentContent.value = ''
       } catch (error) {
         console.error('评论失败', error)
+      }
+    }
+    
+    const submitReply = async (parentId) => {
+      if (!replyContent.value.trim()) return
+      
+      try {
+        const response = await api.post(`/articles/${article.value.id}/comments`, {
+          content: replyContent.value,
+          parent_id: parentId
+        })
+        
+        // 找到父评论并添加回复
+        const parentComment = comments.value.find(c => c.id === parentId)
+        if (parentComment) {
+          if (!parentComment.replies) {
+            parentComment.replies = []
+          }
+          parentComment.replies.push(response.data.comment)
+          parentComment.reply_count++
+        }
+        
+        cancelReply()
+      } catch (error) {
+        console.error('回复失败', error)
       }
     }
     
@@ -300,7 +409,23 @@ export default {
         
         try {
           await api.delete(`/comments/${commentId}`)
-          comments.value = comments.value.filter(c => c.id !== commentId)
+          // 从列表中移除
+          for (let i = 0; i < comments.value.length; i++) {
+            if (comments.value[i].id === commentId) {
+              comments.value.splice(i, 1)
+              break
+            }
+            // 检查是否是回复
+            if (comments.value[i].replies) {
+              for (let j = 0; j < comments.value[i].replies.length; j++) {
+                if (comments.value[i].replies[j].id === commentId) {
+                  comments.value[i].replies.splice(j, 1)
+                  comments.value[i].reply_count--
+                  break
+                }
+              }
+            }
+          }
         } catch (error) {
           console.error('删除评论失败', error)
         }
@@ -352,6 +477,9 @@ export default {
       comments,
       liked,
       commentContent,
+      commentLiked,
+      replyingTo,
+      replyContent,
       token,
       currentUser,
       canEdit,
@@ -360,7 +488,11 @@ export default {
       contentRef,
       renderedHtml,
       toggleLike,
+      toggleCommentLike,
+      showReplyForm,
+      cancelReply,
       submitComment,
+      submitReply,
       deleteArticle,
       deleteComment,
       canDeleteComment,
@@ -399,62 +531,20 @@ export default {
   transform: scale(1.02);
 }
 
-.article-content :deep(h1),
-.article-content :deep(h2),
-.article-content :deep(h3),
-.article-content :deep(h4),
-.article-content :deep(h5),
-.article-content :deep(h6) {
-  margin-top: 24px;
-  margin-bottom: 16px;
-  font-weight: 600;
+.comment-item {
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.article-content :deep(p) {
-  margin-bottom: 16px;
+.comment-item:last-child {
+  border-bottom: none;
 }
 
-.article-content :deep(a) {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
+.replies-list {
+  border-left: 2px solid rgba(0, 0, 0, 0.12);
 }
 
-.article-content :deep(a:hover) {
-  text-decoration: underline;
-}
-
-.article-content :deep(ul),
-.article-content :deep(ol) {
-  margin: 16px 0;
-  padding-left: 32px;
-}
-
-.article-content :deep(blockquote) {
-  margin: 16px 0;
-  padding: 12px 20px;
-  border-left: 4px solid rgb(var(--v-theme-primary));
-  background: rgba(var(--v-theme-primary), 0.05);
-}
-
-.article-content :deep(code) {
-  background: rgba(var(--v-theme-on-surface), 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: 'Courier New', monospace;
-  font-size: 0.9em;
-}
-
-.article-content :deep(pre) {
-  background: rgba(var(--v-theme-on-surface), 0.95);
-  color: #fff;
-  padding: 16px;
-  border-radius: 8px;
-  overflow-x: auto;
-  margin: 16px 0;
-}
-
-.article-content :deep(pre code) {
-  background: none;
-  padding: 0;
+.reply-item:last-child {
+  margin-bottom: 0 !important;
 }
 </style>

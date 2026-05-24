@@ -43,7 +43,7 @@ export const alert = (message, options = {}) => {
 
 // Confirm 弹窗
 export const confirm = (message, options = {}) => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     modalState.value = {
       show: true,
       type: 'confirm',
@@ -55,14 +55,14 @@ export const confirm = (message, options = {}) => {
       cancelText: options.cancelText || '取消',
       confirmColor: options.confirmColor || 'error'
     }
-    confirmCallback = resolve
-    cancelCallback = reject
+    confirmCallback = () => resolve(true)
+    cancelCallback = () => resolve(false)
   })
 }
 
 // Prompt 弹窗
 export const prompt = (message, options = {}) => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     modalState.value = {
       show: true,
       type: 'prompt',
@@ -80,7 +80,7 @@ export const prompt = (message, options = {}) => {
       inputRows: options.rows || 1
     }
     confirmCallback = resolve
-    cancelCallback = reject
+    cancelCallback = () => resolve(null)
   })
 }
 

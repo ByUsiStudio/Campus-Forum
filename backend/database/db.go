@@ -29,11 +29,15 @@ func AutoMigrate() {
 		&models.User{},
 		&models.Article{},
 		&models.Comment{},
+		&models.CommentLike{},
+		&models.ViewHistory{},
 		&models.Like{},
 		&models.Category{},
 		&models.DeletionRequest{},
 		&models.SidebarConfig{},
 		&models.Announcement{},
+		&models.Notification{},
+		&models.UserNotification{},
 	)
 	if err != nil {
 		utils.Error("数据库迁移失败: %v", err)

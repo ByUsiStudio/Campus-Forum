@@ -52,6 +52,7 @@ import Profile from './views/Profile.vue'
 import Admin from './views/Admin.vue'
 import Category from './views/Category.vue'
 import VideoPlayerPage from './views/VideoPlayerPage.vue'
+import Notifications from './views/Notifications.vue'
 
 const routes = [
     { path: '/', component: Home, name: 'Home' },
@@ -62,7 +63,8 @@ const routes = [
     { path: '/profile', component: Profile, name: 'Profile' },
     { path: '/admin', component: Admin, name: 'Admin' },
     { path: '/category/:id', component: Category, name: 'Category' },
-    { path: '/video', component: VideoPlayerPage, name: 'VideoPlayer' }
+    { path: '/video', component: VideoPlayerPage, name: 'VideoPlayer' },
+    { path: '/notifications', component: Notifications, name: 'Notifications' }
 ]
 
 const router = createRouter({

@@ -12,6 +12,7 @@
           <v-btn variant="text" to="/register" v-if="!token" color="primary">注册</v-btn>
           <v-btn variant="text" to="/create" v-if="token" color="primary">写文章</v-btn>
           <v-btn variant="text" to="/profile" v-if="token" color="primary">个人中心</v-btn>
+          <NotificationBell v-if="token" />
           <v-btn variant="text" to="/admin" v-if="isAdmin" color="error">管理后台</v-btn>
           <v-btn variant="text" v-if="token" @click="logout" color="secondary">退出</v-btn>
         </div>
@@ -52,12 +53,14 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from './api'
 import AppModal from './components/AppModal.vue'
+import NotificationBell from './components/NotificationBell.vue'
 import { modalState, handleConfirm, handleCancel } from './utils/modal'
 
 export default {
   name: 'App',
   components: {
-    AppModal
+    AppModal,
+    NotificationBell
   },
   setup() {
     const router = useRouter()
