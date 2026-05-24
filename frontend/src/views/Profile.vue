@@ -6,10 +6,19 @@
           <v-avatar size="150" class="mb-4">
             <v-img :src="user.avatar" :alt="user.display_name"></v-img>
           </v-avatar>
-          <v-btn variant="outlined" color="primary" @click="changeAvatar" block>
+          <v-btn v-if="isOwnProfile" variant="outlined" color="primary" @click="changeAvatar" block>
             <v-icon start>mdi-camera</v-icon>
             更换头像
           </v-btn>
+          <div v-else class="d-flex flex-column gap-2">
+            <v-btn variant="outlined" :color="followStatus.is_following ? 'default' : 'primary'" @click="handleFollow" block>
+              {{ followStatus.is_following ? '已关注' : followStatus.is_followed ? '回关' : '关注' }}
+            </v-btn>
+            <v-btn v-if="followStatus.is_following || followStatus.mutual" variant="outlined" color="primary" :to="'/chat/' + user.id" block>
+              <v-icon start>mdi-message</v-icon>
+              发消息
+            </v-btn>
+          </div>
         </v-card>
       </v-col>
       
@@ -31,6 +40,12 @@
             </v-list-item>
             <v-list-item>
               <template v-slot:prepend>
+                <v-icon>mdi-pencil</v-icon>
+              </template>
+              <v-list-item-title class="whitespace-pre-line">签名：{{ user.signature || '暂无签名' }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item>
+              <template v-slot:prepend>
                 <v-icon>mdi-shield-account</v-icon>
               </template>
               <v-list-item-title>
@@ -46,7 +61,7 @@
           </v-list>
         </v-card>
         
-        <v-card class="pa-6 mb-4">
+        <v-card v-if="isOwnProfile" class="pa-6 mb-4">
           <v-card-subtitle class="text-h6 pa-0 mb-4">编辑资料</v-card-subtitle>
           <v-form @submit.prevent="updateProfile">
             <v-text-field
@@ -55,6 +70,15 @@
               variant="outlined"
               class="mb-4"
             ></v-text-field>
+            <v-textarea
+              v-model="editForm.signature"
+              label="个性化签名"
+              variant="outlined"
+              rows="3"
+              class="mb-4"
+              hint="最多200个字符"
+              :maxlength="200"
+            ></v-textarea>
             <v-btn type="submit" color="primary">保存修改</v-btn>
           </v-form>
         </v-card>
@@ -62,7 +86,7 @@
     </v-row>
     
     <v-card class="pa-6 mt-4">
-      <v-card-title class="text-h6 mb-4">我的文章</v-card-title>
+      <v-card-title class="text-h6 mb-4">{{ isOwnProfile ? '我的文章' : '他的文章' }}</v-card-title>
       
       <div v-if="myArticles.length === 0" class="text-center pa-8 text-medium-emphasis">
         暂无文章
@@ -124,25 +148,85 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 
 export default {
   name: 'Profile',
   setup() {
+    const route = useRoute()
+    const router = useRouter()
     const user = ref(null)
     const myArticles = ref([])
     const editForm = ref({
-      display_name: ''
+      display_name: '',
+      signature: ''
+    })
+    const followStatus = ref({
+      is_following: false,
+      is_followed: false,
+      mutual: false
+    })
+    const currentUser = ref(null)
+    const isOwnProfile = computed(() => {
+      return !route.query.id || (currentUser.value && currentUser.value.id === user.value?.id)
     })
     
     const loadProfile = async () => {
       try {
-        const response = await api.get('/profile')
-        user.value = response.data
-        editForm.value.display_name = user.value.display_name
+        let response
+        if (route.query.id) {
+          // 查看其他用户
+          response = await api.get('/profile')
+          const users = await api.get('/admin/users')
+          const targetUser = users.data.users.find(u => u.id === parseInt(route.query.id))
+          if (targetUser) {
+            user.value = targetUser
+          } else {
+            router.push('/')
+            return
+          }
+        } else {
+          response = await api.get('/profile')
+          user.value = response.data
+          editForm.value.display_name = user.value.display_name
+          editForm.value.signature = user.value.signature || ''
+        }
       } catch (error) {
         console.error('加载用户信息失败', error)
+      }
+    }
+    
+    const loadFollowStatus = async () => {
+      if (!user.value || isOwnProfile.value || !currentUser.value) return
+      
+      try {
+        const response = await api.get(`/follow/status/${user.value.id}`)
+        followStatus.value = response.data
+      } catch (error) {
+        console.error('加载关注状态失败', error)
+      }
+    }
+    
+    const handleFollow = async () => {
+      if (!currentUser.value) {
+        router.push('/login')
+        return
+      }
+      
+      try {
+        if (followStatus.value.is_following) {
+          await api.delete(`/follow/${user.value.id}`)
+          followStatus.value.is_following = false
+          followStatus.value.mutual = false
+        } else {
+          await api.post(`/follow/${user.value.id}`)
+          followStatus.value.is_following = true
+          followStatus.value.mutual = followStatus.value.is_followed
+        }
+      } catch (error) {
+        console.error('关注失败', error)
       }
     }
     
@@ -164,9 +248,15 @@ export default {
     const updateProfile = async () => {
       try {
         await api.put('/profile', {
-          display_name: editForm.value.display_name
+          display_name: editForm.value.display_name,
+          signature: editForm.value.signature
         })
         user.value.display_name = editForm.value.display_name
+        user.value.signature = editForm.value.signature
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+        storedUser.display_name = editForm.value.display_name
+        storedUser.signature = editForm.value.signature
+        localStorage.setItem('user', JSON.stringify(storedUser))
         alert('更新成功')
       } catch (error) {
         console.error('更新失败', error)
@@ -233,8 +323,13 @@ export default {
     }
     
     onMounted(() => {
+      const storedUser = localStorage.getItem('user')
+      if (storedUser) {
+        currentUser.value = JSON.parse(storedUser)
+      }
       loadProfile().then(() => {
         loadMyArticles()
+        loadFollowStatus()
       })
     })
     
@@ -245,7 +340,10 @@ export default {
       updateProfile,
       changeAvatar,
       deleteArticle,
-      formatDate
+      formatDate,
+      followStatus,
+      handleFollow,
+      isOwnProfile
     }
   }
 }

@@ -3,11 +3,39 @@
     <v-card class="pa-6 mb-4">
       <v-card-title class="text-h4 mb-2">{{ article.title }}</v-card-title>
       
+      <!-- 作者信息 -->
+      <div class="d-flex align-center gap-4 mb-4">
+        <v-avatar
+          size="48"
+          color="primary"
+          class="cursor-pointer"
+          @click="goToUserProfile(article.user.id)"
+        >
+          <v-img :src="article.user.avatar"></v-img>
+        </v-avatar>
+        <div class="flex-grow-1">
+          <div
+            class="font-weight-bold text-body-1 cursor-pointer"
+            @click="goToUserProfile(article.user.id)"
+          >
+            {{ article.user.display_name }}
+          </div>
+          <div v-if="article.user.signature" class="text-caption text-medium-emphasis">
+            {{ article.user.signature }}
+          </div>
+        </div>
+        <v-btn
+          v-if="token && currentUser && currentUser.id !== article.user_id"
+          variant="outlined"
+          size="small"
+          :color="followStatus.is_following ? 'default' : 'primary'"
+          @click="handleFollow"
+        >
+          {{ followStatus.is_following ? '已关注' : followStatus.is_followed ? '回关' : '关注' }}
+        </v-btn>
+      </div>
+      
       <v-card-subtitle class="d-flex flex-wrap gap-3 mb-4">
-        <v-chip size="small" color="primary" variant="tonal">
-          <v-icon start size="small">mdi-account</v-icon>
-          {{ article.user.display_name }}
-        </v-chip>
         <v-chip size="small" color="secondary" variant="tonal">
           <v-icon start size="small">mdi-folder</v-icon>
           {{ article.category.name }}
@@ -68,12 +96,12 @@
       
       <div v-for="comment in comments" :key="comment.id" class="comment-item mb-4">
         <div class="d-flex gap-3">
-          <v-avatar color="primary" size="40">
+          <v-avatar color="primary" size="40" class="cursor-pointer" @click="goToUserProfile(comment.user.id)">
             <v-img :src="comment.user.avatar"></v-img>
           </v-avatar>
           <div class="flex-grow-1">
             <div class="d-flex align-center gap-2">
-              <span class="font-weight-bold">{{ comment.user.display_name }}</span>
+              <span class="font-weight-bold cursor-pointer" @click="goToUserProfile(comment.user.id)">{{ comment.user.display_name }}</span>
               <span class="text-caption text-medium-emphasis">{{ formatDate(comment.created_at) }}</span>
             </div>
             <div class="mt-1">{{ comment.content }}</div>
@@ -112,12 +140,12 @@
             <div v-if="comment.replies && comment.replies.length > 0" class="replies-list mt-3 ml-4 pl-3 border-left">
               <div v-for="reply in comment.replies" :key="reply.id" class="reply-item mb-3">
                 <div class="d-flex gap-2">
-                  <v-avatar color="primary" size="32">
+                  <v-avatar color="primary" size="32" class="cursor-pointer" @click="goToUserProfile(reply.user.id)">
                     <v-img :src="reply.user.avatar"></v-img>
                   </v-avatar>
                   <div class="flex-grow-1">
                     <div class="d-flex align-center gap-2">
-                      <span class="font-weight-bold text-body-2">{{ reply.user.display_name }}</span>
+                      <span class="font-weight-bold text-body-2 cursor-pointer" @click="goToUserProfile(reply.user.id)">{{ reply.user.display_name }}</span>
                       <span class="text-caption text-medium-emphasis">{{ formatDate(reply.created_at) }}</span>
                     </div>
                     <div class="mt-1 text-body-2">{{ reply.content }}</div>
@@ -179,6 +207,11 @@ export default {
     const currentUser = ref(null)
     const contentRef = ref(null)
     const renderedHtml = ref('')
+    const followStatus = ref({
+      is_following: false,
+      is_followed: false,
+      mutual: false
+    })
     
     // 存储 Video.js 实例
     const videoPlayers = ref([])
@@ -210,6 +243,9 @@ export default {
         
         // 初始化 Video.js 播放器
         initVideoPlayers()
+        
+        // 加载关注状态
+        loadFollowStatus()
       } catch (error) {
         console.error('加载文章失败', error)
         router.push('/')
@@ -282,6 +318,42 @@ export default {
       } catch (error) {
         console.error('点赞失败', error)
       }
+    }
+    
+    const loadFollowStatus = async () => {
+      if (!article.value || !token.value) return
+      
+      try {
+        const response = await api.get(`/follow/status/${article.value.user_id}`)
+        followStatus.value = response.data
+      } catch (error) {
+        console.error('加载关注状态失败', error)
+      }
+    }
+    
+    const handleFollow = async () => {
+      if (!token.value) {
+        router.push('/login')
+        return
+      }
+      
+      try {
+        if (followStatus.value.is_following) {
+          await api.delete(`/follow/${article.value.user_id}`)
+          followStatus.value.is_following = false
+          followStatus.value.mutual = false
+        } else {
+          await api.post(`/follow/${article.value.user_id}`)
+          followStatus.value.is_following = true
+          followStatus.value.mutual = followStatus.value.is_followed
+        }
+      } catch (error) {
+        console.error('关注失败', error)
+      }
+    }
+    
+    const goToUserProfile = (userId) => {
+      router.push(`/profile?id=${userId}`)
     }
     
     const toggleCommentLike = async (comment) => {
@@ -487,6 +559,7 @@ export default {
       currentImageUrl,
       contentRef,
       renderedHtml,
+      followStatus,
       toggleLike,
       toggleCommentLike,
       showReplyForm,
@@ -498,7 +571,10 @@ export default {
       canDeleteComment,
       handleContentClick,
       closeImageViewer,
-      formatDate
+      formatDate,
+      loadFollowStatus,
+      handleFollow,
+      goToUserProfile
     }
   }
 }
@@ -546,5 +622,9 @@ export default {
 
 .reply-item:last-child {
   margin-bottom: 0 !important;
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 </style>

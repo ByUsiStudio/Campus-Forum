@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isAdmin">
+  <div v-if="isInitialized && isAdmin">
     <v-card class="pa-6">
       <v-card-title class="text-h5 mb-4" style="color: rgb(var(--v-theme-primary));">
         管理后台
@@ -66,6 +66,7 @@
                 <th>显示名称</th>
                 <th>QQ号码</th>
                 <th>角色</th>
+                <th>状态</th>
                 <th>注册时间</th>
                 <th>操作</th>
               </tr>
@@ -81,12 +82,23 @@
                     {{ user.role === 'admin' ? '管理员' : '用户' }}
                   </v-chip>
                 </td>
+                <td>
+                  <v-chip size="small" :color="user.status === 'banned' ? 'error' : 'success'">
+                    {{ user.status === 'banned' ? '已封禁' : '正常' }}
+                  </v-chip>
+                </td>
                 <td>{{ formatDate(user.created_at) }}</td>
                 <td>
-                  <v-btn variant="text" size="small" color="primary" @click="showEditRoleDialog(user)" v-if="user.id !== currentUserId">
+                  <v-btn variant="text" size="small" color="primary" @click="showEditRoleDialog(user)" v-if="currentUserId && user.id !== currentUserId">
                     修改角色
                   </v-btn>
-                  <v-btn variant="text" size="small" color="error" @click="handleDeleteUser(user)" v-if="user.id !== currentUserId">
+                  <v-btn variant="text" size="small" color="warning" @click="showBanDialog(user)" v-if="currentUserId && user.id !== currentUserId && user.status !== 'banned'">
+                    封禁
+                  </v-btn>
+                  <v-btn variant="text" size="small" color="success" @click="handleUnban(user)" v-if="currentUserId && user.id !== currentUserId && user.status === 'banned'">
+                    解封
+                  </v-btn>
+                  <v-btn variant="text" size="small" color="error" @click="handleDeleteUser(user)" v-if="currentUserId && user.id !== currentUserId">
                     删除
                   </v-btn>
                 </td>
@@ -511,6 +523,29 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    
+    <!-- 封禁用户对话框 -->
+    <v-dialog v-model="banDialog.show" max-width="500">
+      <v-card>
+        <v-card-title>封禁用户</v-card-title>
+        <v-card-text>
+          <div class="mb-4">用户：{{ banDialog.user?.display_name }}</div>
+          <v-textarea
+            v-model="banDialog.reason"
+            label="封禁原因"
+            variant="outlined"
+            rows="3"
+            hint="请输入封禁原因"
+            persistent-hint
+          ></v-textarea>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="banDialog.show = false">取消</v-btn>
+          <v-btn color="error" @click="handleBan">确认封禁</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
   
   <v-alert v-else type="error" variant="tonal">
@@ -537,6 +572,7 @@ export default {
     const activeTab = ref('overview')
     const isAdmin = ref(false)
     const currentUserId = ref(null)
+    const isInitialized = ref(false)
     
     // 统计数据
     const statistics = ref({
@@ -624,15 +660,39 @@ export default {
       return md.render(announcementContent.value)
     })
     
-    const checkAdmin = () => {
-      const user = JSON.parse(localStorage.getItem('user') || '{}')
-      if (user.role !== 'admin') {
+    const checkAdmin = async () => {
+      const storedUser = localStorage.getItem('user')
+      if (!storedUser) {
         isAdmin.value = false
-        router.push('/')
+        isInitialized.value = true
+        router.push('/login')
+        return
+      }
+      
+      const user = JSON.parse(storedUser)
+      if (!user || !user.role || user.role !== 'admin') {
+        // 尝试重新获取用户信息
+        try {
+          const response = await api.get('/profile')
+          const profile = response.data
+          localStorage.setItem('user', JSON.stringify(profile))
+          if (profile.role === 'admin') {
+            isAdmin.value = true
+            currentUserId.value = profile.id
+          } else {
+            isAdmin.value = false
+            router.push('/')
+          }
+        } catch (error) {
+          console.error('获取用户信息失败', error)
+          isAdmin.value = false
+          router.push('/login')
+        }
       } else {
         isAdmin.value = true
         currentUserId.value = user.id
       }
+      isInitialized.value = true
     }
     
     const loadStatistics = async () => {
@@ -759,6 +819,52 @@ export default {
       } catch (error) {
         console.error('删除用户失败', error)
         showError(error.response?.data?.error || '删除失败')
+      }
+    }
+    
+    // 封禁相关
+    const banDialog = ref({
+      show: false,
+      user: null,
+      reason: ''
+    })
+    
+    const showBanDialog = (user) => {
+      banDialog.value = {
+        show: true,
+        user: user,
+        reason: ''
+      }
+    }
+    
+    const handleBan = async () => {
+      if (!banDialog.value.reason.trim()) {
+        showError('请输入封禁原因')
+        return
+      }
+      
+      try {
+        await api.post(`/admin/users/${banDialog.value.user.id}/ban`, { reason: banDialog.value.reason })
+        showSuccess('封禁成功')
+        banDialog.value.show = false
+        loadUsers()
+      } catch (error) {
+        console.error('封禁用户失败', error)
+        showError(error.response?.data?.error || '封禁失败')
+      }
+    }
+    
+    const handleUnban = async (user) => {
+      const confirmed = await showConfirm(`确定要解封用户 "${user.display_name}" 吗？`)
+      if (!confirmed) return
+      
+      try {
+        await api.post(`/admin/users/${user.id}/unban`)
+        showSuccess('解封成功')
+        loadUsers()
+      } catch (error) {
+        console.error('解封用户失败', error)
+        showError(error.response?.data?.error || '解封失败')
       }
     }
     
@@ -1016,13 +1122,15 @@ export default {
       if (newTab === 'notifications') loadNotifications()
     })
     
-    onMounted(() => {
-      checkAdmin()
-      loadStatistics()
-      loadDeletionRequests()
-      loadCategories()
-      loadSidebarConfig()
-      loadAnnouncement()
+    onMounted(async () => {
+      await checkAdmin()
+      if (isAdmin.value) {
+        loadStatistics()
+        loadDeletionRequests()
+        loadCategories()
+        loadSidebarConfig()
+        loadAnnouncement()
+      }
     })
     
     return {

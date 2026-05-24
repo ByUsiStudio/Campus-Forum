@@ -129,10 +129,27 @@ func main() {
 			protected.GET("/notifications/admin", middleware.AdminOnly(), controllers.GetAdminNotifications)
 			protected.DELETE("/notifications/:id", middleware.AdminOnly(), controllers.DeleteNotification)
 
+			// 关注相关
+			protected.POST("/follow/:id", controllers.FollowUser)
+			protected.DELETE("/follow/:id", controllers.UnfollowUser)
+			protected.GET("/following", controllers.GetFollowingList)
+			protected.GET("/followers", controllers.GetFollowerList)
+			protected.GET("/follow/status/:id", controllers.CheckFollowStatus)
+			protected.GET("/mutual", controllers.GetMutualFriends)
+
+			// 聊天相关
+			protected.GET("/chat/messages/:id", controllers.GetChatMessages)
+			protected.POST("/chat/messages/:id", controllers.GetChatMessages) // POST方式获取聊天记录
+			protected.GET("/chat/sessions", controllers.GetChatSessions)
+			protected.POST("/chat/send", controllers.SendChatMessage)
+			protected.GET("/chat/unread-count", controllers.GetChatUnreadCount)
+
 			// 后台管理
 			protected.GET("/admin/statistics", middleware.AdminOnly(), controllers.GetStatistics)
 			protected.GET("/admin/users", middleware.AdminOnly(), controllers.GetAllUsers)
 			protected.PUT("/admin/users/:id/role", middleware.AdminOnly(), controllers.UpdateUserRole)
+			protected.POST("/admin/users/:id/ban", middleware.AdminOnly(), controllers.BanUser)
+			protected.POST("/admin/users/:id/unban", middleware.AdminOnly(), controllers.UnbanUser)
 			protected.DELETE("/admin/users/:id", middleware.AdminOnly(), controllers.DeleteUser)
 			protected.GET("/admin/articles", middleware.AdminOnly(), controllers.GetAllArticles)
 			protected.PUT("/admin/articles/:id/status", middleware.AdminOnly(), controllers.UpdateArticleStatus)
@@ -148,9 +165,12 @@ func main() {
 		api.GET("/sidebar-config", controllers.GetSidebarConfig)
 	}
 
+	// WebSocket路由
+	r.GET("/ws/chat", controllers.WebSocketHandler)
+
 	utils.Section("服务启动")
-	utils.Info("服务器地址: http://localhost:%s", config.Port)
-	utils.Info("API 文档: http://localhost:%s/swagger/index.html", config.Port)
+	utils.Info("服务器地址: http://0.0.0.0:%s", config.Port)
+	utils.Info("API 文档: http://0.0.0.0:%s/swagger/index.html", config.Port)
 	utils.Section("")
 
 	r.Run(":" + config.Port)

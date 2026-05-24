@@ -53,6 +53,8 @@ import Admin from './views/Admin.vue'
 import Category from './views/Category.vue'
 import VideoPlayerPage from './views/VideoPlayerPage.vue'
 import Notifications from './views/Notifications.vue'
+import ChatList from './views/ChatList.vue'
+import StandaloneChat from './views/StandaloneChat.vue'
 
 const routes = [
     { path: '/', component: Home, name: 'Home' },
@@ -64,7 +66,9 @@ const routes = [
     { path: '/admin', component: Admin, name: 'Admin' },
     { path: '/category/:id', component: Category, name: 'Category' },
     { path: '/video', component: VideoPlayerPage, name: 'VideoPlayer' },
-    { path: '/notifications', component: Notifications, name: 'Notifications' }
+    { path: '/notifications', component: Notifications, name: 'Notifications' },
+    { path: '/chat', component: ChatList, name: 'ChatList' },
+    { path: '/chat/:id', component: StandaloneChat, name: 'StandaloneChat', meta: { hideAppBar: true } }
 ]
 
 const router = createRouter({

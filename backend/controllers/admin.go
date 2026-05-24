@@ -89,6 +89,55 @@ func DeleteUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
 }
 
+// BanUser 封禁用户
+func BanUser(c *gin.Context) {
+	userID := c.Param("id")
+
+	// 不允许封禁自己
+	if c.GetUint("user_id") == uint(parseUint(userID)) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "不能封禁自己"})
+		return
+	}
+
+	var input struct {
+		Reason string `json:"reason" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	result := database.DB.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+		"status":     "banned",
+		"ban_reason": input.Reason,
+	})
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "封禁成功"})
+}
+
+// UnbanUser 解封用户
+func UnbanUser(c *gin.Context) {
+	userID := c.Param("id")
+
+	result := database.DB.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+		"status":     "normal",
+		"ban_reason": "",
+	})
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "解封成功"})
+}
+
 // GetAllArticles 获取所有文章（管理员）
 func GetAllArticles(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
