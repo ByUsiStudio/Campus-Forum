@@ -35,7 +35,7 @@
     </v-card>
     
     <v-card class="pa-6 mb-4">
-      <div ref="contentRef" class="article-content markdown-body" @click="handleContentClick" v-html="article.content_html"></div>
+      <div ref="contentRef" class="article-content markdown-body" @click="handleContentClick" v-html="renderedHtml"></div>
     </v-card>
     
     <v-card class="pa-4 mb-4">
@@ -104,11 +104,14 @@
 </template>
 
 <script>
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import ImageViewer from '../components/ImageViewer.vue'
 import { confirm as showConfirm, prompt as showPrompt, success as showSuccess } from '../utils/modal'
+import MarkdownIt from 'markdown-it'
+import videojs from 'video.js'
+import 'video.js/dist/video-js.css'
 
 export default {
   name: 'Article',
@@ -127,6 +130,17 @@ export default {
     const token = ref(localStorage.getItem('token'))
     const currentUser = ref(null)
     const contentRef = ref(null)
+    const renderedHtml = ref('')
+    
+    // 存储 Video.js 实例
+    const videoPlayers = ref([])
+    
+    // 初始化 markdown-it
+    const md = new MarkdownIt({
+      html: true,
+      linkify: true,
+      typographer: true
+    })
     
     const canEdit = computed(() => {
       if (!currentUser.value || !article.value) return false
@@ -140,120 +154,64 @@ export default {
         comments.value = response.data.comments
         liked.value = response.data.liked || false
         
+        // 只使用 article.content 中的数据，不使用 content_html
+        renderedHtml.value = md.render(article.value.content)
+        
         await nextTick()
-        processVideoTags()
+        
+        // 初始化 Video.js 播放器
+        initVideoPlayers()
       } catch (error) {
         console.error('加载文章失败', error)
         router.push('/')
       }
     }
     
-    const extractVideosFromContent = () => {
-      if (!article.value || !article.value.content) return []
+    // 初始化所有视频为 Video.js 播放器
+    const initVideoPlayers = () => {
+      if (!contentRef.value) return
       
-      const videoRegex = /<video[^>]*src="([^"]+)"[^>]*\/?\s*>/gi
-      const videos = []
-      let match
+      const videoElements = contentRef.value.querySelectorAll('video')
+      console.log('找到视频元素:', videoElements.length)
       
-      while ((match = videoRegex.exec(article.value.content)) !== null) {
-        videos.push({
-          src: match[1],
-          poster: ''
+      videoElements.forEach((videoEl, index) => {
+        // 获取视频属性
+        const src = videoEl.src || videoEl.getAttribute('src')
+        const poster = videoEl.poster || videoEl.getAttribute('poster') || ''
+        
+        if (!src) return
+        
+        // 创建包装器
+        const wrapper = document.createElement('div')
+        wrapper.className = 'video-js-container'
+        wrapper.style.cssText = 'width: 100%; max-width: 800px; margin: 16px auto; border-radius: 8px; overflow: hidden;'
+        
+        // 将原始 video 元素移入包装器
+        videoEl.parentNode.insertBefore(wrapper, videoEl)
+        wrapper.appendChild(videoEl)
+        
+        // 移除 controls 属性，让 Video.js 自己控制
+        videoEl.removeAttribute('controls')
+        videoEl.className = 'video-js vjs-big-play-centered'
+        videoEl.style.cssText = 'width: 100%; height: auto;'
+        
+        // 初始化 Video.js
+        const player = videojs(videoEl, {
+          controls: true,
+          autoplay: false,
+          preload: 'auto',
+          fluid: true,
+          playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],
+          poster: poster,
+          sources: [{
+            src: src,
+            type: 'video/mp4'
+          }]
         })
-      }
-      
-      console.log('🔍 从原始 content 中提取到的视频:', videos)
-      return videos
-    }
-    
-    const processVideoTags = () => {
-      console.log('=== processVideoTags 开始 ===')
-      
-      if (!contentRef.value) {
-        console.log('❌ contentRef.value 为空')
-        return
-      }
-      
-      if (!article.value) {
-        console.log('❌ article.value 为空')
-        return
-      }
-      
-      const videos = extractVideosFromContent()
-      
-      if (videos.length === 0) {
-        console.log('⚠️ 没有找到任何视频')
-        return
-      }
-      
-      console.log('🔍 找到的视频数量:', videos.length)
-      
-      const pElements = contentRef.value.querySelectorAll('p')
-      let foundPlaceholder = false
-      
-      pElements.forEach((p) => {
-        const content = p.innerHTML
-        if (content.includes('raw HTML omitted') || content.trim() === '') {
-          foundPlaceholder = true
-          
-          const container = document.createElement('div')
-          container.className = 'video-buttons-container'
-          
-          videos.forEach((video, index) => {
-            const button = document.createElement('button')
-            button.className = 'video-play-button'
-            button.innerHTML = `
-              <span class="play-icon-wrapper">
-                <span class="play-icon">▶</span>
-              </span>
-              <span class="button-content">
-                <span class="button-title">视频 ${index + 1}</span>
-                <span class="button-hint">点击播放</span>
-              </span>
-            `
-            
-            button.addEventListener('click', () => {
-              window.location.href = `/video?src=${encodeURIComponent(video.src)}&poster=${encodeURIComponent(video.poster)}&articleId=${article.value.id}`
-            })
-            
-            container.appendChild(button)
-          })
-          
-          p.parentNode.replaceChild(container, p)
-          console.log(`✅ 已替换占位符，创建 ${videos.length} 个视频按钮`)
-        }
+        
+        videoPlayers.value.push(player)
+        console.log(`初始化视频播放器 ${index + 1}`)
       })
-      
-      if (!foundPlaceholder && videos.length > 0) {
-        const container = document.createElement('div')
-        container.className = 'video-buttons-container'
-        
-        videos.forEach((video, index) => {
-          const button = document.createElement('button')
-          button.className = 'video-play-button'
-          button.innerHTML = `
-            <span class="play-icon-wrapper">
-              <span class="play-icon">▶</span>
-            </span>
-            <span class="button-content">
-              <span class="button-title">视频 ${index + 1}</span>
-              <span class="button-hint">点击播放</span>
-            </span>
-          `
-          
-          button.addEventListener('click', () => {
-            window.location.href = `/video?src=${encodeURIComponent(video.src)}&poster=${encodeURIComponent(video.poster)}&articleId=${article.value.id}`
-          })
-          
-          container.appendChild(button)
-        })
-        
-        const contentDiv = contentRef.value.querySelector('div') || contentRef.value
-        contentDiv.appendChild(container)
-        console.log(`✅ 未找到占位符，在内容末尾添加 ${videos.length} 个视频按钮`)
-      }
-      
-      console.log('=== processVideoTags 结束 ===')
     }
     
     const toggleLike = async () => {
@@ -379,6 +337,16 @@ export default {
       loadArticle()
     })
     
+    // 组件卸载时销毁所有 Video.js 实例
+    onBeforeUnmount(() => {
+      videoPlayers.value.forEach(player => {
+        if (player && !player.isDisposed()) {
+          player.dispose()
+        }
+      })
+      videoPlayers.value = []
+    })
+    
     return {
       article,
       comments,
@@ -390,6 +358,7 @@ export default {
       showImageViewer,
       currentImageUrl,
       contentRef,
+      renderedHtml,
       toggleLike,
       submitComment,
       deleteArticle,
@@ -409,98 +378,12 @@ export default {
   line-height: 1.8;
 }
 
-.video-buttons-container {
-  margin: 24px 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  justify-content: center;
-}
-
-.video-play-button {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 18px 28px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
-  border: none;
-  border-radius: 16px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
-    0 4px 20px rgba(102, 126, 234, 0.35),
-    0 1px 3px rgba(0, 0, 0, 0.1);
-  min-width: 220px;
-  overflow: hidden;
-  position: relative;
-}
-
-.video-play-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
+.video-js-container {
   width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.video-play-button:hover::before {
-  left: 100%;
-}
-
-.video-play-button:hover {
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 
-    0 10px 30px rgba(102, 126, 234, 0.45),
-    0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.video-play-button:active {
-  transform: translateY(-1px) scale(0.98);
-}
-
-.play-icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-.video-play-button:hover .play-icon-wrapper {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
-}
-
-.play-icon {
-  font-size: 18px;
-  font-weight: bold;
-  margin-left: 2px;
-}
-
-.button-content {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-}
-
-.button-title {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.button-hint {
-  font-size: 12px;
-  opacity: 0.85;
+  max-width: 800px;
+  margin: 16px auto;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .article-content :deep(img) {

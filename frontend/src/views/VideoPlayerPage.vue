@@ -68,7 +68,7 @@ export default {
 }
 
 .video-card {
-  max-width: 900px;
+  max-width: 950px;
   width: 100%;
   border-radius: 16px;
 }
