@@ -15,7 +15,7 @@
           <v-btn variant="text" to="/register" v-if="!token" color="primary">注册</v-btn>
           <v-btn variant="text" to="/create" v-if="token" color="primary">写文章</v-btn>
           <v-btn variant="text" to="/profile" v-if="token" color="primary">个人中心</v-btn>
-          <!-- 临时去除消息界面的入口 -->
+          <!-- 临时去除聊天界面的入口 -->
           <!-- <v-btn variant="text" v-if="token" @click="goToChat">
             消息
           </v-btn> -->
@@ -27,7 +27,7 @@
 
       <!-- 移动端导航 -->
       <template v-else v-slot:append>
-        <!-- 临时去除消息界面的入口 -->
+        <!-- 临时去除聊天界面的入口 -->
         <!-- <v-btn icon @click="goToChat" class="mr-2">
           <v-icon>mdi-message</v-icon>
         </v-btn> -->

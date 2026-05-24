@@ -14,10 +14,11 @@
             <v-btn variant="outlined" :color="followStatus.is_following ? 'default' : 'primary'" @click="handleFollow" block>
               {{ followStatus.is_following ? '已关注' : followStatus.is_followed ? '回关' : '关注' }}
             </v-btn>
-            <v-btn v-if="followStatus.is_following || followStatus.mutual" variant="outlined" color="primary" :to="'/chat/' + user.id" block>
+            <!-- 临时去除聊天界面的入口 -->
+            <!-- <v-btn v-if="followStatus.is_following || followStatus.mutual" variant="outlined" color="primary" :to="'/chat/' + user.id" block>
               <v-icon start>mdi-message</v-icon>
               发消息
-            </v-btn>
+            </v-btn> -->
           </div>
         </v-card>
       </v-col>
