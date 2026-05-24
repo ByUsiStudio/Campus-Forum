@@ -298,24 +298,24 @@ export default {
           sources: [{
             src: src,
             type: 'video/mp4'
-          }]
+          }],
+          controlBar: {
+            children: [
+              'playToggle',
+              'volumePanel',
+              'currentTimeDisplay',
+              'timeDivider',
+              'durationDisplay',
+              'progressControl',
+              'playbackRateMenuButton',
+              'fullscreenToggle'
+            ]
+          }
         })
         
         // 设置视频容器的宽高比
         const playerContainer = player.el().parentElement
         playerContainer.style.aspectRatio = `${originalWidth} / ${originalHeight}`
-        
-        // 监听全屏变化，确保全屏时保持视频原始比例
-        player.on('fullscreenchange', () => {
-          const isFullscreen = document.fullscreenElement !== null
-          if (isFullscreen) {
-            // 全屏模式下保持视频原始比例，不拉伸
-            const video = player.el()
-            video.style.objectFit = 'contain'
-            video.style.width = '100%'
-            video.style.height = '100%'
-          }
-        })
         
         videoPlayers.value.push(player)
         console.log(`初始化视频播放器 ${index + 1}, 宽高比: ${originalWidth}x${originalHeight}`)
