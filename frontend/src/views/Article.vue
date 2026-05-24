@@ -278,7 +278,12 @@ export default {
         // 移除 controls 属性，让 Video.js 自己控制
         videoEl.removeAttribute('controls')
         videoEl.className = 'video-js vjs-big-play-centered'
-        videoEl.style.cssText = 'width: 100%; height: auto;'
+        videoEl.style.cssText = 'width: 100%; height: auto; max-height: none;'
+        
+        // 获取视频原始尺寸
+        const originalWidth = parseInt(videoEl.getAttribute('width')) || 1280
+        const originalHeight = parseInt(videoEl.getAttribute('height')) || 720
+        const aspectRatio = originalHeight / originalWidth
         
         // 初始化 Video.js
         const player = videojs(videoEl, {
@@ -286,6 +291,8 @@ export default {
           autoplay: false,
           preload: 'auto',
           fluid: true,
+          responsive: true,
+          maintainAspectRatio: true,
           playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],
           poster: poster,
           sources: [{
@@ -294,8 +301,24 @@ export default {
           }]
         })
         
+        // 设置视频容器的宽高比
+        const playerContainer = player.el().parentElement
+        playerContainer.style.aspectRatio = `${originalWidth} / ${originalHeight}`
+        
+        // 监听全屏变化，确保全屏时保持视频原始比例
+        player.on('fullscreenchange', () => {
+          const isFullscreen = document.fullscreenElement !== null
+          if (isFullscreen) {
+            // 全屏模式下保持视频原始比例，不拉伸
+            const video = player.el()
+            video.style.objectFit = 'contain'
+            video.style.width = '100%'
+            video.style.height = '100%'
+          }
+        })
+        
         videoPlayers.value.push(player)
-        console.log(`初始化视频播放器 ${index + 1}`)
+        console.log(`初始化视频播放器 ${index + 1}, 宽高比: ${originalWidth}x${originalHeight}`)
       })
     }
     
@@ -584,8 +607,224 @@ export default {
 .article-content {
   min-height: 300px;
   line-height: 1.8;
+  font-size: 16px;
+  color: #333;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
+/* 标题样式 */
+.article-content :deep(h1) {
+  font-size: 2em;
+  font-weight: bold;
+  margin: 1.5em 0 1em;
+  padding-bottom: 0.3em;
+  border-bottom: 2px solid #e0e0e0;
+  color: #1976d2;
+}
+
+.article-content :deep(h2) {
+  font-size: 1.6em;
+  font-weight: bold;
+  margin: 1.3em 0 0.8em;
+  padding-bottom: 0.2em;
+  border-bottom: 1px solid #e0e0e0;
+  color: #1976d2;
+}
+
+.article-content :deep(h3) {
+  font-size: 1.4em;
+  font-weight: bold;
+  margin: 1.2em 0 0.6em;
+  color: #1976d2;
+}
+
+.article-content :deep(h4) {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin: 1em 0 0.5em;
+  color: #1976d2;
+}
+
+.article-content :deep(h5) {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin: 1em 0 0.5em;
+  color: #1976d2;
+}
+
+.article-content :deep(h6) {
+  font-size: 1em;
+  font-weight: bold;
+  margin: 1em 0 0.5em;
+  color: #1976d2;
+}
+
+/* 段落样式 */
+.article-content :deep(p) {
+  margin: 1em 0;
+  line-height: 1.8;
+}
+
+/* 列表样式 */
+.article-content :deep(ul),
+.article-content :deep(ol) {
+  margin: 1em 0;
+  padding-left: 2em;
+}
+
+.article-content :deep(ul) {
+  list-style-type: disc;
+}
+
+.article-content :deep(ol) {
+  list-style-type: decimal;
+}
+
+.article-content :deep(li) {
+  margin: 0.5em 0;
+  line-height: 1.6;
+}
+
+.article-content :deep(ul ul),
+.article-content :deep(ol ol),
+.article-content :deep(ul ol),
+.article-content :deep(ol ul) {
+  margin: 0.5em 0;
+}
+
+/* 引用样式 */
+.article-content :deep(blockquote) {
+  margin: 1.5em 0;
+  padding: 1em 1.5em;
+  border-left: 4px solid #1976d2;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  color: #666;
+}
+
+.article-content :deep(blockquote p) {
+  margin: 0.5em 0;
+}
+
+/* 代码块样式 */
+.article-content :deep(pre) {
+  margin: 1.5em 0;
+  padding: 1em;
+  background-color: #2d2d2d;
+  border-radius: 8px;
+  overflow-x: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.article-content :deep(pre code) {
+  color: #f8f8f2;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  background: none;
+  padding: 0;
+}
+
+/* 行内代码样式 */
+.article-content :deep(code) {
+  background-color: #f5f5f5;
+  color: #e53935;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+/* 链接样式 */
+.article-content :deep(a) {
+  color: #1976d2;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.article-content :deep(a:hover) {
+  border-bottom-color: #1976d2;
+}
+
+/* 图片样式 */
+.article-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1.5em auto;
+  display: block;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.article-content :deep(img:hover) {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 表格样式 */
+.article-content :deep(table) {
+  width: 100%;
+  margin: 1.5em 0;
+  border-collapse: collapse;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.article-content :deep(thead) {
+  background-color: #1976d2;
+  color: white;
+}
+
+.article-content :deep(th) {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: bold;
+}
+
+.article-content :deep(td) {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.article-content :deep(tbody tr:hover) {
+  background-color: #f5f5f5;
+}
+
+.article-content :deep(tbody tr:last-child td) {
+  border-bottom: none;
+}
+
+/* 分隔线样式 */
+.article-content :deep(hr) {
+  margin: 2em 0;
+  border: none;
+  height: 2px;
+  background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+}
+
+/* 删除线样式 */
+.article-content :deep(del) {
+  color: #999;
+  text-decoration: line-through;
+}
+
+/* 强调样式 */
+.article-content :deep(strong) {
+  font-weight: bold;
+  color: #1976d2;
+}
+
+.article-content :deep(em) {
+  font-style: italic;
+  color: #666;
+}
+
+/* 视频容器样式 */
 .video-js-container {
   width: 100%;
   max-width: 800px;
@@ -594,19 +833,7 @@ export default {
   overflow: hidden;
 }
 
-.article-content :deep(img) {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-  margin: 16px 0;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.article-content :deep(img:hover) {
-  transform: scale(1.02);
-}
-
+/* 评论样式 */
 .comment-item {
   padding-bottom: 16px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
@@ -626,5 +853,39 @@ export default {
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+/* 移动端适配 */
+@media (max-width: 600px) {
+  .article-content {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  
+  .article-content :deep(h1) {
+    font-size: 1.6em;
+  }
+  
+  .article-content :deep(h2) {
+    font-size: 1.4em;
+  }
+  
+  .article-content :deep(h3) {
+    font-size: 1.2em;
+  }
+  
+  .article-content :deep(pre) {
+    padding: 0.8em;
+    font-size: 13px;
+  }
+  
+  .article-content :deep(table) {
+    font-size: 14px;
+  }
+  
+  .article-content :deep(th),
+  .article-content :deep(td) {
+    padding: 8px 12px;
+  }
 }
 </style>

@@ -10,15 +10,6 @@
         <v-tab value="users">用户管理</v-tab>
         <v-tab value="articles">文章管理</v-tab>
         <v-tab value="comments">评论管理</v-tab>
-        <v-tab value="deletions">
-          <v-badge :content="deletionRequests.length" color="error" :model-value="deletionRequests.length > 0">
-            删除审核
-          </v-badge>
-        </v-tab>
-        <v-tab value="categories">分区管理</v-tab>
-        <v-tab value="sidebar">侧边栏配置</v-tab>
-        <v-tab value="announcement">公告管理</v-tab>
-        <v-tab value="notifications">通知管理</v-tab>
       </v-tabs>
       
       <v-window v-model="activeTab">
@@ -150,8 +141,8 @@
               <tr v-for="article in articles" :key="article.id">
                 <td>{{ article.id }}</td>
                 <td class="text-truncate" style="max-width: 200px;">{{ article.title }}</td>
-                <td>{{ article.user?.display_name }}</td>
-                <td>{{ article.category?.name }}</td>
+                <td>{{ article.User?.display_name }}</td>
+                <td>{{ article.Category?.name }}</td>
                 <td>{{ article.like_count }}</td>
                 <td>{{ article.view_count }}</td>
                 <td>
@@ -192,13 +183,13 @@
             <v-list-item v-for="comment in allComments" :key="comment.id" class="px-0">
               <template v-slot:prepend>
                 <v-avatar color="primary" size="40">
-                  <v-img :src="comment.user?.avatar"></v-img>
+                  <v-img :src="comment.User?.avatar"></v-img>
                 </v-avatar>
               </template>
               
               <v-list-item-title>
-                {{ comment.user?.display_name }}
-                <span class="text-caption text-medium-emphasis ml-2">回复文章：{{ comment.article?.title }}</span>
+                {{ comment.User?.display_name }}
+                <span class="text-caption text-medium-emphasis ml-2">回复文章：{{ comment.Article?.title }}</span>
               </v-list-item-title>
               <v-list-item-subtitle class="mt-1">
                 {{ comment.content }}
@@ -214,256 +205,6 @@
               </template>
             </v-list-item>
           </v-list>
-        </v-window-item>
-        
-        <!-- 删除审核 -->
-        <v-window-item value="deletions">
-          <div v-if="deletionRequests.length === 0" class="text-center pa-8 text-medium-emphasis">
-            暂无待审核申请
-          </div>
-          
-          <v-card v-for="req in deletionRequests" :key="req.id" class="mb-4 pa-4" variant="outlined">
-            <v-card-text>
-              <div class="d-flex justify-space-between align-start">
-                <div>
-                  <div class="text-h6 mb-2">{{ req.article?.title }}</div>
-                  <v-list-item-subtitle class="mb-1">
-                    <v-icon size="small">mdi-account</v-icon>
-                    申请人：{{ req.user?.display_name }}
-                  </v-list-item-subtitle>
-                  <v-list-item-subtitle class="mb-1">
-                    <v-icon size="small">mdi-delete</v-icon>
-                    删除原因：{{ req.reason }}
-                  </v-list-item-subtitle>
-                  <v-list-item-subtitle>
-                    <v-icon size="small">mdi-clock</v-icon>
-                    申请时间：{{ formatDate(req.created_at) }}
-                  </v-list-item-subtitle>
-                </div>
-                <div class="d-flex gap-2">
-                  <v-btn color="primary" variant="flat" @click="approveDeletion(req.id)">
-                    批准删除
-                  </v-btn>
-                  <v-btn color="secondary" variant="outlined" @click="rejectDeletion(req.id)">
-                    拒绝
-                  </v-btn>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-window-item>
-        
-        <!-- 分区管理 -->
-        <v-window-item value="categories">
-          <v-card variant="outlined" class="pa-4 mb-4">
-            <v-card-title class="text-subtitle-1 pa-0 mb-4">添加新分区</v-card-title>
-            <v-form @submit.prevent="addCategory">
-              <v-row>
-                <v-col cols="12" md="4">
-                  <v-text-field
-                    v-model="categoryForm.name"
-                    label="分区名称"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-text-field
-                    v-model="categoryForm.description"
-                    label="描述"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="2">
-                  <v-text-field
-                    v-model="categoryForm.sort_order"
-                    label="排序"
-                    type="number"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="2">
-                  <v-btn type="submit" color="primary" block>添加</v-btn>
-                </v-col>
-              </v-row>
-            </v-form>
-          </v-card>
-          
-          <v-list>
-            <v-list-item v-for="cat in categories" :key="cat.id">
-              <template v-slot:prepend>
-                <v-avatar color="primary" size="40">
-                  <span>{{ cat.sort_order }}</span>
-                </v-avatar>
-              </template>
-              
-              <v-list-item-title class="font-weight-bold">{{ cat.name }}</v-list-item-title>
-              <v-list-item-subtitle>{{ cat.description || '无描述' }}</v-list-item-subtitle>
-              
-              <template v-slot:append>
-                <v-btn variant="text" size="small" color="primary" @click="showEditCategoryDialog(cat)">
-                  编辑
-                </v-btn>
-                <v-btn variant="text" size="small" color="error" @click="handleDeleteCategory(cat.id)">
-                  删除
-                </v-btn>
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-window-item>
-        
-        <!-- 侧边栏配置 -->
-        <v-window-item value="sidebar">
-          <v-card-text class="pa-0">
-            <p class="text-body-2 text-medium-emphasis mb-4">
-              配置侧边栏链接列表
-            </p>
-            
-            <div v-for="(item, index) in sidebarItems" :key="index" class="d-flex gap-2 mb-3 align-center">
-              <v-text-field
-                v-model="item.title"
-                label="标题"
-                variant="outlined"
-                density="compact"
-                hide-details
-                class="flex-grow-1"
-              ></v-text-field>
-              <v-text-field
-                v-model="item.link"
-                label="链接"
-                variant="outlined"
-                density="compact"
-                hide-details
-                class="flex-grow-1"
-              ></v-text-field>
-              <v-text-field
-                v-model="item.icon"
-                label="图标"
-                variant="outlined"
-                density="compact"
-                hide-details
-                style="max-width: 120px;"
-              ></v-text-field>
-              <v-btn icon variant="text" color="error" @click="removeSidebarItem(index)">
-                <v-icon>mdi-delete</v-icon>
-              </v-btn>
-            </div>
-            
-            <div class="d-flex gap-2 mt-4">
-              <v-btn variant="outlined" @click="addSidebarItem">
-                <v-icon start>mdi-plus</v-icon>
-                添加链接
-              </v-btn>
-              <v-btn color="primary" @click="saveSidebarConfig">
-                <v-icon start>mdi-content-save</v-icon>
-                保存配置
-              </v-btn>
-            </div>
-          </v-card-text>
-        </v-window-item>
-        
-        <!-- 公告管理 -->
-        <v-window-item value="announcement">
-          <v-card-text class="pa-0">
-            <v-textarea
-              v-model="announcementContent"
-              label="公告内容（支持Markdown）"
-              variant="outlined"
-              rows="10"
-              placeholder="输入公告内容..."
-              class="mb-4"
-            ></v-textarea>
-            
-            <v-btn color="primary" @click="saveAnnouncement" class="mb-4">
-              <v-icon start>mdi-content-save</v-icon>
-              保存公告
-            </v-btn>
-            
-            <v-card v-if="announcementContent" variant="outlined" class="pa-4">
-              <v-card-title class="text-subtitle-1 pa-0 mb-2">预览</v-card-title>
-              <div class="markdown-body" v-html="previewHtml"></div>
-            </v-card>
-          </v-card-text>
-        </v-window-item>
-        
-        <!-- 通知管理 -->
-        <v-window-item value="notifications">
-          <v-card variant="outlined" class="pa-4 mb-4">
-            <v-card-title class="text-subtitle-1 pa-0 mb-4">发送系统通知</v-card-title>
-            <v-form @submit.prevent="sendNotification">
-              <v-row>
-                <v-col cols="12" md="4">
-                  <v-select
-                    v-model="notificationForm.type"
-                    :items="notificationTypes"
-                    label="通知类型"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-select>
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-text-field
-                    v-model="notificationForm.title"
-                    label="通知标题"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-select
-                    v-model="notificationForm.target"
-                    :items="notificationTargets"
-                    label="发送对象"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-select>
-                </v-col>
-                <v-col cols="12">
-                  <v-textarea
-                    v-model="notificationForm.content"
-                    label="通知内容"
-                    variant="outlined"
-                    rows="4"
-                    hide-details
-                  ></v-textarea>
-                </v-col>
-                <v-col cols="12">
-                  <v-btn type="submit" color="primary">发送通知</v-btn>
-                </v-col>
-              </v-row>
-            </v-form>
-          </v-card>
-          
-          <v-card variant="outlined" class="pa-4">
-            <v-card-title class="text-subtitle-1 pa-0 mb-4">已发送通知</v-card-title>
-            <v-list lines="three">
-              <v-list-item v-for="notification in notifications" :key="notification.id" class="px-0">
-                <v-list-item-title>
-                  <v-chip size="small" :color="getNotificationColor(notification.type)" class="mr-2">
-                    {{ getNotificationTypeText(notification.type) }}
-                  </v-chip>
-                  {{ notification.title }}
-                </v-list-item-title>
-                <v-list-item-subtitle class="mt-1">{{ notification.content }}</v-list-item-subtitle>
-                <v-list-item-subtitle class="mt-1">
-                  发送时间：{{ formatDate(notification.created_at) }}
-                </v-list-item-subtitle>
-                <template v-slot:append>
-                  <v-btn variant="text" size="small" color="error" @click="handleDeleteNotification(notification.id)">
-                    删除
-                  </v-btn>
-                </template>
-              </v-list-item>
-            </v-list>
-          </v-card>
         </v-window-item>
       </v-window>
     </v-card>
@@ -507,23 +248,6 @@
       </v-card>
     </v-dialog>
     
-    <!-- 分区编辑对话框 -->
-    <v-dialog v-model="editCategoryDialog.show" max-width="500">
-      <v-card>
-        <v-card-title>编辑分区</v-card-title>
-        <v-card-text>
-          <v-text-field v-model="editCategoryDialog.name" label="分区名称" class="mb-3"></v-text-field>
-          <v-text-field v-model="editCategoryDialog.description" label="描述" class="mb-3"></v-text-field>
-          <v-text-field v-model="editCategoryDialog.sort_order" label="排序" type="number"></v-text-field>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn variant="text" @click="editCategoryDialog.show = false">取消</v-btn>
-          <v-btn color="primary" @click="confirmEditCategory">确定</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    
     <!-- 封禁用户对话框 -->
     <v-dialog v-model="banDialog.show" max-width="500">
       <v-card>
@@ -554,16 +278,10 @@
 </template>
 
 <script>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api'
 import { confirm as showConfirm, success as showSuccess, error as showError } from '../utils/modal'
-import MarkdownIt from 'markdown-it'
-
-const md = new MarkdownIt({
-  html: true,
-  linkify: true
-})
 
 export default {
   name: 'Admin',
@@ -613,55 +331,16 @@ export default {
     const commentTotal = ref(0)
     const commentTotalPages = ref(1)
     
-    // 删除审核
-    const deletionRequests = ref([])
-    
-    // 分区管理
-    const categories = ref([])
-    const categoryForm = ref({
-      name: '',
-      description: '',
-      sort_order: 0
-    })
-    const editCategoryDialog = ref({
+    // 封禁对话框
+    const banDialog = ref({
       show: false,
-      id: null,
-      name: '',
-      description: '',
-      sort_order: 0
-    })
-    
-    // 侧边栏配置
-    const sidebarItems = ref([])
-    
-    // 公告
-    const announcementContent = ref('')
-    
-    // 通知管理
-    const notifications = ref([])
-    const notificationForm = ref({
-      type: 'system',
-      title: '',
-      content: '',
-      target: 'all'
-    })
-    const notificationTypes = [
-      { title: '系统通知', value: 'system' },
-      { title: '活动公告', value: 'activity' },
-      { title: '更新通知', value: 'update' },
-      { title: '警告通知', value: 'warning' }
-    ]
-    const notificationTargets = [
-      { title: '所有用户', value: 'all' },
-      { title: '仅管理员', value: 'admin' }
-    ]
-    
-    const previewHtml = computed(() => {
-      return md.render(announcementContent.value)
+      user: null,
+      reason: ''
     })
     
     const checkAdmin = async () => {
       const storedUser = localStorage.getItem('user')
+      
       if (!storedUser) {
         isAdmin.value = false
         isInitialized.value = true
@@ -669,29 +348,49 @@ export default {
         return
       }
       
-      const user = JSON.parse(storedUser)
-      if (!user || !user.role || user.role !== 'admin') {
-        // 尝试重新获取用户信息
-        try {
-          const response = await api.get('/profile')
-          const profile = response.data
-          localStorage.setItem('user', JSON.stringify(profile))
-          if (profile.role === 'admin') {
-            isAdmin.value = true
-            currentUserId.value = profile.id
-          } else {
-            isAdmin.value = false
-            router.push('/')
-          }
-        } catch (error) {
-          console.error('获取用户信息失败', error)
-          isAdmin.value = false
-          router.push('/login')
-        }
-      } else {
+      let user
+      try {
+        user = JSON.parse(storedUser)
+      } catch (e) {
+        console.error('解析用户信息失败', e)
+        isAdmin.value = false
+        isInitialized.value = true
+        router.push('/login')
+        return
+      }
+      
+      if (!user || !user.id) {
+        isAdmin.value = false
+        isInitialized.value = true
+        router.push('/login')
+        return
+      }
+      
+      if (user.role === 'admin') {
         isAdmin.value = true
         currentUserId.value = user.id
+        isInitialized.value = true
+        return
       }
+      
+      try {
+        const response = await api.get('/profile')
+        const profile = response.data
+        localStorage.setItem('user', JSON.stringify(profile))
+        
+        if (profile.role === 'admin') {
+          isAdmin.value = true
+          currentUserId.value = profile.id
+        } else {
+          isAdmin.value = false
+          router.push('/')
+        }
+      } catch (error) {
+        console.error('获取用户信息失败', error)
+        isAdmin.value = false
+        router.push('/login')
+      }
+      
       isInitialized.value = true
     }
     
@@ -738,51 +437,6 @@ export default {
       }
     }
     
-    const loadDeletionRequests = async () => {
-      try {
-        const response = await api.get('/deletion-requests')
-        deletionRequests.value = response.data.requests
-      } catch (error) {
-        console.error('加载删除申请失败', error)
-      }
-    }
-    
-    const loadCategories = async () => {
-      try {
-        const response = await api.get('/categories')
-        categories.value = response.data.categories
-      } catch (error) {
-        console.error('加载分区失败', error)
-      }
-    }
-    
-    const loadSidebarConfig = async () => {
-      try {
-        const response = await api.get('/sidebar-config')
-        sidebarItems.value = response.data.items || []
-      } catch (error) {
-        console.error('加载侧边栏配置失败', error)
-      }
-    }
-    
-    const loadAnnouncement = async () => {
-      try {
-        const response = await api.get('/announcement')
-        announcementContent.value = response.data.content || ''
-      } catch (error) {
-        console.error('加载公告失败', error)
-      }
-    }
-    
-    const loadNotifications = async () => {
-      try {
-        const response = await api.get('/notifications/admin')
-        notifications.value = response.data.notifications || []
-      } catch (error) {
-        console.error('加载通知失败', error)
-      }
-    }
-    
     // 用户操作
     const showEditRoleDialog = (user) => {
       editRoleDialog.value = {
@@ -800,7 +454,7 @@ export default {
         loadUsers()
       } catch (error) {
         console.error('更新角色失败', error)
-        showError('更新失败')
+        showError(error.response?.data?.error || '更新失败')
       }
     }
     
@@ -821,13 +475,6 @@ export default {
         showError(error.response?.data?.error || '删除失败')
       }
     }
-    
-    // 封禁相关
-    const banDialog = ref({
-      show: false,
-      user: null,
-      reason: ''
-    })
     
     const showBanDialog = (user) => {
       banDialog.value = {
@@ -895,7 +542,7 @@ export default {
         loadArticles()
       } catch (error) {
         console.error('更新状态失败', error)
-        showError('更新失败')
+        showError(error.response?.data?.error || '更新失败')
       }
     }
     
@@ -914,181 +561,6 @@ export default {
         loadComments()
       } catch (error) {
         console.error('删除评论失败', error)
-        showError('删除失败')
-      }
-    }
-    
-    // 删除审核操作
-    const approveDeletion = async (id) => {
-      const confirmed = await showConfirm('确定要批准删除这篇文章吗？', {
-        title: '确认批准',
-        icon: 'mdi-check-circle',
-        iconColor: 'success'
-      })
-      if (!confirmed) return
-      
-      try {
-        await api.post(`/deletion-requests/${id}/approve`)
-        showSuccess('已批准删除')
-        loadDeletionRequests()
-      } catch (error) {
-        console.error('批准删除失败', error)
-        showError('操作失败')
-      }
-    }
-    
-    const rejectDeletion = async (id) => {
-      const confirmed = await showConfirm('确定要拒绝这个删除申请吗？', {
-        title: '确认拒绝',
-        icon: 'mdi-close-circle',
-        iconColor: 'warning'
-      })
-      if (!confirmed) return
-      
-      try {
-        await api.post(`/deletion-requests/${id}/reject`)
-        showSuccess('已拒绝删除')
-        loadDeletionRequests()
-      } catch (error) {
-        console.error('拒绝删除失败', error)
-        showError('操作失败')
-      }
-    }
-    
-    // 分区操作
-    const addCategory = async () => {
-      if (!categoryForm.value.name) {
-        showError('请输入分区名称')
-        return
-      }
-      
-      try {
-        await api.post('/categories', categoryForm.value)
-        showSuccess('添加成功')
-        categoryForm.value = { name: '', description: '', sort_order: 0 }
-        loadCategories()
-      } catch (error) {
-        console.error('添加分区失败', error)
-        showError('添加失败')
-      }
-    }
-    
-    const showEditCategoryDialog = (cat) => {
-      editCategoryDialog.value = {
-        show: true,
-        id: cat.id,
-        name: cat.name,
-        description: cat.description || '',
-        sort_order: cat.sort_order
-      }
-    }
-    
-    const confirmEditCategory = async () => {
-      try {
-        await api.put(`/categories/${editCategoryDialog.value.id}`, {
-          name: editCategoryDialog.value.name,
-          description: editCategoryDialog.value.description,
-          sort_order: parseInt(editCategoryDialog.value.sort_order) || 0
-        })
-        showSuccess('更新成功')
-        editCategoryDialog.value.show = false
-        loadCategories()
-      } catch (error) {
-        console.error('更新失败', error)
-        showError('更新失败')
-      }
-    }
-    
-    const handleDeleteCategory = async (id) => {
-      const confirmed = await showConfirm('确定要删除这个分区吗？', {
-        title: '确认删除',
-        icon: 'mdi-alert-circle',
-        iconColor: 'error'
-      })
-      if (!confirmed) return
-      
-      try {
-        await api.delete(`/categories/${id}`)
-        showSuccess('删除成功')
-        loadCategories()
-      } catch (error) {
-        console.error('删除分区失败', error)
-        showError(error.response?.data?.error || '删除失败')
-      }
-    }
-    
-    // 侧边栏操作
-    const addSidebarItem = () => {
-      sidebarItems.value.push({ title: '', link: '', icon: '' })
-    }
-    
-    const removeSidebarItem = (index) => {
-      sidebarItems.value.splice(index, 1)
-    }
-    
-    const saveSidebarConfig = async () => {
-      try {
-        await api.put('/sidebar-config', { items: sidebarItems.value })
-        showSuccess('保存成功')
-      } catch (error) {
-        console.error('保存失败', error)
-        showError('保存失败')
-      }
-    }
-    
-    // 公告操作
-    const saveAnnouncement = async () => {
-      try {
-        await api.put('/announcement', { content: announcementContent.value })
-        showSuccess('保存成功')
-      } catch (error) {
-        console.error('保存公告失败', error)
-        showError('保存失败')
-      }
-    }
-    
-    // 通知操作
-    const getNotificationColor = (type) => {
-      const colors = { system: 'primary', activity: 'success', update: 'info', warning: 'warning' }
-      return colors[type] || 'default'
-    }
-    
-    const getNotificationTypeText = (type) => {
-      const texts = { system: '系统通知', activity: '活动公告', update: '更新通知', warning: '警告通知' }
-      return texts[type] || type
-    }
-    
-    const sendNotification = async () => {
-      if (!notificationForm.value.title || !notificationForm.value.content) {
-        showError('请填写通知标题和内容')
-        return
-      }
-      
-      try {
-        await api.post('/notifications', notificationForm.value)
-        showSuccess('通知发送成功')
-        notificationForm.value = { type: 'system', title: '', content: '', target: 'all' }
-        loadNotifications()
-      } catch (error) {
-        console.error('发送通知失败', error)
-        showError('发送失败')
-      }
-    }
-    
-    const handleDeleteNotification = async (id) => {
-      const confirmed = await showConfirm('确定要删除这条通知吗？', {
-        title: '确认删除',
-        icon: 'mdi-alert-circle',
-        iconColor: 'error'
-      })
-      if (!confirmed) return
-      
-      try {
-        await api.delete(`/notifications/${id}`)
-        showSuccess('删除成功')
-        loadNotifications()
-      } catch (error) {
-        console.error('删除通知失败', error)
         showError('删除失败')
       }
     }
@@ -1115,76 +587,50 @@ export default {
       if (newTab === 'users') loadUsers()
       if (newTab === 'articles') loadArticles()
       if (newTab === 'comments') loadComments()
-      if (newTab === 'deletions') loadDeletionRequests()
-      if (newTab === 'categories') loadCategories()
-      if (newTab === 'sidebar') loadSidebarConfig()
-      if (newTab === 'announcement') loadAnnouncement()
-      if (newTab === 'notifications') loadNotifications()
     })
     
     onMounted(async () => {
       await checkAdmin()
       if (isAdmin.value) {
         loadStatistics()
-        loadDeletionRequests()
-        loadCategories()
-        loadSidebarConfig()
-        loadAnnouncement()
       }
     })
     
     return {
       activeTab,
       isAdmin,
+      isInitialized,
       currentUserId,
       statistics,
       users,
       editRoleDialog,
-      showEditRoleDialog,
-      confirmEditRole,
-      handleDeleteUser,
       articles,
       articlePage,
       articleTotalPages,
       articleFilter,
       articleStatusOptions,
       statusDialog,
-      showStatusDialog,
-      confirmChangeStatus,
-      getStatusColor,
-      getStatusText,
       allComments,
       commentPage,
       commentTotal,
       commentTotalPages,
+      banDialog,
+      showEditRoleDialog,
+      confirmEditRole,
+      handleDeleteUser,
+      showBanDialog,
+      handleBan,
+      handleUnban,
+      getStatusColor,
+      getStatusText,
+      showStatusDialog,
+      confirmChangeStatus,
       handleDeleteComment,
-      deletionRequests,
-      approveDeletion,
-      rejectDeletion,
-      categories,
-      categoryForm,
-      editCategoryDialog,
-      showEditCategoryDialog,
-      confirmEditCategory,
-      addCategory,
-      handleDeleteCategory,
-      sidebarItems,
-      addSidebarItem,
-      removeSidebarItem,
-      saveSidebarConfig,
-      announcementContent,
-      previewHtml,
-      saveAnnouncement,
-      notifications,
-      notificationForm,
-      notificationTypes,
-      notificationTargets,
-      getNotificationColor,
-      getNotificationTypeText,
-      sendNotification,
-      handleDeleteNotification,
       formatDate
     }
   }
 }
 </script>
+
+<style scoped>
+</style>
