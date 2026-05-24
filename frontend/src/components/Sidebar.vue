@@ -49,12 +49,13 @@
           </template>
           <v-list-item-title>总文章数：{{ stats.totalArticles }}</v-list-item-title>
         </v-list-item>
-        <v-list-item>
+        <!-- 临时去除用户总数显示 -->
+        <!-- <v-list-item>
           <template v-slot:prepend>
             <v-icon size="small" color="primary">mdi-account-group</v-icon>
           </template>
           <v-list-item-title>总用户数：{{ stats.totalUsers }}</v-list-item-title>
-        </v-list-item>
+        </v-list-item> -->
       </v-list>
     </v-card>
   </div>
