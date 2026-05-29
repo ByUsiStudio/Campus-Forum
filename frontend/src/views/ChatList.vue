@@ -2,7 +2,6 @@
   <v-card class="h-screen flex flex-col">
     <v-card-title class="text-h5">消息</v-card-title>
 
-    <!-- 会话列表 -->
     <v-card-text class="flex-1 overflow-auto pa-0">
       <div v-if="sessions.length === 0" class="text-center pa-12 text-medium-emphasis">
         <v-icon size="64" color="grey-lighten-1">mdi-message-circle-off</v-icon>
@@ -18,10 +17,7 @@
           class="cursor-pointer"
         >
           <template v-slot:prepend>
-            <v-avatar color="primary" size="40">
-              <v-img v-if="session.other_user.avatar" :src="session.other_user.avatar"></v-img>
-              <span v-else>{{ session.other_user.display_name?.[0] || 'U' }}</span>
-            </v-avatar>
+            <UserAvatar :user="session.other_user" :size="40" />
           </template>
 
           <v-list-item-title class="font-weight-bold">
@@ -53,9 +49,13 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api'
+import UserAvatar from '../components/UserAvatar.vue'
 
 export default {
   name: 'ChatList',
+  components: {
+    UserAvatar
+  },
   setup() {
     const router = useRouter()
     const sessions = ref([])

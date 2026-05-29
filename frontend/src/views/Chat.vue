@@ -1,16 +1,12 @@
 <template>
   <div class="chat-wrapper">
     <v-card class="chat-container">
-      <!-- 头部 -->
       <v-card-title class="chat-header d-flex align-center gap-2">
         <v-btn icon variant="text" size="small" @click="goBack">
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
         <div style="flex: 1; min-width: 0;">
-          <div class="font-weight-bold text-truncate">{{ currentUser?.display_name }}</div>
-          <div class="text-caption text-medium-emphasis">
-            {{ followStatus.mutual ? '互相关注' : followStatus.is_following ? '已关注' : '未关注' }}
-          </div>
+          <UserAvatar :user="currentUser" :size="32" />
         </div>
         <v-btn
           v-if="!followStatus.is_following"
@@ -32,7 +28,6 @@
         </v-btn>
       </v-card-title>
 
-      <!-- 消息列表 -->
       <v-card-text class="chat-messages">
         <div
           v-for="message in messages"
@@ -40,12 +35,8 @@
           class="message-wrapper"
           :class="{ 'justify-end': isOwnMessage(message) }"
         >
-          <!-- 对方消息 -->
           <template v-if="!isOwnMessage(message)">
-            <v-avatar color="primary" size="32" class="message-avatar">
-              <v-img v-if="currentUser?.avatar" :src="currentUser.avatar"></v-img>
-              <span v-else>{{ currentUser?.display_name?.[0] || 'U' }}</span>
-            </v-avatar>
+            <UserAvatar :user="currentUser" :size="32" class="message-avatar" />
             <div class="message-content">
               <div class="text-caption text-medium-emphasis mb-1">{{ message.sender_name }}</div>
               <v-card class="bg-white message-card">
@@ -58,8 +49,7 @@
               </v-card>
             </div>
           </template>
-          
-          <!-- 自己的消息 -->
+
           <template v-else>
             <div class="message-content">
               <v-card class="bg-primary text-white message-card">
@@ -71,10 +61,7 @@
                 </v-card-text>
               </v-card>
             </div>
-            <v-avatar color="primary" size="32" class="message-avatar">
-              <v-img v-if="myAvatar" :src="myAvatar"></v-img>
-              <span v-else>{{ myDisplayName?.[0] || 'U' }}</span>
-            </v-avatar>
+            <UserAvatar :user="myUser" :size="32" class="message-avatar" />
           </template>
         </div>
 
@@ -84,7 +71,6 @@
         </div>
       </v-card-text>
 
-      <!-- 输入框 -->
       <v-card-actions class="chat-input">
         <v-text-field
           v-model="messageInput"
@@ -114,9 +100,13 @@
 import { ref, onMounted, onUnmounted, watch, nextTick, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
+import UserAvatar from '../components/UserAvatar.vue'
 
 export default {
   name: 'Chat',
+  components: {
+    UserAvatar
+  },
   setup() {
     const route = useRoute()
     const router = useRouter()
@@ -130,56 +120,46 @@ export default {
     })
     const canSendMore = ref(true)
     const websocket = ref(null)
-    
-    // 当前用户信息（用于显示自己的头像）
+
     const myUser = ref(JSON.parse(localStorage.getItem('user') || '{}'))
-    const myAvatar = computed(() => myUser.value.avatar)
-    const myDisplayName = computed(() => myUser.value.display_name || myUser.value.username)
 
     const otherUserId = parseInt(route.params.id)
     const token = ref(localStorage.getItem('token'))
 
-    // WebSocket连接
     const connectWebSocket = () => {
       const user = JSON.parse(localStorage.getItem('user') || '{}')
       if (!user.id || !token.value) return
-      
-      // 直接使用相对路径，nginx已代理 /ws 到后端
+
       const wsUrl = `/ws/chat?user_id=${user.id}`
-      
+
       console.log('Connecting to WebSocket:', wsUrl)
-      
+
       try {
         websocket.value = new WebSocket(wsUrl)
-        
+
         websocket.value.onopen = () => {
           console.log('WebSocket connected successfully')
         }
-        
+
         websocket.value.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data)
-            
-            // 如果是错误消息
+
             if (data.error) {
               console.error('WebSocket server error:', data.error)
               return
             }
-            
-            // 检查消息是否是当前聊天的
-            // data.sender_id 和 data.receiver_id 来自 ChatMessageResponse
+
             const isFromOther = data.sender_id === otherUserId && data.receiver_id === user.id
             const isToOther = data.sender_id === user.id && data.receiver_id === otherUserId
-            
+
             if (isFromOther || isToOther) {
-              // 检查消息是否已经存在（避免重复添加）
               const exists = messages.value.some(m => m.id === data.id)
               if (!exists) {
                 console.log('Adding new message:', data)
                 messages.value.push(data)
                 scrollToBottom()
-                
-                // 如果是对方发送的消息，更新消息限制
+
                 if (data.sender_id === otherUserId) {
                   checkMessageLimit()
                 }
@@ -189,19 +169,17 @@ export default {
             console.error('解析WebSocket消息失败:', error)
           }
         }
-        
+
         websocket.value.onclose = () => {
           console.log('WebSocket disconnected, attempting to reconnect in 3 seconds...')
-          // 3秒后重连
           setTimeout(connectWebSocket, 3000)
         }
-        
+
         websocket.value.onerror = (error) => {
           console.error('WebSocket connection error:', error)
         }
       } catch (error) {
         console.error('Failed to create WebSocket:', error)
-        // 3秒后重试
         setTimeout(connectWebSocket, 3000)
       }
     }
@@ -209,21 +187,18 @@ export default {
     const loadUser = async () => {
       try {
         const response = await api.get(`/follow/status/${otherUserId}`)
-        
-        // 正确设置关注状态
+
         followStatus.value = {
           is_following: response.data.is_following,
           is_followed: response.data.is_followed,
           mutual: response.data.mutual
         }
-        
+
         console.log('关注状态:', followStatus.value)
-        
-        // 尝试从follow状态响应中获取用户信息
+
         if (response.data.following_user) {
           currentUser.value = response.data.following_user
         } else {
-          // 如果API没有返回用户信息，创建一个基本的user对象
           currentUser.value = {
             id: otherUserId,
             display_name: `用户${otherUserId}`,
@@ -235,7 +210,6 @@ export default {
         }
       } catch (error) {
         console.error('加载用户信息失败', error)
-        // 出错时也创建基本的user对象
         currentUser.value = {
           id: otherUserId,
           display_name: `用户${otherUserId}`,
@@ -249,7 +223,6 @@ export default {
 
     const loadMessages = async () => {
       try {
-        // 使用POST拉取服务器聊天记录
         const response = await api.post(`/chat/messages/${otherUserId}`)
         messages.value = response.data.messages || []
         scrollToBottom()
@@ -260,7 +233,6 @@ export default {
 
     const checkMessageLimit = async () => {
       try {
-        // 统计已发送消息数量
         const response = await api.post(`/chat/messages/${otherUserId}`)
         const myMessages = response.data.messages.filter(m => m.sender_id !== otherUserId)
         canSendMore.value = myMessages.length < 2 || followStatus.value.mutual
@@ -273,8 +245,7 @@ export default {
       if (!messageInput.value.trim() || !canSendMore.value) return
 
       const currentUserInfo = JSON.parse(localStorage.getItem('user') || '{}')
-      
-      // 本地回显消息
+
       const localMessage = {
         id: Date.now(),
         sender_id: currentUserInfo.id,
@@ -297,7 +268,6 @@ export default {
         await checkMessageLimit()
       } catch (error) {
         console.error('发送消息失败', error)
-        // 移除本地回显的消息
         messages.value.pop()
         alert(error.response?.data?.error || '发送失败')
       }
@@ -377,15 +347,13 @@ export default {
       isOwnMessage,
       formatTime,
       goBack,
-      myAvatar,
-      myDisplayName
+      myUser
     }
   }
 }
 </script>
 
 <style scoped>
-/* 聊天包装器 - 全屏显示，考虑顶部栏高度 */
 .chat-wrapper {
   height: calc(100vh - 64px);
   display: flex;
@@ -395,7 +363,6 @@ export default {
   overflow: hidden;
 }
 
-/* 聊天容器 - 响应式布局 */
 .chat-container {
   height: 100%;
   display: flex;
@@ -404,7 +371,6 @@ export default {
   overflow: hidden;
 }
 
-/* 聊天头部 - 响应式 */
 .chat-header {
   flex-shrink: 0;
   padding: 8px 12px;
@@ -414,7 +380,6 @@ export default {
   min-height: 56px;
 }
 
-/* 聊天消息区域 - 响应式 */
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -424,19 +389,16 @@ export default {
   flex-direction: column;
 }
 
-/* 单个消息行 - 响应式 */
 .message-wrapper {
   display: flex;
   align-items: flex-start;
   margin-bottom: 10px;
 }
 
-/* 自己的消息 - 右对齐 */
 .message-wrapper.justify-end {
   justify-content: flex-end;
 }
 
-/* 消息头像 */
 .message-avatar {
   flex-shrink: 0;
   margin-right: 8px;
@@ -447,30 +409,25 @@ export default {
   margin-left: 8px;
 }
 
-/* 消息内容区域 - 响应式宽度 */
 .message-content {
   max-width: 70%;
   min-width: 60px;
 }
 
-/* 消息气泡卡片 */
 .message-card {
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   word-break: break-word;
 }
 
-/* 自己消息的气泡 - 右下角直角 */
 .message-wrapper.justify-end .message-card {
   border-bottom-right-radius: 4px;
 }
 
-/* 对方消息的气泡 - 左下角直角 */
 .message-wrapper:not(.justify-end) .message-card {
   border-bottom-left-radius: 4px;
 }
 
-/* 聊天输入区域 - 响应式 */
 .chat-input {
   flex-shrink: 0;
   padding: 10px 12px;
@@ -479,21 +436,19 @@ export default {
   align-items: center;
 }
 
-/* 桌面端 - 居中显示 */
 @media (min-width: 769px) {
   .chat-wrapper {
     height: calc(100vh - 64px);
     max-width: 800px;
     margin: 0 auto;
   }
-  
+
   .chat-container {
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 }
 
-/* 平板适配 */
 @media (min-width: 601px) and (max-width: 768px) {
   .chat-wrapper {
     height: calc(100vh - 64px);
@@ -501,55 +456,51 @@ export default {
   }
 }
 
-/* 移动端适配 */
 @media (max-width: 600px) {
   .chat-wrapper {
     height: calc(100vh - 56px);
     margin: 0;
   }
-  
+
   .chat-header {
     padding: 6px 10px;
     min-height: 52px;
   }
-  
+
   .chat-messages {
     padding: 10px;
   }
-  
+
   .message-content {
     max-width: 80%;
   }
-  
+
   .message-avatar {
-    width: 28px;
-    height: 28px;
     margin-right: 6px;
   }
-  
+
   .message-wrapper.justify-end .message-avatar {
     margin-left: 6px;
   }
-  
+
   .message-wrapper {
     margin-bottom: 8px;
   }
-  
+
   .chat-input {
     padding: 8px 10px;
   }
 }
 
-/* 超小屏幕 */
 @media (max-width: 400px) {
   .message-content {
     max-width: 85%;
   }
-  
+
   .chat-header {
     padding: 6px 8px;
   }
-  
+
   .chat-messages {
     padding: 8px;
   }

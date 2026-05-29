@@ -3,9 +3,7 @@
     <v-row>
       <v-col cols="12" md="4">
         <v-card class="pa-6 text-center">
-          <v-avatar size="150" class="mb-4">
-            <v-img :src="user.avatar" :alt="user.display_name"></v-img>
-          </v-avatar>
+          <UserAvatar :user="user" :size="150" class="mb-4" />
           <v-btn v-if="isOwnProfile" variant="outlined" color="primary" @click="changeAvatar" block>
             <v-icon start>mdi-camera</v-icon>
             更换头像
@@ -14,30 +12,13 @@
             <v-btn variant="outlined" :color="followStatus.is_following ? 'default' : 'primary'" @click="handleFollow" block>
               {{ followStatus.is_following ? '已关注' : followStatus.is_followed ? '回关' : '关注' }}
             </v-btn>
-            <!-- 临时去除聊天界面的入口 -->
-            <!-- <v-btn v-if="followStatus.is_following || followStatus.mutual" variant="outlined" color="primary" :to="'/chat/' + user.id" block>
-              <v-icon start>mdi-message</v-icon>
-              发消息
-            </v-btn> -->
           </div>
         </v-card>
       </v-col>
-      
+
       <v-col cols="12" md="8">
         <v-card class="pa-6 mb-4">
-          <v-card-title class="text-h5 mb-2">{{ user.display_name }}</v-card-title>
-          <div v-if="user.titles && user.titles.length > 0" class="mb-4">
-            <v-chip
-              v-for="title in user.titles"
-              :key="title.id"
-              size="small"
-              :color="title.color"
-              class="mr-2"
-            >
-              <v-icon v-if="title.icon" start size="x-small">{{ title.icon }}</v-icon>
-              {{ title.name }}
-            </v-chip>
-          </div>
+          <UserAvatar :user="user" :size="48" class="mb-4" />
           <v-list density="compact">
             <v-list-item>
               <template v-slot:prepend>
@@ -73,7 +54,7 @@
             </v-list-item>
           </v-list>
         </v-card>
-        
+
         <v-card v-if="isOwnProfile" class="pa-6 mb-4">
           <v-card-subtitle class="text-h6 pa-0 mb-4">编辑资料</v-card-subtitle>
           <v-form @submit.prevent="updateProfile">
@@ -97,14 +78,14 @@
         </v-card>
       </v-col>
     </v-row>
-    
+
     <v-card class="pa-6 mt-4">
       <v-card-title class="text-h6 mb-4">{{ isOwnProfile ? '我的文章' : '他的文章' }}</v-card-title>
-      
+
       <div v-if="myArticles.length === 0" class="text-center pa-8 text-medium-emphasis">
         暂无文章
       </div>
-      
+
       <v-list v-else lines="two">
         <v-list-item
           v-for="article in myArticles"
@@ -112,12 +93,9 @@
           class="px-0"
         >
           <template v-slot:prepend>
-            <v-avatar color="primary" size="50" class="mr-4">
-              <v-img v-if="article.user.avatar" :src="article.user.avatar"></v-img>
-              <span v-else class="text-h6">{{ article.user.display_name?.[0] || 'U' }}</span>
-            </v-avatar>
+            <UserAvatar :user="article.user" :size="50" />
           </template>
-          
+
           <v-list-item-title class="font-weight-bold">
             <router-link :to="'/article/' + article.id" class="text-decoration-none">
               {{ article.title }}
@@ -131,9 +109,10 @@
             <v-icon size="small" class="ml-2">mdi-eye</v-icon>
             {{ article.view_count }}
           </v-list-item-subtitle>
-          
+
           <template v-slot:append>
             <v-btn
+              v-if="isOwnProfile"
               variant="text"
               size="small"
               :to="'/create?id=' + article.id"
@@ -142,6 +121,7 @@
               编辑
             </v-btn>
             <v-btn
+              v-if="isOwnProfile"
               variant="text"
               size="small"
               color="error"
@@ -154,7 +134,7 @@
       </v-list>
     </v-card>
   </div>
-  
+
   <div v-else class="d-flex justify-center align-center" style="min-height: 50vh;">
     <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
   </div>
@@ -164,9 +144,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
+import UserAvatar from '../components/UserAvatar.vue'
 
 export default {
   name: 'Profile',
+  components: {
+    UserAvatar
+  },
   setup() {
     const route = useRoute()
     const router = useRouter()
@@ -185,7 +169,7 @@ export default {
     const isOwnProfile = computed(() => {
       return !route.query.id || (currentUser.value && currentUser.value.id === user.value?.id)
     })
-    
+
     const loadProfile = async () => {
       try {
         if (route.query.id) {
@@ -202,10 +186,10 @@ export default {
         router.push('/')
       }
     }
-    
+
     const loadFollowStatus = async () => {
       if (!user.value || isOwnProfile.value || !currentUser.value) return
-      
+
       try {
         const response = await api.get(`/follow/status/${user.value.id}`)
         followStatus.value = response.data
@@ -213,13 +197,13 @@ export default {
         console.error('加载关注状态失败', error)
       }
     }
-    
+
     const handleFollow = async () => {
       if (!currentUser.value) {
         router.push('/login')
         return
       }
-      
+
       try {
         if (followStatus.value.is_following) {
           await api.delete(`/follow/${user.value.id}`)
@@ -234,7 +218,7 @@ export default {
         console.error('关注失败', error)
       }
     }
-    
+
     const loadMyArticles = async () => {
       try {
         if (route.query.id) {
@@ -254,7 +238,7 @@ export default {
         console.error('加载文章失败', error)
       }
     }
-    
+
     const updateProfile = async () => {
       try {
         await api.put('/profile', {
@@ -273,7 +257,7 @@ export default {
         alert('更新失败')
       }
     }
-    
+
     const changeAvatar = () => {
       const input = document.createElement('input')
       input.type = 'file'
@@ -281,10 +265,10 @@ export default {
       input.onchange = async (e) => {
         const file = e.target.files[0]
         if (!file) return
-        
+
         const formData = new FormData()
         formData.append('avatar', file)
-        
+
         try {
           const response = await api.post('/upload/avatar', formData)
           user.value.avatar = response.data.url
@@ -299,15 +283,15 @@ export default {
       }
       input.click()
     }
-    
+
     const deleteArticle = async (id) => {
       if (!confirm('确定要删除这篇文章吗？')) return
-      
+
       const userRole = user.value?.role
       if (userRole !== 'admin') {
         const reason = prompt('请输入删除原因（管理员将审核）：')
         if (!reason) return
-        
+
         try {
           await api.delete(`/articles/${id}`, { data: { reason } })
           alert('删除申请已提交，等待管理员审核')
@@ -327,11 +311,11 @@ export default {
         }
       }
     }
-    
+
     const formatDate = (date) => {
       return new Date(date).toLocaleString('zh-CN')
     }
-    
+
     onMounted(() => {
       const storedUser = localStorage.getItem('user')
       if (storedUser) {
@@ -342,7 +326,7 @@ export default {
         loadFollowStatus()
       })
     })
-    
+
     return {
       user,
       myArticles,

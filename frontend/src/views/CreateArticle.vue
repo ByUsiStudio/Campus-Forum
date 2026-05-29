@@ -25,13 +25,11 @@
         ></v-select>
 
         <div class="mb-4">
-          <ClientOnly>
-            <VditorEditor
-              v-model="form.content"
-              :height="500"
-              mode="sv"
-            />
-          </ClientOnly>
+          <VditorEditor
+            v-model="form.content"
+            :height="500"
+            mode="sv"
+          />
         </div>
 
         <div class="d-flex gap-4">

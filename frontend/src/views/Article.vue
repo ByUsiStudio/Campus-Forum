@@ -219,8 +219,8 @@ import ImageViewer from '../components/ImageViewer.vue'
 import UserAvatar from '../components/UserAvatar.vue'
 import MarkdownViewer from '../components/MarkdownViewer.vue'
 import { confirm as showConfirm, prompt as showPrompt, success as showSuccess } from '../utils/modal'
-import videojs from 'video.js'
-import 'video.js/dist/video-js.css'
+import Plyr from 'plyr'
+import 'plyr/dist/plyr.css'
 
 export default {
   name: 'Article',
@@ -255,8 +255,8 @@ export default {
     })
     const siteTitle = ref('校园论坛')
     
-    // 存储 Video.js 实例
-    const videoPlayers = ref([])
+    // 存储 Plyr 播放器实例
+    const plyrPlayers = ref([])
 
     const canEdit = computed(() => {
       if (!currentUser.value || !article.value) return false
@@ -301,7 +301,7 @@ export default {
       }
     }
     
-    // 初始化所有视频为 Video.js 播放器
+    // 初始化所有视频为 Plyr 播放器
     const initVideoPlayers = () => {
       if (!contentRef.value) return
       
@@ -317,56 +317,60 @@ export default {
         
         // 创建包装器
         const wrapper = document.createElement('div')
-        wrapper.className = 'video-js-container'
-        wrapper.style.cssText = 'width: 100%; max-width: 800px; margin: 16px auto; border-radius: 8px; overflow: hidden;'
+        wrapper.className = 'plyr-video-container'
+        wrapper.style.cssText = 'width: 100%; max-width: 800px; margin: 16px auto; border-radius: 8px; overflow: hidden; background: #000;'
         
         // 将原始 video 元素移入包装器
         videoEl.parentNode.insertBefore(wrapper, videoEl)
         wrapper.appendChild(videoEl)
         
-        // 移除 controls 属性，让 Video.js 自己控制
+        // 设置视频元素样式
         videoEl.removeAttribute('controls')
-        videoEl.className = 'video-js vjs-big-play-centered'
-        videoEl.style.cssText = 'width: 100%; height: auto; max-height: none;'
+        videoEl.className = 'plyr-video'
+        videoEl.style.cssText = 'width: 100%; height: auto;'
         
         // 获取视频原始尺寸
         const originalWidth = parseInt(videoEl.getAttribute('width')) || 1280
         const originalHeight = parseInt(videoEl.getAttribute('height')) || 720
-        const aspectRatio = originalHeight / originalWidth
         
-        // 初始化 Video.js
-        const player = videojs(videoEl, {
-          controls: true,
+        // 初始化 Plyr
+        const player = new Plyr(videoEl, {
+          controls: [
+            'play-large',
+            'play',
+            'progress',
+            'current-time',
+            'duration',
+            'mute',
+            'volume',
+            'settings',
+            'pip',
+            'airplay',
+            'fullscreen'
+          ],
+          settings: ['quality', 'speed'],
+          speed: {
+            selected: 1,
+            options: [0.5, 0.75, 1, 1.25, 1.5, 2]
+          },
+          quality: {
+            default: 720,
+            options: [720, 480, 360]
+          },
           autoplay: false,
-          preload: 'auto',
-          fluid: true,
-          responsive: true,
-          maintainAspectRatio: true,
-          playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],
-          poster: poster,
-          sources: [{
-            src: src,
-            type: 'video/mp4'
-          }],
-          controlBar: {
-            children: [
-              'playToggle',
-              'volumePanel',
-              'currentTimeDisplay',
-              'timeDivider',
-              'durationDisplay',
-              'progressControl',
-              'playbackRateMenuButton',
-              'fullscreenToggle'
-            ]
-          }
+          muted: false,
+          loop: {
+            active: false
+          },
+          ratio: `${originalWidth}:${originalHeight}`,
+          hideControls: false,
+          resetOnEnd: false,
+          disableContextMenu: true,
+          loadSprite: true,
+          iconUrl: 'https://cdn.plyr.io/3.7.8/plyr.svg'
         })
         
-        // 设置视频容器的宽高比
-        const playerContainer = player.el().parentElement
-        playerContainer.style.aspectRatio = `${originalWidth} / ${originalHeight}`
-        
-        videoPlayers.value.push(player)
+        plyrPlayers.value.push(player)
         console.log(`初始化视频播放器 ${index + 1}, 宽高比: ${originalWidth}x${originalHeight}`)
       })
     }
@@ -657,12 +661,12 @@ export default {
     
     // 组件卸载时销毁所有 Video.js 实例
     onBeforeUnmount(() => {
-      videoPlayers.value.forEach(player => {
+      plyrPlayers.value.forEach(player => {
         if (player && !player.isDisposed()) {
           player.dispose()
         }
       })
-      videoPlayers.value = []
+      plyrPlayers.value = []
       document.title = siteTitle.value
     })
     
