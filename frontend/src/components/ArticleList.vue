@@ -11,10 +11,7 @@
     >
       <v-card-text>
         <div class="d-flex gap-3 mb-3">
-          <v-avatar size="48" color="primary">
-            <v-img v-if="article.user.avatar" :src="article.user.avatar"></v-img>
-            <span v-else class="text-h6">{{ article.user.display_name?.[0] || 'U' }}</span>
-          </v-avatar>
+          <UserAvatar :user="article.user" :size="48" />
           <div class="flex-grow-1">
             <router-link
               :to="'/article/' + article.id"
@@ -26,10 +23,6 @@
             </router-link>
             <div class="d-flex flex-wrap gap-2 mt-1 text-caption text-medium-emphasis">
               <span>
-                <v-icon size="small">mdi-account</v-icon>
-                {{ article.user.display_name }}
-              </span>
-              <span>
                 <v-icon size="small">mdi-folder</v-icon>
                 {{ article.category?.name || '未分类' }}
               </span>
@@ -40,11 +33,11 @@
             </div>
           </div>
         </div>
-        
+
         <div class="text-body-2 text-medium-emphasis mb-3 article-excerpt">
           {{ getExcerpt(article.content_html) }}
         </div>
-        
+
         <div class="d-flex gap-4 text-caption text-medium-emphasis">
           <span>
             <v-icon size="small" color="pink">mdi-heart</v-icon>
@@ -65,8 +58,13 @@
 </template>
 
 <script>
+import UserAvatar from './UserAvatar.vue'
+
 export default {
   name: 'ArticleList',
+  components: {
+    UserAvatar
+  },
   props: {
     articles: {
       type: Array,
@@ -77,7 +75,7 @@ export default {
     const formatDate = (date) => {
       return new Date(date).toLocaleString('zh-CN')
     }
-    
+
     const getExcerpt = (html) => {
       if (!html) return ''
       const div = document.createElement('div')
@@ -85,7 +83,7 @@ export default {
       const text = div.textContent || div.innerText || ''
       return text.substring(0, 150) + (text.length > 150 ? '...' : '')
     }
-    
+
     return {
       formatDate,
       getExcerpt

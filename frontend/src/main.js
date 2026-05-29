@@ -55,11 +55,13 @@ import VideoPlayerPage from './views/VideoPlayerPage.vue'
 import Notifications from './views/Notifications.vue'
 import ChatList from './views/ChatList.vue'
 import StandaloneChat from './views/StandaloneChat.vue'
+import ForgotPassword from './views/ForgotPassword.vue'
 
 const routes = [
     { path: '/', component: Home, name: 'Home' },
     { path: '/login', component: Login, name: 'Login' },
     { path: '/register', component: Register, name: 'Register' },
+    { path: '/forgot-password', component: ForgotPassword, name: 'ForgotPassword' },
     { path: '/article/:id', component: Article, name: 'Article' },
     { path: '/create', component: CreateArticle, name: 'CreateArticle' },
     { path: '/profile', component: Profile, name: 'Profile' },

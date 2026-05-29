@@ -5,25 +5,12 @@
       
       <!-- 作者信息 -->
       <div class="d-flex align-center gap-4 mb-4">
-        <v-avatar
-          size="48"
-          color="primary"
+        <UserAvatar
+          :user="article.user"
+          :size="48"
           class="cursor-pointer"
           @click="goToUserProfile(article.user.id)"
-        >
-          <v-img :src="article.user.avatar"></v-img>
-        </v-avatar>
-        <div class="flex-grow-1">
-          <div
-            class="font-weight-bold text-body-1 cursor-pointer"
-            @click="goToUserProfile(article.user.id)"
-          >
-            {{ article.user.display_name }}
-          </div>
-          <div v-if="article.user.signature" class="text-caption text-medium-emphasis">
-            {{ article.user.signature }}
-          </div>
-        </div>
+        />
         <v-btn
           v-if="token && currentUser && currentUser.id !== article.user_id"
           variant="outlined"
@@ -63,7 +50,9 @@
     </v-card>
     
     <v-card class="pa-6 mb-4">
-      <div ref="contentRef" class="article-content markdown-body" @click="handleContentClick" v-html="renderedHtml"></div>
+      <div ref="contentRef" class="article-content" @click="handleContentClick">
+        <MarkdownViewer :value="article.content" />
+      </div>
     </v-card>
     
     <v-card class="pa-4 mb-4">
@@ -75,7 +64,49 @@
         <v-icon start>mdi-thumb-up</v-icon>
         {{ article.like_count }} 点赞
       </v-btn>
+      <v-btn
+        @click="toggleFavorite"
+        :color="favorited ? 'primary' : 'default'"
+        :variant="favorited ? 'flat' : 'outlined'"
+        class="ml-2"
+      >
+        <v-icon start>mdi-bookmark</v-icon>
+        {{ article.favorite_count || 0 }} 收藏
+      </v-btn>
+      <v-btn
+        @click="showShareDialog = true"
+        variant="outlined"
+        class="ml-2"
+      >
+        <v-icon start>mdi-share-variant</v-icon>
+        分享
+      </v-btn>
     </v-card>
+    
+    <!-- 分享对话框 -->
+    <v-dialog v-model="showShareDialog" max-width="400">
+      <v-card>
+        <v-card-title class="text-h6">分享文章</v-card-title>
+        <v-card-text>
+          <p class="mb-3">复制以下链接分享给好友：</p>
+          <v-text-field
+            v-model="shareUrl"
+            readonly
+            variant="outlined"
+            hide-details
+            append-inner-icon="mdi-content-copy"
+            @click:append-inner="copyShareUrl"
+          ></v-text-field>
+          <v-chip v-if="copySuccess" color="success" class="mt-3" size="small">
+            已复制到剪贴板
+          </v-chip>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showShareDialog = false">关闭</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     
     <v-card class="pa-6">
       <v-card-title class="text-h6 mb-4">
@@ -96,12 +127,14 @@
       
       <div v-for="comment in comments" :key="comment.id" class="comment-item mb-4">
         <div class="d-flex gap-3">
-          <v-avatar color="primary" size="40" class="cursor-pointer" @click="goToUserProfile(comment.user.id)">
-            <v-img :src="comment.user.avatar"></v-img>
-          </v-avatar>
+          <UserAvatar
+            :user="comment.user"
+            :size="40"
+            class="cursor-pointer"
+            @click="goToUserProfile(comment.user.id)"
+          />
           <div class="flex-grow-1">
             <div class="d-flex align-center gap-2">
-              <span class="font-weight-bold cursor-pointer" @click="goToUserProfile(comment.user.id)">{{ comment.user.display_name }}</span>
               <span class="text-caption text-medium-emphasis">{{ formatDate(comment.created_at) }}</span>
             </div>
             <div class="mt-1">{{ comment.content }}</div>
@@ -140,12 +173,14 @@
             <div v-if="comment.replies && comment.replies.length > 0" class="replies-list mt-3 ml-4 pl-3 border-left">
               <div v-for="reply in comment.replies" :key="reply.id" class="reply-item mb-3">
                 <div class="d-flex gap-2">
-                  <v-avatar color="primary" size="32" class="cursor-pointer" @click="goToUserProfile(reply.user.id)">
-                    <v-img :src="reply.user.avatar"></v-img>
-                  </v-avatar>
+                  <UserAvatar
+                    :user="reply.user"
+                    :size="32"
+                    class="cursor-pointer"
+                    @click="goToUserProfile(reply.user.id)"
+                  />
                   <div class="flex-grow-1">
                     <div class="d-flex align-center gap-2">
-                      <span class="font-weight-bold text-body-2 cursor-pointer" @click="goToUserProfile(reply.user.id)">{{ reply.user.display_name }}</span>
                       <span class="text-caption text-medium-emphasis">{{ formatDate(reply.created_at) }}</span>
                     </div>
                     <div class="mt-1 text-body-2">{{ reply.content }}</div>
@@ -181,15 +216,18 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import ImageViewer from '../components/ImageViewer.vue'
+import UserAvatar from '../components/UserAvatar.vue'
+import MarkdownViewer from '../components/MarkdownViewer.vue'
 import { confirm as showConfirm, prompt as showPrompt, success as showSuccess } from '../utils/modal'
-import MarkdownIt from 'markdown-it'
 import videojs from 'video.js'
 import 'video.js/dist/video-js.css'
 
 export default {
   name: 'Article',
   components: {
-    ImageViewer
+    ImageViewer,
+    UserAvatar,
+    MarkdownViewer
   },
   setup() {
     const route = useRoute()
@@ -197,32 +235,29 @@ export default {
     const article = ref(null)
     const comments = ref([])
     const liked = ref(false)
+    const favorited = ref(false)
     const commentContent = ref('')
     const commentLiked = ref({})
     const replyingTo = ref(null)
     const replyContent = ref('')
     const showImageViewer = ref(false)
     const currentImageUrl = ref('')
+    const showShareDialog = ref(false)
+    const shareUrl = ref('')
+    const copySuccess = ref(false)
     const token = ref(localStorage.getItem('token'))
     const currentUser = ref(null)
     const contentRef = ref(null)
-    const renderedHtml = ref('')
     const followStatus = ref({
       is_following: false,
       is_followed: false,
       mutual: false
     })
+    const siteTitle = ref('校园论坛')
     
     // 存储 Video.js 实例
     const videoPlayers = ref([])
-    
-    // 初始化 markdown-it
-    const md = new MarkdownIt({
-      html: true,
-      linkify: true,
-      typographer: true
-    })
-    
+
     const canEdit = computed(() => {
       if (!currentUser.value || !article.value) return false
       return currentUser.value.id === article.value.user_id || currentUser.value.role === 'admin'
@@ -230,21 +265,35 @@ export default {
     
     const loadArticle = async () => {
       try {
-        const response = await api.get(`/articles/${route.params.id}`)
-        article.value = response.data.article
-        comments.value = response.data.comments
-        liked.value = response.data.liked || false
-        commentLiked.value = response.data.comment_liked || {}
+        const [articleRes, siteConfigRes] = await Promise.all([
+          api.get(`/articles/${route.params.id}`),
+          api.get('/site-config')
+        ])
         
-        // 只使用 article.content 中的数据，不使用 content_html
-        renderedHtml.value = md.render(article.value.content)
+        article.value = articleRes.data.article
+        comments.value = articleRes.data.comments
+        liked.value = articleRes.data.liked || false
+        commentLiked.value = articleRes.data.comment_liked || {}
+        siteTitle.value = siteConfigRes.data.site_title || '校园论坛'
         
+        // 检查收藏状态
+        if (token.value) {
+          try {
+            const favoriteRes = await api.get(`/articles/${article.value.id}/favorite/check`)
+            favorited.value = favoriteRes.data.favorited || false
+          } catch (error) {
+            favorited.value = false
+          }
+        }
+        
+        // 设置分享链接
+        shareUrl.value = `${window.location.origin}/article/${article.value.id}`
+
+        document.title = `${article.value.title} - ${siteTitle.value}`
+
         await nextTick()
         
-        // 初始化 Video.js 播放器
         initVideoPlayers()
-        
-        // 加载关注状态
         loadFollowStatus()
       } catch (error) {
         console.error('加载文章失败', error)
@@ -328,8 +377,10 @@ export default {
         return
       }
       
+      const isLiked = liked.value
+      
       try {
-        if (liked.value) {
+        if (isLiked) {
           await api.delete(`/articles/${article.value.id}/like`)
           article.value.like_count--
           liked.value = false
@@ -339,10 +390,35 @@ export default {
           liked.value = true
         }
       } catch (error) {
-        console.error('点赞失败', error)
+        liked.value = isLiked
+        console.error('点赞操作失败', error)
       }
     }
-    
+
+    const toggleFavorite = async () => {
+      if (!token.value) {
+        router.push('/login')
+        return
+      }
+
+      const isFavorited = favorited.value
+
+      try {
+        if (isFavorited) {
+          await api.delete(`/articles/${article.value.id}/favorite`)
+          article.value.favorite_count--
+          favorited.value = false
+        } else {
+          await api.post(`/articles/${article.value.id}/favorite`)
+          article.value.favorite_count++
+          favorited.value = true
+        }
+      } catch (error) {
+        favorited.value = isFavorited
+        console.error('收藏操作失败', error)
+      }
+    }
+
     const loadFollowStatus = async () => {
       if (!article.value || !token.value) return
       
@@ -385,8 +461,10 @@ export default {
         return
       }
       
+      const isCommentLiked = commentLiked.value[comment.id]
+      
       try {
-        if (commentLiked.value[comment.id]) {
+        if (isCommentLiked) {
           await api.delete(`/comments/${comment.id}/like`)
           comment.like_count--
           commentLiked.value[comment.id] = false
@@ -396,7 +474,8 @@ export default {
           commentLiked.value[comment.id] = true
         }
       } catch (error) {
-        console.error('评论点赞失败', error)
+        commentLiked.value[comment.id] = isCommentLiked
+        console.error('评论点赞操作失败', error)
       }
     }
     
@@ -552,6 +631,18 @@ export default {
       showImageViewer.value = false
     }
     
+    const copyShareUrl = async () => {
+      try {
+        await navigator.clipboard.writeText(shareUrl.value)
+        copySuccess.value = true
+        setTimeout(() => {
+          copySuccess.value = false
+        }, 2000)
+      } catch (error) {
+        console.error('复制失败', error)
+      }
+    }
+    
     const formatDate = (date) => {
       return new Date(date).toLocaleString('zh-CN')
     }
@@ -572,12 +663,14 @@ export default {
         }
       })
       videoPlayers.value = []
+      document.title = siteTitle.value
     })
     
     return {
       article,
       comments,
       liked,
+      favorited,
       commentContent,
       commentLiked,
       replyingTo,
@@ -587,10 +680,14 @@ export default {
       canEdit,
       showImageViewer,
       currentImageUrl,
+      showShareDialog,
+      shareUrl,
+      copySuccess,
       contentRef,
-      renderedHtml,
       followStatus,
       toggleLike,
+      toggleFavorite,
+      copyShareUrl,
       toggleCommentLike,
       showReplyForm,
       cancelReply,

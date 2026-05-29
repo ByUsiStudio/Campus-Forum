@@ -132,6 +132,11 @@ func main() {
 			protected.GET("/notifications/admin", middleware.AdminOnly(), controllers.GetAdminNotifications)
 			protected.DELETE("/notifications/:id", middleware.AdminOnly(), controllers.DeleteNotification)
 
+			// 评论回复通知
+			protected.GET("/comment-reply-notifications", controllers.GetCommentReplyNotifications)
+			protected.POST("/comment-reply-notifications/:id/read", controllers.MarkCommentReplyNotificationRead)
+			protected.POST("/comment-reply-notifications/read-all", controllers.MarkAllCommentReplyNotificationsRead)
+
 			// 关注相关
 			protected.POST("/follow/:id", controllers.FollowUser)
 			protected.DELETE("/follow/:id", controllers.UnfollowUser)
@@ -139,6 +144,12 @@ func main() {
 			protected.GET("/followers", controllers.GetFollowerList)
 			protected.GET("/follow/status/:id", controllers.CheckFollowStatus)
 			protected.GET("/mutual", controllers.GetMutualFriends)
+
+			// 收藏相关
+			protected.POST("/articles/:id/favorite", controllers.AddFavorite)
+			protected.DELETE("/articles/:id/favorite", controllers.RemoveFavorite)
+			protected.GET("/favorites", controllers.GetFavorites)
+			protected.GET("/articles/:id/favorite/check", controllers.CheckFavorite)
 
 			// 聊天相关
 			protected.GET("/chat/messages/:id", controllers.GetChatMessages)
@@ -158,6 +169,15 @@ func main() {
 			protected.PUT("/admin/articles/:id/status", middleware.AdminOnly(), controllers.UpdateArticleStatus)
 			protected.GET("/admin/comments", middleware.AdminOnly(), controllers.GetAllComments)
 			protected.DELETE("/admin/comments/:id", middleware.AdminOnly(), controllers.DeleteCommentAdmin)
+
+			// 头衔管理
+			protected.GET("/titles", controllers.GetAllTitles)
+			protected.POST("/titles", middleware.AdminOnly(), controllers.CreateTitle)
+			protected.PUT("/titles/:id", middleware.AdminOnly(), controllers.UpdateTitle)
+			protected.DELETE("/titles/:id", middleware.AdminOnly(), controllers.DeleteTitle)
+			protected.POST("/titles/grant", middleware.AdminOnly(), controllers.GrantTitle)
+			protected.POST("/titles/revoke", middleware.AdminOnly(), controllers.RevokeTitle)
+			protected.GET("/users/:id/titles", controllers.GetUserTitles)
 		}
 
 		// 公开路由
@@ -167,6 +187,14 @@ func main() {
 		api.GET("/announcement", controllers.GetAnnouncement)
 		api.GET("/sidebar-config", controllers.GetSidebarConfig)
 		api.GET("/site-config", controllers.GetSiteConfig)
+
+		// 用户公开信息
+		api.GET("/users/:id", controllers.GetUserByID)
+		api.GET("/users/:id/articles", controllers.GetUserArticles)
+
+		// 密码重置
+		api.POST("/password/reset-code", controllers.SendResetCode)
+		api.POST("/password/reset", controllers.ResetPassword)
 	}
 
 	// WebSocket路由

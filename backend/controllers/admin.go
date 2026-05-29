@@ -5,6 +5,7 @@ import (
 	"forum/models"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -40,7 +41,46 @@ func GetStatistics(c *gin.Context) {
 func GetAllUsers(c *gin.Context) {
 	var users []models.User
 	database.DB.Order("created_at DESC").Find(&users)
-	c.JSON(http.StatusOK, gin.H{"users": users})
+
+	type UserResponse struct {
+		ID          uint           `json:"id"`
+		Username    string         `json:"username"`
+		DisplayName string         `json:"display_name"`
+		Avatar      string         `json:"avatar"`
+		QQNumber    string         `json:"qq_number"`
+		Role        string         `json:"role"`
+		Status      string         `json:"status"`
+		CreatedAt   time.Time      `json:"created_at"`
+		Titles      []models.Title `json:"titles"`
+	}
+
+	var response []UserResponse
+	for _, user := range users {
+		var userTitles []models.UserTitle
+		database.DB.Where("user_id = ?", user.ID).Preload("Title").Find(&userTitles)
+
+		var titles []models.Title
+		for _, ut := range userTitles {
+			if ut.Title.IsActive {
+				titles = append(titles, ut.Title)
+			}
+		}
+
+		resp := UserResponse{
+			ID:          user.ID,
+			Username:    user.Username,
+			DisplayName: user.DisplayName,
+			Avatar:      user.Avatar,
+			QQNumber:    user.QQNumber,
+			Role:        user.Role,
+			Status:      user.Status,
+			CreatedAt:   user.CreatedAt,
+			Titles:      titles,
+		}
+		response = append(response, resp)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"users": response})
 }
 
 // UpdateUserRole 更新用户角色
@@ -56,7 +96,7 @@ func UpdateUserRole(c *gin.Context) {
 		return
 	}
 
-	if input.Role != "admin" && input.Role != "user" {
+	if input.Role != "admin" && input.Role != "user" && input.Role != "system" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的角色"})
 		return
 	}

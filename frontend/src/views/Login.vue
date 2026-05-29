@@ -40,6 +40,7 @@
         </v-form>
         
         <div class="text-center mt-4 text-body-2">
+          <router-link to="/forgot-password" class="text-secondary mr-4">忘记密码？</router-link>
           还没有账号？ <router-link to="/register" class="text-primary">立即注册</router-link>
         </div>
       </v-card-text>

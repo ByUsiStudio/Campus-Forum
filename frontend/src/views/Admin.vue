@@ -5,12 +5,13 @@
         管理后台
       </v-card-title>
       
-      <v-tabs v-model="activeTab" color="primary" class="mb-4">
+      <v-tabs v-model="activeTab" color="primary" class="mb-4" show-arrows>
         <v-tab value="overview">概览</v-tab>
         <v-tab value="users">用户管理</v-tab>
         <v-tab value="articles">文章管理</v-tab>
         <v-tab value="comments">评论管理</v-tab>
         <v-tab value="categories">分区管理</v-tab>
+        <v-tab value="titles">头衔管理</v-tab>
         <v-tab value="sidebar">侧边栏配置</v-tab>
         <v-tab value="deletions">
           <v-badge :content="deletionRequests.length" color="error" :model-value="deletionRequests.length > 0">
@@ -63,8 +64,7 @@
             <thead>
               <tr>
                 <th>ID</th>
-                <th>用户名</th>
-                <th>显示名称</th>
+                <th>用户</th>
                 <th>QQ号码</th>
                 <th>角色</th>
                 <th>状态</th>
@@ -75,12 +75,13 @@
             <tbody>
               <tr v-for="user in users" :key="user.id">
                 <td>{{ user.id }}</td>
-                <td>{{ user.username }}</td>
-                <td>{{ user.display_name }}</td>
+                <td>
+                  <UserAvatar :user="user" :size="32" :show-username="true" />
+                </td>
                 <td>{{ user.qq_number }}</td>
                 <td>
-                  <v-chip size="small" :color="user.role === 'admin' ? 'error' : 'default'">
-                    {{ user.role === 'admin' ? '管理员' : '用户' }}
+                  <v-chip size="small" :color="user.role === 'admin' ? 'error' : user.role === 'system' ? 'warning' : 'default'">
+                    {{ user.role === 'admin' ? '管理员' : user.role === 'system' ? '系统管理员' : '用户' }}
                   </v-chip>
                 </td>
                 <td>
@@ -270,7 +271,121 @@
             </v-list-item>
           </v-list>
         </v-window-item>
-        
+
+        <!-- 头衔管理 -->
+        <v-window-item value="titles">
+          <v-card variant="outlined" class="pa-4 mb-4">
+            <v-card-title class="text-subtitle-1 pa-0 mb-4">添加新头衔</v-card-title>
+            <v-form @submit.prevent="addTitle">
+              <v-row>
+                <v-col cols="12" md="3">
+                  <v-text-field
+                    v-model="titleForm.name"
+                    label="头衔名称"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-text-field
+                    v-model="titleForm.description"
+                    label="描述"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" md="2">
+                  <v-text-field
+                    v-model="titleForm.color"
+                    label="颜色"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" md="2">
+                  <v-text-field
+                    v-model="titleForm.icon"
+                    label="图标"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" md="2">
+                  <v-btn type="submit" color="primary" block>添加</v-btn>
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-card>
+
+          <v-card variant="outlined" class="pa-4 mb-4">
+            <v-card-title class="text-subtitle-1 pa-0 mb-4">授予头衔</v-card-title>
+            <v-form @submit.prevent="grantTitle">
+              <v-row>
+                <v-col cols="12" md="4">
+                  <v-select
+                    v-model="grantForm.user_id"
+                    :items="users"
+                    item-title="display_name"
+                    item-value="id"
+                    label="选择用户"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                  ></v-select>
+                </v-col>
+                <v-col cols="12" md="4">
+                  <v-select
+                    v-model="grantForm.title_id"
+                    :items="titles"
+                    item-title="name"
+                    item-value="id"
+                    label="选择头衔"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                  ></v-select>
+                </v-col>
+                <v-col cols="12" md="2">
+                  <v-text-field
+                    v-model="grantForm.reason"
+                    label="授予原因"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" md="2">
+                  <v-btn type="submit" color="primary" block>授予</v-btn>
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-card>
+
+          <v-list>
+            <v-list-item v-for="title in titles" :key="title.id">
+              <template v-slot:prepend>
+                <v-chip :color="title.color" size="small">
+                  <v-icon v-if="title.icon" start size="x-small">{{ title.icon }}</v-icon>
+                  {{ title.name }}
+                </v-chip>
+              </template>
+
+              <v-list-item-title>{{ title.name }}</v-list-item-title>
+              <v-list-item-subtitle>{{ title.description || '无描述' }}</v-list-item-subtitle>
+
+              <template v-slot:append>
+                <v-btn variant="text" size="small" color="error" @click="handleDeleteTitle(title.id)">
+                  删除
+                </v-btn>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-window-item>
+
         <!-- 侧边栏配置 -->
         <v-window-item value="sidebar">
           <v-card-text class="pa-0">
@@ -503,6 +618,7 @@
           <div class="mb-4">用户：{{ editRoleDialog.user?.display_name }}</div>
           <v-radio-group v-model="editRoleDialog.role" inline>
             <v-radio label="管理员" value="admin"></v-radio>
+            <v-radio label="系统" value="system"></v-radio>
             <v-radio label="普通用户" value="user"></v-radio>
           </v-radio-group>
         </v-card-text>
@@ -584,10 +700,14 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api'
+import UserAvatar from '../components/UserAvatar.vue'
 import { confirm as showConfirm, success as showSuccess, error as showError } from '../utils/modal'
 
 export default {
   name: 'Admin',
+  components: {
+    UserAvatar
+  },
   setup() {
     const router = useRouter()
     const activeTab = ref('overview')
@@ -650,7 +770,21 @@ export default {
       description: '',
       sort_order: 0
     })
-    
+
+    // 头衔管理
+    const titles = ref([])
+    const titleForm = ref({
+      name: '',
+      description: '',
+      color: '#6750A4',
+      icon: ''
+    })
+    const grantForm = ref({
+      user_id: null,
+      title_id: null,
+      reason: ''
+    })
+
     // 侧边栏配置
     const sidebarItems = ref([])
     
@@ -805,7 +939,16 @@ export default {
         console.error('加载分区失败', error)
       }
     }
-    
+
+    const loadTitles = async () => {
+      try {
+        const response = await api.get('/titles')
+        titles.value = response.data.titles || []
+      } catch (error) {
+        console.error('加载头衔失败', error)
+      }
+    }
+
     const loadSidebarConfig = async () => {
       try {
         const response = await api.get('/sidebar-config')
@@ -1078,7 +1221,59 @@ export default {
         showError(error.response?.data?.error || '删除失败')
       }
     }
-    
+
+    // 头衔操作
+    const addTitle = async () => {
+      if (!titleForm.value.name) {
+        showError('请输入头衔名称')
+        return
+      }
+
+      try {
+        await api.post('/titles', titleForm.value)
+        showSuccess('添加成功')
+        titleForm.value = { name: '', description: '', color: '#6750A4', icon: '' }
+        loadTitles()
+      } catch (error) {
+        console.error('添加头衔失败', error)
+        showError('添加失败')
+      }
+    }
+
+    const grantTitle = async () => {
+      if (!grantForm.value.user_id || !grantForm.value.title_id) {
+        showError('请选择用户和头衔')
+        return
+      }
+
+      try {
+        await api.post('/titles/grant', grantForm.value)
+        showSuccess('授予成功')
+        grantForm.value = { user_id: null, title_id: null, reason: '' }
+      } catch (error) {
+        console.error('授予头衔失败', error)
+        showError(error.response?.data?.error || '授予失败')
+      }
+    }
+
+    const handleDeleteTitle = async (id) => {
+      const confirmed = await showConfirm('确定要删除这个头衔吗？', {
+        title: '确认删除',
+        icon: 'mdi-alert-circle',
+        iconColor: 'error'
+      })
+      if (!confirmed) return
+
+      try {
+        await api.delete(`/titles/${id}`)
+        showSuccess('删除成功')
+        loadTitles()
+      } catch (error) {
+        console.error('删除头衔失败', error)
+        showError('删除失败')
+      }
+    }
+
     // 侧边栏操作
     const addSidebarItem = () => {
       sidebarItems.value.push({ title: '', link: '', icon: '' })
@@ -1180,18 +1375,20 @@ export default {
       if (newTab === 'comments') loadComments()
       if (newTab === 'deletions') loadDeletionRequests()
       if (newTab === 'categories') loadCategories()
+      if (newTab === 'titles') loadTitles()
       if (newTab === 'sidebar') loadSidebarConfig()
       if (newTab === 'announcement') loadAnnouncement()
       if (newTab === 'siteconfig') loadSiteConfig()
       if (newTab === 'notifications') loadNotifications()
     })
-    
+
     onMounted(async () => {
       await checkAdmin()
       if (isAdmin.value) {
         loadStatistics()
         loadDeletionRequests()
         loadCategories()
+        loadTitles()
         loadSidebarConfig()
         loadAnnouncement()
       }
@@ -1219,6 +1416,9 @@ export default {
       categories,
       categoryForm,
       editCategoryDialog,
+      titles,
+      titleForm,
+      grantForm,
       sidebarItems,
       announcementContent,
       notifications,
@@ -1245,6 +1445,9 @@ export default {
       showEditCategoryDialog,
       confirmEditCategory,
       handleDeleteCategory,
+      addTitle,
+      grantTitle,
+      handleDeleteTitle,
       addSidebarItem,
       removeSidebarItem,
       saveSidebarConfig,
@@ -1260,4 +1463,11 @@ export default {
 </script>
 
 <style scoped>
+:deep(.v-tabs) {
+  touch-action: none;
+}
+
+:deep(.v-tabs__container) {
+  touch-action: none;
+}
 </style>

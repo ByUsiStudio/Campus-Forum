@@ -25,7 +25,19 @@
       
       <v-col cols="12" md="8">
         <v-card class="pa-6 mb-4">
-          <v-card-title class="text-h5 mb-4">{{ user.display_name }}</v-card-title>
+          <v-card-title class="text-h5 mb-2">{{ user.display_name }}</v-card-title>
+          <div v-if="user.titles && user.titles.length > 0" class="mb-4">
+            <v-chip
+              v-for="title in user.titles"
+              :key="title.id"
+              size="small"
+              :color="title.color"
+              class="mr-2"
+            >
+              <v-icon v-if="title.icon" start size="x-small">{{ title.icon }}</v-icon>
+              {{ title.name }}
+            </v-chip>
+          </div>
           <v-list density="compact">
             <v-list-item>
               <template v-slot:prepend>
@@ -176,26 +188,18 @@ export default {
     
     const loadProfile = async () => {
       try {
-        let response
         if (route.query.id) {
-          // 查看其他用户
-          response = await api.get('/profile')
-          const users = await api.get('/admin/users')
-          const targetUser = users.data.users.find(u => u.id === parseInt(route.query.id))
-          if (targetUser) {
-            user.value = targetUser
-          } else {
-            router.push('/')
-            return
-          }
+          const response = await api.get(`/users/${route.query.id}`)
+          user.value = response.data
         } else {
-          response = await api.get('/profile')
+          const response = await api.get('/profile')
           user.value = response.data
           editForm.value.display_name = user.value.display_name
           editForm.value.signature = user.value.signature || ''
         }
       } catch (error) {
         console.error('加载用户信息失败', error)
+        router.push('/')
       }
     }
     
@@ -233,13 +237,18 @@ export default {
     
     const loadMyArticles = async () => {
       try {
-        const response = await api.get('/articles', {
-          params: { page: 1, page_size: 50 }
-        })
-        if (user.value) {
-          myArticles.value = response.data.articles.filter(
-            a => a.user_id === user.value.id
-          )
+        if (route.query.id) {
+          const response = await api.get(`/users/${route.query.id}/articles`)
+          myArticles.value = response.data.articles || []
+        } else {
+          const response = await api.get('/articles', {
+            params: { page: 1, page_size: 50 }
+          })
+          if (user.value) {
+            myArticles.value = response.data.articles.filter(
+              a => a.user_id === user.value.id
+            )
+          }
         }
       } catch (error) {
         console.error('加载文章失败', error)
