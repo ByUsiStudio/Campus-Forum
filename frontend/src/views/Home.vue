@@ -25,7 +25,7 @@
         ></v-select>
       </div>
       
-      <ArticleList :articles="articles" />
+      <ArticleList :articles="articles" :loading="loading" />
       
       <div class="d-flex justify-center align-center gap-4 mt-4" v-if="totalPages > 1">
         <v-btn 
@@ -69,15 +69,17 @@ export default {
     const page = ref(1)
     const totalPages = ref(1)
     const selectedCategory = ref(null)
-    
+    const loading = ref(false)
+
     const categoryOptions = computed(() => {
       return [
         { title: '全部分区', value: null },
         ...categories.value.map(cat => ({ title: cat.name, value: cat.id }))
       ]
     })
-    
+
     const loadArticles = async () => {
+      loading.value = true
       try {
         const params = {
           page: page.value,
@@ -91,6 +93,8 @@ export default {
         totalPages.value = response.data.total_pages
       } catch (error) {
         console.error('加载文章失败', error)
+      } finally {
+        loading.value = false
       }
     }
     
@@ -140,6 +144,7 @@ export default {
       totalPages,
       selectedCategory,
       categoryOptions,
+      loading,
       loadArticles,
       prevPage,
       nextPage

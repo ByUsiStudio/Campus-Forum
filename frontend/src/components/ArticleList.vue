@@ -1,66 +1,69 @@
 <template>
   <div class="article-list">
-    <div v-if="articles.length === 0" class="text-center pa-8 text-medium-emphasis">
+    <div v-if="loading" class="article-grid">
+      <v-skeleton-loader
+        v-for="i in 6"
+        :key="i"
+        type="article"
+        class="article-skeleton"
+      />
+    </div>
+    <div v-else-if="articles.length === 0" class="text-center pa-8 text-medium-emphasis">
       <v-icon size="48" class="mb-2">mdi-text-box-outline</v-icon>
       <div>暂无文章</div>
     </div>
-    <v-card
-      v-for="article in articles"
-      :key="article.id"
-      class="article-card mb-4"
-      variant="elevated"
-      hover
-    >
-      <v-card-text class="pa-4">
-        <div class="d-flex gap-4">
-          <UserAvatar :user="article.user" :size="48" class="flex-shrink-0" />
-          <div class="flex-grow-1 min-width-0">
-            <div class="d-flex align-start justify-space-between gap-2 mb-2">
-              <router-link
-                :to="'/article/' + article.id"
-                class="article-title text-decoration-none"
-              >
-                {{ article.title }}
-              </router-link>
-            </div>
-
-            <div class="d-flex flex-wrap align-center gap-3 mb-3 text-caption text-medium-emphasis">
-              <span class="d-flex align-center gap-1">
-                <v-icon size="small">mdi-folder-outline</v-icon>
-                {{ article.category?.name || '未分类' }}
-              </span>
-              <span class="d-flex align-center gap-1">
-                <v-icon size="small">mdi-clock-outline</v-icon>
+    <div v-else class="article-grid">
+      <v-card
+        v-for="article in articles"
+        :key="article.id"
+        class="article-card"
+        variant="flat"
+      >
+        <router-link
+          :to="'/article/' + article.id"
+          class="article-link"
+        >
+          <div class="article-header">
+            <UserAvatar :user="article.user" :size="40" />
+            <div class="article-meta">
+              <div class="article-time text-caption text-medium-emphasis">
                 {{ formatDate(article.created_at) }}
-              </span>
+              </div>
             </div>
+            <v-chip
+              v-if="article.category?.name"
+              size="x-small"
+              :style="{ backgroundColor: article.category.color + '20', color: article.category.color }"
+            >
+              {{ article.category.name }}
+            </v-chip>
+          </div>
 
-            <div class="article-excerpt text-body-2 text-medium-emphasis mb-3">
-              {{ getExcerpt(article.content) }}
-            </div>
+          <div class="article-title">{{ article.title }}</div>
 
-            <div class="d-flex align-center gap-4 text-caption">
-              <span class="d-flex align-center gap-1">
+          <div class="article-excerpt text-body-2 text-medium-emphasis">
+            {{ getExcerpt(article.content) }}
+          </div>
+
+          <div class="article-footer">
+            <div class="article-stats">
+              <span class="stat-item">
                 <v-icon size="small" color="pink">mdi-heart</v-icon>
                 {{ article.like_count || 0 }}
               </span>
-              <span class="d-flex align-center gap-1">
+              <span class="stat-item">
                 <v-icon size="small">mdi-eye-outline</v-icon>
                 {{ article.view_count || 0 }}
               </span>
-              <span class="d-flex align-center gap-1">
+              <span class="stat-item">
                 <v-icon size="small">mdi-comment-outline</v-icon>
                 {{ article.comment_count || 0 }}
               </span>
-              <span v-if="article.favorite_count" class="d-flex align-center gap-1">
-                <v-icon size="small" color="amber">mdi-star</v-icon>
-                {{ article.favorite_count || 0 }}
-              </span>
             </div>
           </div>
-        </div>
-      </v-card-text>
-    </v-card>
+        </router-link>
+      </v-card>
+    </div>
   </div>
 </template>
 
@@ -76,6 +79,10 @@ export default {
     articles: {
       type: Array,
       default: () => []
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   },
   setup() {
@@ -126,23 +133,64 @@ export default {
 
 <style scoped>
 .article-list {
-  display: flex;
-  flex-direction: column;
+  width: 100%;
+}
+
+.article-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
 }
 
 .article-card {
-  transition: transform 0.2s, box-shadow 0.2s;
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.25s ease;
 }
 
 .article-card:hover {
-  transform: translateY(-2px);
+  border-color: rgba(var(--v-theme-primary), 0.3);
+  box-shadow: 0 4px 20px rgba(var(--v-theme-primary), 0.1);
+  transform: translateY(-4px);
+}
+
+.article-link {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  text-decoration: none;
+  color: inherit;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.article-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.article-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.author-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: rgb(var(--v-theme-on-surface));
+  line-height: 1.3;
 }
 
 .article-title {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 600;
   color: rgb(var(--v-theme-primary));
   line-height: 1.4;
+  margin-bottom: 8px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -150,24 +198,55 @@ export default {
   transition: color 0.2s;
 }
 
-.article-title:hover {
+.article-card:hover .article-title {
   color: rgb(var(--v-theme-secondary));
-  text-decoration: underline;
 }
 
 .article-excerpt {
+  flex: 1;
   line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  margin-bottom: 12px;
 }
 
-.min-width-0 {
-  min-width: 0;
+.article-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.06);
 }
 
-.flex-shrink-0 {
-  flex-shrink: 0;
+.article-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: rgb(var(--v-theme-on-surface));
+  opacity: 0.7;
+}
+
+.article-skeleton {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+@media (max-width: 600px) {
+  .article-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .article-card {
+    border-radius: 8px;
+  }
 }
 </style>

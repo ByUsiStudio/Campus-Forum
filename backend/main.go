@@ -122,6 +122,7 @@ func main() {
 
 			// 网站配置
 			protected.PUT("/site-config", middleware.AdminOnly(), controllers.UpdateSiteConfig)
+			protected.POST("/site-config/test-smtp", middleware.AdminOnly(), controllers.TestSMTPConfig)
 
 			// 通知相关
 			protected.GET("/notifications", controllers.GetNotifications)

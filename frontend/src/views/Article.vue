@@ -219,8 +219,7 @@ import ImageViewer from '../components/ImageViewer.vue'
 import UserAvatar from '../components/UserAvatar.vue'
 import MarkdownViewer from '../components/MarkdownViewer.vue'
 import { confirm as showConfirm, prompt as showPrompt, success as showSuccess } from '../utils/modal'
-import Plyr from 'plyr'
-import 'plyr/dist/plyr.css'
+
 
 export default {
   name: 'Article',
@@ -254,9 +253,7 @@ export default {
       mutual: false
     })
     const siteTitle = ref('校园论坛')
-    
-    // 存储 Plyr 播放器实例
-    const plyrPlayers = ref([])
+
 
     const canEdit = computed(() => {
       if (!currentUser.value || !article.value) return false
@@ -301,77 +298,22 @@ export default {
       }
     }
     
-    // 初始化所有视频为 Plyr 播放器
+    // 使用浏览器默认视频播放器
     const initVideoPlayers = () => {
       if (!contentRef.value) return
       
       const videoElements = contentRef.value.querySelectorAll('video')
-      console.log('找到视频元素:', videoElements.length)
-      
-      videoElements.forEach((videoEl, index) => {
-        // 获取视频属性
-        const src = videoEl.src || videoEl.getAttribute('src')
-        const poster = videoEl.poster || videoEl.getAttribute('poster') || ''
-        
-        if (!src) return
-        
-        // 创建包装器
-        const wrapper = document.createElement('div')
-        wrapper.className = 'plyr-video-container'
-        wrapper.style.cssText = 'width: 100%; max-width: 800px; margin: 16px auto; border-radius: 8px; overflow: hidden; background: #000;'
-        
-        // 将原始 video 元素移入包装器
-        videoEl.parentNode.insertBefore(wrapper, videoEl)
-        wrapper.appendChild(videoEl)
-        
-        // 设置视频元素样式
-        videoEl.removeAttribute('controls')
-        videoEl.className = 'plyr-video'
-        videoEl.style.cssText = 'width: 100%; height: auto;'
-        
-        // 获取视频原始尺寸
-        const originalWidth = parseInt(videoEl.getAttribute('width')) || 1280
-        const originalHeight = parseInt(videoEl.getAttribute('height')) || 720
-        
-        // 初始化 Plyr
-        const player = new Plyr(videoEl, {
-          controls: [
-            'play-large',
-            'play',
-            'progress',
-            'current-time',
-            'duration',
-            'mute',
-            'volume',
-            'settings',
-            'pip',
-            'airplay',
-            'fullscreen'
-          ],
-          settings: ['quality', 'speed'],
-          speed: {
-            selected: 1,
-            options: [0.5, 0.75, 1, 1.25, 1.5, 2]
-          },
-          quality: {
-            default: 720,
-            options: [720, 480, 360]
-          },
-          autoplay: false,
-          muted: false,
-          loop: {
-            active: false
-          },
-          ratio: `${originalWidth}:${originalHeight}`,
-          hideControls: false,
-          resetOnEnd: false,
-          disableContextMenu: true,
-          loadSprite: true,
-          iconUrl: 'https://cdn.plyr.io/3.7.8/plyr.svg'
-        })
-        
-        plyrPlayers.value.push(player)
-        console.log(`初始化视频播放器 ${index + 1}, 宽高比: ${originalWidth}x${originalHeight}`)
+      videoElements.forEach((videoEl) => {
+        // 使用浏览器默认播放器
+        videoEl.controls = true
+        videoEl.playsInline = true
+        videoEl.style.maxWidth = '100%'
+        videoEl.style.maxHeight = '500px'
+        videoEl.style.height = 'auto'
+        videoEl.style.borderRadius = '8px'
+        videoEl.style.margin = '16px 0'
+        videoEl.style.display = 'block'
+        videoEl.style.background = '#000'
       })
     }
     
@@ -659,14 +601,7 @@ export default {
       loadArticle()
     })
     
-    // 组件卸载时销毁所有 Video.js 实例
     onBeforeUnmount(() => {
-      plyrPlayers.value.forEach(player => {
-        if (player && !player.isDisposed()) {
-          player.dispose()
-        }
-      })
-      plyrPlayers.value = []
       document.title = siteTitle.value
     })
     

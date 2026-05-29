@@ -1,5 +1,5 @@
 <template>
-  <div class="video-player-wrapper">
+  <div class="video-player-wrapper" ref="wrapperRef">
     <video
       ref="videoRef"
       class="plyr-video"
@@ -41,7 +41,19 @@ const props = defineProps({
 })
 
 const videoRef = ref(null)
+const wrapperRef = ref(null)
 let player = null
+let scrollPosition = 0
+
+const handleFullscreenChange = () => {
+  if (document.fullscreenElement) {
+    scrollPosition = window.scrollY
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+    window.scrollTo({ top: scrollPosition, behavior: 'instant' })
+  }
+}
 
 const initPlayer = () => {
   if (!videoRef.value) return
@@ -79,8 +91,16 @@ const initPlayer = () => {
     resetOnEnd: false,
     disableContextMenu: true,
     loadSprite: true,
-    iconUrl: 'https://cdn.plyr.io/3.7.8/plyr.svg'
+    iconUrl: 'https://cdn.plyr.io/3.7.8/plyr.svg',
+    fullscreen: {
+      enabled: true,
+      fallback: true,
+      iosNative: false
+    }
   })
+
+  player.on('enterfullscreen', handleFullscreenChange)
+  player.on('exitfullscreen', handleFullscreenChange)
 }
 
 watch(() => props.src, (newSrc) => {
@@ -105,9 +125,11 @@ watch(() => props.poster, (newPoster) => {
 
 onMounted(() => {
   initPlayer()
+  document.addEventListener('fullscreenchange', handleFullscreenChange)
 })
 
 onBeforeUnmount(() => {
+  document.removeEventListener('fullscreenchange', handleFullscreenChange)
   if (player) {
     player.destroy()
     player = null
@@ -197,5 +219,49 @@ defineExpose({
 
 :deep(.plyr__menu__item:hover) {
   background: rgba(255, 255, 255, 0.1);
+}
+
+:deep(.plyr--full-ui.plyr--fullscreen) {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+}
+
+:deep(.plyr--fullscreen .plyr__control--overlaid) {
+  background: rgba(var(--v-theme-primary), 0.9);
+}
+
+:deep(.plyr--fullscreen .plyr__controls) {
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+}
+
+@media (max-width: 768px) {
+  .video-player-wrapper {
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  :deep(.plyr) {
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  :deep(.plyr__controls) {
+    padding: 8px;
+  }
+
+  :deep(.plyr__control) {
+    padding: 8px;
+  }
+
+  :deep(.plyr__time) {
+    font-size: 10px;
+  }
 }
 </style>

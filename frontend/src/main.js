@@ -79,18 +79,19 @@ const router = createRouter({
 })
 
 // 路由守卫
+const publicPaths = ['/login', '/register', '/forgot-password', '/']
+
 router.beforeEach((to, from, next) => {
     const token = localStorage.getItem('token')
-    const isInit = localStorage.getItem('isInit')
-    
-    if (to.path === '/login' || to.path === '/register') {
-        if (token) {
+
+    if (publicPaths.includes(to.path)) {
+        if (token && (to.path === '/login' || to.path === '/register')) {
             next('/')
         } else {
             next()
         }
     } else {
-        if (!token && to.path !== '/') {
+        if (!token) {
             next('/login')
         } else {
             next()
