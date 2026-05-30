@@ -3,6 +3,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import './styles/style.css'
 
+// Highlight.js 语法高亮
+import hljs from 'highlight.js'
+import 'highlight.js/styles/github-dark.css'
+window.hljs = hljs
+
 // Vuetify
 import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
