@@ -237,112 +237,132 @@ export default {
 
 <style scoped>
 .users-panel {
-  animation: fadeIn 0.3s ease;
+  animation: panelFadeIn 0.4s ease;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.panel-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin: 0 0 4px 0;
-}
-
-.panel-subtitle {
-  font-size: 0.9rem;
-  color: #6b7280;
-  margin: 0;
+@keyframes panelFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .table-card {
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.06);
 }
 
 .users-table {
   width: 100%;
+  border-collapse: collapse;
+}
+
+.users-table thead {
+  background: linear-gradient(135deg, #F8F7FF 0%, #F1F5F9 100%);
 }
 
 .users-table th {
   font-weight: 600;
-  color: #6b7280;
-  font-size: 0.85rem;
+  color: #49454F;
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  background: #f8f9ff !important;
-  padding: 16px 12px !important;
+  letter-spacing: 0.8px;
+  padding: 18px 20px !important;
+  text-align: left;
+  border-bottom: 2px solid #E7E0EC;
 }
 
 .users-table td {
-  padding: 14px 12px !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 16px 20px !important;
+  font-size: 14px;
+  color: #49454F;
+  border-bottom: 1px solid #F2F0F4;
+  transition: background 0.2s ease;
+}
+
+.user-row {
+  transition: all 0.25s ease;
 }
 
 .user-row:hover {
-  background: rgba(103, 80, 164, 0.03);
+  background: #F8F7FF;
+  transform: scale(1.002);
+}
+
+.user-row:hover td {
+  background: #F8F7FF;
 }
 
 .user-cell {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .user-info {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .user-name {
   font-weight: 600;
-  color: #1a1a2e;
+  color: #1C1B1F;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 14px;
 }
 
 .user-id {
-  font-size: 0.75rem;
-  color: #9ca3af;
+  font-size: 12px;
+  color: #938F99;
+  margin-top: 2px;
 }
 
 .qq-cell {
-  color: #6b7280;
-  font-family: monospace;
+  color: #625B71;
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 13px;
 }
 
 .date-cell {
-  color: #6b7280;
-  font-size: 0.9rem;
+  color: #938F99;
+  font-size: 13px;
 }
 
 .action-cell {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   justify-content: center;
   flex-wrap: wrap;
 }
 
+.action-cell .v-btn {
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 6px 12px;
+  transition: all 0.2s ease;
+}
+
+.action-cell .v-btn:hover {
+  transform: translateY(-1px);
+}
+
 @media (max-width: 960px) {
   .users-table {
-    font-size: 0.85rem;
+    font-size: 13px;
   }
 
   .users-table th,
   .users-table td {
-    padding: 10px 8px !important;
+    padding: 14px 12px !important;
   }
 
   .qq-cell,
@@ -354,6 +374,11 @@ export default {
 @media (max-width: 600px) {
   .action-cell {
     flex-direction: column;
+    gap: 4px;
+  }
+
+  .action-cell .v-btn {
+    width: 100%;
   }
 }
 </style>

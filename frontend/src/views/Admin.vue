@@ -10,60 +10,6 @@
           </div>
         </div>
 
-        <v-tabs class="header-tabs" slider-color="primary">
-          <v-tab :to="{ name: 'AdminIndex' }" class="tab-item">
-            <v-icon size="20" class="tab-icon">mdi-view-dashboard</v-icon>
-            <span>概览</span>
-          </v-tab>
-          <v-tab :to="{ name: 'AdminUsers' }" class="tab-item">
-            <v-icon size="20" class="tab-icon">mdi-account-group</v-icon>
-            <span>用户</span>
-          </v-tab>
-          <v-tab :to="{ name: 'AdminArticles' }" class="tab-item">
-            <v-icon size="20" class="tab-icon">mdi-file-document-edit</v-icon>
-            <span>文章</span>
-          </v-tab>
-          <v-tab :to="{ name: 'AdminComments' }" class="tab-item">
-            <v-icon size="20" class="tab-icon">mdi-comment-text-multiple</v-icon>
-            <span>评论</span>
-          </v-tab>
-          <v-tab :to="{ name: 'AdminCategories' }" class="tab-item">
-            <v-icon size="20" class="tab-icon">mdi-shape</v-icon>
-            <span>分区</span>
-          </v-tab>
-          <v-tab :to="{ name: 'AdminTitles' }" class="tab-item">
-            <v-icon size="20" class="tab-icon">mdi-medal</v-icon>
-            <span>头衔</span>
-          </v-tab>
-          <v-tab :to="{ name: 'AdminSidebar' }" class="tab-item">
-            <v-icon size="20" class="tab-icon">mdi-web</v-icon>
-            <span>侧边栏</span>
-          </v-tab>
-          <v-tab :to="{ name: 'AdminDeletions' }" class="tab-item">
-            <v-icon size="20" class="tab-icon">mdi-delete-forever</v-icon>
-            <span>删除申请</span>
-            <v-chip v-if="deletionCount > 0" size="x-small" color="error" class="tab-badge">
-              {{ deletionCount }}
-            </v-chip>
-          </v-tab>
-          <v-tab :to="{ name: 'AdminAnnouncement' }" class="tab-item">
-            <v-icon size="20" class="tab-icon">mdi-bullhorn</v-icon>
-            <span>公告</span>
-          </v-tab>
-          <v-tab :to="{ name: 'AdminSiteConfig' }" class="tab-item">
-            <v-icon size="20" class="tab-icon">mdi-globe</v-icon>
-            <span>网站配置</span>
-          </v-tab>
-          <v-tab :to="{ name: 'AdminSMTPConfig' }" class="tab-item">
-            <v-icon size="20" class="tab-icon">mdi-email-settings</v-icon>
-            <span>邮件配置</span>
-          </v-tab>
-          <v-tab :to="{ name: 'AdminNotifications' }" class="tab-item">
-            <v-icon size="20" class="tab-icon">mdi-bell</v-icon>
-            <span>通知管理</span>
-          </v-tab>
-        </v-tabs>
-
         <div class="header-actions">
           <v-btn icon variant="text" size="small" @click="goToHome">
             <v-icon>mdi-home</v-icon>
@@ -74,6 +20,152 @@
         </div>
       </div>
     </v-app-bar>
+
+    <v-navigation-drawer
+      permanent
+      expand-on-hover
+      width="250"
+      class="admin-sidebar"
+    >
+      <v-list dense class="sidebar-menu">
+        <v-list-item
+          :to="{ name: 'AdminIndex' }"
+          :active="route.name === 'AdminIndex'"
+          class="sidebar-item"
+        >
+          <v-list-item-icon class="sidebar-icon">
+            <v-icon>mdi-view-dashboard</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>概览</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item
+          :to="{ name: 'AdminUsers' }"
+          :active="route.name === 'AdminUsers'"
+          class="sidebar-item"
+        >
+          <v-list-item-icon class="sidebar-icon">
+            <v-icon>mdi-account-group</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>用户管理</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item
+          :to="{ name: 'AdminArticles' }"
+          :active="route.name === 'AdminArticles'"
+          class="sidebar-item"
+        >
+          <v-list-item-icon class="sidebar-icon">
+            <v-icon>mdi-file-document-edit</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>文章管理</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item
+          :to="{ name: 'AdminComments' }"
+          :active="route.name === 'AdminComments'"
+          class="sidebar-item"
+        >
+          <v-list-item-icon class="sidebar-icon">
+            <v-icon>mdi-comment-text-multiple</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>评论管理</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item
+          :to="{ name: 'AdminCategories' }"
+          :active="route.name === 'AdminCategories'"
+          class="sidebar-item"
+        >
+          <v-list-item-icon class="sidebar-icon">
+            <v-icon>mdi-shape</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>分区管理</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item
+          :to="{ name: 'AdminTitles' }"
+          :active="route.name === 'AdminTitles'"
+          class="sidebar-item"
+        >
+          <v-list-item-icon class="sidebar-icon">
+            <v-icon>mdi-medal</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>头衔管理</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item
+          :to="{ name: 'AdminSidebar' }"
+          :active="route.name === 'AdminSidebar'"
+          class="sidebar-item"
+        >
+          <v-list-item-icon class="sidebar-icon">
+            <v-icon>mdi-web</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>侧边栏配置</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item
+          :to="{ name: 'AdminDeletions' }"
+          :active="route.name === 'AdminDeletions'"
+          class="sidebar-item"
+        >
+          <v-list-item-icon class="sidebar-icon">
+            <v-icon>mdi-delete-forever</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>删除申请</v-list-item-title>
+          <v-chip v-if="deletionCount > 0" size="x-small" color="error" class="sidebar-badge">
+            {{ deletionCount }}
+          </v-chip>
+        </v-list-item>
+
+        <v-divider class="sidebar-divider"></v-divider>
+
+        <v-list-item
+          :to="{ name: 'AdminAnnouncement' }"
+          :active="route.name === 'AdminAnnouncement'"
+          class="sidebar-item"
+        >
+          <v-list-item-icon class="sidebar-icon">
+            <v-icon>mdi-bullhorn</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>公告管理</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item
+          :to="{ name: 'AdminSiteConfig' }"
+          :active="route.name === 'AdminSiteConfig'"
+          class="sidebar-item"
+        >
+          <v-list-item-icon class="sidebar-icon">
+            <v-icon>mdi-globe</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>网站配置</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item
+          :to="{ name: 'AdminSMTPConfig' }"
+          :active="route.name === 'AdminSMTPConfig'"
+          class="sidebar-item"
+        >
+          <v-list-item-icon class="sidebar-icon">
+            <v-icon>mdi-email-settings</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>邮件配置</v-list-item-title>
+        </v-list-item>
+
+        <v-list-item
+          :to="{ name: 'AdminNotifications' }"
+          :active="route.name === 'AdminNotifications'"
+          class="sidebar-item"
+        >
+          <v-list-item-icon class="sidebar-icon">
+            <v-icon>mdi-bell</v-icon>
+          </v-list-item-icon>
+          <v-list-item-title>通知管理</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-navigation-drawer>
 
     <v-main class="admin-main">
       <router-view></router-view>
@@ -131,7 +223,7 @@ const checkAdmin = async () => {
 const loadDeletionCount = async () => {
   try {
     const response = await api.get('/deletion-requests')
-    deletionCount.value = response.data.length
+    deletionCount.value = response.data.requests ? response.data.requests.length : 0
   } catch (error) {
     console.error('加载删除申请数量失败', error)
     deletionCount.value = 0
@@ -150,99 +242,197 @@ watch(() => route.path, () => {
 
 <style scoped>
 .admin-header {
-  background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%) !important;
-  border-bottom: 1px solid rgba(103, 80, 164, 0.1);
+  background: linear-gradient(135deg, #6750A4 0%, #7C3AED 50%, #8B5CF6 100%);
+  box-shadow: 0 4px 20px -4px rgba(103, 80, 164, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -25%;
+  width: 200px;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+}
+
+.admin-header::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 150px;
+  height: 150px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
 }
 
 .header-content {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   width: 100%;
-  padding: 0 24px;
-  gap: 32px;
+  padding: 0 32px;
+  position: relative;
+  z-index: 1;
 }
 
 .header-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+  gap: 14px;
 }
 
 .brand-icon {
-  background: linear-gradient(135deg, #6750A4 0%, #9c8cd8 100%);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+  padding: 10px;
   border-radius: 12px;
-  padding: 8px;
-  color: white !important;
+  transition: transform 0.3s ease;
+}
+
+.brand-icon:hover {
+  transform: scale(1.05);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
 }
 
 .brand-title {
-  font-size: 1.1rem;
+  color: #fff;
   font-weight: 700;
-  color: #1a1a2e;
-  line-height: 1.3;
+  font-size: 20px;
+  letter-spacing: -0.3px;
 }
 
 .brand-subtitle {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.header-tabs {
-  flex: 1;
-  max-width: 1200px;
-}
-
-.tab-item {
-  min-width: auto !important;
-  padding: 0 16px !important;
-  font-size: 0.875rem;
-  font-weight: 500;
-  gap: 8px;
-}
-
-.tab-icon {
-  margin-right: 4px;
-}
-
-.tab-badge {
-  margin-left: 4px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  font-weight: 400;
 }
 
 .header-actions {
   display: flex;
-  gap: 8px;
-  flex-shrink: 0;
+  gap: 12px;
+}
+
+.header-actions .v-btn {
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 8px 16px;
+  transition: all 0.25s ease;
+}
+
+.header-actions .v-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.admin-sidebar {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8F7FF 100%);
+  border-right: 1px solid rgba(103, 80, 164, 0.1);
+  box-shadow: 4px 0 20px -4px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-menu {
+  padding: 20px 0;
+}
+
+.sidebar-item {
+  margin: 6px 10px;
+  border-radius: 10px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, #6750A4 0%, #8B5CF6 100%);
+  transform: scaleY(0);
+  transition: transform 0.25s ease;
+}
+
+.sidebar-item:hover {
+  background: rgba(103, 80, 164, 0.06);
+  transform: translateX(4px);
+}
+
+.sidebar-item.active {
+  background: rgba(103, 80, 164, 0.1);
+  box-shadow: 0 4px 12px -4px rgba(103, 80, 164, 0.15);
+}
+
+.sidebar-item.active::before {
+  transform: scaleY(1);
+}
+
+.sidebar-item.active .sidebar-icon,
+.sidebar-item.active .v-list-item-title {
+  color: #6750A4;
+  font-weight: 500;
+}
+
+.sidebar-icon {
+  color: #625B71;
+  transition: color 0.25s ease;
+}
+
+.sidebar-item:hover .sidebar-icon {
+  color: #6750A4;
+}
+
+.sidebar-badge {
+  margin-left: auto;
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.sidebar-divider {
+  margin: 16px 12px;
+  background: linear-gradient(90deg, transparent 0%, rgba(103, 80, 164, 0.15) 50%, transparent 100%);
+  height: 1px;
 }
 
 .admin-main {
-  background: #f8f9ff;
+  padding: 32px;
   min-height: calc(100vh - 72px);
+  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+  animation: fadeIn 0.3s ease;
 }
 
-.error-page {
-  background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.error-content {
-  text-align: center;
-  padding: 48px 24px;
-}
-
-.error-icon {
-  margin-bottom: 24px;
-}
-
-.error-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin-bottom: 12px;
-}
-
-.error-message {
-  font-size: 1rem;
-  color: #6b7280;
+.spin {
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
@@ -250,36 +440,55 @@ watch(() => route.path, () => {
   to { transform: rotate(360deg); }
 }
 
-.spin {
-  animation: spin 1s linear infinite;
+.error-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 50%, #F1F5F9 100%);
 }
 
-@media (max-width: 960px) {
-  .header-content {
-    padding: 0 16px;
-    gap: 16px;
-  }
+.error-content {
+  text-align: center;
+  padding: 64px;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px -20px rgba(103, 80, 164, 0.15);
+  animation: slideUp 0.4s ease;
+}
 
-  .brand-subtitle {
-    display: none;
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-
-  .header-tabs {
-    max-width: none;
-  }
-
-  .tab-item span {
-    display: none;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@media (max-width: 640px) {
-  .header-tabs {
-    overflow-x: auto;
-  }
+.error-icon {
+  opacity: 0.9;
+  background: linear-gradient(135deg, #FECACA 0%, #FCA5A5 100%);
+  padding: 24px;
+  border-radius: 50%;
+  box-shadow: 0 8px 32px -8px rgba(239, 68, 68, 0.2);
+}
 
-  .tab-item {
-    padding: 0 12px !important;
-  }
+.error-title {
+  margin: 28px 0 14px;
+  font-size: 32px;
+  font-weight: 700;
+  color: #1C1B1F;
+  letter-spacing: -0.5px;
+}
+
+.error-message {
+  color: #625B71;
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 300px;
+  margin: 0 auto;
 }
 </style>

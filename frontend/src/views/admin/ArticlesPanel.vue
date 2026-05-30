@@ -218,123 +218,140 @@ export default {
 
 <style scoped>
 .articles-panel {
-  animation: fadeIn 0.3s ease;
+  animation: panelFadeIn 0.4s ease;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.panel-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin: 0 0 4px 0;
-}
-
-.panel-subtitle {
-  font-size: 0.9rem;
-  color: #6b7280;
-  margin: 0;
+@keyframes panelFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .header-actions {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
   flex-wrap: wrap;
 }
 
 .filter-select {
-  width: 140px;
+  min-width: 160px;
 }
 
 .table-card {
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.06);
 }
 
 .articles-table {
   width: 100%;
+  border-collapse: collapse;
+}
+
+.articles-table thead {
+  background: linear-gradient(135deg, #F8F7FF 0%, #F1F5F9 100%);
 }
 
 .articles-table th {
   font-weight: 600;
-  color: #6b7280;
-  font-size: 0.85rem;
+  color: #49454F;
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  background: #f8f9ff !important;
-  padding: 16px 12px !important;
+  letter-spacing: 0.8px;
+  padding: 18px 20px !important;
+  text-align: left;
+  border-bottom: 2px solid #E7E0EC;
 }
 
 .articles-table td {
-  padding: 14px 12px !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 16px 20px !important;
+  font-size: 14px;
+  color: #49454F;
+  border-bottom: 1px solid #F2F0F4;
+  transition: background 0.2s ease;
+}
+
+.article-row {
+  transition: all 0.25s ease;
 }
 
 .article-row:hover {
-  background: rgba(103, 80, 164, 0.03);
+  background: #F8F7FF;
+  transform: scale(1.002);
 }
 
 .id-cell {
-  font-family: monospace;
-  color: #9ca3af;
-  font-size: 0.85rem;
+  font-family: 'Monaco', 'Consolas', monospace;
+  color: #938F99;
+  font-size: 13px;
 }
 
 .title-cell {
-  max-width: 240px;
+  max-width: 260px;
 }
 
 .article-title {
-  font-weight: 500;
-  color: #1a1a2e;
+  font-weight: 600;
+  color: #1C1B1F;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.article-title:hover {
+  color: #6750A4;
 }
 
 .author-cell {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .author-name {
-  font-size: 0.9rem;
-  color: #4b5563;
+  font-size: 13px;
+  color: #625B71;
 }
 
 .count-cell {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  font-size: 0.9rem;
-  color: #6b7280;
+  gap: 6px;
+  font-size: 13px;
+  color: #625B71;
 }
 
 .date-cell {
-  color: #6b7280;
-  font-size: 0.85rem;
+  color: #938F99;
+  font-size: 13px;
   white-space: nowrap;
 }
 
 .action-cell {
   display: flex;
   justify-content: center;
-  gap: 4px;
+  gap: 8px;
+}
+
+.action-cell .v-btn {
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 6px 12px;
+  transition: all 0.2s ease;
+}
+
+.action-cell .v-btn:hover {
+  transform: translateY(-1px);
 }
 
 .pagination-wrapper {
@@ -342,22 +359,23 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 16px;
-  margin-top: 24px;
+  margin-top: 28px;
 }
 
 .page-info {
-  font-size: 0.9rem;
-  color: #6b7280;
+  font-size: 13px;
+  color: #625B71;
+  font-weight: 500;
 }
 
 @media (max-width: 960px) {
   .articles-table {
-    font-size: 0.8rem;
+    font-size: 12px;
   }
 
   .articles-table th,
   .articles-table td {
-    padding: 10px 6px !important;
+    padding: 14px 12px !important;
   }
 
   .author-cell,
@@ -366,7 +384,18 @@ export default {
   }
 
   .title-cell {
-    max-width: 160px;
+    max-width: 180px;
+  }
+}
+
+@media (max-width: 600px) {
+  .action-cell {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .action-cell .v-btn {
+    width: 100%;
   }
 }
 </style>
