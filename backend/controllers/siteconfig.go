@@ -5,6 +5,7 @@ import (
 	"forum/models"
 	"net/http"
 	"net/smtp"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,13 +25,13 @@ func GetSiteConfig(c *gin.Context) {
 
 func UpdateSiteConfig(c *gin.Context) {
 	var input struct {
-		SiteTitle     string `json:"site_title"`
-		SMTPHost      string `json:"smtp_host"`
-		SMTPPort      int    `json:"smtp_port"`
-		SMTPUsername  string `json:"smtp_username"`
-		SMTPPassword  string `json:"smtp_password"`
-		SMTPFrom      string `json:"smtp_from"`
-		SMTPFromName  string `json:"smtp_from_name"`
+		SiteTitle    string `json:"site_title"`
+		SMTPHost     string `json:"smtp_host"`
+		SMTPPort     int    `json:"smtp_port"`
+		SMTPUsername string `json:"smtp_username"`
+		SMTPPassword string `json:"smtp_password"`
+		SMTPFrom     string `json:"smtp_from"`
+		SMTPFromName string `json:"smtp_from_name"`
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -91,7 +92,7 @@ func TestSMTPConfig(c *gin.Context) {
 	// 发送测试邮件
 	auth := smtp.PlainAuth("", input.SMTPUsername, input.SMTPPassword, input.SMTPHost)
 	err := smtp.SendMail(
-		input.SMTPHost+":"+string(rune(input.SMTPPort+'0')),
+		input.SMTPHost+":"+strconv.Itoa(input.SMTPPort),
 		auth,
 		input.SMTPFrom,
 		[]string{input.SMTPTo},

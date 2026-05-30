@@ -856,12 +856,13 @@ export default {
       }
     }
 
-    const saveSiteConfig = async () => {
+    const saveSiteConfig = async (formData) => {
+      const config = formData || siteConfigForm.value
       try {
-        await api.put('/site-config', { site_title: siteConfigForm.value.siteTitle })
+        await api.put('/site-config', { site_title: config.siteTitle })
         showSuccess('保存成功')
-        if (siteConfigForm.value.siteTitle) {
-          document.title = siteConfigForm.value.siteTitle
+        if (config.siteTitle) {
+          document.title = config.siteTitle
         }
       } catch (error) {
         console.error('保存网站配置失败', error)
@@ -869,15 +870,16 @@ export default {
       }
     }
 
-    const saveSmtpConfig = async () => {
+    const saveSmtpConfig = async (formData) => {
+      const config = formData || smtpConfigForm.value
       try {
         await api.put('/site-config', {
-          smtp_host: smtpConfigForm.value.host,
-          smtp_port: smtpConfigForm.value.port,
-          smtp_username: smtpConfigForm.value.username,
-          smtp_password: smtpConfigForm.value.password,
-          smtp_from: smtpConfigForm.value.from,
-          smtp_from_name: smtpConfigForm.value.fromName
+          smtp_host: config.host,
+          smtp_port: config.port,
+          smtp_username: config.username,
+          smtp_password: config.password,
+          smtp_from: config.from,
+          smtp_from_name: config.fromName
         })
         showSuccess('保存成功')
       } catch (error) {
@@ -886,15 +888,16 @@ export default {
       }
     }
 
-    const testSmtpConfig = async () => {
+    const testSmtpConfig = async (formData) => {
+      const config = formData || smtpConfigForm.value
       try {
         await api.post('/site-config/test-smtp', {
-          smtp_host: smtpConfigForm.value.host,
-          smtp_port: smtpConfigForm.value.port,
-          smtp_username: smtpConfigForm.value.username,
-          smtp_password: smtpConfigForm.value.password,
-          smtp_from: smtpConfigForm.value.from,
-          smtp_to: smtpConfigForm.value.from
+          smtp_host: config.host,
+          smtp_port: config.port,
+          smtp_username: config.username,
+          smtp_password: config.password,
+          smtp_from: config.from,
+          smtp_to: config.from
         })
         showSuccess('测试邮件发送成功')
       } catch (error) {

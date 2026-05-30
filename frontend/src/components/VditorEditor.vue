@@ -1,5 +1,13 @@
 <template>
-  <div ref="editorRef" class="vditor-container"></div>
+  <div ref="editorRef" class="vditor-container">
+    <input
+      ref="videoInputRef"
+      type="file"
+      accept="video/*"
+      style="display: none"
+      @change="handleVideoUpload"
+    />
+  </div>
 </template>
 
 <script setup>
@@ -27,6 +35,37 @@ const emit = defineEmits(['update:modelValue'])
 const editorRef = ref(null)
 let vditor = null
 let isInitialized = false
+const videoInputRef = ref(null)
+
+const handleVideoUpload = async (event) => {
+  const file = event.target.files[0]
+  if (!file || !vditor) return
+
+  const formData = new FormData()
+  formData.append('video', file)
+
+  try {
+    const token = localStorage.getItem('token')
+    const response = await fetch('/api/upload/video', {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: formData
+    })
+
+    const data = await response.json()
+    if (data.url) {
+      vditor.insertValue(`<video src="${data.url}" controls></video>`)
+    } else {
+      console.error('Upload failed:', data.error)
+    }
+  } catch (error) {
+    console.error('Video upload failed:', error)
+  }
+
+  event.target.value = ''
+}
 
 const initVditor = async () => {
   if (!editorRef.value) return
@@ -50,76 +89,101 @@ const initVditor = async () => {
     toolbar: [
       {
         name: 'headings',
-        tip: '标题'
+        tip: '标题',
+        dataTooltip: '标题'
       },
       {
         name: 'bold',
-        tip: '加粗'
+        tip: '加粗',
+        dataTooltip: '加粗'
       },
       {
         name: 'italic',
-        tip: '斜体'
+        tip: '斜体',
+        dataTooltip: '斜体'
       },
       {
         name: 'strike',
-        tip: '删除线'
+        tip: '删除线',
+        dataTooltip: '删除线'
       },
       '|',
       {
         name: 'line',
-        tip: '分割线'
+        tip: '分割线',
+        dataTooltip: '分割线'
       },
       {
         name: 'quote',
-        tip: '引用'
+        tip: '引用',
+        dataTooltip: '引用'
       },
       {
         name: 'list',
-        tip: '无序列表'
+        tip: '无序列表',
+        dataTooltip: '无序列表'
       },
       {
         name: 'ordered-list',
-        tip: '有序列表'
+        tip: '有序列表',
+        dataTooltip: '有序列表'
       },
       {
         name: 'check',
-        tip: '任务列表'
+        tip: '任务列表',
+        dataTooltip: '任务列表'
       },
       '|',
       {
         name: 'code',
-        tip: '代码块'
+        tip: '代码块',
+        dataTooltip: '代码块'
       },
       {
         name: 'inline-code',
-        tip: '行内代码'
+        tip: '行内代码',
+        dataTooltip: '行内代码'
       },
       {
         name: 'link',
-        tip: '链接'
+        tip: '链接',
+        dataTooltip: '链接'
       },
       {
         name: 'table',
-        tip: '表格'
+        tip: '表格',
+        dataTooltip: '表格'
       },
       '|',
       {
         name: 'upload',
-        tip: '上传图片'
+        tip: '上传图片',
+        dataTooltip: '上传图片'
+      },
+      {
+        tip: '上传视频',
+        dataTooltip: '上传视频',
+        icon: '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" fill="currentColor"></path></svg>',
+        click () {
+          videoInputRef.value?.click()
+        }
       },
       '|',
       {
         name: 'undo',
-        tip: '撤销'
+        tip: '撤销',
+        dataTooltip: '撤销'
       },
       {
         name: 'redo',
-        tip: '重做'
+        tip: '重做',
+        dataTooltip: '重做'
       },
       '|',
       {
         name: 'preview',
-        tip: '预览'
+        tip: '预览',
+        dataTooltip: '预览'
       }
     ],
     toolbarConfig: {
@@ -137,7 +201,7 @@ const initVditor = async () => {
         try {
           const res = JSON.parse(msg)
           if (res.url) {
-            vditor.insertValue(`![图片](${res.url})`)
+            vditor.insertValue(`![${res.url}](${res.url})`)
           }
         } catch (e) {
           console.error('Parse upload response failed:', e)
@@ -188,7 +252,7 @@ defineExpose({
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 8px;
   min-height: 500px;
-  overflow: hidden;
+  overflow: visible;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -260,12 +324,12 @@ defineExpose({
   line-height: 1.6;
 }
 
-:deep(.vditor-tooltipped) {
+:deep(.vditor-toolbar__item[data-tip]) {
   position: relative;
 }
 
-:deep(.vditor-tooltipped::after) {
-  content: attr(data-tooltip);
+:deep(.vditor-toolbar__item[data-tip]:hover::after) {
+  content: attr(data-tip);
   position: absolute;
   bottom: 100%;
   left: 50%;
@@ -276,17 +340,12 @@ defineExpose({
   font-size: 12px;
   white-space: nowrap;
   border-radius: 4px;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s, visibility 0.2s;
-  z-index: 1000;
-  pointer-events: none;
-  margin-bottom: 6px;
-}
-
-:deep(.vditor-tooltipped:hover::after) {
   opacity: 1;
   visibility: visible;
+  transition: opacity 0.2s, visibility 0.2s;
+  z-index: 9999;
+  pointer-events: none;
+  margin-bottom: 8px;
 }
 
 :deep(.vditor-preview__action) {

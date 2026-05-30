@@ -37,7 +37,7 @@
               variant="outlined"
               class="mb-4"
             ></v-text-field>
-            <v-btn color="primary" size="large" @click="$emit('save-site')">
+            <v-btn color="primary" size="large" @click="$emit('save-site', localSiteConfig)">
               <v-icon start>mdi-content-save</v-icon>
               保存配置
             </v-btn>
@@ -106,11 +106,11 @@
               </v-col>
             </v-row>
             <div class="smtp-actions">
-              <v-btn color="primary" size="large" @click="$emit('save-smtp')">
+              <v-btn color="primary" size="large" @click="$emit('save-smtp', localSmtpConfig)">
                 <v-icon start>mdi-content-save</v-icon>
                 保存配置
               </v-btn>
-              <v-btn variant="outlined" size="large" @click="$emit('test-smtp')">
+              <v-btn variant="outlined" size="large" @click="$emit('test-smtp', localSmtpConfig)">
                 <v-icon start>mdi-send</v-icon>
                 发送测试邮件
               </v-btn>
