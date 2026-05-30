@@ -65,7 +65,26 @@ const routes = [
     { path: '/article/:id', component: Article, name: 'Article' },
     { path: '/create', component: CreateArticle, name: 'CreateArticle' },
     { path: '/profile', component: Profile, name: 'Profile' },
-    { path: '/admin', component: Admin, name: 'Admin' },
+    { 
+      path: '/admin', 
+      component: Admin, 
+      name: 'Admin',
+      children: [
+        { path: '', redirect: { name: 'AdminIndex' } },
+        { path: 'index', name: 'AdminIndex' },
+        { path: 'users', name: 'AdminUsers' },
+        { path: 'articles', name: 'AdminArticles' },
+        { path: 'comments', name: 'AdminComments' },
+        { path: 'categories', name: 'AdminCategories' },
+        { path: 'titles', name: 'AdminTitles' },
+        { path: 'sidebar', name: 'AdminSidebar' },
+        { path: 'deletions', name: 'AdminDeletions' },
+        { path: 'announcement', name: 'AdminAnnouncement' },
+        { path: 'siteconfig', name: 'AdminSiteConfig' },
+        { path: 'smtpconfig', name: 'AdminSMTPConfig' },
+        { path: 'notifications', name: 'AdminNotifications' }
+      ]
+    },
     { path: '/category/:id', component: Category, name: 'Category' },
     { path: '/video', component: VideoPlayerPage, name: 'VideoPlayer' },
     { path: '/notifications', component: Notifications, name: 'Notifications' },

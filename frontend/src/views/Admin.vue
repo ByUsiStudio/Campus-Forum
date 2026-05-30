@@ -1,743 +1,239 @@
 <template>
-  <div v-if="isInitialized && isAdmin" class="admin-layout">
-    <v-navigation-drawer
-      v-model="drawer"
-      temporary
-      fixed
-      app
-      class="admin-sidebar"
-    >
-      <v-list-item class="px-4">
-        <v-list-item-content>
-          <v-list-item-title class="text-h6" style="color: rgb(var(--v-theme-primary));">管理后台</v-list-item-title>
-        </v-list-item-content>
-      </v-list-item>
-      <v-divider></v-divider>
-      <v-list nav>
-        <v-list-item
-          v-for="item in menuItems"
-          :key="item.value"
-          :value="item.value"
-          :active="activeTab === item.value"
-          @click="activeTab = item.value"
-        >
-          <template v-slot:prepend>
-            <v-icon>{{ item.icon }}</v-icon>
-          </template>
-          <v-list-item-title>{{ item.title }}</v-list-item-title>
-          <v-badge
-            v-if="item.badge"
-            :content="item.badge"
-            color="error"
-            :model-value="item.badge > 0"
-          ></v-badge>
-        </v-list-item>
-      </v-list>
-    </v-navigation-drawer>
+  <v-app v-if="isInitialized && isAdmin">
+    <v-app-bar flat class="admin-header" height="72">
+      <div class="header-content">
+        <div class="header-brand">
+          <v-icon size="28" color="primary" class="brand-icon">mdi-shield-crown</v-icon>
+          <div class="brand-text">
+            <div class="brand-title">管理后台</div>
+            <div class="brand-subtitle">校园论坛管理中心</div>
+          </div>
+        </div>
 
-    <v-app-bar app fixed class="admin-app-bar">
-      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title style="color: rgb(var(--v-theme-primary));">管理后台</v-toolbar-title>
+        <v-tabs v-model="activeTab" class="header-tabs" slider-color="primary">
+          <v-tab value="overview" class="tab-item">
+            <v-icon size="20" class="tab-icon">mdi-view-dashboard</v-icon>
+            <span>概览</span>
+          </v-tab>
+          <v-tab value="users" class="tab-item">
+            <v-icon size="20" class="tab-icon">mdi-account-group</v-icon>
+            <span>用户</span>
+          </v-tab>
+          <v-tab value="articles" class="tab-item">
+            <v-icon size="20" class="tab-icon">mdi-file-document-edit</v-icon>
+            <span>文章</span>
+          </v-tab>
+          <v-tab value="comments" class="tab-item">
+            <v-icon size="20" class="tab-icon">mdi-comment-text-multiple</v-icon>
+            <span>评论</span>
+          </v-tab>
+          <v-tab value="categories" class="tab-item">
+            <v-icon size="20" class="tab-icon">mdi-shape</v-icon>
+            <span>分区</span>
+          </v-tab>
+          <v-tab value="titles" class="tab-item">
+            <v-icon size="20" class="tab-icon">mdi-medal</v-icon>
+            <span>头衔</span>
+          </v-tab>
+          <v-tab value="content" class="tab-item">
+            <v-icon size="20" class="tab-icon">mdi-web</v-icon>
+            <span>内容</span>
+            <v-chip v-if="deletionRequests.length" size="x-small" color="error" class="tab-badge">
+              {{ deletionRequests.length }}
+            </v-chip>
+          </v-tab>
+          <v-tab value="system" class="tab-item">
+            <v-icon size="20" class="tab-icon">mdi-cog</v-icon>
+            <span>系统</span>
+          </v-tab>
+        </v-tabs>
+
+        <div class="header-actions">
+          <v-btn icon variant="text" size="small" @click="goToHome">
+            <v-icon>mdi-home</v-icon>
+          </v-btn>
+          <v-btn icon variant="text" size="small" @click="handleRefresh">
+            <v-icon :class="{ 'spin': isRefreshing }">mdi-refresh</v-icon>
+          </v-btn>
+        </div>
+      </div>
     </v-app-bar>
 
     <v-main class="admin-main">
-      <div class="admin-content">
-        <v-window-item value="overview">
-          <v-row>
-            <v-col cols="12" sm="6" md="3">
-              <v-card color="primary" class="pa-4">
-                <div class="text-h3 text-white">{{ statistics.user_count }}</div>
-                <div class="text-body-1 text-white opacity-80">用户总数</div>
-              </v-card>
-            </v-col>
-            <v-col cols="12" sm="6" md="3">
-              <v-card color="success" class="pa-4">
-                <div class="text-h3 text-white">{{ statistics.article_count }}</div>
-                <div class="text-body-1 text-white opacity-80">文章总数</div>
-              </v-card>
-            </v-col>
-            <v-col cols="12" sm="6" md="3">
-              <v-card color="info" class="pa-4">
-                <div class="text-h3 text-white">{{ statistics.comment_count }}</div>
-                <div class="text-body-1 text-white opacity-80">评论总数</div>
-              </v-card>
-            </v-col>
-            <v-col cols="12" sm="6" md="3">
-              <v-card color="warning" class="pa-4">
-                <div class="text-h3 text-white">{{ statistics.view_count }}</div>
-                <div class="text-body-1 text-white opacity-80">总浏览量</div>
-              </v-card>
-            </v-col>
-          </v-row>
-        </v-window-item>
+      <v-container fluid class="pa-6">
+        <v-window v-model="activeTab">
+          <v-window-item value="overview">
+            <OverviewPanel :statistics="statistics" :loading="loading" @refresh="loadStatistics" />
+          </v-window-item>
 
-        <v-window-item value="users">
-          <v-card variant="outlined" class="pa-4 mb-4">
-            <div class="text-body-2 text-medium-emphasis mb-2">用户总数：{{ users.length }}</div>
-          </v-card>
+          <v-window-item value="users">
+            <UsersPanel
+              :users="users"
+              :loading="loading"
+              :current-user-id="currentUserId"
+              :current-user-role="currentUserRole"
+              @edit-role="showEditRoleDialog"
+              @ban="showBanDialog"
+              @unban="handleUnban"
+              @delete="handleDeleteUser"
+              @refresh="loadUsers"
+            />
+          </v-window-item>
 
-          <v-table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>用户</th>
-                <th>QQ号码</th>
-                <th>角色</th>
-                <th>状态</th>
-                <th>注册时间</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="user in users" :key="user.id">
-                <td>{{ user.id }}</td>
-                <td>
-                  <UserAvatar :user="user" :size="32" />
-                </td>
-                <td>{{ user.qq_number }}</td>
-                <td>
-                  <v-chip size="small" :color="user.role === 'admin' ? 'error' : user.role === 'system' ? 'warning' : 'default'">
-                    {{ user.role === 'admin' ? '管理员' : user.role === 'system' ? '系统管理员' : '用户' }}
-                  </v-chip>
-                </td>
-                <td>
-                  <v-chip size="small" :color="user.status === 'banned' ? 'error' : 'success'">
-                    {{ user.status === 'banned' ? '已封禁' : '正常' }}
-                  </v-chip>
-                </td>
-                <td>{{ formatDate(user.created_at) }}</td>
-                <td>
-                  <v-btn variant="text" size="small" color="primary" @click="showEditRoleDialog(user)" v-if="currentUserId && user.id !== currentUserId">
-                    修改角色
-                  </v-btn>
-                  <v-btn variant="text" size="small" color="warning" @click="showBanDialog(user)" v-if="currentUserId && user.id !== currentUserId && user.status !== 'banned'">
-                    封禁
-                  </v-btn>
-                  <v-btn variant="text" size="small" color="success" @click="handleUnban(user)" v-if="currentUserId && user.id !== currentUserId && user.status === 'banned'">
-                    解封
-                  </v-btn>
-                  <v-btn variant="text" size="small" color="error" @click="handleDeleteUser(user)" v-if="currentUserId && user.id !== currentUserId">
-                    删除
-                  </v-btn>
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
-        </v-window-item>
+          <v-window-item value="articles">
+            <ArticlesPanel
+              :articles="articles"
+              :loading="loading"
+              :page="articlePage"
+              :total-pages="articleTotalPages"
+              :filter="articleFilter"
+              :status-options="articleStatusOptions"
+              @change-status="showStatusDialog"
+              @refresh="loadArticles"
+              @update:page="articlePage = $event; loadArticles()"
+              @update:filter="articleFilter = $event; articlePage = 1; loadArticles()"
+            />
+          </v-window-item>
 
-        <v-window-item value="articles">
-          <v-card variant="outlined" class="pa-4 mb-4">
-            <v-row align="center">
-              <v-col cols="12" md="4">
-                <v-select
-                  v-model="articleFilter"
-                  :items="articleStatusOptions"
-                  label="筛选状态"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                ></v-select>
-              </v-col>
-              <v-col cols="12" md="8" class="text-right">
-                <v-pagination
-                  v-model="articlePage"
-                  :length="articleTotalPages"
-                  :total-visible="5"
-                  density="compact"
-                ></v-pagination>
-              </v-col>
-            </v-row>
-          </v-card>
+          <v-window-item value="comments">
+            <CommentsPanel
+              :comments="allComments"
+              :loading="loading"
+              @delete="handleDeleteComment"
+              @refresh="loadComments"
+            />
+          </v-window-item>
 
-          <v-table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>标题</th>
-                <th>作者</th>
-                <th>分区</th>
-                <th>点赞</th>
-                <th>浏览</th>
-                <th>状态</th>
-                <th>发布时间</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="article in articles" :key="article.id">
-                <td>{{ article.id }}</td>
-                <td class="text-truncate" style="max-width: 200px;">{{ article.title }}</td>
-                <td>{{ article.User?.display_name }}</td>
-                <td>{{ article.Category?.name }}</td>
-                <td>{{ article.like_count }}</td>
-                <td>{{ article.view_count }}</td>
-                <td>
-                  <v-chip size="small" :color="getStatusColor(article.status)">
-                    {{ getStatusText(article.status) }}
-                  </v-chip>
-                </td>
-                <td>{{ formatDate(article.created_at) }}</td>
-                <td>
-                  <v-btn variant="text" size="small" color="primary" @click="showStatusDialog(article)">
-                    修改状态
-                  </v-btn>
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
-        </v-window-item>
+          <v-window-item value="categories">
+            <CategoriesPanel
+              :categories="categories"
+              :loading="loading"
+              @add="addCategory"
+              @edit="showEditCategoryDialog"
+              @delete="handleDeleteCategory"
+              @refresh="loadCategories"
+            />
+          </v-window-item>
 
-        <v-window-item value="comments">
-          <v-card variant="outlined" class="pa-4 mb-4">
-            <v-row align="center">
-              <v-col cols="12" md="6">
-                <div class="text-body-2">评论总数：{{ commentTotal }}</div>
-              </v-col>
-              <v-col cols="12" md="6" class="text-right">
-                <v-pagination
-                  v-model="commentPage"
-                  :length="commentTotalPages"
-                  :total-visible="5"
-                  density="compact"
-                ></v-pagination>
-              </v-col>
-            </v-row>
-          </v-card>
+          <v-window-item value="titles">
+            <TitlesPanel
+              :titles="titles"
+              :users="users"
+              :loading="loading"
+              @add-title="addTitle"
+              @grant="grantTitle"
+              @revoke="revokeTitle"
+              @delete-title="handleDeleteTitle"
+              @refresh="loadTitles"
+            />
+          </v-window-item>
 
-          <v-list lines="three">
-            <v-list-item v-for="comment in allComments" :key="comment.id" class="px-0">
-              <template v-slot:prepend>
-                <UserAvatar :user="comment.User || {}" :size="40" />
-              </template>
+          <v-window-item value="content">
+            <ContentPanel
+              :sidebar-items="sidebarItems"
+              :deletion-requests="deletionRequests"
+              :announcement="announcementContent"
+              @add-sidebar-item="addSidebarItem"
+              @remove-sidebar-item="removeSidebarItem"
+              @save-sidebar="saveSidebarConfig"
+              @approve-deletion="approveDeletion"
+              @reject-deletion="rejectDeletion"
+              @save-announcement="saveAnnouncement"
+              @refresh-sidebar="loadSidebarConfig"
+              @refresh-deletions="loadDeletionRequests"
+              @refresh-announcement="loadAnnouncement"
+            />
+          </v-window-item>
 
-              <v-list-item-title>
-                {{ comment.User?.display_name }}
-                <span class="text-caption text-medium-emphasis ml-2">回复文章：{{ comment.Article?.title }}</span>
-              </v-list-item-title>
-              <v-list-item-subtitle class="mt-1">
-                {{ comment.content }}
-              </v-list-item-subtitle>
-              <v-list-item-subtitle class="mt-1">
-                {{ formatDate(comment.created_at) }}
-              </v-list-item-subtitle>
-
-              <template v-slot:append>
-                <v-btn variant="text" size="small" color="error" @click="handleDeleteComment(comment.id)">
-                  删除
-                </v-btn>
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-window-item>
-
-        <v-window-item value="categories">
-          <v-card variant="outlined" class="pa-4 mb-4">
-            <v-card-title class="text-subtitle-1 pa-0 mb-4">添加新分区</v-card-title>
-            <v-form @submit.prevent="addCategory">
-              <v-row>
-                <v-col cols="12" md="4">
-                  <v-text-field
-                    v-model="categoryForm.name"
-                    label="分区名称"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-text-field
-                    v-model="categoryForm.description"
-                    label="描述"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="2">
-                  <v-btn type="submit" color="primary" block>添加</v-btn>
-                </v-col>
-              </v-row>
-            </v-form>
-          </v-card>
-
-          <v-list>
-            <v-list-item v-for="cat in categories" :key="cat.id">
-              <template v-slot:prepend>
-                <v-avatar color="primary" size="40">
-                  <span>{{ cat.sort_order || 0 }}</span>
-                </v-avatar>
-              </template>
-
-              <v-list-item-title class="font-weight-bold">{{ cat.name }}</v-list-item-title>
-              <v-list-item-subtitle>{{ cat.description || '无描述' }}</v-list-item-subtitle>
-
-              <template v-slot:append>
-                <v-btn variant="text" size="small" color="primary" @click="showEditCategoryDialog(cat)">
-                  编辑
-                </v-btn>
-                <v-btn variant="text" size="small" color="error" @click="handleDeleteCategory(cat.id)">
-                  删除
-                </v-btn>
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-window-item>
-
-        <v-window-item value="titles">
-          <v-card variant="outlined" class="pa-4 mb-4">
-            <v-card-title class="text-subtitle-1 pa-0 mb-4">添加新头衔</v-card-title>
-            <v-form @submit.prevent="addTitle">
-              <v-row>
-                <v-col cols="12" md="3">
-                  <v-text-field
-                    v-model="titleForm.name"
-                    label="头衔名称"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="3">
-                  <v-text-field
-                    v-model="titleForm.description"
-                    label="描述"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="2">
-                  <v-text-field
-                    v-model="titleForm.color"
-                    label="颜色"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="2">
-                  <v-text-field
-                    v-model="titleForm.icon"
-                    label="图标"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="2">
-                  <v-btn type="submit" color="primary" block>添加</v-btn>
-                </v-col>
-              </v-row>
-            </v-form>
-          </v-card>
-
-          <v-card variant="outlined" class="pa-4 mb-4">
-            <v-card-title class="text-subtitle-1 pa-0 mb-4">授予头衔</v-card-title>
-            <v-form @submit.prevent="grantTitle">
-              <v-row>
-                <v-col cols="12" md="4">
-                  <v-select
-                    v-model="grantForm.user_id"
-                    :items="users"
-                    item-title="display_name"
-                    item-value="id"
-                    label="选择用户"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-select>
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-select
-                    v-model="grantForm.title_id"
-                    :items="titles"
-                    item-title="name"
-                    item-value="id"
-                    label="选择头衔"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-select>
-                </v-col>
-                <v-col cols="12" md="2">
-                  <v-text-field
-                    v-model="grantForm.reason"
-                    label="授予原因"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="2">
-                  <v-btn type="submit" color="primary" block>授予</v-btn>
-                </v-col>
-              </v-row>
-            </v-form>
-          </v-card>
-
-          <v-list>
-            <v-list-item v-for="title in titles" :key="title.id">
-              <template v-slot:prepend>
-                <v-chip :color="title.color" size="small">
-                  <v-icon v-if="title.icon" start size="x-small">{{ title.icon }}</v-icon>
-                  {{ title.name }}
-                </v-chip>
-              </template>
-
-              <v-list-item-title>{{ title.name }}</v-list-item-title>
-              <v-list-item-subtitle>{{ title.description || '无描述' }}</v-list-item-subtitle>
-
-              <template v-slot:append>
-                <v-btn variant="text" size="small" color="error" @click="handleDeleteTitle(title.id)">
-                  删除
-                </v-btn>
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-window-item>
-
-        <v-window-item value="sidebar">
-          <v-card-text class="pa-0">
-            <p class="text-body-2 text-medium-emphasis mb-4">
-              配置侧边栏链接列表
-            </p>
-
-            <div v-for="(item, index) in sidebarItems" :key="index" class="d-flex gap-2 mb-3 align-center">
-              <v-text-field
-                v-model="item.title"
-                label="标题"
-                variant="outlined"
-                density="compact"
-                hide-details
-                class="flex-grow-1"
-              ></v-text-field>
-              <v-text-field
-                v-model="item.link"
-                label="链接"
-                variant="outlined"
-                density="compact"
-                hide-details
-                class="flex-grow-1"
-              ></v-text-field>
-              <v-text-field
-                v-model="item.icon"
-                label="图标"
-                variant="outlined"
-                density="compact"
-                hide-details
-                style="max-width: 120px;"
-              ></v-text-field>
-              <v-btn icon variant="text" color="error" @click="removeSidebarItem(index)">
-                <v-icon>mdi-delete</v-icon>
-              </v-btn>
-            </div>
-
-            <div class="d-flex gap-2 mt-4">
-              <v-btn variant="outlined" @click="addSidebarItem">
-                <v-icon start>mdi-plus</v-icon>
-                添加链接
-              </v-btn>
-              <v-btn color="primary" @click="saveSidebarConfig">
-                <v-icon start>mdi-content-save</v-icon>
-                保存配置
-              </v-btn>
-            </div>
-          </v-card-text>
-        </v-window-item>
-
-        <v-window-item value="deletions">
-          <div v-if="deletionRequests.length === 0" class="text-center pa-8 text-medium-emphasis">
-            暂无待审核申请
-          </div>
-
-          <v-card v-for="req in deletionRequests" :key="req.id" class="mb-4 pa-4" variant="outlined">
-            <v-card-text>
-              <div class="d-flex justify-space-between align-start">
-                <div>
-                  <div class="text-h6 mb-2">{{ req.article?.title || '文章已删除' }}</div>
-                  <v-list-item-subtitle class="mb-1">
-                    <v-icon size="small">mdi-account</v-icon>
-                    申请人：{{ req.user?.display_name }}
-                  </v-list-item-subtitle>
-                  <v-list-item-subtitle class="mb-1">
-                    <v-icon size="small">mdi-delete</v-icon>
-                    删除原因：{{ req.reason }}
-                  </v-list-item-subtitle>
-                  <v-list-item-subtitle>
-                    <v-icon size="small">mdi-clock</v-icon>
-                    申请时间：{{ formatDate(req.created_at) }}
-                  </v-list-item-subtitle>
-                </div>
-                <div class="d-flex gap-2">
-                  <v-btn color="primary" variant="flat" @click="approveDeletion(req.id)">
-                    批准删除
-                  </v-btn>
-                  <v-btn color="secondary" variant="outlined" @click="rejectDeletion(req.id)">
-                    拒绝
-                  </v-btn>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-window-item>
-
-        <v-window-item value="announcement">
-          <v-card-text class="pa-0">
-            <v-textarea
-              v-model="announcementContent"
-              label="公告内容（支持Markdown）"
-              variant="outlined"
-              rows="10"
-              placeholder="输入公告内容..."
-              class="mb-4"
-            ></v-textarea>
-
-            <v-btn color="primary" @click="saveAnnouncement" class="mb-4">
-              <v-icon start>mdi-content-save</v-icon>
-              保存公告
-            </v-btn>
-          </v-card-text>
-        </v-window-item>
-
-        <v-window-item value="siteconfig">
-          <v-card-text class="pa-0">
-            <v-alert type="info" variant="tonal" class="mb-4">
-              <v-icon start>mdi-information</v-icon>
-              修改网站标题后，用户将在浏览器标签页和PWA安装提示中看到新的标题
-            </v-alert>
-
-            <v-text-field
-              v-model="siteConfigForm.siteTitle"
-              label="网站标题"
-              variant="outlined"
-              hint="显示在浏览器标签页和PWA安装提示中的标题"
-              persistent-hint
-              class="mb-4"
-              prepend-inner-icon="mdi-format-title"
-            ></v-text-field>
-
-            <v-btn color="primary" @click="saveSiteConfig">
-              <v-icon start>mdi-content-save</v-icon>
-              保存网站配置
-            </v-btn>
-          </v-card-text>
-        </v-window-item>
-
-        <v-window-item value="smtpconfig">
-          <v-card-text class="pa-0">
-            <v-alert type="info" variant="tonal" class="mb-4">
-              <v-icon start>mdi-information</v-icon>
-              SMTP配置用于发送找回密码等邮件通知，配置完成后请测试发送
-            </v-alert>
-
-            <v-text-field
-              v-model="smtpConfigForm.host"
-              label="SMTP服务器地址"
-              variant="outlined"
-              hint="如: smtp.qq.com"
-              persistent-hint
-              class="mb-4"
-              prepend-inner-icon="mdi-server"
-            ></v-text-field>
-
-            <v-text-field
-              v-model="smtpConfigForm.port"
-              label="SMTP端口"
-              variant="outlined"
-              type="number"
-              hint="QQ邮箱默认: 465"
-              persistent-hint
-              class="mb-4"
-              prepend-inner-icon="mdi-network-port"
-            ></v-text-field>
-
-            <v-text-field
-              v-model="smtpConfigForm.username"
-              label="邮箱账号"
-              variant="outlined"
-              hint="完整邮箱地址"
-              persistent-hint
-              class="mb-4"
-              prepend-inner-icon="mdi-email"
-            ></v-text-field>
-
-            <v-text-field
-              v-model="smtpConfigForm.password"
-              label="授权码/密码"
-              variant="outlined"
-              type="password"
-              hint="QQ邮箱请使用授权码"
-              persistent-hint
-              class="mb-4"
-              prepend-inner-icon="mdi-lock"
-            ></v-text-field>
-
-            <v-text-field
-              v-model="smtpConfigForm.from"
-              label="发件人邮箱"
-              variant="outlined"
-              hint="显示给收件人的邮箱地址"
-              persistent-hint
-              class="mb-4"
-              prepend-inner-icon="mdi-mail-send"
-            ></v-text-field>
-
-            <v-text-field
-              v-model="smtpConfigForm.fromName"
-              label="发件人名称"
-              variant="outlined"
-              hint="显示给收件人的名称"
-              persistent-hint
-              class="mb-4"
-              prepend-inner-icon="mdi-user"
-            ></v-text-field>
-
-            <v-switch
-              v-model="smtpConfigForm.ssl"
-              label="启用SSL"
-              class="mb-4"
-              prepend-icon="mdi-lock-check"
-            ></v-switch>
-
-            <div class="d-flex gap-4">
-              <v-btn color="primary" @click="saveSmtpConfig">
-                <v-icon start>mdi-content-save</v-icon>
-                保存SMTP配置
-              </v-btn>
-              <v-btn color="info" @click="testSmtpConfig">
-                <v-icon start>mdi-mail-check</v-icon>
-                测试发送
-              </v-btn>
-            </div>
-          </v-card-text>
-        </v-window-item>
-
-        <v-window-item value="notifications">
-          <v-card-text class="pa-0">
-            <v-card variant="outlined" class="pa-4 mb-4">
-              <v-card-title class="text-subtitle-1 pa-0 mb-4">发送系统通知</v-card-title>
-              <v-form @submit.prevent="handleSendNotification">
-                <v-row>
-                  <v-col cols="12" md="3">
-                    <v-select
-                      v-model="notificationForm.type"
-                      :items="notificationTypes"
-                      label="通知类型"
-                      variant="outlined"
-                      density="compact"
-                      hide-details
-                    ></v-select>
-                  </v-col>
-                  <v-col cols="12" md="3">
-                    <v-select
-                      v-model="notificationForm.user_id"
-                      :items="users"
-                      item-title="display_name"
-                      item-value="id"
-                      label="目标用户"
-                      variant="outlined"
-                      density="compact"
-                      hide-details
-                    ></v-select>
-                  </v-col>
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                      v-model="notificationForm.title"
-                      label="通知标题"
-                      variant="outlined"
-                      density="compact"
-                      hide-details
-                    ></v-text-field>
-                  </v-col>
-                  <v-col cols="12" md="2">
-                    <v-btn type="submit" color="primary" block>发送</v-btn>
-                  </v-col>
-                </v-row>
-                <v-row class="mt-2">
-                  <v-col cols="12">
-                    <v-textarea
-                      v-model="notificationForm.content"
-                      label="通知内容"
-                      variant="outlined"
-                      rows="3"
-                      hide-details
-                    ></v-textarea>
-                  </v-col>
-                </v-row>
-              </v-form>
-            </v-card>
-
-            <v-card variant="outlined" class="pa-4">
-              <v-card-title class="text-subtitle-1 pa-0 mb-4">历史通知</v-card-title>
-              <v-list>
-                <v-list-item v-for="notif in notifications" :key="notif.id">
-                  <template v-slot:prepend>
-                    <v-icon :color="notif.type === 'system' ? 'primary' : notif.type === 'warning' ? 'warning' : 'success'">
-                      {{ notif.type === 'system' ? 'mdi-bell' : notif.type === 'warning' ? 'mdi-alert' : 'mdi-check-circle' }}
-                    </v-icon>
-                  </template>
-                  <v-list-item-title>{{ notif.title }}</v-list-item-title>
-                  <v-list-item-subtitle>{{ notif.content }}</v-list-item-subtitle>
-                  <template v-slot:append>
-                    <span class="text-caption text-medium-emphasis">{{ formatDate(notif.created_at) }}</span>
-                  </template>
-                </v-list-item>
-              </v-list>
-            </v-card>
-          </v-card-text>
-        </v-window-item>
-      </div>
+          <v-window-item value="system">
+            <SystemPanel
+              :site-config="siteConfigForm"
+              :smtp-config="smtpConfigForm"
+              :notifications="notifications"
+              :notification-form="notificationForm"
+              :notification-types="notificationTypes"
+              @save-site="saveSiteConfig"
+              @save-smtp="saveSmtpConfig"
+              @test-smtp="testSmtpConfig"
+              @send-notification="handleSendNotification"
+              @delete-notification="deleteNotification"
+              @refresh-site="loadSiteConfig"
+              @refresh-smtp="loadSmtpConfig"
+              @refresh-notifications="loadNotifications"
+            />
+          </v-window-item>
+        </v-window>
+      </v-container>
     </v-main>
 
-    <v-dialog v-model="editRoleDialog.show" max-width="400">
-      <v-card>
-        <v-card-title>修改用户角色</v-card-title>
-        <v-card-text>
-          <div class="mb-4">用户：{{ editRoleDialog.user?.display_name }}</div>
-          <v-select
-            v-model="editRoleDialog.role"
-            :items="[
-              { title: '普通用户', value: 'user' },
-              { title: '系统管理员', value: 'system' },
-              { title: '管理员', value: 'admin' }
-            ]"
-            label="选择角色"
-            variant="outlined"
-          ></v-select>
+    <v-dialog v-model="editRoleDialog.show" max-width="480">
+      <v-card class="dialog-card">
+        <v-card-title class="dialog-title">
+          <v-icon class="title-icon">mdi-account-edit</v-icon>
+          修改用户角色
+        </v-card-title>
+        <v-card-text class="dialog-body">
+          <div class="user-info-card">
+            <UserAvatar :user="editRoleDialog.user || {}" :size="48" />
+            <div class="user-info-text">
+              <div class="user-name">{{ editRoleDialog.user?.display_name }}</div>
+              <div class="user-meta">ID: {{ editRoleDialog.user?.id }}</div>
+            </div>
+          </div>
+          <v-radio-group v-model="editRoleDialog.role" class="mt-4">
+            <v-radio label="普通用户" value="user" color="primary"></v-radio>
+            <v-radio label="管理员" value="admin" color="error"></v-radio>
+            <v-radio label="系统管理员" value="system" color="warning"></v-radio>
+          </v-radio-group>
         </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
+        <v-card-actions class="dialog-actions">
           <v-btn variant="text" @click="editRoleDialog.show = false">取消</v-btn>
-          <v-btn color="primary" @click="handleEditRole">确认</v-btn>
+          <v-btn color="primary" variant="flat" @click="handleEditRole">确认修改</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="banDialog.show" max-width="400">
-      <v-card>
-        <v-card-title>封禁用户</v-card-title>
-        <v-card-text>
-          <div class="mb-4">用户：{{ banDialog.user?.display_name }}</div>
+    <v-dialog v-model="banDialog.show" max-width="480">
+      <v-card class="dialog-card">
+        <v-card-title class="dialog-title">
+          <v-icon class="title-icon text-error">mdi-gavel</v-icon>
+          封禁用户
+        </v-card-title>
+        <v-card-text class="dialog-body">
+          <div class="user-info-card">
+            <UserAvatar :user="banDialog.user || {}" :size="48" />
+            <div class="user-info-text">
+              <div class="user-name">{{ banDialog.user?.display_name }}</div>
+              <div class="user-meta">即将被封禁</div>
+            </div>
+          </div>
           <v-textarea
             v-model="banDialog.reason"
             label="封禁原因"
+            placeholder="请输入封禁原因..."
             variant="outlined"
             rows="3"
+            class="mt-4"
           ></v-textarea>
         </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
+        <v-card-actions class="dialog-actions">
           <v-btn variant="text" @click="banDialog.show = false">取消</v-btn>
-          <v-btn color="error" @click="handleBan">封禁</v-btn>
+          <v-btn color="error" variant="flat" @click="handleBan">确认封禁</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="statusDialog.show" max-width="400">
-      <v-card>
-        <v-card-title>修改文章状态</v-card-title>
-        <v-card-text>
-          <div class="mb-4">文章：{{ statusDialog.article?.title }}</div>
+    <v-dialog v-model="statusDialog.show" max-width="480">
+      <v-card class="dialog-card">
+        <v-card-title class="dialog-title">
+          <v-icon class="title-icon">mdi-file-edit</v-icon>
+          修改文章状态
+        </v-card-title>
+        <v-card-text class="dialog-body">
+          <div class="article-preview">
+            <div class="preview-label">文章</div>
+            <div class="preview-title">{{ statusDialog.article?.title }}</div>
+          </div>
           <v-select
             v-model="statusDialog.status"
             :items="[
@@ -747,20 +243,23 @@
             ]"
             label="选择状态"
             variant="outlined"
+            class="mt-4"
           ></v-select>
         </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
+        <v-card-actions class="dialog-actions">
           <v-btn variant="text" @click="statusDialog.show = false">取消</v-btn>
-          <v-btn color="primary" @click="handleEditStatus">确认</v-btn>
+          <v-btn color="primary" variant="flat" @click="handleEditStatus">确认</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="editCategoryDialog.show" max-width="400">
-      <v-card>
-        <v-card-title>编辑分区</v-card-title>
-        <v-card-text>
+    <v-dialog v-model="editCategoryDialog.show" max-width="480">
+      <v-card class="dialog-card">
+        <v-card-title class="dialog-title">
+          <v-icon class="title-icon">mdi-folder-edit</v-icon>
+          编辑分区
+        </v-card-title>
+        <v-card-text class="dialog-body">
           <v-text-field
             v-model="editCategoryDialog.name"
             label="分区名称"
@@ -773,19 +272,32 @@
             variant="outlined"
           ></v-text-field>
         </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
+        <v-card-actions class="dialog-actions">
           <v-btn variant="text" @click="editCategoryDialog.show = false">取消</v-btn>
-          <v-btn color="primary" @click="handleEditCategory">保存</v-btn>
+          <v-btn color="primary" variant="flat" @click="handleEditCategory">保存</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </div>
+  </v-app>
 
-  <v-card v-else-if="isInitialized && !isAdmin" class="pa-8 text-center">
-    <v-icon size="64" color="error" class="mb-4">mdi-lock</v-icon>
-    <div class="text-h6">您没有权限访问此页面</div>
-  </v-card>
+  <v-app v-else-if="isInitialized && !isAdmin">
+    <v-main class="error-page">
+      <v-container class="fill-height">
+        <v-row align="center" justify="center">
+          <v-col cols="12" sm="8" md="5" lg="4">
+            <div class="error-content">
+              <v-icon size="80" color="error" class="error-icon">mdi-lock</v-icon>
+              <h2 class="error-title">访问受限</h2>
+              <p class="error-message">您没有权限访问管理后台</p>
+              <v-btn color="primary" size="large" @click="goToHome" class="mt-6">
+                返回首页
+              </v-btn>
+            </div>
+          </v-col>
+        </v-row>
+      </v-container>
+    </v-main>
+  </v-app>
 </template>
 
 <script>
@@ -794,34 +306,38 @@ import { useRouter } from 'vue-router'
 import api from '../api'
 import UserAvatar from '../components/UserAvatar.vue'
 import { confirm as showConfirm, success as showSuccess, error as showError } from '../utils/modal'
+import OverviewPanel from './admin/OverviewPanel.vue'
+import UsersPanel from './admin/UsersPanel.vue'
+import ArticlesPanel from './admin/ArticlesPanel.vue'
+import CommentsPanel from './admin/CommentsPanel.vue'
+import CategoriesPanel from './admin/CategoriesPanel.vue'
+import TitlesPanel from './admin/TitlesPanel.vue'
+import ContentPanel from './admin/ContentPanel.vue'
+import SystemPanel from './admin/SystemPanel.vue'
 
 export default {
   name: 'Admin',
   components: {
-    UserAvatar
+    UserAvatar,
+    OverviewPanel,
+    UsersPanel,
+    ArticlesPanel,
+    CommentsPanel,
+    CategoriesPanel,
+    TitlesPanel,
+    ContentPanel,
+    SystemPanel
   },
   setup() {
     const router = useRouter()
     const activeTab = ref('overview')
-    const drawer = ref(false)
     const isAdmin = ref(false)
     const currentUserId = ref(null)
+    const currentUserRole = ref(null)
     const isInitialized = ref(false)
-
-    const menuItems = computed(() => [
-      { title: '概览', value: 'overview', icon: 'mdi-view-dashboard' },
-      { title: '用户管理', value: 'users', icon: 'mdi-account' },
-      { title: '文章管理', value: 'articles', icon: 'mdi-file-text' },
-      { title: '评论管理', value: 'comments', icon: 'mdi-message-text' },
-      { title: '分区管理', value: 'categories', icon: 'mdi-folder' },
-      { title: '头衔管理', value: 'titles', icon: 'mdi-award' },
-      { title: '侧边栏配置', value: 'sidebar', icon: 'mdi-sidebar' },
-      { title: '删除审核', value: 'deletions', icon: 'mdi-delete', badge: deletionRequests.value.length },
-      { title: '公告管理', value: 'announcement', icon: 'mdi-bullhorn' },
-      { title: '网站配置', value: 'siteconfig', icon: 'mdi-settings' },
-      { title: 'SMTP配置', value: 'smtpconfig', icon: 'mdi-email' },
-      { title: '通知管理', value: 'notifications', icon: 'mdi-bell' }
-    ])
+    const loading = ref(false)
+    const isRefreshing = ref(false)
+    const deletionRequests = ref([])
 
     const statistics = ref({
       user_count: 0,
@@ -843,9 +359,6 @@ export default {
     ]
 
     const comments = ref([])
-    const commentPage = ref(1)
-    const commentTotalPages = ref(1)
-    const commentTotal = ref(0)
     const allComments = computed(() => comments.value)
 
     const categories = ref([])
@@ -865,16 +378,19 @@ export default {
     const notifications = ref([])
     const notificationForm = ref({
       type: 'system',
-      user_id: null,
+      target: 'all',
       title: '',
       content: ''
     })
     const notificationTypes = [
       { title: '系统通知', value: 'system' },
-      { title: '警告', value: 'warning' },
-      { title: '成功', value: 'success' }
+      { title: '活动通知', value: 'activity' },
+      { title: '更新通知', value: 'update' },
+      { title: '警告通知', value: 'warning' },
+      { title: '全部用户', value: 'all' },
+      { title: '仅管理员', value: 'admin' }
     ]
-    const deletionRequests = ref([])
+
     const categoryForm = ref({
       name: '',
       description: '',
@@ -921,18 +437,56 @@ export default {
           router.push('/login')
           return
         }
-        const response = await api.get('/auth/me')
-        if (response.data.user.role !== 'admin' && response.data.user.role !== 'system') {
+        const response = await api.get('/profile')
+        const userData = response.data
+        const userRole = userData.role || userData.user?.role
+
+        if (userRole !== 'admin' && userRole !== 'system' && userRole !== 'Admin' && userRole !== 'System') {
           router.push('/')
           return
         }
-        currentUserId.value = response.data.user.id
+        currentUserId.value = userData.id || userData.user?.id
+        currentUserRole.value = userRole
         isAdmin.value = true
         isInitialized.value = true
       } catch (error) {
         console.error('检查管理员权限失败', error)
         localStorage.removeItem('token')
         router.push('/login')
+      }
+    }
+
+    const goToHome = () => {
+      router.push('/')
+    }
+
+    const handleRefresh = async () => {
+      isRefreshing.value = true
+      await loadDataForCurrentTab()
+      setTimeout(() => {
+        isRefreshing.value = false
+      }, 500)
+    }
+
+    const loadDataForCurrentTab = async () => {
+      loading.value = true
+      try {
+        switch (activeTab.value) {
+          case 'overview': await loadStatistics(); break
+          case 'users': await loadUsers(); break
+          case 'articles': await loadArticles(); break
+          case 'comments': await loadComments(); break
+          case 'categories': await loadCategories(); break
+          case 'titles': await loadTitles(); break
+          case 'content':
+            await Promise.all([loadSidebarConfig(), loadDeletionRequests(), loadAnnouncement()])
+            break
+          case 'system':
+            await Promise.all([loadSiteConfig(), loadSmtpConfig(), loadNotifications()])
+            break
+        }
+      } finally {
+        loading.value = false
       }
     }
 
@@ -970,11 +524,8 @@ export default {
 
     const loadComments = async () => {
       try {
-        const params = { page: commentPage.value, page_size: 20 }
-        const response = await api.get('/admin/comments', { params })
+        const response = await api.get('/admin/comments', { params: { page: 1, page_size: 50 } })
         comments.value = response.data.comments
-        commentTotal.value = response.data.total
-        commentTotalPages.value = response.data.total_pages
       } catch (error) {
         console.error('加载评论失败', error)
       }
@@ -983,7 +534,7 @@ export default {
     const loadCategories = async () => {
       try {
         const response = await api.get('/categories')
-        categories.value = response.data
+        categories.value = response.data.categories || []
       } catch (error) {
         console.error('加载分区失败', error)
       }
@@ -992,7 +543,7 @@ export default {
     const loadTitles = async () => {
       try {
         const response = await api.get('/titles')
-        titles.value = response.data
+        titles.value = response.data.titles || []
       } catch (error) {
         console.error('加载头衔失败', error)
       }
@@ -1045,7 +596,7 @@ export default {
     const loadNotifications = async () => {
       try {
         const response = await api.get('/notifications/admin')
-        notifications.value = response.data
+        notifications.value = response.data.notifications || []
       } catch (error) {
         console.error('加载通知失败', error)
       }
@@ -1054,7 +605,7 @@ export default {
     const loadDeletionRequests = async () => {
       try {
         const response = await api.get('/deletion-requests')
-        deletionRequests.value = response.data
+        deletionRequests.value = response.data.requests || []
       } catch (error) {
         console.error('加载删除请求失败', error)
       }
@@ -1172,13 +723,14 @@ export default {
       }
     }
 
-    const addCategory = async () => {
-      if (!categoryForm.value.name) {
+    const addCategory = async (formData) => {
+      const catData = formData || categoryForm.value
+      if (!catData.name) {
         showError('请输入分区名称')
         return
       }
       try {
-        await api.post('/categories', categoryForm.value)
+        await api.post('/categories', catData)
         showSuccess('添加成功')
         categoryForm.value = { name: '', description: '', color: '#6750A4' }
         loadCategories()
@@ -1216,13 +768,14 @@ export default {
       }
     }
 
-    const addTitle = async () => {
-      if (!titleForm.value.name) {
+    const addTitle = async (formData) => {
+      const titleData = formData || titleForm.value
+      if (!titleData.name) {
         showError('请输入头衔名称')
         return
       }
       try {
-        await api.post('/titles', titleForm.value)
+        await api.post('/titles', titleData)
         showSuccess('添加成功')
         titleForm.value = { name: '', description: '', color: '#6750A4', icon: '' }
         loadTitles()
@@ -1232,18 +785,33 @@ export default {
       }
     }
 
-    const grantTitle = async () => {
-      if (!grantForm.value.user_id || !grantForm.value.title_id) {
+    const grantTitle = async (formData) => {
+      const grantData = formData || grantForm.value
+      if (!grantData.user_id || !grantData.title_id) {
         showError('请选择用户和头衔')
         return
       }
       try {
-        await api.post('/titles/grant', grantForm.value)
+        await api.post('/titles/grant', grantData)
         showSuccess('授予成功')
         grantForm.value = { user_id: null, title_id: null, reason: '' }
+        loadUsers()
       } catch (error) {
         console.error('授予头衔失败', error)
         showError(error.response?.data?.error || '授予失败')
+      }
+    }
+
+    const revokeTitle = async (userId, titleId) => {
+      const confirmed = await showConfirm('确定要撤销该用户的头衔吗？')
+      if (!confirmed) return
+      try {
+        await api.post('/titles/revoke', { user_id: userId, title_id: titleId })
+        showSuccess('撤销成功')
+        loadUsers()
+      } catch (error) {
+        console.error('撤销头衔失败', error)
+        showError(error.response?.data?.error || '撤销失败')
       }
     }
 
@@ -1343,11 +911,24 @@ export default {
       try {
         await api.post('/notifications', notificationForm.value)
         showSuccess('发送成功')
-        notificationForm.value = { type: 'system', user_id: null, title: '', content: '' }
+        notificationForm.value = { type: 'system', target: 'all', title: '', content: '' }
         loadNotifications()
       } catch (error) {
         console.error('发送通知失败', error)
         showError(error.response?.data?.error || '发送失败')
+      }
+    }
+
+    const deleteNotification = async (id) => {
+      const confirmed = await showConfirm('确定要删除此通知吗？')
+      if (!confirmed) return
+      try {
+        await api.delete(`/notifications/${id}`)
+        showSuccess('删除成功')
+        loadNotifications()
+      } catch (error) {
+        console.error('删除通知失败', error)
+        showError(error.response?.data?.error || '删除失败')
       }
     }
 
@@ -1377,82 +958,26 @@ export default {
       }
     }
 
-    const formatDate = (dateString) => {
-      if (!dateString) return ''
-      const date = new Date(dateString)
-      return date.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    }
-
-    const getStatusColor = (status) => {
-      const colors = {
-        pending: 'warning',
-        published: 'success',
-        rejected: 'error'
-      }
-      return colors[status] || 'default'
-    }
-
-    const getStatusText = (status) => {
-      const texts = {
-        pending: '待审核',
-        published: '已发布',
-        rejected: '已拒绝'
-      }
-      return texts[status] || status
-    }
-
     watch(activeTab, (newTab) => {
-      if (newTab === 'overview') loadStatistics()
-      if (newTab === 'users') loadUsers()
-      if (newTab === 'articles') loadArticles()
-      if (newTab === 'comments') loadComments()
-      if (newTab === 'titles') { loadTitles(); loadUsers() }
-      if (newTab === 'sidebar') loadSidebarConfig()
-      if (newTab === 'announcement') loadAnnouncement()
-      if (newTab === 'siteconfig') loadSiteConfig()
-      if (newTab === 'smtpconfig') loadSmtpConfig()
-      if (newTab === 'notifications') loadNotifications()
-    })
-
-    watch(articlePage, () => {
-      loadArticles()
-    })
-
-    watch(commentPage, () => {
-      loadComments()
-    })
-
-    watch(articleFilter, () => {
-      articlePage.value = 1
-      loadArticles()
+      if (!isInitialized.value) return
+      loadDataForCurrentTab()
     })
 
     onMounted(async () => {
       await checkAdmin()
       if (isAdmin.value) {
         loadStatistics()
-        loadUsers()
         loadDeletionRequests()
-        loadCategories()
-        loadTitles()
-        loadSidebarConfig()
-        loadAnnouncement()
       }
     })
 
     return {
       activeTab,
-      drawer,
-      menuItems,
       isAdmin,
       isInitialized,
       currentUserId,
+      loading,
+      isRefreshing,
       statistics,
       users,
       articles,
@@ -1461,7 +986,6 @@ export default {
       articleFilter,
       articleStatusOptions,
       allComments,
-      commentPage,
       categories,
       titles,
       sidebarItems,
@@ -1494,6 +1018,7 @@ export default {
       handleDeleteCategory,
       addTitle,
       grantTitle,
+      revokeTitle,
       handleDeleteTitle,
       addSidebarItem,
       removeSidebarItem,
@@ -1503,47 +1028,235 @@ export default {
       saveSmtpConfig,
       testSmtpConfig,
       handleSendNotification,
+      deleteNotification,
       approveDeletion,
       rejectDeletion,
-      formatDate,
-      getStatusColor,
-      getStatusText
+      goToHome,
+      handleRefresh,
+      loadStatistics,
+      loadUsers,
+      loadArticles,
+      loadComments,
+      loadCategories,
+      loadTitles,
+      loadSidebarConfig,
+      loadDeletionRequests,
+      loadAnnouncement,
+      loadSiteConfig,
+      loadSmtpConfig,
+      loadNotifications
     }
   }
 }
 </script>
 
 <style scoped>
-.admin-layout {
-  min-height: 100vh;
+.admin-header {
+  background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%) !important;
+  border-bottom: 1px solid rgba(103, 80, 164, 0.1);
 }
 
-.admin-sidebar {
-  width: 250px;
+.header-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0 24px;
+  gap: 32px;
 }
 
-.admin-app-bar {
-  background: rgb(var(--v-theme-surface));
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.brand-icon {
+  background: linear-gradient(135deg, #6750A4 0%, #9c8cd8 100%);
+  border-radius: 12px;
+  padding: 8px;
+  color: white !important;
+}
+
+.brand-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.3;
+}
+
+.brand-subtitle {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.header-tabs {
+  flex: 1;
+  max-width: 800px;
+}
+
+.tab-item {
+  min-width: auto !important;
+  padding: 0 16px !important;
+  font-size: 0.875rem;
+  font-weight: 500;
+  gap: 8px;
+}
+
+.tab-icon {
+  margin-right: 4px;
+}
+
+.tab-badge {
+  margin-left: 4px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .admin-main {
-  padding-top: 64px;
+  background: #f8f9ff;
+  min-height: calc(100vh - 72px);
 }
 
-.admin-content {
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
+.dialog-card {
+  border-radius: 20px !important;
+  overflow: hidden;
 }
 
-@media (max-width: 600px) {
-  .admin-sidebar {
-    width: 240px;
+.dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 24px 16px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+}
+
+.title-icon {
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(103, 80, 164, 0.1);
+}
+
+.dialog-body {
+  padding: 24px !important;
+}
+
+.dialog-actions {
+  padding: 16px 24px 24px;
+  gap: 12px;
+}
+
+.user-info-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #f8f9ff;
+  border-radius: 12px;
+}
+
+.user-info-text {
+  flex: 1;
+}
+
+.user-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.user-meta {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.article-preview {
+  padding: 16px;
+  background: #f8f9ff;
+  border-radius: 12px;
+}
+
+.preview-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.preview-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.error-page {
+  background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+}
+
+.error-content {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.error-icon {
+  margin-bottom: 24px;
+}
+
+.error-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 12px;
+}
+
+.error-message {
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@media (max-width: 960px) {
+  .header-content {
+    padding: 0 16px;
+    gap: 16px;
   }
 
-  .admin-content {
-    padding: 16px;
+  .brand-subtitle {
+    display: none;
+  }
+
+  .header-tabs {
+    max-width: none;
+  }
+
+  .tab-item span {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-tabs {
+    overflow-x: auto;
+  }
+
+  .tab-item {
+    padding: 0 12px !important;
   }
 }
 </style>

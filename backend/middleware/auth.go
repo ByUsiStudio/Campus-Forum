@@ -60,7 +60,7 @@ func Auth(secret string) gin.HandlerFunc {
 func AdminOnly() gin.HandlerFunc {
     return func(c *gin.Context) {
         role := c.GetString("role")
-        if role != "admin" {
+        if role != "admin" && role != "system" {
             c.JSON(http.StatusForbidden, gin.H{"error": "需要管理员权限"})
             c.Abort()
             return

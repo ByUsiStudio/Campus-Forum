@@ -135,7 +135,7 @@ export default {
     }, { immediate: true })
     
     const isAdmin = computed(() => {
-      return user.value && user.value.role === 'admin'
+      return user.value && (user.value.role === 'admin' || user.value.role === 'system' || user.value.role === 'Admin' || user.value.role === 'System')
     })
     
     const loadChatUnreadCount = async () => {
