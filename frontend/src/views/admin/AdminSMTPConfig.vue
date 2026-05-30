@@ -59,8 +59,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '../api'
-import { showSuccess, showError } from '../utils/modal'
+import api from '../../api'
+import { success, error } from '../../utils/modal'
 
 const smtpConfigForm = ref({
   host: '',
@@ -97,10 +97,10 @@ const saveSmtpConfig = async () => {
       smtp_from: smtpConfigForm.value.from,
       smtp_from_name: smtpConfigForm.value.fromName
     })
-    showSuccess('保存成功')
+    success('保存成功')
   } catch (error) {
     console.error('保存SMTP配置失败', error)
-    showError(error.response?.data?.error || '保存失败')
+    error(error.response?.data?.error || '保存失败')
   }
 }
 
@@ -114,10 +114,10 @@ const testSmtpConfig = async () => {
       smtp_from: smtpConfigForm.value.from,
       smtp_to: smtpConfigForm.value.from
     })
-    showSuccess('测试邮件发送成功')
+    success('测试邮件发送成功')
   } catch (error) {
     console.error('测试SMTP配置失败', error)
-    showError(error.response?.data?.error || '测试失败')
+    error(error.response?.data?.error || '测试失败')
   }
 }
 

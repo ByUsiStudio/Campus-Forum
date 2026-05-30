@@ -55,15 +55,15 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '../api'
-import { showConfirm, showSuccess, showError } from '../utils/modal'
+import api from '../../api'
+import { confirm, success, error } from '../../utils/modal'
 
 const deletionRequests = ref([])
 
 const loadDeletionRequests = async () => {
   try {
     const response = await api.get('/deletion-requests')
-    deletionRequests.value = response.data
+    deletionRequests.value = response.data.requests || []
   } catch (error) {
     console.error('加载删除申请失败', error)
   }
@@ -76,30 +76,30 @@ const formatTime = (timeString) => {
 }
 
 const approveDeletion = async (id) => {
-  const confirmed = await showConfirm('确定要批准此删除申请吗？')
+  const confirmed = await confirm('确定要批准此删除申请吗？')
   if (!confirmed) return
   
   try {
     await api.post(`/deletion-requests/${id}/approve`)
-    showSuccess('已批准删除')
+    success('已批准删除')
     loadDeletionRequests()
   } catch (error) {
     console.error('批准删除失败', error)
-    showError(error.response?.data?.error || '操作失败')
+    error(error.response?.data?.error || '操作失败')
   }
 }
 
 const rejectDeletion = async (id) => {
-  const confirmed = await showConfirm('确定要拒绝此删除申请吗？')
+  const confirmed = await confirm('确定要拒绝此删除申请吗？')
   if (!confirmed) return
   
   try {
     await api.post(`/deletion-requests/${id}/reject`)
-    showSuccess('已拒绝删除')
+    success('已拒绝删除')
     loadDeletionRequests()
   } catch (error) {
     console.error('拒绝删除失败', error)
-    showError(error.response?.data?.error || '操作失败')
+    error(error.response?.data?.error || '操作失败')
   }
 }
 

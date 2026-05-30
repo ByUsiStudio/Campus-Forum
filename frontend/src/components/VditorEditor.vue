@@ -72,6 +72,12 @@ const initVditor = async () => {
     vditor = null
   }
 
+  // 创建一个包装对象来保存引用
+  const modalControls = {
+    showImageModal: showImageModal,
+    showVideoModal: showVideoModal
+  }
+
   vditor = new Vditor(editorRef.value, {
     value: (typeof props.modelValue === 'string' ? props.modelValue : '') || '',
     height: props.height,
@@ -154,13 +160,13 @@ const initVditor = async () => {
         name: 'image-upload',
         tip: '上传图片',
         icon: '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="currentColor"/></svg>',
-        click: openImageModal
+        click: () => { modalControls.showImageModal.value = true }
       },
       {
         name: 'video-upload',
         tip: '上传视频',
         icon: '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>',
-        click: openVideoModal
+        click: () => { modalControls.showVideoModal.value = true }
       },
       '|',
       {

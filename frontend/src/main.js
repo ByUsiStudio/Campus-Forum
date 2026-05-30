@@ -57,6 +57,20 @@ import ChatList from './views/ChatList.vue'
 import StandaloneChat from './views/StandaloneChat.vue'
 import ForgotPassword from './views/ForgotPassword.vue'
 
+// 导入后台管理子组件
+import AdminIndex from './views/admin/AdminIndex.vue'
+import AdminUsers from './views/admin/AdminUsers.vue'
+import AdminArticles from './views/admin/AdminArticles.vue'
+import AdminComments from './views/admin/AdminComments.vue'
+import AdminCategories from './views/admin/AdminCategories.vue'
+import AdminTitles from './views/admin/AdminTitles.vue'
+import AdminSidebar from './views/admin/AdminSidebar.vue'
+import AdminDeletions from './views/admin/AdminDeletions.vue'
+import AdminAnnouncement from './views/admin/AdminAnnouncement.vue'
+import AdminSiteConfig from './views/admin/AdminSiteConfig.vue'
+import AdminSMTPConfig from './views/admin/AdminSMTPConfig.vue'
+import AdminNotifications from './views/admin/AdminNotifications.vue'
+
 const routes = [
     { path: '/', component: Home, name: 'Home' },
     { path: '/login', component: Login, name: 'Login' },
@@ -71,18 +85,18 @@ const routes = [
       name: 'Admin',
       children: [
         { path: '', redirect: { name: 'AdminIndex' } },
-        { path: 'index', name: 'AdminIndex' },
-        { path: 'users', name: 'AdminUsers' },
-        { path: 'articles', name: 'AdminArticles' },
-        { path: 'comments', name: 'AdminComments' },
-        { path: 'categories', name: 'AdminCategories' },
-        { path: 'titles', name: 'AdminTitles' },
-        { path: 'sidebar', name: 'AdminSidebar' },
-        { path: 'deletions', name: 'AdminDeletions' },
-        { path: 'announcement', name: 'AdminAnnouncement' },
-        { path: 'siteconfig', name: 'AdminSiteConfig' },
-        { path: 'smtpconfig', name: 'AdminSMTPConfig' },
-        { path: 'notifications', name: 'AdminNotifications' }
+        { path: 'index', name: 'AdminIndex', component: AdminIndex },
+        { path: 'users', name: 'AdminUsers', component: AdminUsers },
+        { path: 'articles', name: 'AdminArticles', component: AdminArticles },
+        { path: 'comments', name: 'AdminComments', component: AdminComments },
+        { path: 'categories', name: 'AdminCategories', component: AdminCategories },
+        { path: 'titles', name: 'AdminTitles', component: AdminTitles },
+        { path: 'sidebar', name: 'AdminSidebar', component: AdminSidebar },
+        { path: 'deletions', name: 'AdminDeletions', component: AdminDeletions },
+        { path: 'announcement', name: 'AdminAnnouncement', component: AdminAnnouncement },
+        { path: 'siteconfig', name: 'AdminSiteConfig', component: AdminSiteConfig },
+        { path: 'smtpconfig', name: 'AdminSMTPConfig', component: AdminSMTPConfig },
+        { path: 'notifications', name: 'AdminNotifications', component: AdminNotifications }
       ]
     },
     { path: '/category/:id', component: Category, name: 'Category' },

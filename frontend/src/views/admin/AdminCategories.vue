@@ -41,8 +41,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import CategoriesPanel from './CategoriesPanel.vue'
-import api from '../api'
-import { showConfirm, showSuccess, showError } from '../utils/modal'
+import api from '../../api'
+import { confirm, success, error } from '../../utils/modal'
 
 const categories = ref([])
 const loading = ref(true)
@@ -58,7 +58,7 @@ const loadCategories = async () => {
   loading.value = true
   try {
     const response = await api.get('/categories')
-    categories.value = response.data
+    categories.value = response.data.categories || []
   } catch (error) {
     console.error('加载分区列表失败', error)
   } finally {
@@ -90,7 +90,7 @@ const closeCategoryDialog = () => {
 
 const handleEditCategory = async () => {
   if (!editCategoryDialog.value.name) {
-    showError('请输入分区名称')
+    error('请输入分区名称')
     return
   }
   
@@ -105,25 +105,25 @@ const handleEditCategory = async () => {
     } else {
       await api.post('/categories', data)
     }
-    showSuccess('保存成功')
+    success('保存成功')
     closeCategoryDialog()
     loadCategories()
   } catch (error) {
     console.error('保存分区失败', error)
-    showError(error.response?.data?.error || '保存失败')
+    error(error.response?.data?.error || '保存失败')
   }
 }
 
 const handleDeleteCategory = async (category) => {
-  const confirmed = await showConfirm(`确定要删除分区 "${category.name}" 吗？`)
+  const confirmed = await confirm(`确定要删除分区 "${category.name}" 吗？`)
   if (!confirmed) return
   try {
     await api.delete(`/categories/${category.id}`)
-    showSuccess('删除成功')
+    success('删除成功')
     loadCategories()
   } catch (error) {
     console.error('删除分区失败', error)
-    showError(error.response?.data?.error || '删除失败')
+    error(error.response?.data?.error || '删除失败')
   }
 }
 

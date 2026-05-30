@@ -91,8 +91,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '../api'
-import { showConfirm, showSuccess, showError } from '../utils/modal'
+import api from '../../api'
+import { confirm, success, error } from '../../utils/modal'
 
 const notifications = ref([])
 const notificationForm = ref({
@@ -117,7 +117,7 @@ const notificationTargets = [
 const loadNotifications = async () => {
   try {
     const response = await api.get('/notifications/admin')
-    notifications.value = response.data
+    notifications.value = response.data.notifications || []
   } catch (error) {
     console.error('加载通知列表失败', error)
   }
@@ -131,32 +131,32 @@ const formatTime = (timeString) => {
 
 const handleSendNotification = async () => {
   if (!notificationForm.value.title || !notificationForm.value.content) {
-    showError('请填写通知标题和内容')
+    error('请填写通知标题和内容')
     return
   }
   
   try {
     await api.post('/notifications', notificationForm.value)
-    showSuccess('发送成功')
+    success('发送成功')
     notificationForm.value = { type: 'system', target: 'all', title: '', content: '' }
     loadNotifications()
   } catch (error) {
     console.error('发送通知失败', error)
-    showError(error.response?.data?.error || '发送失败')
+    error(error.response?.data?.error || '发送失败')
   }
 }
 
 const deleteNotification = async (id) => {
-  const confirmed = await showConfirm('确定要删除此通知吗？')
+  const confirmed = await confirm('确定要删除此通知吗？')
   if (!confirmed) return
   
   try {
     await api.delete(`/notifications/${id}`)
-    showSuccess('删除成功')
+    success('删除成功')
     loadNotifications()
   } catch (error) {
     console.error('删除通知失败', error)
-    showError(error.response?.data?.error || '删除失败')
+    error(error.response?.data?.error || '删除失败')
   }
 }
 

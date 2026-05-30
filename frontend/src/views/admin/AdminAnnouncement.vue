@@ -26,8 +26,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '../api'
-import { showSuccess, showError } from '../utils/modal'
+import api from '../../api'
+import { success, error } from '../../utils/modal'
 
 const announcementContent = ref('')
 
@@ -43,10 +43,10 @@ const loadAnnouncement = async () => {
 const saveAnnouncement = async () => {
   try {
     await api.put('/announcement', { content: announcementContent.value })
-    showSuccess('保存成功')
+    success('保存成功')
   } catch (error) {
     console.error('保存公告失败', error)
-    showError(error.response?.data?.error || '保存失败')
+    error(error.response?.data?.error || '保存失败')
   }
 }
 

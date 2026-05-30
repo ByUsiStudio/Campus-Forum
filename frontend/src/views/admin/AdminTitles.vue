@@ -40,8 +40,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import TitlesPanel from './TitlesPanel.vue'
-import api from '../api'
-import { showConfirm, showSuccess, showError } from '../utils/modal'
+import api from '../../api'
+import { confirm, success, error } from '../../utils/modal'
 
 const titles = ref([])
 const users = ref([])
@@ -64,7 +64,7 @@ const loadTitles = async () => {
   loading.value = true
   try {
     const response = await api.get('/titles')
-    titles.value = response.data
+    titles.value = response.data.titles || []
   } catch (error) {
     console.error('加载头衔列表失败', error)
   } finally {
@@ -75,7 +75,7 @@ const loadTitles = async () => {
 const loadUsers = async () => {
   try {
     const response = await api.get('/admin/users')
-    users.value = response.data
+    users.value = response.data.users || []
   } catch (error) {
     console.error('加载用户列表失败', error)
   }
@@ -87,11 +87,11 @@ const addTitle = async () => {
   
   try {
     await api.post('/titles', { name: titleName })
-    showSuccess('添加成功')
+    success('添加成功')
     loadTitles()
   } catch (error) {
     console.error('添加头衔失败', error)
-    showError(error.response?.data?.error || '添加失败')
+    error(error.response?.data?.error || '添加失败')
   }
 }
 
@@ -105,7 +105,7 @@ const grantTitle = (titleId) => {
 
 const handleGrant = async () => {
   if (!grantDialog.value.selectedUserId) {
-    showError('请选择用户')
+    error('请选择用户')
     return
   }
   
@@ -114,40 +114,40 @@ const handleGrant = async () => {
       title_id: grantDialog.value.titleId,
       user_id: grantDialog.value.selectedUserId
     })
-    showSuccess('授予成功')
+    success('授予成功')
     grantDialog.value.show = false
     loadTitles()
   } catch (error) {
     console.error('授予头衔失败', error)
-    showError(error.response?.data?.error || '授予失败')
+    error(error.response?.data?.error || '授予失败')
   }
 }
 
 const revokeTitle = async (titleId, userId) => {
-  const confirmed = await showConfirm('确定要撤销此头衔吗？')
+  const confirmed = await confirm('确定要撤销此头衔吗？')
   if (!confirmed) return
   
   try {
     await api.post('/titles/revoke', { title_id: titleId, user_id: userId })
-    showSuccess('撤销成功')
+    success('撤销成功')
     loadTitles()
   } catch (error) {
     console.error('撤销头衔失败', error)
-    showError(error.response?.data?.error || '撤销失败')
+    error(error.response?.data?.error || '撤销失败')
   }
 }
 
 const handleDeleteTitle = async (title) => {
-  const confirmed = await showConfirm(`确定要删除头衔 "${title.name}" 吗？`)
+  const confirmed = await confirm(`确定要删除头衔 "${title.name}" 吗？`)
   if (!confirmed) return
   
   try {
     await api.delete(`/titles/${title.id}`)
-    showSuccess('删除成功')
+    success('删除成功')
     loadTitles()
   } catch (error) {
     console.error('删除头衔失败', error)
-    showError(error.response?.data?.error || '删除失败')
+    error(error.response?.data?.error || '删除失败')
   }
 }
 

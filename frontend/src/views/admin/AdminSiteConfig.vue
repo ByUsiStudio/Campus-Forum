@@ -24,8 +24,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '../api'
-import { showSuccess, showError } from '../utils/modal'
+import api from '../../api'
+import { success, error } from '../../utils/modal'
 
 const siteConfigForm = ref({
   siteTitle: ''
@@ -43,13 +43,13 @@ const loadSiteConfig = async () => {
 const saveSiteConfig = async () => {
   try {
     await api.put('/site-config', { site_title: siteConfigForm.value.siteTitle })
-    showSuccess('保存成功')
+    success('保存成功')
     if (siteConfigForm.value.siteTitle) {
       document.title = siteConfigForm.value.siteTitle
     }
   } catch (error) {
     console.error('保存网站配置失败', error)
-    showError(error.response?.data?.error || '保存失败')
+    error(error.response?.data?.error || '保存失败')
   }
 }
 

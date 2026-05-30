@@ -52,8 +52,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '../api'
-import { showSuccess, showError } from '../utils/modal'
+import api from '../../api'
+import { success, error } from '../../utils/modal'
 
 const sidebarItems = ref([])
 
@@ -87,10 +87,10 @@ const removeSidebarItem = (index) => {
 const saveSidebarConfig = async () => {
   try {
     await api.put('/sidebar-config', { items: sidebarItems.value })
-    showSuccess('保存成功')
+    success('保存成功')
   } catch (error) {
     console.error('保存侧边栏配置失败', error)
-    showError(error.response?.data?.error || '保存失败')
+    error(error.response?.data?.error || '保存失败')
   }
 }
 

@@ -45,8 +45,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ArticlesPanel from './ArticlesPanel.vue'
-import api from '../api'
-import { showConfirm, showSuccess, showError } from '../utils/modal'
+import api from '../../api'
+import { confirm, success, error } from '../../utils/modal'
 
 const router = useRouter()
 const articles = ref([])
@@ -84,7 +84,7 @@ const loadArticles = async () => {
 
 const loadCurrentUser = async () => {
   try {
-    const response = await api.get('/user')
+    const response = await api.get('/profile')
     currentUserRole.value = response.data.role
   } catch (error) {
     console.error('加载当前用户失败', error)
@@ -105,25 +105,25 @@ const handleEditStatus = async () => {
     await api.put(`/admin/articles/${statusDialog.value.article.id}/status`, {
       status: statusDialog.value.status
     })
-    showSuccess('修改成功')
+    success('修改成功')
     statusDialog.value.show = false
     loadArticles()
   } catch (error) {
     console.error('修改状态失败', error)
-    showError(error.response?.data?.error || '修改失败')
+    error(error.response?.data?.error || '修改失败')
   }
 }
 
 const handleDeleteArticle = async (article) => {
-  const confirmed = await showConfirm(`确定要删除文章 "${article.title}" 吗？`)
+  const confirmed = await confirm(`确定要删除文章 "${article.title}" 吗？`)
   if (!confirmed) return
   try {
     await api.delete(`/admin/articles/${article.id}`)
-    showSuccess('删除成功')
+    success('删除成功')
     loadArticles()
   } catch (error) {
     console.error('删除文章失败', error)
-    showError(error.response?.data?.error || '删除失败')
+    error(error.response?.data?.error || '删除失败')
   }
 }
 

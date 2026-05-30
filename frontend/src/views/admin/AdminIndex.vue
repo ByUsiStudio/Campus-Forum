@@ -9,9 +9,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import OverviewPanel from './OverviewPanel.vue'
-import api from '../api'
+import api from '../../api'
 
-const statistics = ref(null)
+const statistics = ref({
+  user_count: 0,
+  article_count: 0,
+  comment_count: 0,
+  view_count: 0
+})
 const loading = ref(true)
 
 const loadStatistics = async () => {

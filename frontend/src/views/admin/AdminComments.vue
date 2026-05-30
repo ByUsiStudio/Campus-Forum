@@ -12,8 +12,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import CommentsPanel from './CommentsPanel.vue'
-import api from '../api'
-import { showConfirm, showSuccess, showError } from '../utils/modal'
+import api from '../../api'
+import { confirm, success, error } from '../../utils/modal'
 
 const allComments = ref([])
 const loading = ref(true)
@@ -22,7 +22,7 @@ const loadComments = async () => {
   loading.value = true
   try {
     const response = await api.get('/admin/comments')
-    allComments.value = response.data
+    allComments.value = response.data.comments || []
   } catch (error) {
     console.error('加载评论列表失败', error)
   } finally {
@@ -31,15 +31,15 @@ const loadComments = async () => {
 }
 
 const handleDeleteComment = async (commentId) => {
-  const confirmed = await showConfirm('确定要删除此评论吗？')
+  const confirmed = await confirm('确定要删除此评论吗？')
   if (!confirmed) return
   try {
     await api.delete(`/admin/comments/${commentId}`)
-    showSuccess('删除成功')
+    success('删除成功')
     loadComments()
   } catch (error) {
     console.error('删除评论失败', error)
-    showError(error.response?.data?.error || '删除失败')
+    error(error.response?.data?.error || '删除失败')
   }
 }
 

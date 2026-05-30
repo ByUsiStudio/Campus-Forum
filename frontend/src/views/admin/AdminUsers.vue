@@ -108,9 +108,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import UsersPanel from './UsersPanel.vue'
-import UserAvatar from '../components/UserAvatar.vue'
-import api from '../api'
-import { showConfirm, showSuccess, showError } from '../utils/modal'
+import UserAvatar from '../../components/UserAvatar.vue'
+import api from '../../api'
+import { confirm, success, error } from '../../utils/modal'
 
 const router = useRouter()
 const users = ref([])
@@ -141,7 +141,7 @@ const loadUsers = async () => {
   loading.value = true
   try {
     const response = await api.get('/admin/users')
-    users.value = response.data
+    users.value = response.data.users || []
   } catch (error) {
     console.error('加载用户列表失败', error)
   } finally {
@@ -151,7 +151,7 @@ const loadUsers = async () => {
 
 const loadCurrentUser = async () => {
   try {
-    const response = await api.get('/user')
+    const response = await api.get('/profile')
     currentUserId.value = response.data.id
     currentUserRole.value = response.data.role
   } catch (error) {
@@ -190,18 +190,18 @@ const handleEditRole = async () => {
     await api.put(`/admin/users/${editRoleDialog.value.user.id}/role`, {
       role: editRoleDialog.value.role
     })
-    showSuccess('修改成功')
+    success('修改成功')
     editRoleDialog.value.show = false
     loadUsers()
   } catch (error) {
     console.error('修改角色失败', error)
-    showError(error.response?.data?.error || '修改失败')
+    error(error.response?.data?.error || '修改失败')
   }
 }
 
 const handleEditUser = async () => {
   if (!editUserDialog.value.displayName) {
-    showError('请输入显示名称')
+    error('请输入显示名称')
     return
   }
   try {
@@ -209,12 +209,12 @@ const handleEditUser = async () => {
       display_name: editUserDialog.value.displayName,
       email: editUserDialog.value.email
     })
-    showSuccess('保存成功')
+    success('保存成功')
     editUserDialog.value.show = false
     loadUsers()
   } catch (error) {
     console.error('编辑用户失败', error)
-    showError(error.response?.data?.error || '保存失败')
+    error(error.response?.data?.error || '保存失败')
   }
 }
 
@@ -223,38 +223,38 @@ const handleBan = async () => {
     await api.post(`/admin/users/${banDialog.value.user.id}/ban`, {
       reason: banDialog.value.reason
     })
-    showSuccess('封禁成功')
+    success('封禁成功')
     banDialog.value.show = false
     loadUsers()
   } catch (error) {
     console.error('封禁用户失败', error)
-    showError(error.response?.data?.error || '封禁失败')
+    error(error.response?.data?.error || '封禁失败')
   }
 }
 
 const handleUnban = async (userId) => {
-  const confirmed = await showConfirm('确定要解封此用户吗？')
+  const confirmed = await confirm('确定要解封此用户吗？')
   if (!confirmed) return
   try {
     await api.post(`/admin/users/${userId}/unban`)
-    showSuccess('解封成功')
+    success('解封成功')
     loadUsers()
   } catch (error) {
     console.error('解封用户失败', error)
-    showError(error.response?.data?.error || '解封失败')
+    error(error.response?.data?.error || '解封失败')
   }
 }
 
 const handleDeleteUser = async (user) => {
-  const confirmed = await showConfirm(`确定要删除用户 "${user.display_name}" 吗？`)
+  const confirmed = await confirm(`确定要删除用户 "${user.display_name}" 吗？`)
   if (!confirmed) return
   try {
     await api.delete(`/admin/users/${user.id}`)
-    showSuccess('删除成功')
+    success('删除成功')
     loadUsers()
   } catch (error) {
     console.error('删除用户失败', error)
-    showError(error.response?.data?.error || '删除失败')
+    error(error.response?.data?.error || '删除失败')
   }
 }
 
