@@ -5,6 +5,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -78,81 +79,97 @@ func ProxyWebDAVHandler(c *gin.Context) {
 
 	switch c.Request.Method {
 	case "GET", "HEAD":
-		proxyGET(c, targetURL)
+		// 下载使用代理转发（支持视频拖拽、断点续传）
+		proxyDownload(c, targetURL)
 	case "PUT":
-		proxyPUT(c, targetURL)
+		// 上传使用重定向（避免经过服务器，提高性能）
+		redirectURL := buildURLWithAuth(targetURL)
+		c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 	case "DELETE":
-		proxyDELETE(c, targetURL)
+		proxyDelete(c, targetURL)
 	case "PROPFIND":
-		proxyPROPFIND(c, targetURL)
+		proxyPropfind(c, targetURL)
 	default:
 		c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "不支持的操作"})
 	}
 }
 
-func proxyGET(c *gin.Context, targetURL string) {
-	req, err := http.NewRequest("GET", targetURL, nil)
+// proxyDownload 处理 GET 和 HEAD 请求（代理模式）
+func proxyDownload(c *gin.Context, targetURL string) {
+	// 创建请求
+	req, err := http.NewRequest(c.Request.Method, targetURL, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建请求失败"})
 		return
 	}
+
+	// 添加认证
 	req.SetBasicAuth(webdavUsername, webdavPassword)
 
+	// 复制关键请求头（支持断点续传和缓存）
+	if rangeHeader := c.Request.Header.Get("Range"); rangeHeader != "" {
+		req.Header.Set("Range", rangeHeader)
+	}
+	if ifMatch := c.Request.Header.Get("If-Match"); ifMatch != "" {
+		req.Header.Set("If-Match", ifMatch)
+	}
+	if ifNoneMatch := c.Request.Header.Get("If-None-Match"); ifNoneMatch != "" {
+		req.Header.Set("If-None-Match", ifNoneMatch)
+	}
+	if ifModifiedSince := c.Request.Header.Get("If-Modified-Since"); ifModifiedSince != "" {
+		req.Header.Set("If-Modified-Since", ifModifiedSince)
+	}
+
+	// 发送请求
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取文件失败"})
+		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("连接WebDAV失败: %v", err)})
 		return
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		c.JSON(resp.StatusCode, gin.H{"error": "文件不存在"})
+	// 复制响应头
+	for key, values := range resp.Header {
+		for _, value := range values {
+			c.Header(key, value)
+		}
+	}
+
+	// 设置状态码
+	c.Status(resp.StatusCode)
+
+	// 对于 HEAD 请求，不需要传输 body
+	if c.Request.Method == "HEAD" {
 		return
 	}
 
-	contentType := resp.Header.Get("Content-Type")
-	if contentType == "" {
-		contentType = "application/octet-stream"
-	}
-
-	c.Header("Content-Type", contentType)
-	c.Header("Content-Length", fmt.Sprintf("%d", resp.ContentLength))
-
-	c.Status(http.StatusOK)
+	// 流式传输 body
 	_, err = io.Copy(c.Writer, resp.Body)
 	if err != nil {
-		Info("下载转发失败: %v", err)
+		// 客户端可能主动断开连接，不记录为错误
+		if err != io.EOF && !strings.Contains(err.Error(), "broken pipe") {
+			Info("下载转发失败: %v", err)
+		}
 	}
 }
 
-func proxyPUT(c *gin.Context, targetURL string) {
-	req, err := http.NewRequest("PUT", targetURL, c.Request.Body)
+// buildURLWithAuth 将认证信息编码到 URL 中（用于上传重定向）
+func buildURLWithAuth(rawURL string) string {
+	if webdavUsername == "" || webdavPassword == "" {
+		return rawURL
+	}
+
+	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建请求失败"})
-		return
+		return rawURL
 	}
 
-	req.SetBasicAuth(webdavUsername, webdavPassword)
-	req.Header.Set("Content-Type", "application/octet-stream")
-	req.ContentLength = c.Request.ContentLength
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "上传失败"})
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		body, _ := io.ReadAll(resp.Body)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("上传失败: %d - %s", resp.StatusCode, string(body))})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "上传成功"})
+	parsedURL.User = url.UserPassword(webdavUsername, webdavPassword)
+	return parsedURL.String()
 }
 
-func proxyDELETE(c *gin.Context, targetURL string) {
+// proxyDelete 处理 DELETE 请求
+func proxyDelete(c *gin.Context, targetURL string) {
 	req, err := http.NewRequest("DELETE", targetURL, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建请求失败"})
@@ -162,15 +179,22 @@ func proxyDELETE(c *gin.Context, targetURL string) {
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "删除失败"})
+		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("删除失败: %v", err)})
 		return
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		c.JSON(resp.StatusCode, gin.H{"error": fmt.Sprintf("删除失败: %d - %s", resp.StatusCode, string(body))})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
 }
 
-func proxyPROPFIND(c *gin.Context, targetURL string) {
+// proxyPropfind 处理 PROPFIND 请求（获取目录列表）
+func proxyPropfind(c *gin.Context, targetURL string) {
 	req, err := http.NewRequest("PROPFIND", targetURL, c.Request.Body)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建请求失败"})
@@ -183,24 +207,26 @@ func proxyPROPFIND(c *gin.Context, targetURL string) {
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取目录失败"})
+		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("获取目录失败: %v", err)})
 		return
 	}
 	defer resp.Body.Close()
 
-	contentType := resp.Header.Get("Content-Type")
-	if contentType == "" {
-		contentType = "application/xml"
+	// 复制响应头
+	for key, values := range resp.Header {
+		for _, value := range values {
+			c.Header(key, value)
+		}
 	}
 
-	c.Header("Content-Type", contentType)
-	c.Status(http.StatusOK)
+	c.Status(resp.StatusCode)
 	_, err = io.Copy(c.Writer, resp.Body)
 	if err != nil {
 		Info("PROPFIND 转发失败: %v", err)
 	}
 }
 
+// GetFileURL 获取文件访问 URL
 func GetFileURL(remotePath string) string {
 	return "/proxy/webdav" + remotePath
 }
