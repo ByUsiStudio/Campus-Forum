@@ -9,7 +9,7 @@
         <v-select
           v-model="notificationForm.type"
           :items="notificationTypes"
-          item-text="label"
+          item-title="label"
           item-value="value"
           label="通知类型"
           variant="outlined"
@@ -19,7 +19,7 @@
         <v-select
           v-model="notificationForm.target"
           :items="notificationTargets"
-          item-text="label"
+          item-title="label"
           item-value="value"
           label="发送对象"
           variant="outlined"

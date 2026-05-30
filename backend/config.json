@@ -1,5 +1,5 @@
 {
-    "port": "3620",
+    "port": 3620,
     "jwt_secret": "your-secret-key-change-this-in-production",
     "webdav": {
         "url": "http://localhost:5005",

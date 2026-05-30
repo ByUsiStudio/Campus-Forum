@@ -9,6 +9,7 @@
             <UserAvatar
               :user="article.user"
               :size="44"
+              :showUsername="false"
               class="cursor-pointer"
               @click="goToUserProfile(article.user.id)"
             />
@@ -95,7 +96,7 @@
         </h3>
 
         <div v-if="token" class="comment-form">
-          <UserAvatar :user="currentUser" :size="40" />
+          <UserAvatar :user="currentUser" :size="40" :showUsername="false" />
           <div class="comment-input-wrapper">
             <v-textarea
               v-model="commentContent"
@@ -121,6 +122,7 @@
             <UserAvatar
               :user="comment.user"
               :size="40"
+              :showUsername="false"
               class="cursor-pointer"
               @click="goToUserProfile(comment.user.id)"
             />
@@ -181,6 +183,7 @@
                   <UserAvatar
                     :user="reply.user"
                     :size="32"
+                    :showUsername="false"
                     class="cursor-pointer"
                     @click="goToUserProfile(reply.user.id)"
                   />
@@ -306,19 +309,41 @@ export default {
     
     const loadArticle = async () => {
       try {
-        const [articleRes, siteConfigRes] = await Promise.all([
-          api.get(`/articles/${route.params.id}`),
-          api.get('/site-config')
-        ])
+        console.log('尝试加载文章，ID:', route.params.id)
+        console.log('当前路由:', route.fullPath)
+        console.log('路由参数:', JSON.stringify(route.params))
         
-        article.value = articleRes.data.article
-        comments.value = articleRes.data.comments
+        if (!route.params.id) {
+          throw new Error('文章ID为空')
+        }
+        
+        const articleRes = await api.get(`/articles/${route.params.id}`)
+        console.log('API状态码:', articleRes.status)
+        console.log('API返回数据:', JSON.stringify(articleRes.data, null, 2))
+        
+        // 尝试多种数据结构
+        const articleData = articleRes.data.article || articleRes.data
+        
+        if (!articleData) {
+          throw new Error('文章数据为空')
+        }
+        
+        article.value = articleData
+        comments.value = articleRes.data.comments || []
         liked.value = articleRes.data.liked || false
         commentLiked.value = articleRes.data.comment_liked || {}
-        siteTitle.value = siteConfigRes.data.site_title || '校园论坛'
+        
+        // 获取站点配置
+        try {
+          const siteConfigRes = await api.get('/site-config')
+          siteTitle.value = siteConfigRes.data.site_title || '校园论坛'
+        } catch (configError) {
+          console.warn('加载站点配置失败', configError)
+          siteTitle.value = '校园论坛'
+        }
         
         // 检查收藏状态
-        if (token.value) {
+        if (token.value && article.value.id) {
           try {
             const favoriteRes = await api.get(`/articles/${article.value.id}/favorite/check`)
             favorited.value = favoriteRes.data.favorited || false
@@ -336,8 +361,11 @@ export default {
         
         initVideoPlayers()
         loadFollowStatus()
+        
+        console.log('文章加载成功')
       } catch (error) {
         console.error('加载文章失败', error)
+        console.error('错误详情:', error.response?.data || error.message)
         router.push('/')
       }
     }
@@ -692,21 +720,28 @@ export default {
 
 <style scoped>
 .article-page {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 24px 16px;
+  width: 100%;
+  max-width: none;
+  min-height: 100vh;
+  margin: 0;
+  padding: 16px 24px 32px;
+  background: #f5f7fb;
 }
 
 .article-container {
+  position: relative;
+  width: 100%;
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 18px rgba(0, 0, 0, 0.08);
   overflow: hidden;
 }
 
 .article-header {
+  position: relative;
   padding: 32px 40px 24px;
   border-bottom: 1px solid #f0f0f0;
+  min-height: 140px;
 }
 
 .article-title {
@@ -723,6 +758,8 @@ export default {
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
+  min-width: 0;
+  padding-right: 260px;
 }
 
 .author-info {
@@ -775,11 +812,11 @@ export default {
 }
 
 .article-actions {
+  position: absolute;
+  top: 32px;
+  right: 40px;
   display: flex;
   gap: 12px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px dashed #e5e5e5;
 }
 
 .article-body {
@@ -948,6 +985,13 @@ export default {
   .article-meta {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .article-actions {
+    position: static;
+    width: 100%;
+    margin-top: 20px;
+    justify-content: flex-start;
   }
 
   .article-body {

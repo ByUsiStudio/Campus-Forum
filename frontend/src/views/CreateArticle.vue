@@ -114,10 +114,18 @@ export default {
         } else {
           response = await api.post('/articles', form.value)
         }
-        router.push(`/article/${response.data.article.id}`)
+        
+        const articleId = response.data.article?.id
+        if (!articleId) {
+          throw new Error('文章ID不存在')
+        }
+        
+        console.log('准备跳转到文章页面:', `/article/${articleId}`)
+        await router.push(`/article/${articleId}`)
+        console.log('跳转成功')
       } catch (error) {
-        console.error('提交失败', error)
-        await showError('提交失败')
+        console.error('提交或跳转失败', error)
+        await showError('提交失败: ' + (error.message || '未知错误'))
       } finally {
         submitting.value = false
       }

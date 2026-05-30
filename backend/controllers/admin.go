@@ -15,7 +15,7 @@ import (
 func CheckAdmin(c *gin.Context) {
 	role := c.GetString("role")
 	isAdmin := role == "admin" || role == "system"
-	
+
 	c.JSON(http.StatusOK, gin.H{
 		"is_admin": isAdmin,
 		"role":     role,
@@ -100,7 +100,6 @@ func UpdateUser(c *gin.Context) {
 
 	var input struct {
 		DisplayName string `json:"display_name"`
-		Email       string `json:"email"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -126,9 +125,6 @@ func UpdateUser(c *gin.Context) {
 
 	if input.DisplayName != "" {
 		targetUser.DisplayName = input.DisplayName
-	}
-	if input.Email != "" {
-		targetUser.Email = input.Email
 	}
 
 	database.DB.Save(&targetUser)

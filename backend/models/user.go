@@ -8,7 +8,6 @@ type User struct {
 	ID          uint       `gorm:"primarykey" json:"id"`
 	Username    string     `gorm:"uniqueIndex;size:50" json:"username"`
 	QQNumber    string     `gorm:"uniqueIndex;size:20" json:"qq_number"`
-	Email       string     `gorm:"uniqueIndex;size:100" json:"email"`
 	DisplayName string     `gorm:"size:50" json:"display_name"`
 	Password    string     `gorm:"size:255" json:"-"`
 	Avatar      string     `gorm:"size:500" json:"avatar"`

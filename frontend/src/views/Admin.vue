@@ -1,5 +1,5 @@
 <template>
-  <v-app v-if="isInitialized && isAdmin">
+  <v-app v-if="isInitialized && isAdmin" class="admin-page">
     <v-navigation-drawer
       v-model="drawerOpen"
       :rail="sidebarCollapsed"
@@ -78,7 +78,9 @@
     </v-app-bar>
 
     <v-main class="admin-main">
-      <router-view></router-view>
+      <div class="admin-page-container">
+        <router-view />
+      </div>
     </v-main>
   </v-app>
 

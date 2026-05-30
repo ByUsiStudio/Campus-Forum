@@ -22,7 +22,7 @@
         <v-select
           v-model="grantDialog.selectedUserId"
           :items="usersForSelect"
-          item-text="display_name"
+          item-title="display_name"
           item-value="id"
           label="选择用户"
           variant="outlined"

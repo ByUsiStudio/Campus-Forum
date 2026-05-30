@@ -30,11 +30,12 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "required": ["username", "password", "email"],
+                            "required": ["username", "qq_number", "display_name", "password"],
                             "properties": {
                                 "username": {"type": "string"},
-                                "password": {"type": "string"},
-                                "email": {"type": "string"}
+                                "qq_number": {"type": "string"},
+                                "display_name": {"type": "string"},
+                                "password": {"type": "string"}
                             }
                         }
                     }
@@ -564,8 +565,8 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
-	Host:             "localhost:8080",
+	Version:          "1.3.3",
+	Host:             "0.0.0.0:3620",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "校园论坛 API 文档",

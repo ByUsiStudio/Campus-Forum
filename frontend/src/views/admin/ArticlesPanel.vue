@@ -9,6 +9,8 @@
         <v-select
           v-model="localFilter"
           :items="statusOptions"
+          item-title="label"
+          item-value="value"
           label="状态筛选"
           variant="outlined"
           density="compact"

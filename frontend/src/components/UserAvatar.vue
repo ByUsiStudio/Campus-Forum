@@ -3,7 +3,7 @@
     <v-avatar :size="size" class="flex-shrink-0">
       <v-img :src="user.avatar" :alt="user.display_name" />
     </v-avatar>
-    <div class="user-info">
+    <div v-if="showUsername" class="user-info">
       <div class="user-name" :class="nameSizeClass">{{ user.display_name }}</div>
       <div class="titles-row">
         <template v-for="title in displayTitles" :key="title.id || 'default'">
@@ -35,7 +35,7 @@ const props = defineProps({
   },
   showUsername: {
     type: Boolean,
-    default: false
+    default: true
   },
   maxVisibleTitles: {
     type: Number,
