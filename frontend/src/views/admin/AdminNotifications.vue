@@ -62,8 +62,13 @@
             class="align-center"
           >
             <v-list-item-content>
-              <v-list-item-title>{{ notification.title }}</v-list-item-title>
-              <v-list-item-subtitle>
+              <v-list-item-title class="font-weight-bold mb-1">
+                {{ notification.title }}
+              </v-list-item-title>
+              <v-list-item-subtitle class="mb-2">
+                {{ notification.content }}
+              </v-list-item-subtitle>
+              <v-list-item-subtitle class="text-caption text-medium-emphasis">
                 {{ notification.type }} | {{ notification.target }} | {{ formatTime(notification.created_at) }}
               </v-list-item-subtitle>
             </v-list-item-content>
