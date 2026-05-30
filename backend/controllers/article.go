@@ -335,8 +335,8 @@ func DeleteArticle(c *gin.Context) {
 		return
 	}
 
-	// 如果是管理员，直接删除
-	if role == "admin" {
+	// 如果是管理员或系统管理员，直接删除
+	if role == "admin" || role == "system" {
 		database.DB.Delete(&article)
 		c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
 		return

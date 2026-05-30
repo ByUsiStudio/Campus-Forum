@@ -73,6 +73,7 @@
               :current-user-id="currentUserId"
               :current-user-role="currentUserRole"
               @edit-role="showEditRoleDialog"
+              @edit-user="showEditUserDialog"
               @ban="showBanDialog"
               @unban="handleUnban"
               @delete="handleDeleteUser"
@@ -88,7 +89,9 @@
               :total-pages="articleTotalPages"
               :filter="articleFilter"
               :status-options="articleStatusOptions"
+              :current-user-role="currentUserRole"
               @change-status="showStatusDialog"
+              @delete="handleDeleteArticle"
               @refresh="loadArticles"
               @update:page="articlePage = $event; loadArticles()"
               @update:filter="articleFilter = $event; articlePage = 1; loadArticles()"
@@ -219,6 +222,39 @@
         <v-card-actions class="dialog-actions">
           <v-btn variant="text" @click="banDialog.show = false">取消</v-btn>
           <v-btn color="error" variant="flat" @click="handleBan">确认封禁</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="editUserDialog.show" max-width="480">
+      <v-card class="dialog-card">
+        <v-card-title class="dialog-title">
+          <v-icon class="title-icon">mdi-account-edit</v-icon>
+          编辑用户
+        </v-card-title>
+        <v-card-text class="dialog-body">
+          <div class="user-info-card">
+            <UserAvatar :user="editUserDialog.user || {}" :size="48" />
+            <div class="user-info-text">
+              <div class="user-name">{{ editUserDialog.user?.display_name }}</div>
+              <div class="user-meta">ID: {{ editUserDialog.user?.id }}</div>
+            </div>
+          </div>
+          <v-text-field
+            v-model="editUserDialog.displayName"
+            label="显示名称"
+            variant="outlined"
+            class="mt-4 mb-4"
+          ></v-text-field>
+          <v-text-field
+            v-model="editUserDialog.email"
+            label="邮箱"
+            variant="outlined"
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions class="dialog-actions">
+          <v-btn variant="text" @click="editUserDialog.show = false">取消</v-btn>
+          <v-btn color="primary" variant="flat" @click="handleEditUser">保存</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -417,6 +453,12 @@ export default {
       show: false,
       user: null,
       reason: ''
+    })
+    const editUserDialog = ref({
+      show: false,
+      user: null,
+      displayName: '',
+      email: ''
     })
     const statusDialog = ref({
       show: false,
@@ -627,6 +669,15 @@ export default {
       }
     }
 
+    const showEditUserDialog = (user) => {
+      editUserDialog.value = {
+        show: true,
+        user,
+        displayName: user.display_name || '',
+        email: user.email || ''
+      }
+    }
+
     const showStatusDialog = (article) => {
       statusDialog.value = {
         show: true,
@@ -672,6 +723,25 @@ export default {
       }
     }
 
+    const handleEditUser = async () => {
+      if (!editUserDialog.value.displayName) {
+        showError('请输入显示名称')
+        return
+      }
+      try {
+        await api.put(`/admin/users/${editUserDialog.value.user.id}`, {
+          display_name: editUserDialog.value.displayName,
+          email: editUserDialog.value.email
+        })
+        showSuccess('保存成功')
+        editUserDialog.value.show = false
+        loadUsers()
+      } catch (error) {
+        console.error('编辑用户失败', error)
+        showError(error.response?.data?.error || '保存失败')
+      }
+    }
+
     const handleUnban = async (user) => {
       const confirmed = await showConfirm(`确定要解封用户 "${user.display_name}" 吗？`)
       if (!confirmed) return
@@ -707,6 +777,19 @@ export default {
       } catch (error) {
         console.error('修改状态失败', error)
         showError(error.response?.data?.error || '修改失败')
+      }
+    }
+
+    const handleDeleteArticle = async (article) => {
+      const confirmed = await showConfirm(`确定要删除文章 "${article.title}" 吗？`)
+      if (!confirmed) return
+      try {
+        await api.delete(`/admin/articles/${article.id}`)
+        showSuccess('删除成功')
+        loadArticles()
+      } catch (error) {
+        console.error('删除文章失败', error)
+        showError(error.response?.data?.error || '删除失败')
       }
     }
 
@@ -1004,17 +1087,21 @@ export default {
       grantForm,
       editRoleDialog,
       banDialog,
+      editUserDialog,
       statusDialog,
       editCategoryDialog,
       showEditRoleDialog,
       showBanDialog,
+      showEditUserDialog,
       showStatusDialog,
       showEditCategoryDialog,
       handleEditRole,
       handleBan,
+      handleEditUser,
       handleUnban,
       handleDeleteUser,
       handleEditStatus,
+      handleDeleteArticle,
       handleDeleteComment,
       addCategory,
       handleEditCategory,
@@ -1260,6 +1347,38 @@ export default {
 
   .tab-item {
     padding: 0 12px !important;
+  }
+
+  .dialog-card {
+    margin: 16px !important;
+    max-width: calc(100vw - 32px) !important;
+    width: 100%;
+  }
+
+  .dialog-title {
+    padding: 16px 20px 12px !important;
+    font-size: 1.1rem !important;
+  }
+
+  .title-icon {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 6px !important;
+  }
+
+  .dialog-body {
+    padding: 16px 20px !important;
+  }
+
+  .dialog-actions {
+    padding: 12px 20px 16px !important;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .user-info-card {
+    padding: 12px !important;
+    gap: 12px !important;
   }
 }
 </style>

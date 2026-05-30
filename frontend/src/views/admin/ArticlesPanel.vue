@@ -81,6 +81,15 @@
                 <v-btn variant="text" size="small" color="primary" @click="$emit('change-status', article)">
                   改状态
                 </v-btn>
+                <v-btn
+                  variant="text"
+                  size="small"
+                  color="error"
+                  @click="$emit('delete', article)"
+                  v-if="canDeleteArticle()"
+                >
+                  删除
+                </v-btn>
               </div>
             </td>
           </tr>
@@ -134,9 +143,13 @@ export default {
     statusOptions: {
       type: Array,
       default: () => []
+    },
+    currentUserRole: {
+      type: String,
+      default: null
     }
   },
-  emits: ['change-status', 'refresh', 'update:page', 'update:filter'],
+  emits: ['change-status', 'delete', 'refresh', 'update:page', 'update:filter'],
   setup(props, { emit }) {
     const localPage = ref(props.page)
     const localFilter = ref(props.filter)
@@ -186,13 +199,18 @@ export default {
       })
     }
 
+    const canDeleteArticle = () => {
+      return props.currentUserRole === 'system' || props.currentUserRole === 'admin'
+    }
+
     return {
       localPage,
       localFilter,
       getStatusColor,
       getStatusIcon,
       getStatusText,
-      formatDate
+      formatDate,
+      canDeleteArticle
     }
   }
 }

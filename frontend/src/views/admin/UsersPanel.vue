@@ -76,6 +76,15 @@
                 <v-btn
                   variant="text"
                   size="small"
+                  color="info"
+                  @click="$emit('edit-user', user)"
+                  v-if="canEditUser(user)"
+                >
+                  编辑
+                </v-btn>
+                <v-btn
+                  variant="text"
+                  size="small"
                   color="warning"
                   @click="$emit('ban', user)"
                   v-if="canBanUser(user)"
@@ -135,7 +144,7 @@ export default {
       default: null
     }
   },
-  emits: ['edit-role', 'ban', 'unban', 'delete', 'refresh'],
+  emits: ['edit-role', 'edit-user', 'ban', 'unban', 'delete', 'refresh'],
   setup(props) {
     const getRoleColor = (role) => {
       const colors = {
@@ -181,6 +190,13 @@ export default {
       return false
     }
 
+    const canEditUser = (user) => {
+      if (!props.currentUserId || user.id === props.currentUserId) return false
+      if (props.currentUserRole === 'system') return true
+      if (props.currentUserRole === 'admin' && user.role !== 'system' && user.role !== 'System') return true
+      return false
+    }
+
     const canBanUser = (user) => {
       if (!props.currentUserId || user.id === props.currentUserId) return false
       if (user.status === 'banned') return false
@@ -210,6 +226,7 @@ export default {
       getRoleText,
       formatDate,
       canEditRole,
+      canEditUser,
       canBanUser,
       canUnbanUser,
       canDeleteUser
