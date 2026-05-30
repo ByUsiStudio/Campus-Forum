@@ -78,7 +78,7 @@ const initVditor = async () => {
   }
 
   vditor = new Vditor(editorRef.value, {
-    value: props.modelValue || '',
+    value: (typeof props.modelValue === 'string' ? props.modelValue : '') || '',
     height: props.height,
     mode: props.mode,
     placeholder: '使用 Markdown 语法编写文章...',
@@ -216,16 +216,16 @@ const initVditor = async () => {
     },
     after () {
       isInitialized = true
-      if (props.modelValue) {
-        vditor.setValue(props.modelValue)
-      }
     }
   })
 }
 
 watch(() => props.modelValue, (newVal) => {
-  if (isInitialized && vditor && vditor.getValue() !== newVal) {
-    vditor.setValue(newVal || '')
+  if (isInitialized && vditor) {
+    const strVal = typeof newVal === 'string' ? newVal : ''
+    if (vditor.getValue() !== strVal) {
+      vditor.setValue(strVal)
+    }
   }
 })
 
