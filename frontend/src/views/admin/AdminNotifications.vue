@@ -116,7 +116,7 @@ const notificationTargets = [
 
 const loadNotifications = async () => {
   try {
-    const response = await api.get('/admin/notifications')
+    const response = await api.get('/notifications/admin')
     notifications.value = response.data
   } catch (error) {
     console.error('加载通知列表失败', error)

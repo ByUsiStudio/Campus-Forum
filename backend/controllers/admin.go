@@ -94,6 +94,47 @@ func GetAllUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"users": response})
 }
 
+// UpdateUser 管理员更新用户信息
+func UpdateUser(c *gin.Context) {
+	userID := c.Param("id")
+
+	var input struct {
+		DisplayName string `json:"display_name"`
+		Email       string `json:"email"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 获取当前用户角色
+	currentRole := c.GetString("role")
+
+	// 获取目标用户信息
+	var targetUser models.User
+	if result := database.DB.First(&targetUser, userID); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
+		return
+	}
+
+	// 权限检查：只有 system 用户可以修改 system 用户
+	if targetUser.Role == "system" && currentRole != "system" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "需要系统管理员权限"})
+		return
+	}
+
+	if input.DisplayName != "" {
+		targetUser.DisplayName = input.DisplayName
+	}
+	if input.Email != "" {
+		targetUser.Email = input.Email
+	}
+
+	database.DB.Save(&targetUser)
+	c.JSON(http.StatusOK, gin.H{"message": "更新成功"})
+}
+
 // UpdateUserRole 更新用户角色
 func UpdateUserRole(c *gin.Context) {
 	userID := c.Param("id")

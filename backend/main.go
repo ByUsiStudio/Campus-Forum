@@ -163,6 +163,7 @@ func main() {
 			protected.GET("/admin/check", controllers.CheckAdmin)
 			protected.GET("/admin/statistics", middleware.AdminOnly(), controllers.GetStatistics)
 			protected.GET("/admin/users", middleware.AdminOnly(), controllers.GetAllUsers)
+			protected.PUT("/admin/users/:id", middleware.AdminOnly(), controllers.UpdateUser)
 			protected.PUT("/admin/users/:id/role", middleware.AdminOnly(), controllers.UpdateUserRole)
 			protected.POST("/admin/users/:id/ban", middleware.AdminOnly(), controllers.BanUser)
 			protected.POST("/admin/users/:id/unban", middleware.AdminOnly(), controllers.UnbanUser)

@@ -63,7 +63,7 @@ const usersForSelect = computed(() => {
 const loadTitles = async () => {
   loading.value = true
   try {
-    const response = await api.get('/admin/titles')
+    const response = await api.get('/titles')
     titles.value = response.data
   } catch (error) {
     console.error('加载头衔列表失败', error)
@@ -86,7 +86,7 @@ const addTitle = async () => {
   if (!titleName) return
   
   try {
-    await api.post('/admin/titles', { name: titleName })
+    await api.post('/titles', { name: titleName })
     showSuccess('添加成功')
     loadTitles()
   } catch (error) {
@@ -110,7 +110,8 @@ const handleGrant = async () => {
   }
   
   try {
-    await api.post(`/admin/titles/${grantDialog.value.titleId}/grant`, {
+    await api.post('/titles/grant', {
+      title_id: grantDialog.value.titleId,
       user_id: grantDialog.value.selectedUserId
     })
     showSuccess('授予成功')
@@ -127,7 +128,7 @@ const revokeTitle = async (titleId, userId) => {
   if (!confirmed) return
   
   try {
-    await api.post(`/admin/titles/${titleId}/revoke`, { user_id: userId })
+    await api.post('/titles/revoke', { title_id: titleId, user_id: userId })
     showSuccess('撤销成功')
     loadTitles()
   } catch (error) {
@@ -141,7 +142,7 @@ const handleDeleteTitle = async (title) => {
   if (!confirmed) return
   
   try {
-    await api.delete(`/admin/titles/${title.id}`)
+    await api.delete(`/titles/${title.id}`)
     showSuccess('删除成功')
     loadTitles()
   } catch (error) {

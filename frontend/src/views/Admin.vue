@@ -130,7 +130,7 @@ const checkAdmin = async () => {
 
 const loadDeletionCount = async () => {
   try {
-    const response = await api.get('/admin/deletions')
+    const response = await api.get('/deletion-requests')
     deletionCount.value = response.data.length
   } catch (error) {
     console.error('加载删除申请数量失败', error)

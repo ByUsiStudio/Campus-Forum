@@ -62,7 +62,7 @@ const deletionRequests = ref([])
 
 const loadDeletionRequests = async () => {
   try {
-    const response = await api.get('/admin/deletions')
+    const response = await api.get('/deletion-requests')
     deletionRequests.value = response.data
   } catch (error) {
     console.error('加载删除申请失败', error)
@@ -80,7 +80,7 @@ const approveDeletion = async (id) => {
   if (!confirmed) return
   
   try {
-    await api.post(`/admin/deletions/${id}/approve`)
+    await api.post(`/deletion-requests/${id}/approve`)
     showSuccess('已批准删除')
     loadDeletionRequests()
   } catch (error) {
@@ -94,7 +94,7 @@ const rejectDeletion = async (id) => {
   if (!confirmed) return
   
   try {
-    await api.post(`/admin/deletions/${id}/reject`)
+    await api.post(`/deletion-requests/${id}/reject`)
     showSuccess('已拒绝删除')
     loadDeletionRequests()
   } catch (error) {
