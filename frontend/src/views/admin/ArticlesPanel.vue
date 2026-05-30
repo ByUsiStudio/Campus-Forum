@@ -232,6 +232,35 @@ export default {
   }
 }
 
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.panel-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1C1B1F;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.panel-subtitle {
+  font-size: 0.95rem;
+  color: #938F99;
+  margin: 0;
+}
+
 .header-actions {
   display: flex;
   gap: 14px;

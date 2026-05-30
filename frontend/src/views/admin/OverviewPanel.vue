@@ -1,23 +1,20 @@
 <template>
   <div class="overview-panel">
     <div class="panel-header">
-      <div class="header-left">
-        <h2 class="panel-title">数据概览</h2>
-        <p class="panel-subtitle">查看论坛核心数据统计</p>
-      </div>
-      <v-btn variant="outlined" color="primary" @click="$emit('refresh')" :loading="loading">
-        <v-icon start>mdi-refresh</v-icon>
+      <h2 class="panel-title">数据概览</h2>
+      <v-btn variant="text" color="primary" @click="$emit('refresh')" :loading="loading">
+        <v-icon start size="18">mdi-refresh</v-icon>
         刷新
       </v-btn>
     </div>
 
     <v-row class="stats-grid">
       <v-col cols="12" sm="6" lg="3">
-        <div class="stat-card stat-users">
-          <div class="stat-icon-wrapper">
-            <v-icon size="28" color="white">mdi-account-group</v-icon>
+        <div class="stat-card">
+          <div class="stat-icon stat-users">
+            <v-icon size="24" color="white">mdi-account-group</v-icon>
           </div>
-          <div class="stat-content">
+          <div class="stat-info">
             <div class="stat-value">{{ statistics.user_count || 0 }}</div>
             <div class="stat-label">用户总数</div>
           </div>
@@ -25,11 +22,11 @@
       </v-col>
 
       <v-col cols="12" sm="6" lg="3">
-        <div class="stat-card stat-articles">
-          <div class="stat-icon-wrapper">
-            <v-icon size="28" color="white">mdi-file-document</v-icon>
+        <div class="stat-card">
+          <div class="stat-icon stat-articles">
+            <v-icon size="24" color="white">mdi-file-document</v-icon>
           </div>
-          <div class="stat-content">
+          <div class="stat-info">
             <div class="stat-value">{{ statistics.article_count || 0 }}</div>
             <div class="stat-label">文章总数</div>
           </div>
@@ -37,11 +34,11 @@
       </v-col>
 
       <v-col cols="12" sm="6" lg="3">
-        <div class="stat-card stat-comments">
-          <div class="stat-icon-wrapper">
-            <v-icon size="28" color="white">mdi-comment-text</v-icon>
+        <div class="stat-card">
+          <div class="stat-icon stat-comments">
+            <v-icon size="24" color="white">mdi-comment-text</v-icon>
           </div>
-          <div class="stat-content">
+          <div class="stat-info">
             <div class="stat-value">{{ statistics.comment_count || 0 }}</div>
             <div class="stat-label">评论总数</div>
           </div>
@@ -49,11 +46,11 @@
       </v-col>
 
       <v-col cols="12" sm="6" lg="3">
-        <div class="stat-card stat-views">
-          <div class="stat-icon-wrapper">
-            <v-icon size="28" color="white">mdi-eye</v-icon>
+        <div class="stat-card">
+          <div class="stat-icon stat-views">
+            <v-icon size="24" color="white">mdi-eye</v-icon>
           </div>
-          <div class="stat-content">
+          <div class="stat-info">
             <div class="stat-value">{{ formatNumber(statistics.view_count || 0) }}</div>
             <div class="stat-label">总浏览量</div>
           </div>
@@ -61,29 +58,26 @@
       </v-col>
     </v-row>
 
-    <v-row class="mt-6">
+    <v-row>
       <v-col cols="12" lg="8">
-        <v-card class="quick-actions-card">
-          <v-card-title class="card-title">
-            <v-icon class="title-icon">mdi-lightning-bolt</v-icon>
-            快捷操作
-          </v-card-title>
+        <v-card class="content-card">
+          <v-card-title class="card-title">快捷操作</v-card-title>
           <v-card-text>
-            <div class="quick-actions-grid">
-              <v-btn color="primary" variant="tonal" size="large" class="action-btn" to="/">
-                <v-icon start>mdi-home</v-icon>
+            <div class="quick-actions">
+              <v-btn variant="tonal" color="primary" to="/">
+                <v-icon start size="18">mdi-home</v-icon>
                 返回首页
               </v-btn>
-              <v-btn color="success" variant="tonal" size="large" class="action-btn">
-                <v-icon start>mdi-plus</v-icon>
+              <v-btn variant="tonal" color="success">
+                <v-icon start size="18">mdi-plus</v-icon>
                 创建文章
               </v-btn>
-              <v-btn color="warning" variant="tonal" size="large" class="action-btn">
-                <v-icon start>mdi-bell</v-icon>
+              <v-btn variant="tonal" color="warning">
+                <v-icon start size="18">mdi-bell</v-icon>
                 发送通知
               </v-btn>
-              <v-btn color="info" variant="tonal" size="large" class="action-btn">
-                <v-icon start>mdi-cog</v-icon>
+              <v-btn variant="tonal" color="info">
+                <v-icon start size="18">mdi-cog</v-icon>
                 系统设置
               </v-btn>
             </div>
@@ -92,11 +86,8 @@
       </v-col>
 
       <v-col cols="12" lg="4">
-        <v-card class="system-info-card">
-          <v-card-title class="card-title">
-            <v-icon class="title-icon">mdi-information</v-icon>
-            系统信息
-          </v-card-title>
+        <v-card class="content-card">
+          <v-card-title class="card-title">系统信息</v-card-title>
           <v-card-text>
             <div class="info-list">
               <div class="info-item">
@@ -105,11 +96,11 @@
               </div>
               <div class="info-item">
                 <span class="info-label">数据库状态</span>
-                <v-chip size="small" color="success">正常</v-chip>
+                <v-chip size="small" color="success" variant="tonal">正常</v-chip>
               </div>
               <div class="info-item">
                 <span class="info-label">服务器状态</span>
-                <v-chip size="small" color="success">在线</v-chip>
+                <v-chip size="small" color="success" variant="tonal">在线</v-chip>
               </div>
               <div class="info-item">
                 <span class="info-label">当前时间</span>
@@ -155,54 +146,43 @@ export default {
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
+        minute: '2-digit'
       })
     }
 
     const formatNumber = (num) => {
-      if (num >= 10000) {
-        return (num / 10000).toFixed(1) + 'w'
-      }
-      if (num >= 1000) {
-        return (num / 1000).toFixed(1) + 'k'
-      }
+      if (num >= 10000) return (num / 10000).toFixed(1) + 'w'
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
       return num.toString()
     }
 
     onMounted(() => {
       updateTime()
-      timeInterval = setInterval(updateTime, 1000)
+      timeInterval = setInterval(updateTime, 60000)
     })
 
     onUnmounted(() => {
-      if (timeInterval) {
-        clearInterval(timeInterval)
-      }
+      if (timeInterval) clearInterval(timeInterval)
     })
 
-    return {
-      currentTime,
-      formatNumber
-    }
+    return { currentTime, formatNumber }
   }
 }
 </script>
 
 <style scoped>
-.overview-panel {
-  animation: panelFadeIn 0.4s ease;
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
 }
 
-@keyframes panelFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.panel-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1A1A1A;
+  margin: 0;
 }
 
 .stats-grid {
@@ -212,207 +192,88 @@ export default {
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 28px;
-  border-radius: 20px;
-  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -2px rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 100%;
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -25%;
-  width: 100px;
-  height: 100px;
-  background: rgba(103, 80, 164, 0.03);
-  border-radius: 50%;
+  gap: 16px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #F0F0F0;
+  transition: border-color 0.2s;
 }
 
 .stat-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 
-    0 20px 40px -10px rgba(0, 0, 0, 0.1),
-    0 8px 16px -4px rgba(0, 0, 0, 0.06);
+  border-color: #E0E0E0;
 }
 
-.stat-icon-wrapper {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.3s ease;
-  position: relative;
-  z-index: 1;
 }
 
-.stat-card:hover .stat-icon-wrapper {
-  transform: scale(1.08);
-}
+.stat-users { background: #6750A4; }
+.stat-articles { background: #EC4899; }
+.stat-comments { background: #06B6D4; }
+.stat-views { background: #10B981; }
 
-.stat-users .stat-icon-wrapper {
-  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
-  box-shadow: 0 8px 24px -8px rgba(99, 102, 241, 0.4);
-}
-
-.stat-articles .stat-icon-wrapper {
-  background: linear-gradient(135deg, #EC4899 0%, #F43F5E 100%);
-  box-shadow: 0 8px 24px -8px rgba(236, 72, 153, 0.4);
-}
-
-.stat-comments .stat-icon-wrapper {
-  background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
-  box-shadow: 0 8px 24px -8px rgba(6, 182, 212, 0.4);
-}
-
-.stat-views .stat-icon-wrapper {
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  box-shadow: 0 8px 24px -8px rgba(16, 185, 129, 0.4);
-}
-
-.stat-content {
-  flex: 1;
+.stat-info {
   min-width: 0;
-  position: relative;
-  z-index: 1;
 }
 
 .stat-value {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: #1C1B1F;
-  line-height: 1.15;
-  letter-spacing: -1px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1A1A1A;
+  line-height: 1.2;
 }
 
 .stat-label {
-  font-size: 14px;
-  color: #625B71;
-  margin-top: 6px;
-  font-weight: 500;
+  font-size: 13px;
+  color: #888;
+  margin-top: 2px;
 }
 
-.quick-actions-card,
-.system-info-card {
-  border-radius: 20px;
-  height: 100%;
-  background: #fff;
-  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
+.content-card {
+  border-radius: 12px;
+  border: 1px solid #F0F0F0;
 }
 
 .card-title {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  padding: 22px 24px !important;
-  border-bottom: 1px solid #F2F0F4;
-  background: linear-gradient(90deg, #F8F7FF 0%, #ffffff 100%);
+  color: #1A1A1A;
+  padding-bottom: 12px;
 }
 
-.title-icon {
-  width: 40px;
-  height: 40px;
-  padding: 8px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(103, 80, 164, 0.1) 0%, rgba(123, 58, 237, 0.1) 100%);
-  color: #6750A4 !important;
-  transition: transform 0.2s ease;
-}
-
-.card-title:hover .title-icon {
-  transform: scale(1.1);
-}
-
-.quick-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-  padding: 8px;
-}
-
-.action-btn {
-  justify-content: flex-start;
-  height: 56px;
-  border-radius: 14px;
-  font-weight: 500;
-  font-size: 14px;
-  transition: all 0.25s ease;
-}
-
-.action-btn:hover {
-  transform: translateY(-2px);
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .info-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 12px;
 }
 
 .info-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  transition: background 0.2s ease;
-}
-
-.info-item:hover {
-  background: #F8F7FF;
-}
-
-.info-item:not(:last-child) {
-  border-bottom: 1px solid #F2F0F4;
 }
 
 .info-label {
   font-size: 14px;
-  color: #625B71;
-  font-weight: 500;
+  color: #666;
 }
 
 .info-value {
   font-size: 14px;
-  font-weight: 600;
-  color: #1C1B1F;
-}
-
-@media (max-width: 600px) {
-  .stats-grid {
-    margin-bottom: 0;
-  }
-
-  .stat-card {
-    padding: 22px;
-  }
-
-  .stat-value {
-    font-size: 2rem;
-  }
-
-  .quick-actions-grid {
-    grid-template-columns: 1fr;
-  }
-  .stat-value {
-    font-size: 1.5rem;
-  }
-
-  .quick-actions-grid {
-    grid-template-columns: 1fr;
-  }
+  color: #333;
+  font-weight: 500;
 }
 </style>

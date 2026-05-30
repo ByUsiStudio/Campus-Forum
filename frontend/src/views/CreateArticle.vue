@@ -25,10 +25,10 @@
         ></v-select>
 
         <div class="mb-4">
-          <VditorEditor
+          <ByteMDEditor
             v-model="form.content"
             :height="500"
-            mode="sv"
+            mode="split"
           />
         </div>
 
@@ -51,13 +51,13 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
-import VditorEditor from '../components/VditorEditor.vue'
+import ByteMDEditor from '../components/ByteMDEditor.vue'
 import { alert as showAlert, error as showError } from '../utils/modal'
 
 export default {
   name: 'CreateArticle',
   components: {
-    VditorEditor
+    ByteMDEditor
   },
   setup() {
     const route = useRoute()
