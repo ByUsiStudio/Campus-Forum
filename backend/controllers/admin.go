@@ -11,6 +11,17 @@ import (
 	"gorm.io/gorm"
 )
 
+// CheckAdmin 检查用户是否是管理员
+func CheckAdmin(c *gin.Context) {
+	role := c.GetString("role")
+	isAdmin := role == "admin" || role == "system"
+	
+	c.JSON(http.StatusOK, gin.H{
+		"is_admin": isAdmin,
+		"role":     role,
+	})
+}
+
 // GetStatistics 获取统计数据
 func GetStatistics(c *gin.Context) {
 	var userCount int64

@@ -160,6 +160,7 @@ func main() {
 			protected.GET("/chat/unread-count", controllers.GetChatUnreadCount)
 
 			// 后台管理
+			protected.GET("/admin/check", controllers.CheckAdmin)
 			protected.GET("/admin/statistics", middleware.AdminOnly(), controllers.GetStatistics)
 			protected.GET("/admin/users", middleware.AdminOnly(), controllers.GetAllUsers)
 			protected.PUT("/admin/users/:id/role", middleware.AdminOnly(), controllers.UpdateUserRole)
