@@ -95,6 +95,8 @@
       "view_count": 100,
       "like_count": 10,
       "comment_count": 5,
+      "voice_url": "string",
+      "is_anonymous": false,
       "created_at": "2024-01-01T00:00:00Z"
     }
   ],
@@ -120,16 +122,22 @@
 **响应**:
 ```json
 {
-  "id": 1,
-  "title": "string",
-  "content": "string",
-  "content_html": "string",
-  "user": {...},
-  "category": {...},
-  "view_count": 100,
-  "like_count": 10,
+  "article": {
+    "id": 1,
+    "title": "string",
+    "content": "string",
+    "content_html": "string",
+    "user": {...},
+    "category": {...},
+    "view_count": 100,
+    "like_count": 10,
+    "voice_url": "string",
+    "is_anonymous": false,
+    "created_at": "2024-01-01T00:00:00Z"
+  },
   "comments": [...],
-  "created_at": "2024-01-01T00:00:00Z"
+  "liked": false,
+  "comment_liked": {}
 }
 ```
 
@@ -151,15 +159,17 @@ Authorization: Bearer <token>
 {
   "title": "string",
   "content": "string (Markdown)",
-  "category_id": 1
+  "category_id": 1,
+  "voice_url": "string (可选，语音文件URL)",
+  "is_anonymous": false
 }
 ```
 
 **响应**:
 ```json
 {
-  "message": "文章创建成功",
-  "article_id": 1
+  "message": "创建成功",
+  "article": {...}
 }
 ```
 
@@ -181,7 +191,9 @@ Authorization: Bearer <token>
 {
   "title": "string",
   "content": "string",
-  "category_id": 1
+  "category_id": 1,
+  "voice_url": "string",
+  "is_anonymous": false
 }
 ```
 
@@ -226,6 +238,45 @@ Authorization: Bearer <token>
 
 ---
 
+### 收藏文章
+
+**POST** `/api/articles/{id}/favorite`
+
+收藏文章（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 取消收藏
+
+**DELETE** `/api/articles/{id}/favorite`
+
+取消收藏（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 获取收藏列表
+
+**GET** `/api/favorites`
+
+获取当前用户的收藏列表（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
 ## 评论接口
 
 ### 获取文章评论
@@ -242,6 +293,9 @@ Authorization: Bearer <token>
       "id": 1,
       "content": "string",
       "user": {...},
+      "is_anonymous": false,
+      "reply_count": 5,
+      "replies": [...],
       "created_at": "2024-01-01T00:00:00Z"
     }
   ]
@@ -264,7 +318,9 @@ Authorization: Bearer <token>
 **请求体**:
 ```json
 {
-  "content": "string"
+  "content": "string",
+  "parent_id": null,
+  "is_anonymous": false
 }
 ```
 
@@ -279,6 +335,180 @@ Authorization: Bearer <token>
 **Headers**:
 ```
 Authorization: Bearer <token>
+```
+
+---
+
+### 点赞评论
+
+**POST** `/api/comments/{id}/like`
+
+点赞评论（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 取消评论点赞
+
+**DELETE** `/api/comments/{id}/like`
+
+取消评论点赞（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+## 关注接口
+
+### 关注用户
+
+**POST** `/api/follow/{id}`
+
+关注用户（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**路径参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| id | int | 被关注用户 ID |
+
+---
+
+### 取消关注
+
+**DELETE** `/api/follow/{id}`
+
+取消关注（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 获取关注列表
+
+**GET** `/api/following`
+
+获取当前用户的关注列表（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**响应**:
+```json
+{
+  "following": [
+    {
+      "id": 1,
+      "username": "string",
+      "display_name": "string",
+      "avatar": "string",
+      "role": "user",
+      "signature": "string"
+    }
+  ]
+}
+```
+
+---
+
+### 获取粉丝列表
+
+**GET** `/api/followers`
+
+获取当前用户的粉丝列表（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**响应**:
+```json
+{
+  "followers": [...]
+}
+```
+
+---
+
+### 检查关注状态
+
+**GET** `/api/follow/status/{id}`
+
+检查与指定用户的关注状态（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**响应**:
+```json
+{
+  "is_following": true,
+  "is_followed": false,
+  "mutual": false,
+  "following_user": {...}
+}
+```
+
+---
+
+### 获取互相关注好友
+
+**GET** `/api/mutual`
+
+获取互相关注的好友列表（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 获取用户关注列表
+
+**GET** `/api/users/{id}/following`
+
+获取指定用户的关注列表（公开接口）。
+
+**响应**:
+```json
+{
+  "following": [...]
+}
+```
+
+---
+
+### 获取用户粉丝列表
+
+**GET** `/api/users/{id}/followers`
+
+获取指定用户的粉丝列表（公开接口）。
+
+**响应**:
+```json
+{
+  "followers": [...]
+}
 ```
 
 ---
@@ -372,8 +602,9 @@ Authorization: Bearer <token>
   "display_name": "string",
   "email": "string",
   "avatar": "string",
-  "bio": "string",
+  "signature": "string",
   "role": "user",
+  "qq_number": "string",
   "created_at": "2024-01-01T00:00:00Z"
 }
 ```
@@ -395,7 +626,44 @@ Authorization: Bearer <token>
 ```json
 {
   "display_name": "string",
-  "bio": "string"
+  "signature": "string"
+}
+```
+
+---
+
+### 获取用户公开信息
+
+**GET** `/api/users/{id}`
+
+获取指定用户的公开信息。
+
+**响应**:
+```json
+{
+  "id": 1,
+  "username": "string",
+  "display_name": "string",
+  "avatar": "string",
+  "role": "user",
+  "signature": "string",
+  "titles": [...],
+  "created_at": "2024-01-01T00:00:00Z"
+}
+```
+
+---
+
+### 获取用户文章列表
+
+**GET** `/api/users/{id}/articles`
+
+获取指定用户的文章列表。
+
+**响应**:
+```json
+{
+  "articles": [...]
 }
 ```
 
@@ -418,11 +686,12 @@ Content-Type: multipart/form-data
 **Form Data**:
 | 字段 | 类型 | 描述 |
 |------|------|------|
-| file | file | 图片文件 |
+| avatar | file | 图片文件 |
 
 **响应**:
 ```json
 {
+  "message": "上传成功",
   "url": "https://..."
 }
 ```
@@ -444,11 +713,12 @@ Content-Type: multipart/form-data
 **Form Data**:
 | 字段 | 类型 | 描述 |
 |------|------|------|
-| file | file | 图片文件 |
+| image | file | 图片文件 |
 
 **响应**:
 ```json
 {
+  "message": "上传成功",
   "url": "https://..."
 }
 ```
@@ -470,13 +740,241 @@ Content-Type: multipart/form-data
 **Form Data**:
 | 字段 | 类型 | 描述 |
 |------|------|------|
-| file | file | 视频文件 |
+| video | file | 视频文件 |
 
 **响应**:
 ```json
 {
+  "message": "上传成功",
   "url": "https://..."
 }
+```
+
+---
+
+### 上传语音
+
+**POST** `/api/upload/voice`
+
+上传语音文件（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+**Form Data**:
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| voice | file | 语音文件 |
+
+**响应**:
+```json
+{
+  "message": "上传成功",
+  "url": "https://..."
+}
+```
+
+---
+
+## 通知接口
+
+### 获取通知列表
+
+**GET** `/api/notifications`
+
+获取当前用户的通知列表（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 获取未读通知数量
+
+**GET** `/api/notifications/unread-count`
+
+获取未读通知数量（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 标记通知为已读
+
+**POST** `/api/notifications/{id}/read`
+
+标记单条通知为已读（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 标记所有通知为已读
+
+**POST** `/api/notifications/read-all`
+
+标记所有通知为已读（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 获取评论回复通知
+
+**GET** `/api/comment-reply-notifications`
+
+获取评论回复通知列表（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 获取粉丝通知
+
+**GET** `/api/follow-notifications`
+
+获取粉丝通知列表（关注对象发新内容时的通知）（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**响应**:
+```json
+{
+  "notifications": [
+    {
+      "id": 1,
+      "user_id": 123,
+      "sender_id": 456,
+      "article_id": 789,
+      "type": "new_article",
+      "is_read": false,
+      "sender": {...},
+      "article": {...},
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### 标记粉丝通知为已读
+
+**POST** `/api/follow-notifications/{id}/read`
+
+标记单条粉丝通知为已读（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 标记所有粉丝通知为已读
+
+**POST** `/api/follow-notifications/read-all`
+
+标记所有粉丝通知为已读（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 获取粉丝通知未读数量
+
+**GET** `/api/follow-notifications/unread-count`
+
+获取粉丝通知未读数量（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+## 聊天接口
+
+### 获取聊天会话列表
+
+**GET** `/api/chat/sessions`
+
+获取当前用户的聊天会话列表（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 获取聊天记录
+
+**GET** `/api/chat/messages/{id}`
+
+获取与指定用户的聊天记录（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 发送消息
+
+**POST** `/api/chat/send`
+
+发送消息（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**请求体**:
+```json
+{
+  "receiver_id": 1,
+  "content": "string"
+}
+```
+
+---
+
+### 获取聊天未读数量
+
+**GET** `/api/chat/unread-count`
+
+获取聊天未读消息数量（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
 ```
 
 ---
@@ -566,6 +1064,118 @@ Authorization: Bearer <token>
 
 ---
 
+### 获取网站配置
+
+**GET** `/api/site-config`
+
+获取网站配置（公开接口）。
+
+**响应**:
+```json
+{
+  "site_title": "string",
+  "site_description": "string"
+}
+```
+
+---
+
+### 更新网站配置
+
+**PUT** `/api/site-config`
+
+更新网站配置（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 获取版本信息
+
+**GET** `/api/version`
+
+获取前后端版本信息（公开接口）。
+
+**响应**:
+```json
+{
+  "frontend": {
+    "version": "string"
+  },
+  "backend": {
+    "version": "string"
+  },
+  "swagger": {
+    "version": "string"
+  }
+}
+```
+
+---
+
+## 头衔接口
+
+### 获取所有头衔
+
+**GET** `/api/titles`
+
+获取所有头衔列表。
+
+---
+
+### 授予用户头衔
+
+**POST** `/api/titles/grant`
+
+授予用户头衔（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**请求体**:
+```json
+{
+  "user_id": 1,
+  "title_id": 1
+}
+```
+
+---
+
+### 撤销用户头衔
+
+**POST** `/api/titles/revoke`
+
+撤销用户头衔（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**请求体**:
+```json
+{
+  "user_id": 1,
+  "title_id": 1
+}
+```
+
+---
+
+### 获取用户头衔
+
+**GET** `/api/users/{id}/titles`
+
+获取指定用户的头衔列表。
+
+---
+
 ## 管理接口
 
 ### 获取删除请求列表
@@ -615,6 +1225,71 @@ Authorization: Bearer <token>
 **POST** `/api/deletion-requests/{id}/reject`
 
 拒绝删除请求（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 获取统计数据
+
+**GET** `/api/admin/statistics`
+
+获取后台统计数据（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 获取所有用户
+
+**GET** `/api/admin/users`
+
+获取用户列表（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 更新用户
+
+**PUT** `/api/admin/users/{id}`
+
+更新用户信息（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 封禁用户
+
+**POST** `/api/admin/users/{id}/ban`
+
+封禁用户（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 解封用户
+
+**POST** `/api/admin/users/{id}/unban`
+
+解封用户（需管理员权限）。
 
 **Headers**:
 ```

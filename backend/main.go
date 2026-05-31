@@ -197,6 +197,7 @@ func main() {
 		api.GET("/announcement", controllers.GetAnnouncement)
 		api.GET("/sidebar-config", controllers.GetSidebarConfig)
 		api.GET("/site-config", controllers.GetSiteConfig)
+		api.GET("/version", controllers.GetVersion)
 
 		// 用户公开信息
 		api.GET("/users/:id", controllers.GetUserByID)

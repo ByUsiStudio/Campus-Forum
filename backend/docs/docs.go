@@ -30,12 +30,11 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "required": ["username", "qq_number", "display_name", "password"],
+                            "required": ["username", "password", "email"],
                             "properties": {
                                 "username": {"type": "string"},
-                                "qq_number": {"type": "string"},
-                                "display_name": {"type": "string"},
-                                "password": {"type": "string"}
+                                "password": {"type": "string"},
+                                "email": {"type": "string"}
                             }
                         }
                     }
@@ -111,7 +110,9 @@ const docTemplate = `{
                             "properties": {
                                 "title": {"type": "string"},
                                 "content": {"type": "string"},
-                                "category_id": {"type": "integer"}
+                                "category_id": {"type": "integer"},
+                                "voice_url": {"type": "string"},
+                                "is_anonymous": {"type": "boolean"}
                             }
                         }
                     }
@@ -156,7 +157,9 @@ const docTemplate = `{
                             "properties": {
                                 "title": {"type": "string"},
                                 "content": {"type": "string"},
-                                "category_id": {"type": "integer"}
+                                "category_id": {"type": "integer"},
+                                "voice_url": {"type": "string"},
+                                "is_anonymous": {"type": "boolean"}
                             }
                         }
                     }
@@ -212,6 +215,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/articles/{id}/favorite": {
+            "post": {
+                "description": "收藏文章",
+                "tags": ["文章"],
+                "summary": "收藏文章",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "收藏成功"},
+                    "401": {"description": "未授权"}
+                }
+            },
+            "delete": {
+                "description": "取消收藏",
+                "tags": ["文章"],
+                "summary": "取消收藏",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "取消成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/favorites": {
+            "get": {
+                "description": "获取收藏列表",
+                "produces": ["application/json"],
+                "tags": ["文章"],
+                "summary": "获取收藏列表",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
         "/api/articles/{id}/comments": {
             "get": {
                 "description": "获取文章评论",
@@ -243,7 +287,9 @@ const docTemplate = `{
                             "type": "object",
                             "required": ["content"],
                             "properties": {
-                                "content": {"type": "string"}
+                                "content": {"type": "string"},
+                                "parent_id": {"type": "integer"},
+                                "is_anonymous": {"type": "boolean"}
                             }
                         }
                     }
@@ -267,6 +313,145 @@ const docTemplate = `{
                     "200": {"description": "删除成功"},
                     "401": {"description": "未授权"},
                     "403": {"description": "无权限"}
+                }
+            }
+        },
+        "/api/comments/{id}/like": {
+            "post": {
+                "description": "点赞评论",
+                "tags": ["评论"],
+                "summary": "点赞评论",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "点赞成功"},
+                    "401": {"description": "未授权"}
+                }
+            },
+            "delete": {
+                "description": "取消评论点赞",
+                "tags": ["评论"],
+                "summary": "取消评论点赞",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "取消成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/follow/{id}": {
+            "post": {
+                "description": "关注用户",
+                "tags": ["关注"],
+                "summary": "关注用户",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "关注成功"},
+                    "401": {"description": "未授权"}
+                }
+            },
+            "delete": {
+                "description": "取消关注",
+                "tags": ["关注"],
+                "summary": "取消关注",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "取消成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/following": {
+            "get": {
+                "description": "获取当前用户的关注列表",
+                "produces": ["application/json"],
+                "tags": ["关注"],
+                "summary": "获取关注列表",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/followers": {
+            "get": {
+                "description": "获取当前用户的粉丝列表",
+                "produces": ["application/json"],
+                "tags": ["关注"],
+                "summary": "获取粉丝列表",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/follow/status/{id}": {
+            "get": {
+                "description": "检查与指定用户的关注状态",
+                "produces": ["application/json"],
+                "tags": ["关注"],
+                "summary": "检查关注状态",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/mutual": {
+            "get": {
+                "description": "获取互相关注的好友列表",
+                "produces": ["application/json"],
+                "tags": ["关注"],
+                "summary": "获取互关注好友",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/users/{id}/following": {
+            "get": {
+                "description": "获取指定用户的关注列表",
+                "produces": ["application/json"],
+                "tags": ["关注"],
+                "summary": "获取用户关注列表",
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "成功"}
+                }
+            }
+        },
+        "/api/users/{id}/followers": {
+            "get": {
+                "description": "获取指定用户的粉丝列表",
+                "produces": ["application/json"],
+                "tags": ["关注"],
+                "summary": "获取用户粉丝列表",
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "成功"}
                 }
             }
         },
@@ -382,7 +567,7 @@ const docTemplate = `{
                             "type": "object",
                             "properties": {
                                 "display_name": {"type": "string"},
-                                "bio": {"type": "string"}
+                                "signature": {"type": "string"}
                             }
                         }
                     }
@@ -390,6 +575,34 @@ const docTemplate = `{
                 "responses": {
                     "200": {"description": "更新成功"},
                     "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/users/{id}": {
+            "get": {
+                "description": "获取指定用户的公开信息",
+                "produces": ["application/json"],
+                "tags": ["用户"],
+                "summary": "获取用户公开信息",
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "成功"}
+                }
+            }
+        },
+        "/api/users/{id}/articles": {
+            "get": {
+                "description": "获取指定用户的文章列表",
+                "produces": ["application/json"],
+                "tags": ["用户"],
+                "summary": "获取用户文章列表",
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "成功"}
                 }
             }
         },
@@ -417,6 +630,225 @@ const docTemplate = `{
                 "security": [{"Bearer": []}],
                 "responses": {
                     "200": {"description": "上传成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/upload/video": {
+            "post": {
+                "description": "上传视频",
+                "consumes": ["multipart/form-data"],
+                "produces": ["application/json"],
+                "tags": ["上传"],
+                "summary": "上传视频",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "上传成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/upload/voice": {
+            "post": {
+                "description": "上传语音",
+                "consumes": ["multipart/form-data"],
+                "produces": ["application/json"],
+                "tags": ["上传"],
+                "summary": "上传语音",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "上传成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/notifications": {
+            "get": {
+                "description": "获取通知列表",
+                "produces": ["application/json"],
+                "tags": ["通知"],
+                "summary": "获取通知列表",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/notifications/unread-count": {
+            "get": {
+                "description": "获取未读通知数量",
+                "produces": ["application/json"],
+                "tags": ["通知"],
+                "summary": "获取未读数量",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/notifications/{id}/read": {
+            "post": {
+                "description": "标记通知为已读",
+                "tags": ["通知"],
+                "summary": "标记已读",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/notifications/read-all": {
+            "post": {
+                "description": "标记所有通知为已读",
+                "tags": ["通知"],
+                "summary": "全部标记已读",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/comment-reply-notifications": {
+            "get": {
+                "description": "获取评论回复通知列表",
+                "produces": ["application/json"],
+                "tags": ["通知"],
+                "summary": "获取评论回复通知",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/follow-notifications": {
+            "get": {
+                "description": "获取粉丝通知列表（关注对象发新内容时的通知）",
+                "produces": ["application/json"],
+                "tags": ["通知"],
+                "summary": "获取粉丝通知",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/follow-notifications/{id}/read": {
+            "post": {
+                "description": "标记粉丝通知为已读",
+                "tags": ["通知"],
+                "summary": "标记粉丝通知已读",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/follow-notifications/read-all": {
+            "post": {
+                "description": "标记所有粉丝通知为已读",
+                "tags": ["通知"],
+                "summary": "全部标记已读",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/follow-notifications/unread-count": {
+            "get": {
+                "description": "获取粉丝通知未读数量",
+                "produces": ["application/json"],
+                "tags": ["通知"],
+                "summary": "获取粉丝通知未读数量",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/chat/sessions": {
+            "get": {
+                "description": "获取聊天会话列表",
+                "produces": ["application/json"],
+                "tags": ["聊天"],
+                "summary": "获取聊天会话",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/chat/messages/{id}": {
+            "get": {
+                "description": "获取与指定用户的聊天记录",
+                "produces": ["application/json"],
+                "tags": ["聊天"],
+                "summary": "获取聊天记录",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/chat/send": {
+            "post": {
+                "description": "发送消息",
+                "consumes": ["application/json"],
+                "produces": ["application/json"],
+                "tags": ["聊天"],
+                "summary": "发送消息",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {
+                        "description": "消息内容",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "required": ["receiver_id", "content"],
+                            "properties": {
+                                "receiver_id": {"type": "integer"},
+                                "content": {"type": "string"}
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {"description": "发送成功"},
+                    "401": {"description": "未授权"}
+                }
+            }
+        },
+        "/api/chat/unread-count": {
+            "get": {
+                "description": "获取聊天未读消息数量",
+                "produces": ["application/json"],
+                "tags": ["聊天"],
+                "summary": "获取未读数量",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
                     "401": {"description": "未授权"}
                 }
             }
@@ -507,6 +939,143 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/site-config": {
+            "get": {
+                "description": "获取网站配置",
+                "produces": ["application/json"],
+                "tags": ["配置"],
+                "summary": "获取网站配置",
+                "responses": {
+                    "200": {"description": "成功"}
+                }
+            },
+            "put": {
+                "description": "更新网站配置",
+                "consumes": ["application/json"],
+                "produces": ["application/json"],
+                "tags": ["配置"],
+                "summary": "更新网站配置",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {
+                        "description": "网站配置",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "site_title": {"type": "string"},
+                                "site_description": {"type": "string"}
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {"description": "更新成功"},
+                    "401": {"description": "未授权"},
+                    "403": {"description": "需要管理员权限"}
+                }
+            }
+        },
+        "/api/version": {
+            "get": {
+                "description": "获取前后端版本信息",
+                "produces": ["application/json"],
+                "tags": ["其他"],
+                "summary": "获取版本信息",
+                "responses": {
+                    "200": {"description": "成功"}
+                }
+            }
+        },
+        "/api/titles": {
+            "get": {
+                "description": "获取所有头衔列表",
+                "produces": ["application/json"],
+                "tags": ["头衔"],
+                "summary": "获取头衔列表",
+                "responses": {
+                    "200": {"description": "成功"}
+                }
+            }
+        },
+        "/api/titles/grant": {
+            "post": {
+                "description": "授予用户头衔",
+                "consumes": ["application/json"],
+                "produces": ["application/json"],
+                "tags": ["头衔"],
+                "summary": "授予头衔",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {
+                        "description": "授予信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "required": ["user_id", "title_id"],
+                            "properties": {
+                                "user_id": {"type": "integer"},
+                                "title_id": {"type": "integer"}
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"},
+                    "403": {"description": "需要管理员权限"}
+                }
+            }
+        },
+        "/api/titles/revoke": {
+            "post": {
+                "description": "撤销用户头衔",
+                "consumes": ["application/json"],
+                "produces": ["application/json"],
+                "tags": ["头衔"],
+                "summary": "撤销头衔",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {
+                        "description": "撤销信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "required": ["user_id", "title_id"],
+                            "properties": {
+                                "user_id": {"type": "integer"},
+                                "title_id": {"type": "integer"}
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"},
+                    "403": {"description": "需要管理员权限"}
+                }
+            }
+        },
+        "/api/users/{id}/titles": {
+            "get": {
+                "description": "获取指定用户的头衔列表",
+                "produces": ["application/json"],
+                "tags": ["头衔"],
+                "summary": "获取用户头衔",
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "成功"}
+                }
+            }
+        },
         "/api/deletion-requests": {
             "get": {
                 "description": "获取删除请求列表",
@@ -552,6 +1121,84 @@ const docTemplate = `{
                     "403": {"description": "需要管理员权限"}
                 }
             }
+        },
+        "/api/admin/statistics": {
+            "get": {
+                "description": "获取后台统计数据",
+                "produces": ["application/json"],
+                "tags": ["管理"],
+                "summary": "获取统计数据",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"},
+                    "403": {"description": "需要管理员权限"}
+                }
+            }
+        },
+        "/api/admin/users": {
+            "get": {
+                "description": "获取用户列表",
+                "produces": ["application/json"],
+                "tags": ["管理"],
+                "summary": "获取用户列表",
+                "security": [{"Bearer": []}],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"},
+                    "403": {"description": "需要管理员权限"}
+                }
+            }
+        },
+        "/api/admin/users/{id}": {
+            "put": {
+                "description": "更新用户信息",
+                "consumes": ["application/json"],
+                "produces": ["application/json"],
+                "tags": ["管理"],
+                "summary": "更新用户",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"},
+                    "403": {"description": "需要管理员权限"}
+                }
+            }
+        },
+        "/api/admin/users/{id}/ban": {
+            "post": {
+                "description": "封禁用户",
+                "tags": ["管理"],
+                "summary": "封禁用户",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"},
+                    "403": {"description": "需要管理员权限"}
+                }
+            }
+        },
+        "/api/admin/users/{id}/unban": {
+            "post": {
+                "description": "解封用户",
+                "tags": ["管理"],
+                "summary": "解封用户",
+                "security": [{"Bearer": []}],
+                "parameters": [
+                    {"name": "id", "in": "path", "required": true, "type": "integer"}
+                ],
+                "responses": {
+                    "200": {"description": "成功"},
+                    "401": {"description": "未授权"},
+                    "403": {"description": "需要管理员权限"}
+                }
+            }
         }
     },
     "securityDefinitions": {
@@ -565,7 +1212,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.3.3",
+	Version:          "1.3.5",
 	Host:             "0.0.0.0:3620",
 	BasePath:         "/",
 	Schemes:          []string{},

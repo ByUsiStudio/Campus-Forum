@@ -72,7 +72,25 @@
         <router-view />
       </v-container>
     </v-main>
-    
+
+    <v-footer v-if="!hideAppBar" class="open-source-footer">
+      <div class="text-center" style="width: 100%;">
+        <div class="mb-2">
+          <span class="text-medium-emphasis">本论坛基于</span>
+          <a href="https://github.com/ByUsiStudio/Campus-Forum" target="_blank" class="open-source-link">GitHub</a>
+          <span class="text-medium-emphasis"> 与 </span>
+          <a href="https://gitee.com/byusistudio/campus-forum" target="_blank" class="open-source-link">Gitee</a>
+          <span class="text-medium-emphasis"> 开源</span>
+        </div>
+        <div class="text-caption text-medium-emphasis">
+          <a href="https://github.com/ByUsiStudio/Campus-Forum" target="_blank" class="open-source-link">https://github.com/ByUsiStudio/Campus-Forum</a>
+        </div>
+        <div class="text-caption text-medium-emphasis mt-1">
+          前端版本: {{ frontendVersion }} | 后端版本: {{ backendVersion || 'unknown' }}
+        </div>
+      </div>
+    </v-footer>
+
     <!-- 独立页面直接渲染router-view -->
     <router-view v-else />
 
@@ -122,6 +140,8 @@ export default {
     const drawer = ref(false)
     const isMobile = ref(false)
     const hideAppBar = ref(false)
+    const backendVersion = ref(null)
+    const frontendVersion = __FRONTEND_VERSION__ || 'unknown'
     let pollInterval = null
     
     // 检测屏幕宽度
@@ -173,6 +193,15 @@ export default {
         }
       }
     }
+
+    const loadVersion = async () => {
+      try {
+        const response = await api.get('/version')
+        backendVersion.value = response.data.backend?.version
+      } catch (error) {
+        console.error('加载版本信息失败', error)
+      }
+    }
     
     onMounted(() => {
       checkMobile()
@@ -184,6 +213,7 @@ export default {
       }
       loadUser()
       loadChatUnreadCount()
+      loadVersion()
 
       // 每分钟刷新未读消息数量
       pollInterval = setInterval(loadChatUnreadCount, 60000)
@@ -214,7 +244,9 @@ export default {
       chatUnreadCount,
       goToChat,
       isMobile,
-      drawer
+      drawer,
+      backendVersion,
+      frontendVersion
     }
   }
 }
@@ -238,5 +270,19 @@ export default {
   position: absolute;
   top: -4px;
   right: -8px;
+}
+
+.open-source-footer {
+  background: transparent !important;
+  padding: 16px;
+}
+
+.open-source-link {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+}
+
+.open-source-link:hover {
+  text-decoration: underline;
 }
 </style>

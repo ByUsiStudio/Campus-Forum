@@ -119,3 +119,5 @@ function getErrorMessage(error) {
 }
 
 export default api
+
+export const getVersion = () => api.get('/version')

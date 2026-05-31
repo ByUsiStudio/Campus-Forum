@@ -3,23 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title id="siteTitle">校园论坛 - 分享与交流</title>
-    
-    <!-- PWA 相关配置 -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#1976d2">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="校园论坛">
-    <meta name="application-name" content="校园论坛">
-    <meta name="description" content="校园论坛 - 分享与交流">
-    <meta name="msapplication-TileColor" content="#1976d2">
-    <meta name="msapplication-TileImage" content="/xylt.svg">
-    
-    <!-- 图标 - 使用 xylt.svg -->
+    <title id="siteTitle">{{SITE_TITLE}}</title>
+    <!-- 图标 -->
     <link rel="icon" type="image/svg+xml" href="/xylt.svg">
-    <link rel="apple-touch-icon" href="/xylt.svg">
-    
+
     <style>
         * {
             margin: 0;
@@ -27,87 +14,28 @@
             -webkit-tap-highlight-color: transparent;
         }
     </style>
-    
+
     <!-- 动态加载网站标题 -->
     <script>
-        // 从服务器获取网站配置
         fetch('/api/site-config')
             .then(response => response.json())
             .then(data => {
-                const siteTitle = data.site_title || '校园论坛 - 分享与交流';
+                const siteTitle = data.site_title || '{{SITE_TITLE}}';
                 document.title = siteTitle;
                 document.getElementById('siteTitle').textContent = siteTitle;
-                // 更新 PWA 应用名称
-                document.querySelector('meta[name="apple-mobile-web-app-title"]').setAttribute('content', siteTitle);
-                document.querySelector('meta[name="application-name"]').setAttribute('content', siteTitle);
             })
             .catch(err => {
                 console.log('加载网站配置失败，使用默认标题');
             });
     </script>
 </head>
-<!-- 
-这么烂的代码有什么好看的，真的是，要看自己去这个论坛的开源仓库看，开源仓库的链接如下：
+<!--
+开源仓库：
 https://github.com/ByUsiStudio/Campus-Forum
 https://gitee.com/byusistudio/campus-forum
 -->
 <body>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
-    
-    <!-- 安装提示弹窗容器 -->
-    <div id="installPrompt" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); padding: 20px; z-index: 1000; max-width: 320px;">
-        <div style="display: flex; align-items: center; gap: 16px;">
-            <img src="/xylt.svg" width="64" height="64" style="border-radius: 16px;" />
-            <div style="flex: 1;">
-                <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1a1a1a;" id="installTitle">安装校园论坛</h3>
-                <p style="margin: 4px 0 0; font-size: 14px; color: #666;">将应用添加到您的主屏幕</p>
-            </div>
-        </div>
-        <div style="display: flex; gap: 12px; margin-top: 16px;">
-            <button id="installBtn" style="flex: 1; padding: 10px; background: #1976d2; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">安装</button>
-            <button id="installCancel" style="flex: 1; padding: 10px; background: #f0f0f0; color: #333; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;">稍后</button>
-        </div>
-    </div>
-    
-    <script>
-        let deferredPrompt;
-        
-        // 更新安装提示的标题
-        const updateInstallPromptTitle = () => {
-            const title = document.getElementById('siteTitle')?.textContent || '校园论坛';
-            const installTitle = document.getElementById('installTitle');
-            if (installTitle && title !== '校园论坛 - 分享与交流') {
-                installTitle.textContent = '安装 ' + title;
-            }
-        };
-        
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            document.getElementById('installPrompt').style.display = 'block';
-            updateInstallPromptTitle();
-            
-            document.getElementById('installBtn').addEventListener('click', () => {
-                document.getElementById('installPrompt').style.display = 'none';
-                deferredPrompt.prompt();
-                
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('用户接受了安装提示');
-                    }
-                    deferredPrompt = null;
-                });
-            });
-            
-            document.getElementById('installCancel').addEventListener('click', () => {
-                document.getElementById('installPrompt').style.display = 'none';
-            });
-        });
-        
-        window.addEventListener('appinstalled', (evt) => {
-            console.log('应用已安装');
-        });
-    </script>
 </body>
 </html>
