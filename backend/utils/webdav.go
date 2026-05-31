@@ -32,6 +32,7 @@ func InitWebDAV(url, username, password string) {
 	webdavURL = strings.TrimSuffix(url, "/")
 	webdavUsername = username
 	webdavPassword = password
+	Info("WebDAV 初始化完成: %s", webdavURL)
 }
 
 func UploadToWebDAV(file *multipart.FileHeader, remotePath string) error {
@@ -77,13 +78,14 @@ func ProxyWebDAVHandler(c *gin.Context) {
 	filePath := c.Param("path")
 	targetURL := webdavURL + filePath
 
+	Info("WebDAV代理请求: %s %s -> %s", c.Request.Method, c.Request.URL.Path, targetURL)
+
 	switch c.Request.Method {
 	case "GET", "HEAD":
-		downloadURL := buildURLWithAuth(targetURL)
-		c.Redirect(http.StatusMovedPermanently, downloadURL)
+		downloadFromWebDAV(c, targetURL)
 	case "PUT":
 		redirectURL := buildURLWithAuth(targetURL)
-		c.Redirect(http.StatusMovedPermanently, redirectURL)
+		c.Redirect(http.StatusTemporaryRedirect, redirectURL)
 	case "DELETE":
 		proxyDelete(c, targetURL)
 	case "PROPFIND":
@@ -96,6 +98,7 @@ func ProxyWebDAVHandler(c *gin.Context) {
 func downloadFromWebDAV(c *gin.Context, targetURL string) {
 	req, err := http.NewRequest(c.Request.Method, targetURL, nil)
 	if err != nil {
+		Error("创建WebDAV请求失败: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建请求失败"})
 		return
 	}
@@ -117,10 +120,15 @@ func downloadFromWebDAV(c *gin.Context, targetURL string) {
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
+		Error("连接WebDAV失败: %v", err)
 		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("连接WebDAV失败: %v", err)})
 		return
 	}
 	defer resp.Body.Close()
+
+	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+	c.Header("Pragma", "no-cache")
+	c.Header("Expires", "0")
 
 	for key, values := range resp.Header {
 		for _, value := range values {
@@ -137,7 +145,7 @@ func downloadFromWebDAV(c *gin.Context, targetURL string) {
 	_, err = io.Copy(c.Writer, resp.Body)
 	if err != nil {
 		if err != io.EOF && !strings.Contains(err.Error(), "broken pipe") {
-			Info("下载转发失败: %v", err)
+			Error("下载转发失败: %v", err)
 		}
 	}
 }

@@ -6,12 +6,14 @@
       :poster="poster"
       playsinline
       controls
-    />
+    >
+      <source :src="src" type="video/mp4" />
+    </video>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
 
@@ -101,19 +103,17 @@ const initPlayer = () => {
   player.on('exitfullscreen', handleFullscreenChange)
 }
 
-const setupVideoSource = () => {
-  if (!videoRef.value || !props.src) return
-  videoRef.value.src = props.src
-  if (props.autoplay) {
-    videoRef.value.play().catch(() => {})
-  }
-}
-
 watch(() => props.src, (newSrc) => {
   if (player && newSrc) {
-    nextTick(() => {
-      setupVideoSource()
-    })
+    player.source = {
+      type: 'video',
+      sources: [
+        {
+          src: newSrc,
+          type: 'video/mp4'
+        }
+      ]
+    }
   }
 })
 
@@ -125,9 +125,6 @@ watch(() => props.poster, (newPoster) => {
 
 onMounted(() => {
   initPlayer()
-  nextTick(() => {
-    setupVideoSource()
-  })
   document.addEventListener('fullscreenchange', handleFullscreenChange)
 })
 
