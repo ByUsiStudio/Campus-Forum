@@ -12,6 +12,8 @@ VERSION="$1"
 mkdir -p ../build
 rm -rf ../build/web || true
 
+LDFLAGS="-X forum/controllers.FrontendVersion=${VERSION} -X forum/controllers.BackendVersion=${VERSION} -X forum/controllers.SwaggerVersion=${VERSION}"
+
 compile() {
     local target="$1"
     local os="$2"
@@ -22,7 +24,7 @@ compile() {
         export CGO_ENABLED=0
         export GOOS="$os"
         export GOARCH="$arch"
-        go build -o "$output" . 
+        go build -ldflags "$LDFLAGS" -o "$output" .
     ) || { echo "❌ $target 编译失败"; exit 1; }
     echo "✅ 编译成功"
 }

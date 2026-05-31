@@ -16,15 +16,18 @@ echo.
 if not exist "build" mkdir build
 if exist "build\web" rmdir /s /q "build\web"
 
-:: Build backend
+:: Build backend with version injection
 echo [1/3] Building backend...
 cd backend
+
+:: Set ldflags for version injection
+set LDFLAGS=-X forum/controllers.FrontendVersion=%VERSION% -X forum/controllers.BackendVersion=%VERSION% -X forum/controllers.SwaggerVersion=%VERSION%
 
 echo    - Building Windows-AMD64...
 set GOOS=windows
 set GOARCH=amd64
 set CGO_ENABLED=0
-go build -o "..\build\server-windows-amd64.exe" .
+go build -ldflags "%LDFLAGS%" -o "..\build\server-windows-amd64.exe" .
 if errorlevel 1 (
     echo    [FAIL] Windows-AMD64
     exit /b 1
@@ -34,7 +37,7 @@ echo    [OK] Windows-AMD64
 echo    - Building Linux-AMD64...
 set GOOS=linux
 set GOARCH=amd64
-go build -o "..\build\server-linux-amd64" .
+go build -ldflags "%LDFLAGS%" -o "..\build\server-linux-amd64" .
 if errorlevel 1 (
     echo    [FAIL] Linux-AMD64
     exit /b 1
@@ -43,7 +46,7 @@ echo    [OK] Linux-AMD64
 
 echo    - Building Linux-ARM64...
 set GOARCH=arm64
-go build -o "..\build\server-linux-arm64" .
+go build -ldflags "%LDFLAGS%" -o "..\build\server-linux-arm64" .
 if errorlevel 1 (
     echo    [FAIL] Linux-ARM64
     exit /b 1
