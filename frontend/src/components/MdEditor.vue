@@ -402,7 +402,7 @@ const md = new MarkdownIt({
           '</code></pre>'
       } catch (e) {}
     }
-    return '<pre class="hljs-code code-block"><code class="hljs">' + md.utils.escapeHtml(str) + '</code></pre>'
+    return '<pre class="hljs-code code-block"><code class="hljs">' + MarkdownIt().utils.escapeHtml(str) + '</code></pre>'
   }
 })
 

@@ -606,7 +606,7 @@ export default {
         
         try {
           await api.delete(`/comments/${commentId}`)
-          // 从列表中移除
+          // 从列表中移除评论
           for (let i = 0; i < comments.value.length; i++) {
             if (comments.value[i].id === commentId) {
               comments.value.splice(i, 1)
@@ -721,35 +721,30 @@ export default {
 <style scoped>
 .article-page {
   width: 100%;
-  max-width: none;
   min-height: 100vh;
   margin: 0;
-  padding: 16px 24px 32px;
+  padding: 8px;
   background: #f5f7fb;
 }
 
 .article-container {
-  position: relative;
   width: 100%;
   background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 2px 18px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.05);
 }
 
 .article-header {
-  position: relative;
-  padding: 32px 40px 24px;
+  padding: 16px;
   border-bottom: 1px solid #f0f0f0;
-  min-height: 140px;
 }
 
 .article-title {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: #1a1a1a;
   line-height: 1.4;
-  margin: 0 0 20px 0;
+  margin: 0 0 12px 0;
 }
 
 .article-meta {
@@ -757,15 +752,13 @@ export default {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
-  min-width: 0;
-  padding-right: 260px;
+  gap: 8px;
 }
 
 .author-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .author-details {
@@ -796,7 +789,7 @@ export default {
 .article-tags {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
 }
 
 .category-chip {
@@ -812,27 +805,23 @@ export default {
 }
 
 .article-actions {
-  position: absolute;
-  top: 32px;
-  right: 40px;
   display: flex;
-  gap: 12px;
+  gap: 8px;
 }
 
 .article-body {
-  padding: 32px 40px;
-  min-height: 400px;
+  padding: 16px;
 }
 
 .article-footer {
-  padding: 20px 40px;
+  padding: 12px 16px;
   border-top: 1px solid #f0f0f0;
   background: #fafafa;
 }
 
 .interaction-bar {
   display: flex;
-  gap: 12px;
+  gap: 8px;
 }
 
 .action-btn {
@@ -840,30 +829,30 @@ export default {
 }
 
 .comments-section {
-  padding: 32px 40px;
+  padding: 16px;
   border-top: 1px solid #f0f0f0;
 }
 
 .section-title {
   display: flex;
   align-items: center;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #333;
-  margin: 0 0 24px 0;
+  margin: 0 0 12px 0;
 }
 
 .comment-form {
   display: flex;
-  gap: 16px;
-  margin-bottom: 32px;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .comment-input-wrapper {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .comment-textarea {
@@ -878,22 +867,22 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 16px 20px;
+  padding: 8px 12px;
   background: #f5f5f5;
-  border-radius: 8px;
+  border-radius: 4px;
   color: #666;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 .comments-list {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 12px;
 }
 
 .comment-item {
   display: flex;
-  gap: 16px;
+  gap: 8px;
 }
 
 .comment-content-wrapper {
@@ -903,59 +892,59 @@ export default {
 .comment-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: 6px;
+  margin-bottom: 4px;
 }
 
 .comment-author {
   font-weight: 500;
   color: #333;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .comment-time {
-  font-size: 12px;
+  font-size: 11px;
   color: #999;
 }
 
 .comment-text {
   margin: 0;
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: 13px;
+  line-height: 1.5;
   color: #444;
 }
 
 .comment-actions {
   display: flex;
-  gap: 16px;
-  margin-top: 8px;
+  gap: 8px;
+  margin-top: 4px;
 }
 
 .reply-form {
-  margin-top: 12px;
-  padding: 12px;
+  margin-top: 8px;
+  padding: 8px;
   background: #f5f5f5;
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .reply-form-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 .replies-list {
-  margin-top: 16px;
-  padding-left: 20px;
+  margin-top: 8px;
+  padding-left: 12px;
   border-left: 2px solid #e8e8e8;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
 }
 
 .reply-item {
   display: flex;
-  gap: 12px;
+  gap: 8px;
 }
 
 .reply-content-wrapper {
@@ -967,56 +956,5 @@ export default {
   justify-content: center;
   align-items: center;
   min-height: 50vh;
-}
-
-@media (max-width: 768px) {
-  .article-page {
-    padding: 12px;
-  }
-
-  .article-header {
-    padding: 20px;
-  }
-
-  .article-title {
-    font-size: 1.5rem;
-  }
-
-  .article-meta {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .article-actions {
-    position: static;
-    width: 100%;
-    margin-top: 20px;
-    justify-content: flex-start;
-  }
-
-  .article-body {
-    padding: 20px;
-  }
-
-  .article-footer {
-    padding: 16px 20px;
-  }
-
-  .comments-section {
-    padding: 20px;
-  }
-
-  .comment-form {
-    flex-direction: column;
-  }
-
-  .comment-item {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .replies-list {
-    padding-left: 12px;
-  }
 }
 </style>

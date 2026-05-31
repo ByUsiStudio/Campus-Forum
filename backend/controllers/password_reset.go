@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"crypto/rand"
+	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"forum/database"
 	"forum/models"
@@ -25,16 +27,55 @@ func generateCode(length int) string {
 func sendEmail(smtpHost string, smtpPort int, username, password, from, to, subject, body string) error {
 	auth := smtp.PlainAuth("", username, password, smtpHost)
 
-	msg := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", from, to, subject, body)
+	// 构建带 UTF-8 编码的邮件内容
+	msg := []byte(fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: =?UTF-8?B?%s?=\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n%s",
+		from, to, base64.StdEncoding.EncodeToString([]byte(subject)), body))
 
-	err := smtp.SendMail(
-		fmt.Sprintf("%s:%d", smtpHost, smtpPort),
-		auth,
-		from,
-		[]string{to},
-		[]byte(msg),
-	)
+	// 尝试使用 TLS 连接
+	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%d", smtpHost, smtpPort), &tls.Config{
+		ServerName:         smtpHost,
+		InsecureSkipVerify: true, // 允许自签名证书
+	})
+	if err != nil {
+		// TLS 连接失败，尝试普通连接
+		err = smtp.SendMail(
+			fmt.Sprintf("%s:%d", smtpHost, smtpPort),
+			auth,
+			from,
+			[]string{to},
+			msg,
+		)
+		return err
+	}
+	defer conn.Close()
 
+	client, err := smtp.NewClient(conn, smtpHost)
+	if err != nil {
+		return err
+	}
+	defer client.Quit()
+
+	if err := client.Auth(auth); err != nil {
+		return err
+	}
+
+	if err := client.Mail(from); err != nil {
+		return err
+	}
+
+	if err := client.Rcpt(to); err != nil {
+		return err
+	}
+
+	w, err := client.Data()
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(msg)
+	if err != nil {
+		return err
+	}
+	err = w.Close()
 	return err
 }
 
