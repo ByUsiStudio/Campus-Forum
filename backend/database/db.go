@@ -72,13 +72,13 @@ func GenerateToken() string {
 	return hex.EncodeToString(bytes)
 }
 
-func HashPassword(password string) string {
+func HashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		utils.Error("密码加密失败: %v", err)
-		os.Exit(1)
+		return "", err
 	}
-	return string(hash)
+	return string(hash), nil
 }
 
 func CheckPasswordHash(password, hash string) bool {

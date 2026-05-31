@@ -41,11 +41,17 @@ func Register(c *gin.Context) {
 	// 使用QQ头像作为默认头像
 	avatarURL := "https://q1.qlogo.cn/g?b=qq&nk=" + input.QQNumber + "&s=640"
 
+	hashedPassword, err := database.HashPassword(input.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "密码加密失败"})
+		return
+	}
+
 	user := models.User{
 		Username:    input.Username,
 		QQNumber:    input.QQNumber,
 		DisplayName: input.DisplayName,
-		Password:    database.HashPassword(input.Password),
+		Password:    hashedPassword,
 		Avatar:      avatarURL,
 		Role:        "user",
 	}
@@ -134,11 +140,17 @@ func InitAdmin(c *gin.Context) {
 
 	avatarURL := "https://q1.qlogo.cn/g?b=qq&nk=" + input.QQNumber + "&s=640"
 
+	hashedPassword, err := database.HashPassword(input.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "密码加密失败"})
+		return
+	}
+
 	admin := models.User{
 		Username:    input.Username,
 		QQNumber:    input.QQNumber,
 		DisplayName: input.DisplayName,
-		Password:    database.HashPassword(input.Password),
+		Password:    hashedPassword,
 		Avatar:      avatarURL,
 		Role:        "admin",
 	}

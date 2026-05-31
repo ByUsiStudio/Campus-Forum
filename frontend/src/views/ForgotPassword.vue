@@ -114,7 +114,7 @@ export default {
           resetIdentifier.value = response.data.identifier || ''
           step.value = 2
         } catch (err) {
-          error.value = err.message || '发送验证码失败'
+          error.value = err.response?.data?.error || err.message || '发送验证码失败'
         } finally {
           loading.value = false
         }
@@ -147,7 +147,7 @@ export default {
             router.push('/login')
           }, 1500)
         } catch (err) {
-          error.value = err.message || '重置密码失败'
+          error.value = err.response?.data?.error || err.message || '重置密码失败'
         } finally {
           loading.value = false
         }

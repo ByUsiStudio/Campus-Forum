@@ -3,6 +3,7 @@ package controllers
 import (
 	"crypto/rand"
 	"crypto/tls"
+	_ "embed"
 	"encoding/base64"
 	"fmt"
 	"forum/database"
@@ -10,10 +11,14 @@ import (
 	"math/big"
 	"net/http"
 	"net/smtp"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
+
+//go:embed templates/reset_password.html
+var resetPasswordTemplate string
 
 func generateCode(length int) string {
 	code := ""
@@ -30,20 +35,25 @@ func generateIdentifier() string {
 	return base64.URLEncoding.EncodeToString(b)
 }
 
-func sendEmail(smtpHost string, smtpPort int, username, password, from, to, subject, body string) error {
+func renderEmailTemplate(subject, code string) string {
+	htmlBody := strings.ReplaceAll(resetPasswordTemplate, "{{.Subject}}", subject)
+	htmlBody = strings.ReplaceAll(htmlBody, "{{.Code}}", code)
+	return htmlBody
+}
+
+func sendEmail(smtpHost string, smtpPort int, username, password, from, to, subject, code string) error {
 	auth := smtp.PlainAuth("", username, password, smtpHost)
 
-	// 构建带 UTF-8 编码的邮件内容
-	msg := []byte(fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: =?UTF-8?B?%s?=\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n%s",
-		from, to, base64.StdEncoding.EncodeToString([]byte(subject)), body))
+	htmlBody := renderEmailTemplate(subject, code)
 
-	// 尝试使用 TLS 连接
+	msg := []byte(fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: =?UTF-8?B?%s?=\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n%s",
+		from, to, base64.StdEncoding.EncodeToString([]byte(subject)), htmlBody))
+
 	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%d", smtpHost, smtpPort), &tls.Config{
 		ServerName:         smtpHost,
-		InsecureSkipVerify: true, // 允许自签名证书
+		InsecureSkipVerify: true,
 	})
 	if err != nil {
-		// TLS 连接失败，尝试普通连接
 		err = smtp.SendMail(
 			fmt.Sprintf("%s:%d", smtpHost, smtpPort),
 			auth,
@@ -64,11 +74,9 @@ func sendEmail(smtpHost string, smtpPort int, username, password, from, to, subj
 	if err := client.Auth(auth); err != nil {
 		return err
 	}
-
 	if err := client.Mail(from); err != nil {
 		return err
 	}
-
 	if err := client.Rcpt(to); err != nil {
 		return err
 	}
@@ -81,8 +89,7 @@ func sendEmail(smtpHost string, smtpPort int, username, password, from, to, subj
 	if err != nil {
 		return err
 	}
-	err = w.Close()
-	return err
+	return w.Close()
 }
 
 func SendResetCode(c *gin.Context) {
@@ -102,9 +109,10 @@ func SendResetCode(c *gin.Context) {
 	}
 
 	var siteConfig models.SiteConfig
-	if result := database.DB.First(&siteConfig, 1); result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "系统配置未初始化"})
-		return
+	result := database.DB.First(&siteConfig)
+	if result.Error != nil {
+		siteConfig = models.SiteConfig{SiteTitle: "校园论坛 - 分享与交流"}
+		database.DB.Create(&siteConfig)
 	}
 
 	if siteConfig.SMTPHost == "" || siteConfig.SMTPUsername == "" {
@@ -122,8 +130,7 @@ func SendResetCode(c *gin.Context) {
 	database.DB.Save(&user)
 
 	email := input.QQNumber + "@qq.com"
-	subject := "密码重置验证码"
-	body := fmt.Sprintf("您的密码重置验证码是：%s ，15分钟内有效。\n\n如果不是您本人操作，请忽略此邮件。", code)
+	subject := "校园论坛 - 密码重置验证码"
 
 	err := sendEmail(
 		siteConfig.SMTPHost,
@@ -133,7 +140,7 @@ func SendResetCode(c *gin.Context) {
 		siteConfig.SMTPFrom,
 		email,
 		subject,
-		body,
+		code,
 	)
 
 	if err != nil {
@@ -181,7 +188,12 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 
-	user.Password = database.HashPassword(input.Password)
+	hashedPassword, err := database.HashPassword(input.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "密码加密失败"})
+		return
+	}
+	user.Password = hashedPassword
 	user.ResetToken = ""
 	user.ResetIdentifier = ""
 	user.ResetExpiry = nil
