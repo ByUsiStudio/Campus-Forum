@@ -19,6 +19,22 @@
       <v-col cols="12" md="8">
         <v-card class="pa-6 mb-4">
           <UserAvatar :user="user" :size="48" class="mb-4" />
+          <div class="d-flex justify-space-around mb-4">
+            <div class="text-center cursor-pointer" @click="goToFollowing">
+              <div class="text-h6">{{ followingCount }}</div>
+              <div class="text-caption text-medium-emphasis">关注</div>
+            </div>
+            <v-divider vertical></v-divider>
+            <div class="text-center cursor-pointer" @click="goToFollowers">
+              <div class="text-h6">{{ followersCount }}</div>
+              <div class="text-caption text-medium-emphasis">粉丝</div>
+            </div>
+            <v-divider vertical></v-divider>
+            <div class="text-center">
+              <div class="text-h6">{{ articleCount }}</div>
+              <div class="text-caption text-medium-emphasis">文章</div>
+            </div>
+          </div>
           <v-list density="compact">
             <v-list-item>
               <template v-slot:prepend>
@@ -166,6 +182,9 @@ export default {
       mutual: false
     })
     const currentUser = ref(null)
+    const followingCount = ref(0)
+    const followersCount = ref(0)
+    const articleCount = ref(0)
     const isOwnProfile = computed(() => {
       return !route.query.id || (currentUser.value && currentUser.value.id === user.value?.id)
     })
@@ -219,11 +238,39 @@ export default {
       }
     }
 
+    const goToFollowing = () => {
+      if (user.value) {
+        router.push({ path: '/follow-list', query: { userId: user.value.id } })
+      }
+    }
+
+    const goToFollowers = () => {
+      if (user.value) {
+        router.push({ path: '/follow-list', query: { userId: user.value.id, tab: 'followers' } })
+      }
+    }
+
+    const loadFollowCounts = async () => {
+      if (!user.value) return
+      try {
+        const targetId = route.query.id || user.value.id
+        const [followingRes, followersRes] = await Promise.all([
+          api.get(`/users/${targetId}/following`),
+          api.get(`/users/${targetId}/followers`)
+        ])
+        followingCount.value = followingRes.data.following?.length || 0
+        followersCount.value = followersRes.data.followers?.length || 0
+      } catch (error) {
+        console.error('加载关注数据失败', error)
+      }
+    }
+
     const loadMyArticles = async () => {
       try {
         if (route.query.id) {
           const response = await api.get(`/users/${route.query.id}/articles`)
           myArticles.value = response.data.articles || []
+          articleCount.value = myArticles.value.length
         } else {
           const response = await api.get('/articles', {
             params: { page: 1, page_size: 50 }
@@ -232,6 +279,7 @@ export default {
             myArticles.value = response.data.articles.filter(
               a => a.user_id === user.value.id
             )
+            articleCount.value = myArticles.value.length
           }
         }
       } catch (error) {
@@ -324,6 +372,7 @@ export default {
       loadProfile().then(() => {
         loadMyArticles()
         loadFollowStatus()
+        loadFollowCounts()
       })
     })
 
@@ -337,6 +386,11 @@ export default {
       formatDate,
       followStatus,
       handleFollow,
+      goToFollowing,
+      goToFollowers,
+      followingCount,
+      followersCount,
+      articleCount,
       isOwnProfile
     }
   }

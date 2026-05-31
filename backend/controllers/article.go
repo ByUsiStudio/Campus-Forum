@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 func getUserTitles(userID uint) []models.Title {
@@ -30,9 +29,11 @@ func CreateArticle(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
 	var input struct {
-		Title      string `json:"title" binding:"required"`
-		Content    string `json:"content" binding:"required"`
-		CategoryID uint   `json:"category_id" binding:"required"`
+		Title       string `json:"title" binding:"required"`
+		Content     string `json:"content" binding:"required"`
+		CategoryID  uint   `json:"category_id" binding:"required"`
+		VoiceURL    string `json:"voice_url"`
+		IsAnonymous bool   `json:"is_anonymous"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -40,7 +41,6 @@ func CreateArticle(c *gin.Context) {
 		return
 	}
 
-	// 将Markdown转换为HTML
 	contentHTML := utils.MarkdownToHTML(input.Content)
 
 	article := models.Article{
@@ -50,6 +50,8 @@ func CreateArticle(c *gin.Context) {
 		UserID:      userID,
 		CategoryID:  input.CategoryID,
 		Status:      "published",
+		VoiceURL:    input.VoiceURL,
+		IsAnonymous: input.IsAnonymous,
 	}
 
 	if result := database.DB.Create(&article); result.Error != nil {
@@ -57,8 +59,22 @@ func CreateArticle(c *gin.Context) {
 		return
 	}
 
-	// 预加载关联数据
 	database.DB.Preload("User").Preload("Category").First(&article, article.ID)
+
+	if !input.IsAnonymous {
+		var follows []models.Follow
+		database.DB.Where("following_id = ?", userID).Find(&follows)
+
+		for _, follow := range follows {
+			notification := models.FollowNotification{
+				UserID:    follow.FollowerID,
+				SenderID:  userID,
+				ArticleID: article.ID,
+				Type:      "new_article",
+			}
+			database.DB.Create(&notification)
+		}
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "创建成功",
@@ -111,8 +127,13 @@ func GetArticles(c *gin.Context) {
 		}
 		resp.User.ID = article.User.ID
 		resp.User.Username = article.User.Username
-		resp.User.DisplayName = article.User.DisplayName
-		resp.User.Avatar = article.User.Avatar
+		if article.IsAnonymous {
+			resp.User.DisplayName = "匿名用户"
+			resp.User.Avatar = ""
+		} else {
+			resp.User.DisplayName = article.User.DisplayName
+			resp.User.Avatar = article.User.Avatar
+		}
 		resp.User.Titles = titles
 		response = append(response, resp)
 	}
@@ -135,7 +156,6 @@ func GetArticle(c *gin.Context) {
 		return
 	}
 
-	// 浏览量校验：仅登录用户可增加浏览量，同一用户1分钟内只允许增加一浏览量
 	clientIP := c.ClientIP()
 	articleIDUint := uint(parseUint(id))
 
@@ -168,21 +188,17 @@ func GetArticle(c *gin.Context) {
 		article.ViewCount++
 	}
 
-	// 获取评论（包含回复）
 	var comments []models.Comment
 	database.DB.Preload("User").Where("article_id = ? AND parent_id IS NULL", article.ID).Order("created_at DESC").Find(&comments)
 
-	// 获取每个评论的回复
 	for i := range comments {
 		var replies []models.Comment
 		database.DB.Preload("User").Where("parent_id = ?", comments[i].ID).Order("created_at ASC").Find(&replies)
 		comments[i].Replies = replies
 	}
 
-	// 获取文章作者头衔
 	articleTitles := getUserTitles(article.UserID)
 
-	// 获取评论用户头衔
 	type CommentResponse struct {
 		models.Comment
 		User struct {
@@ -203,11 +219,16 @@ func GetArticle(c *gin.Context) {
 		}
 		resp.User.ID = comment.User.ID
 		resp.User.Username = comment.User.Username
-		resp.User.DisplayName = comment.User.DisplayName
-		resp.User.Avatar = comment.User.Avatar
-		resp.User.Titles = commentTitles
+		if comment.IsAnonymous {
+			resp.User.DisplayName = "匿名用户"
+			resp.User.Avatar = ""
+			resp.User.Titles = []models.Title{}
+		} else {
+			resp.User.DisplayName = comment.User.DisplayName
+			resp.User.Avatar = comment.User.Avatar
+			resp.User.Titles = commentTitles
+		}
 
-		// 处理回复
 		for _, reply := range comment.Replies {
 			replyTitles := getUserTitles(reply.UserID)
 			replyResp := CommentResponse{
@@ -215,15 +236,20 @@ func GetArticle(c *gin.Context) {
 			}
 			replyResp.User.ID = reply.User.ID
 			replyResp.User.Username = reply.User.Username
-			replyResp.User.DisplayName = reply.User.DisplayName
-			replyResp.User.Avatar = reply.User.Avatar
-			replyResp.User.Titles = replyTitles
+			if reply.IsAnonymous {
+				replyResp.User.DisplayName = "匿名用户"
+				replyResp.User.Avatar = ""
+				replyResp.User.Titles = []models.Title{}
+			} else {
+				replyResp.User.DisplayName = reply.User.DisplayName
+				replyResp.User.Avatar = reply.User.Avatar
+				replyResp.User.Titles = replyTitles
+			}
 			resp.Replies = append(resp.Replies, replyResp)
 		}
 		commentResponses = append(commentResponses, resp)
 	}
 
-	// 获取当前用户是否点赞
 	var liked bool
 	if userID, exists := c.Get("user_id"); exists {
 		var like models.Like
@@ -232,7 +258,6 @@ func GetArticle(c *gin.Context) {
 		}
 	}
 
-	// 获取当前用户对每条评论的点赞状态
 	var commentLikedMap = make(map[uint]bool)
 	if userID, exists := c.Get("user_id"); exists {
 		for _, comment := range commentResponses {
@@ -240,7 +265,6 @@ func GetArticle(c *gin.Context) {
 			if database.DB.Where("user_id = ? AND comment_id = ?", userID, comment.ID).First(&commentLike).Error == nil {
 				commentLikedMap[comment.ID] = true
 			}
-			// 检查回复的点赞状态
 			for _, reply := range comment.Replies {
 				if database.DB.Where("user_id = ? AND comment_id = ?", userID, reply.ID).First(&commentLike).Error == nil {
 					commentLikedMap[reply.ID] = true
@@ -265,8 +289,13 @@ func GetArticle(c *gin.Context) {
 	}
 	articleResp.User.ID = article.User.ID
 	articleResp.User.Username = article.User.Username
-	articleResp.User.DisplayName = article.User.DisplayName
-	articleResp.User.Avatar = article.User.Avatar
+	if article.IsAnonymous {
+		articleResp.User.DisplayName = "匿名用户"
+		articleResp.User.Avatar = ""
+	} else {
+		articleResp.User.DisplayName = article.User.DisplayName
+		articleResp.User.Avatar = article.User.Avatar
+	}
 	articleResp.User.Titles = articleTitles
 
 	c.JSON(http.StatusOK, gin.H{
@@ -287,16 +316,17 @@ func UpdateArticle(c *gin.Context) {
 		return
 	}
 
-	// 检查权限
 	if article.UserID != userID && c.GetString("role") != "admin" {
 		c.JSON(http.StatusForbidden, gin.H{"error": "无权限修改"})
 		return
 	}
 
 	var input struct {
-		Title      string `json:"title"`
-		Content    string `json:"content"`
-		CategoryID uint   `json:"category_id"`
+		Title       string `json:"title"`
+		Content     string `json:"content"`
+		CategoryID  uint   `json:"category_id"`
+		VoiceURL    string `json:"voice_url"`
+		IsAnonymous *bool  `json:"is_anonymous"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -313,6 +343,12 @@ func UpdateArticle(c *gin.Context) {
 	}
 	if input.CategoryID != 0 {
 		article.CategoryID = input.CategoryID
+	}
+	if input.VoiceURL != "" {
+		article.VoiceURL = input.VoiceURL
+	}
+	if input.IsAnonymous != nil {
+		article.IsAnonymous = *input.IsAnonymous
 	}
 
 	database.DB.Save(&article)
@@ -335,20 +371,17 @@ func DeleteArticle(c *gin.Context) {
 		return
 	}
 
-	// 如果是管理员或系统管理员，直接删除
 	if role == "admin" || role == "system" {
 		database.DB.Delete(&article)
 		c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
 		return
 	}
 
-	// 普通用户需要提交删除申请
 	var input struct {
 		Reason string `json:"reason"`
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		input.Reason = "用户请求删除"
 	}
 
 	deletionRequest := models.DeletionRequest{
@@ -357,192 +390,38 @@ func DeleteArticle(c *gin.Context) {
 		Reason:    input.Reason,
 		Status:    "pending",
 	}
-
 	database.DB.Create(&deletionRequest)
 
-	c.JSON(http.StatusOK, gin.H{"message": "删除申请已提交，等待管理员审核"})
+	c.JSON(http.StatusOK, gin.H{"message": "删除申请已提交，等待审核"})
 }
 
-func LikeArticle(c *gin.Context) {
+func GetMyArticles(c *gin.Context) {
 	userID := c.GetUint("user_id")
-	articleID := c.Param("id")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 
-	// 检查是否已点赞
-	var existingLike models.Like
-	if result := database.DB.Where("user_id = ? AND article_id = ?", userID, articleID).First(&existingLike); result.Error == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "已经点过赞了"})
-		return
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
 	}
 
-	like := models.Like{
-		UserID:    userID,
-		ArticleID: uint(parseUint(articleID)),
-	}
+	offset := (page - 1) * pageSize
 
-	database.DB.Create(&like)
-	database.DB.Model(&models.Article{}).Where("id = ?", articleID).UpdateColumn("like_count", database.DB.Raw("like_count + 1"))
+	var articles []models.Article
+	var total int64
 
-	// 获取最新点赞数
-	var article models.Article
-	database.DB.First(&article, articleID)
+	database.DB.Model(&models.Article{}).Where("user_id = ?", userID).Count(&total)
+	database.DB.Where("user_id = ?", userID).Preload("User").Preload("Category").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&articles)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":    "点赞成功",
-		"like_count": article.LikeCount,
+		"articles":    articles,
+		"total":       total,
+		"page":        page,
+		"page_size":   pageSize,
+		"total_pages": (total + int64(pageSize) - 1) / int64(pageSize),
 	})
-}
-
-func UnlikeArticle(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	articleID := c.Param("id")
-
-	result := database.DB.Where("user_id = ? AND article_id = ?", userID, uint(parseUint(articleID))).Delete(&models.Like{})
-	if result.RowsAffected > 0 {
-		database.DB.Model(&models.Article{}).Where("id = ?", uint(parseUint(articleID))).UpdateColumn("like_count", database.DB.Raw("like_count - 1"))
-	}
-
-	var article models.Article
-	database.DB.First(&article, articleID)
-
-	c.JSON(http.StatusOK, gin.H{
-		"message":    "取消点赞",
-		"like_count": article.LikeCount,
-	})
-}
-
-func CreateComment(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	articleID := c.Param("id")
-
-	var input struct {
-		Content  string `json:"content" binding:"required"`
-		ParentID *uint  `json:"parent_id"` // 回复的评论ID
-	}
-
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// 如果是回复，检查父评论是否存在
-	var parentCommentUserID uint
-	if input.ParentID != nil {
-		var parentComment models.Comment
-		if result := database.DB.First(&parentComment, *input.ParentID); result.Error != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "父评论不存在"})
-			return
-		}
-		// 记录父评论用户ID用于发送通知
-		parentCommentUserID = parentComment.UserID
-		// 增加父评论的回复数量
-		database.DB.Model(&parentComment).UpdateColumn("reply_count", parentComment.ReplyCount+1)
-	}
-
-	comment := models.Comment{
-		Content:   input.Content,
-		UserID:    userID,
-		ArticleID: uint(parseUint(articleID)),
-		ParentID:  input.ParentID,
-	}
-
-	database.DB.Create(&comment)
-	database.DB.Preload("User").First(&comment, comment.ID)
-
-	// 如果是回复且回复的不是自己，发送通知
-	if input.ParentID != nil && parentCommentUserID != userID {
-		replyNotification := models.CommentReplyNotification{
-			UserID:    parentCommentUserID,
-			CommentID: *input.ParentID,
-			ReplyID:   comment.ID,
-			ArticleID: uint(parseUint(articleID)),
-		}
-		database.DB.Create(&replyNotification)
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "评论成功",
-		"comment": comment,
-	})
-}
-
-// LikeComment 点赞评论
-func LikeComment(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	commentIDStr := c.Param("id")
-	commentID := uint(parseUint(commentIDStr))
-
-	var comment models.Comment
-	if result := database.DB.First(&comment, commentID); result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "评论不存在"})
-		return
-	}
-
-	var existingLike models.CommentLike
-	if result := database.DB.Where("user_id = ? AND comment_id = ?", userID, commentID).First(&existingLike); result.Error == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "已经点过赞了"})
-		return
-	}
-
-	like := models.CommentLike{
-		UserID:    userID,
-		CommentID: commentID,
-	}
-
-	database.DB.Create(&like)
-	database.DB.Model(&comment).UpdateColumn("like_count", comment.LikeCount+1)
-
-	c.JSON(http.StatusOK, gin.H{
-		"message":    "点赞成功",
-		"like_count": comment.LikeCount + 1,
-	})
-}
-
-// UnlikeComment 取消评论点赞
-func UnlikeComment(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	commentIDStr := c.Param("id")
-	commentID := uint(parseUint(commentIDStr))
-
-	result := database.DB.Where("user_id = ? AND comment_id = ?", userID, commentID).Delete(&models.CommentLike{})
-	if result.RowsAffected > 0 {
-		var comment models.Comment
-		database.DB.First(&comment, commentID)
-		database.DB.Model(&comment).UpdateColumn("like_count", comment.LikeCount-1)
-
-		c.JSON(http.StatusOK, gin.H{
-			"message":    "取消点赞",
-			"like_count": comment.LikeCount - 1,
-		})
-		return
-	}
-
-	c.JSON(http.StatusBadRequest, gin.H{"error": "未点赞"})
-}
-
-func DeleteComment(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	role := c.GetString("role")
-	commentID := c.Param("id")
-
-	var comment models.Comment
-	if result := database.DB.First(&comment, commentID); result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "评论不存在"})
-		return
-	}
-
-	// 检查权限
-	if comment.UserID != userID && role != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "无权限删除"})
-		return
-	}
-
-	// 如果是回复评论，减少父评论的回复数量
-	if comment.ParentID != nil {
-		database.DB.Model(&models.Comment{}).Where("id = ?", *comment.ParentID).UpdateColumn("reply_count", gorm.Expr("reply_count - 1"))
-	}
-
-	database.DB.Delete(&comment)
-	c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
 }
 
 func parseUint(s string) uint {

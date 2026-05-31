@@ -151,3 +151,56 @@ func UploadVideo(c *gin.Context) {
 		"url":     videoURL,
 	})
 }
+
+func UploadVoice(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	file, err := c.FormFile("voice")
+	if err != nil {
+		utils.Error("获取上传文件失败: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请选择文件"})
+		return
+	}
+
+	utils.Info("开始上传语音: %s, 大小: %d", file.Filename, file.Size)
+
+	// 检查文件大小 (50MB)
+	if file.Size > 50*1024*1024 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "语音文件大小不能超过50MB"})
+		return
+	}
+
+	// 检查文件类型
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	allowedExts := []string{".mp3", ".webm", ".ogg", ".wav", ".m4a", ".aac"}
+	allowed := false
+	for _, allowedExt := range allowedExts {
+		if ext == allowedExt {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的语音格式"})
+		return
+	}
+
+	// 生成文件名
+	filename := fmt.Sprintf("voice_%d_%d%s", userID, time.Now().UnixNano(), ext)
+	remotePath := fmt.Sprintf("/voices/%s", filename)
+
+	// 上传到WebDAV
+	if err := utils.UploadToWebDAV(file, remotePath); err != nil {
+		utils.Error("语音上传失败: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "上传失败: " + err.Error()})
+		return
+	}
+
+	voiceURL := "/proxy/webdav" + remotePath
+	utils.Info("语音上传成功: %s -> %s", file.Filename, voiceURL)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "上传成功",
+		"url":     voiceURL,
+	})
+}

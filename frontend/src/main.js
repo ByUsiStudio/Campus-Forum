@@ -61,6 +61,7 @@ import Notifications from './views/Notifications.vue'
 import ChatList from './views/ChatList.vue'
 import StandaloneChat from './views/StandaloneChat.vue'
 import ForgotPassword from './views/ForgotPassword.vue'
+import FollowList from './views/FollowList.vue'
 
 // 导入后台管理子组件
 import AdminIndex from './views/admin/AdminIndex.vue'
@@ -107,6 +108,7 @@ const routes = [
     { path: '/category/:id', component: Category, name: 'Category' },
     { path: '/video', component: VideoPlayerPage, name: 'VideoPlayer' },
     { path: '/notifications', component: Notifications, name: 'Notifications' },
+    { path: '/follow-list', component: FollowList, name: 'FollowList' },
     { path: '/chat', component: ChatList, name: 'ChatList' },
     { path: '/chat/:id', component: StandaloneChat, name: 'StandaloneChat', meta: { hideAppBar: true } }
 ]

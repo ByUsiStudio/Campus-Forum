@@ -65,3 +65,63 @@ func GetUserArticles(c *gin.Context) {
 		"articles": articles,
 	})
 }
+
+func GetUserFollowing(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的用户ID"})
+		return
+	}
+
+	var user models.User
+	if result := database.DB.First(&user, uint(id)); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
+		return
+	}
+
+	var follows []models.Follow
+	database.DB.Where("follower_id = ?", uint(id)).Find(&follows)
+
+	followingIDs := make([]uint, 0)
+	for _, follow := range follows {
+		followingIDs = append(followingIDs, follow.FollowingID)
+	}
+
+	var users []models.User
+	if len(followingIDs) > 0 {
+		database.DB.Where("id IN ?", followingIDs).Find(&users)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"following": users})
+}
+
+func GetUserFollowers(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的用户ID"})
+		return
+	}
+
+	var user models.User
+	if result := database.DB.First(&user, uint(id)); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
+		return
+	}
+
+	var follows []models.Follow
+	database.DB.Where("following_id = ?", uint(id)).Find(&follows)
+
+	followerIDs := make([]uint, 0)
+	for _, follow := range follows {
+		followerIDs = append(followerIDs, follow.FollowerID)
+	}
+
+	var users []models.User
+	if len(followerIDs) > 0 {
+		database.DB.Where("id IN ?", followerIDs).Find(&users)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"followers": users})
+}

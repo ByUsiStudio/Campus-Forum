@@ -90,6 +90,7 @@ func main() {
 			protected.POST("/upload/avatar", controllers.UploadAvatar)
 			protected.POST("/upload/image", controllers.UploadImage)
 			protected.POST("/upload/video", controllers.UploadVideo)
+			protected.POST("/upload/voice", controllers.UploadVoice)
 
 			// 文章相关
 			protected.POST("/articles", controllers.CreateArticle)
@@ -137,6 +138,12 @@ func main() {
 			protected.GET("/comment-reply-notifications", controllers.GetCommentReplyNotifications)
 			protected.POST("/comment-reply-notifications/:id/read", controllers.MarkCommentReplyNotificationRead)
 			protected.POST("/comment-reply-notifications/read-all", controllers.MarkAllCommentReplyNotificationsRead)
+
+			// 粉丝通知（关注对象发新内容）
+			protected.GET("/follow-notifications", controllers.GetFollowNotifications)
+			protected.POST("/follow-notifications/:id/read", controllers.MarkFollowNotificationRead)
+			protected.POST("/follow-notifications/read-all", controllers.MarkAllFollowNotificationsRead)
+			protected.GET("/follow-notifications/unread-count", controllers.GetFollowNotificationUnreadCount)
 
 			// 关注相关
 			protected.POST("/follow/:id", controllers.FollowUser)
@@ -194,6 +201,8 @@ func main() {
 		// 用户公开信息
 		api.GET("/users/:id", controllers.GetUserByID)
 		api.GET("/users/:id/articles", controllers.GetUserArticles)
+		api.GET("/users/:id/following", controllers.GetUserFollowing)
+		api.GET("/users/:id/followers", controllers.GetUserFollowers)
 
 		// 密码重置
 		api.POST("/password/reset-code", controllers.SendResetCode)

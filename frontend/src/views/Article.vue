@@ -58,6 +58,40 @@
         <MarkdownViewer :value="article.content" />
       </div>
 
+      <div v-if="article.voice_url" class="voice-player">
+        <div class="voice-player-header">
+          <v-icon size="20" color="primary">mdi-volume-high</v-icon>
+          <span class="voice-player-title">语音朗读</span>
+        </div>
+        <div class="voice-controls">
+          <v-btn
+            :icon="isPlaying ? 'mdi-pause' : 'mdi-play'"
+            variant="flat"
+            color="primary"
+            size="large"
+            @click="toggleVoicePlay"
+          />
+          <div class="voice-progress-wrapper">
+            <div class="voice-progress">
+              <div
+                class="voice-progress-bar"
+                :style="{ width: voiceProgress + '%' }"
+              />
+            </div>
+            <div class="voice-time">
+              {{ formatVoiceTime(currentVoiceTime) }} / {{ formatVoiceTime(voiceDuration) }}
+            </div>
+          </div>
+        </div>
+        <audio
+          ref="audioRef"
+          :src="article.voice_url"
+          @timeupdate="onVoiceTimeUpdate"
+          @loadedmetadata="onVoiceLoaded"
+          @ended="onVoiceEnded"
+        />
+      </div>
+
       <footer class="article-footer">
         <div class="interaction-bar">
           <v-btn
@@ -106,9 +140,19 @@
               hide-details
               class="comment-textarea"
             />
-            <v-btn color="primary" size="small" @click="submitComment" class="submit-comment-btn">
-              发表
-            </v-btn>
+            <div class="comment-form-actions">
+              <v-checkbox
+                v-model="commentIsAnonymous"
+                label="匿名评论"
+                color="primary"
+                hide-details
+                density="compact"
+                class="comment-anonymous-checkbox"
+              />
+              <v-btn color="primary" size="small" @click="submitComment" class="submit-comment-btn">
+                发表
+              </v-btn>
+            </div>
           </div>
         </div>
 
@@ -173,6 +217,14 @@
                   density="compact"
                 />
                 <div class="reply-form-actions">
+                  <v-checkbox
+                    v-model="replyIsAnonymous"
+                    label="匿名回复"
+                    color="primary"
+                    hide-details
+                    density="compact"
+                    class="reply-anonymous-checkbox"
+                  />
                   <v-btn size="small" color="primary" @click="submitReply(comment.id)">发送</v-btn>
                   <v-btn size="small" variant="text" @click="cancelReply">取消</v-btn>
                 </div>
@@ -283,9 +335,11 @@ export default {
     const liked = ref(false)
     const favorited = ref(false)
     const commentContent = ref('')
+    const commentIsAnonymous = ref(false)
     const commentLiked = ref({})
     const replyingTo = ref(null)
     const replyContent = ref('')
+    const replyIsAnonymous = ref(false)
     const showImageViewer = ref(false)
     const currentImageUrl = ref('')
     const showShareDialog = ref(false)
@@ -300,12 +354,55 @@ export default {
       mutual: false
     })
     const siteTitle = ref('校园论坛')
+    const audioRef = ref(null)
+    const isPlaying = ref(false)
+    const voiceProgress = ref(0)
+    const voiceDuration = ref(0)
+    const currentVoiceTime = ref(0)
+    const voiceVolume = ref(0.8)
 
 
     const canEdit = computed(() => {
       if (!currentUser.value || !article.value) return false
       return currentUser.value.id === article.value.user_id || currentUser.value.role === 'admin'
     })
+
+    const toggleVoicePlay = () => {
+      if (!audioRef.value) return
+      if (isPlaying.value) {
+        audioRef.value.pause()
+      } else {
+        audioRef.value.play()
+      }
+      isPlaying.value = !isPlaying.value
+    }
+
+    const onVoiceTimeUpdate = () => {
+      if (!audioRef.value) return
+      currentVoiceTime.value = audioRef.value.currentTime
+      if (audioRef.value.duration) {
+        voiceProgress.value = (audioRef.value.currentTime / audioRef.value.duration) * 100
+      }
+    }
+
+    const onVoiceLoaded = () => {
+      if (!audioRef.value) return
+      voiceDuration.value = audioRef.value.duration
+      audioRef.value.volume = voiceVolume.value
+    }
+
+    const onVoiceEnded = () => {
+      isPlaying.value = false
+      voiceProgress.value = 0
+      currentVoiceTime.value = 0
+    }
+
+    const formatVoiceTime = (seconds) => {
+      if (!seconds || isNaN(seconds)) return '00:00'
+      const mins = Math.floor(seconds / 60)
+      const secs = Math.floor(seconds % 60)
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    }
     
     const loadArticle = async () => {
       try {
@@ -505,14 +602,16 @@ export default {
     const cancelReply = () => {
       replyingTo.value = null
       replyContent.value = ''
+      replyIsAnonymous.value = false
     }
     
     const submitComment = async () => {
       if (!commentContent.value.trim()) return
-      
+
       try {
         const response = await api.post(`/articles/${article.value.id}/comments`, {
-          content: commentContent.value
+          content: commentContent.value,
+          is_anonymous: commentIsAnonymous.value
         })
         // 新评论添加到列表
         comments.value.unshift({
@@ -520,6 +619,7 @@ export default {
           replies: []
         })
         commentContent.value = ''
+        commentIsAnonymous.value = false
       } catch (error) {
         console.error('评论失败', error)
       }
@@ -531,9 +631,10 @@ export default {
       try {
         const response = await api.post(`/articles/${article.value.id}/comments`, {
           content: replyContent.value,
-          parent_id: parentId
+          parent_id: parentId,
+          is_anonymous: replyIsAnonymous.value
         })
-        
+
         // 找到父评论并添加回复
         const parentComment = comments.value.find(c => c.id === parentId)
         if (parentComment) {
@@ -543,7 +644,7 @@ export default {
           parentComment.replies.push(response.data.comment)
           parentComment.reply_count++
         }
-        
+
         cancelReply()
       } catch (error) {
         console.error('回复失败', error)
@@ -859,8 +960,23 @@ export default {
   flex: 1;
 }
 
+.comment-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .submit-comment-btn {
-  align-self: flex-end;
+  margin-left: auto;
+}
+
+.comment-anonymous-checkbox {
+  flex-shrink: 0;
+}
+
+.reply-anonymous-checkbox {
+  flex-shrink: 0;
+  margin-right: auto;
 }
 
 .login-hint {
@@ -956,5 +1072,59 @@ export default {
   justify-content: center;
   align-items: center;
   min-height: 50vh;
+}
+
+.voice-player {
+  padding: 16px;
+  margin: 0 16px 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.voice-player-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.voice-player-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.voice-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.voice-progress-wrapper {
+  flex: 1;
+}
+
+.voice-progress {
+  height: 4px;
+  background: #e9ecef;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.voice-progress-bar {
+  height: 100%;
+  background: #6750A4;
+  transition: width 0.1s linear;
+}
+
+.voice-time {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.voice-volume-slider {
+  width: 100px;
 }
 </style>

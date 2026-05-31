@@ -17,6 +17,8 @@ type Article struct {
 	FavoriteCount int       `gorm:"default:0" json:"favorite_count"`
 	ViewCount     int       `gorm:"default:0" json:"view_count"`
 	Status        string    `gorm:"default:published" json:"status"` // published, deleted, pending
+	VoiceURL      string    `gorm:"size:500" json:"voice_url"`       // 语音文件URL
+	IsAnonymous   bool      `gorm:"default:false" json:"is_anonymous"` // 是否匿名发布
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }

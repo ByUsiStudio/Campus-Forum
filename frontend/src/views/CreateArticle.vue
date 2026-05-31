@@ -28,7 +28,65 @@
           <MdEditor
             v-model="form.content"
             :height="500"
+            @voice-input="handleVoiceInput"
           />
+        </div>
+
+        <v-expand-transition>
+          <div v-if="voiceUrl || isRecording" class="mb-4">
+            <v-card variant="outlined" class="pa-3">
+              <div class="d-flex align-center gap-3">
+                <v-icon :color="isRecording ? 'error' : 'primary'">
+                  {{ isRecording ? 'mdi-microphone' : 'mdi-volume-high' }}
+                </v-icon>
+                <div class="flex-grow-1">
+                  <div class="text-subtitle-2">
+                    {{ isRecording ? '录音中...' : '语音已添加' }}
+                  </div>
+                  <div v-if="voiceUrl && !isRecording" class="text-caption text-medium-emphasis">
+                    {{ voiceUrl.split('/').pop() }}
+                  </div>
+                </div>
+                <v-btn
+                  v-if="!isRecording"
+                  variant="text"
+                  color="error"
+                  size="small"
+                  @click="removeVoice"
+                >
+                  删除
+                </v-btn>
+              </div>
+              <v-progress-linear
+                v-if="isRecording"
+                :model-value="recordingDuration"
+                color="error"
+                height="4"
+                class="mt-2"
+              />
+            </v-card>
+          </div>
+        </v-expand-transition>
+
+        <div class="d-flex align-center gap-4 mb-4">
+          <v-btn
+            variant="outlined"
+            color="primary"
+            size="small"
+            :loading="isRecording || isUploadingVoice"
+            @click="toggleRecording"
+          >
+            <v-icon left>{{ isRecording ? 'mdi-stop' : 'mdi-microphone' }}</v-icon>
+            {{ isRecording ? '停止录音' : '添加语音' }}
+          </v-btn>
+
+          <v-checkbox
+            v-model="form.is_anonymous"
+            label="匿名发布"
+            color="primary"
+            hide-details
+            class="mt-0"
+          ></v-checkbox>
         </div>
 
         <div class="d-flex gap-4">
@@ -47,7 +105,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import MdEditor from '../components/MdEditor.vue'
@@ -65,11 +123,20 @@ export default {
     const form = ref({
       title: '',
       category_id: null,
-      content: ''
+      content: '',
+      is_anonymous: false
     })
     const isEdit = ref(false)
     const articleId = ref(null)
     const submitting = ref(false)
+    const voiceUrl = ref('')
+    const isRecording = ref(false)
+    const recordingDuration = ref(0)
+    const isUploadingVoice = ref(false)
+
+    let mediaRecorder = null
+    let audioChunks = []
+    let recordingTimer = null
 
     const loadCategories = async () => {
       try {
@@ -90,6 +157,8 @@ export default {
         form.value.title = article.title
         form.value.category_id = article.category_id
         form.value.content = article.content
+        form.value.is_anonymous = article.is_anonymous
+        voiceUrl.value = article.voice_url || ''
       } catch (error) {
         console.error('加载文章失败', error)
       }
@@ -109,19 +178,24 @@ export default {
 
       try {
         let response
+        const submitData = {
+          ...form.value,
+          voice_url: voiceUrl.value
+        }
+
         if (isEdit.value) {
-          response = await api.put(`/articles/${articleId.value}`, form.value)
+          response = await api.put(`/articles/${articleId.value}`, submitData)
         } else {
-          response = await api.post('/articles', form.value)
+          response = await api.post('/articles', submitData)
         }
         
-        const articleId = response.data.article?.id
-        if (!articleId) {
+        const newArticleId = response.data.article?.id
+        if (!newArticleId) {
           throw new Error('文章ID不存在')
         }
         
-        console.log('准备跳转到文章页面:', `/article/${articleId}`)
-        await router.push(`/article/${articleId}`)
+        console.log('准备跳转到文章页面:', `/article/${newArticleId}`)
+        await router.push(`/article/${newArticleId}`)
         console.log('跳转成功')
       } catch (error) {
         console.error('提交或跳转失败', error)
@@ -130,6 +204,92 @@ export default {
         submitting.value = false
       }
     }
+
+    const handleVoiceInput = (audioBlob) => {
+      uploadVoice(audioBlob)
+    }
+
+    const uploadVoice = async (audioBlob) => {
+      isUploadingVoice.value = true
+      try {
+        const formData = new FormData()
+        formData.append('voice', audioBlob, 'voice.webm')
+
+        const response = await api.post('/upload/voice', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+
+        voiceUrl.value = response.data.url
+        await showAlert('语音上传成功')
+      } catch (error) {
+        console.error('语音上传失败', error)
+        await showError('语音上传失败')
+      } finally {
+        isUploadingVoice.value = false
+      }
+    }
+
+    const toggleRecording = async () => {
+      if (isRecording.value) {
+        stopRecording()
+      } else {
+        await startRecording()
+      }
+    }
+
+    const startRecording = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        mediaRecorder = new MediaRecorder(stream)
+        audioChunks = []
+
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunks.push(event.data)
+        }
+
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
+          stream.getTracks().forEach(track => track.stop())
+          await uploadVoice(audioBlob)
+        }
+
+        mediaRecorder.start()
+        isRecording.value = true
+        recordingDuration.value = 0
+
+        recordingTimer = setInterval(() => {
+          recordingDuration.value += 1
+        }, 1000)
+
+      } catch (error) {
+        console.error('无法访问麦克风', error)
+        await showError('无法访问麦克风，请检查权限设置')
+      }
+    }
+
+    const stopRecording = () => {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop()
+      }
+      isRecording.value = false
+      if (recordingTimer) {
+        clearInterval(recordingTimer)
+        recordingTimer = null
+      }
+    }
+
+    const removeVoice = () => {
+      voiceUrl.value = ''
+    }
+
+    onUnmounted(() => {
+      if (recordingTimer) {
+        clearInterval(recordingTimer)
+      }
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop()
+      }
+    })
 
     onMounted(() => {
       const id = route.query.id
@@ -146,7 +306,14 @@ export default {
       form,
       isEdit,
       submitting,
-      submitArticle
+      voiceUrl,
+      isRecording,
+      recordingDuration,
+      isUploadingVoice,
+      submitArticle,
+      handleVoiceInput,
+      toggleRecording,
+      removeVoice
     }
   }
 }
