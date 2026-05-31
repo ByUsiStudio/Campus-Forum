@@ -2,16 +2,19 @@
   <v-app v-if="isInitialized && isAdmin" class="admin-page">
     <v-navigation-drawer
       v-model="drawerOpen"
-      :rail="sidebarCollapsed"
-      permanent
+      :rail="isMobile ? false : sidebarCollapsed"
+      :permanent="!isMobile"
+      :temporary="isMobile"
+      :width="240"
       class="admin-sidebar"
     >
       <div class="sidebar-inner">
-        <div class="sidebar-header" @click="toggleSidebar">
+        <div class="sidebar-header" @click="isMobile ? toggleDrawer() : toggleSidebar()">
           <v-icon size="24" color="primary">mdi-shield-crown</v-icon>
-          <span v-if="!sidebarCollapsed" class="header-title">管理后台</span>
+          <span v-if="!sidebarCollapsed || isMobile" class="header-title">管理后台</span>
           <v-spacer />
           <v-btn
+            v-if="!isMobile"
             icon
             variant="text"
             size="x-small"
@@ -20,6 +23,15 @@
             <v-icon size="18">
               {{ sidebarCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-left' }}
             </v-icon>
+          </v-btn>
+          <v-btn
+            v-if="isMobile"
+            icon
+            variant="text"
+            size="small"
+            @click.stop="drawerOpen = false"
+          >
+            <v-icon size="20">mdi-close</v-icon>
           </v-btn>
         </div>
 
@@ -32,11 +44,12 @@
             :to="{ name: item.route }"
             class="nav-item"
             :class="{ 'active': route.name === item.route }"
+            @click="isMobile && (drawerOpen = false)"
           >
-            <v-icon size="20" class="nav-icon">{{ item.icon }}</v-icon>
-            <span v-if="!sidebarCollapsed" class="nav-text">{{ item.title }}</span>
+            <v-icon size="22" class="nav-icon">{{ item.icon }}</v-icon>
+            <span v-if="!sidebarCollapsed || isMobile" class="nav-text">{{ item.title }}</span>
             <v-chip
-              v-if="item.badge && item.badge() > 0 && !sidebarCollapsed"
+              v-if="item.badge && item.badge() > 0 && (!sidebarCollapsed || isMobile)"
               size="x-small"
               color="error"
               class="nav-badge"
@@ -44,7 +57,7 @@
               {{ item.badge() }}
             </v-chip>
             <v-badge
-              v-if="item.badge && item.badge() > 0 && sidebarCollapsed"
+              v-if="item.badge && item.badge() > 0 && sidebarCollapsed && !isMobile"
               :content="item.badge()"
               color="error"
               class="nav-badge-inline"
@@ -67,9 +80,17 @@
     </v-navigation-drawer>
 
     <v-app-bar flat class="admin-header">
-      <div class="header-content">
+      <v-btn
+        v-if="isMobile"
+        icon
+        variant="text"
+        @click="drawerOpen = true"
+      >
+        <v-icon>mdi-menu</v-icon>
+      </v-btn>
+      <div class="header-content" :class="{ 'ml-0': isMobile }">
         <div class="header-brand">
-          <v-icon size="24" color="primary">mdi-shield-crown</v-icon>
+          <v-icon v-if="!isMobile" size="24" color="primary">mdi-shield-crown</v-icon>
           <div class="brand-text">
             <div class="brand-title">{{ currentPageTitle }}</div>
           </div>
@@ -100,7 +121,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
 
@@ -110,6 +131,7 @@ const route = useRoute()
 const isInitialized = ref(false)
 const isAdmin = ref(false)
 const isRefreshing = ref(false)
+const isMobile = ref(false)
 const deletionCount = ref(0)
 const sidebarCollapsed = ref(false)
 const drawerOpen = ref(true)
@@ -150,6 +172,14 @@ const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value
 }
 
+const toggleDrawer = () => {
+  drawerOpen.value = !drawerOpen.value
+}
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 960
+}
+
 const goToHome = () => {
   router.push('/')
 }
@@ -183,8 +213,14 @@ const loadDeletionCount = async () => {
 }
 
 onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
   checkAdmin()
   loadDeletionCount()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
 })
 
 watch(() => route.path, () => {
@@ -351,6 +387,46 @@ watch(() => route.path, () => {
   .admin-sidebar {
     position: fixed;
     z-index: 1000;
+  }
+
+  .admin-header {
+    padding-left: 0;
+  }
+
+  .header-content {
+    padding: 0 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-sidebar .sidebar-inner {
+    padding-bottom: 60px;
+  }
+
+  .sidebar-nav {
+    padding: 8px 4px;
+  }
+
+  .nav-item {
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-bottom: 4px;
+  }
+
+  .nav-icon {
+    font-size: 24px;
+  }
+
+  .nav-text {
+    font-size: 15px;
+  }
+
+  .header-title {
+    font-size: 18px;
+  }
+
+  .admin-page-container {
+    padding: 12px;
   }
 }
 </style>
