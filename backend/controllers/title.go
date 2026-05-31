@@ -110,9 +110,9 @@ func DeleteTitle(c *gin.Context) {
 
 func GrantTitle(c *gin.Context) {
 	var input struct {
-		UserID uint   `json:"user_id" binding:"required"`
-		TitleID uint  `json:"title_id" binding:"required"`
-		Reason string `json:"reason"`
+		UserID  uint   `json:"user_id" binding:"required"`
+		TitleID uint   `json:"title_id" binding:"required"`
+		Reason  string `json:"reason"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -147,7 +147,7 @@ func GrantTitle(c *gin.Context) {
 	database.DB.Create(&userTitle)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "头衔授予成功",
+		"message":    "头衔授予成功",
 		"user_title": userTitle,
 	})
 }

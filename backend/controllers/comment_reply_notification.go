@@ -21,9 +21,9 @@ func GetCommentReplyNotifications(c *gin.Context) {
 
 	type NotificationWithInfo struct {
 		models.CommentReplyNotification
-		ReplyUser    models.User    `json:"reply_user"`
-		ArticleTitle string         `json:"article_title"`
-		ReplyContent string         `json:"reply_content"`
+		ReplyUser    models.User `json:"reply_user"`
+		ArticleTitle string      `json:"article_title"`
+		ReplyContent string      `json:"reply_content"`
 	}
 
 	var response []NotificationWithInfo

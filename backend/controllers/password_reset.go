@@ -54,14 +54,20 @@ func sendEmail(smtpHost string, smtpPort int, username, password, from, to, subj
 		InsecureSkipVerify: true,
 	})
 	if err != nil {
-		err = smtp.SendMail(
+		// TLS 连接失败，尝试使用不加密的 smtp.SendMail 作为回退
+		fmt.Printf("tls.Dial failed: %v, trying smtp.SendMail fallback\n", err)
+		if sendErr := smtp.SendMail(
 			fmt.Sprintf("%s:%d", smtpHost, smtpPort),
 			auth,
 			from,
 			[]string{to},
 			msg,
-		)
-		return err
+		); sendErr != nil {
+			// 返回回退发送的错误
+			fmt.Printf("smtp.SendMail fallback failed: %v\n", sendErr)
+			return sendErr
+		}
+		return nil
 	}
 	defer conn.Close()
 
@@ -72,6 +78,7 @@ func sendEmail(smtpHost string, smtpPort int, username, password, from, to, subj
 	defer client.Quit()
 
 	if err := client.Auth(auth); err != nil {
+		fmt.Printf("SMTP client auth failed over TLS: %v\n", err)
 		return err
 	}
 	if err := client.Mail(from); err != nil {
@@ -127,7 +134,11 @@ func SendResetCode(c *gin.Context) {
 	user.ResetToken = code
 	user.ResetIdentifier = identifier
 	user.ResetExpiry = &expiry
-	database.DB.Save(&user)
+	if res := database.DB.Save(&user); res.Error != nil {
+		fmt.Printf("Failed to save user reset token: %v\n", res.Error)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "保存重置信息失败"})
+		return
+	}
 
 	email := input.QQNumber + "@qq.com"
 	subject := "校园论坛 - 密码重置验证码"
@@ -159,11 +170,13 @@ func ResetPassword(c *gin.Context) {
 		QQNumber   string `json:"qq_number" binding:"required"`
 		Code       string `json:"code" binding:"required"`
 		Identifier string `json:"identifier" binding:"required"`
-		Password   string `json:"password" binding:"required;min=6"`
+		Password   string `json:"password" binding:"required,min=6"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "请提供完整的参数"})
+		// 记录具体绑定错误，便于排查客户端传参问题
+		fmt.Printf("ResetPassword bind error: %v\n", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请提供完整的参数: " + err.Error()})
 		return
 	}
 
@@ -190,6 +203,7 @@ func ResetPassword(c *gin.Context) {
 
 	hashedPassword, err := database.HashPassword(input.Password)
 	if err != nil {
+		fmt.Printf("HashPassword error: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "密码加密失败"})
 		return
 	}
@@ -197,7 +211,13 @@ func ResetPassword(c *gin.Context) {
 	user.ResetToken = ""
 	user.ResetIdentifier = ""
 	user.ResetExpiry = nil
-	database.DB.Save(&user)
+
+	if res := database.DB.Save(&user); res.Error != nil {
+		// 记录 DB 保存错误并返回 500
+		fmt.Printf("Failed to save user after password reset: %v\n", res.Error)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "保存用户信息失败"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "密码重置成功"})
 }
