@@ -12,26 +12,59 @@
     />
   </v-container>
 
-  <v-dialog v-model="grantDialog.show" max-width="480">
+  <v-dialog v-model="grantDialog.show" max-width="500">
     <v-card class="dialog-card">
       <v-card-title class="dialog-title">
-        <v-icon class="title-icon">mdi-medal</v-icon>
+        <v-avatar color="primary" size="40" class="mr-3">
+          <v-icon color="white" size="20">mdi-medal</v-icon>
+        </v-avatar>
         授予头衔
       </v-card-title>
       <v-card-text class="dialog-body">
-        <v-select
-          v-model="grantDialog.selectedUserId"
-          :items="usersForSelect"
-          item-title="display_name"
-          item-value="id"
-          label="选择用户"
-          variant="outlined"
-          class="mt-4"
-        ></v-select>
+        <v-form ref="grantForm" v-model="formValid">
+          <v-select
+            v-model="grantDialog.selectedUserId"
+            :items="usersForSelect"
+            item-title="display_name"
+            item-value="id"
+            label="选择用户"
+            variant="outlined"
+            density="comfortable"
+            :rules="[rules.required]"
+            prepend-inner-icon="mdi-account"
+            class="mb-2"
+          >
+            <template #label>
+              <span class="text-body-2">选择用户</span>
+            </template>
+            <template #item="{ props, item }">
+              <v-list-item v-bind="props" :title="item.raw.display_name">
+                <template #prepend>
+                  <v-avatar size="32" class="mr-3">
+                    <v-img :src="item.raw.avatar || '/default-avatar.png'"></v-img>
+                  </v-avatar>
+                </template>
+                <template #subtitle>
+                  <span class="text-caption">@{{ item.raw.username }}</span>
+                </template>
+              </v-list-item>
+            </template>
+          </v-select>
+        </v-form>
       </v-card-text>
       <v-card-actions class="dialog-actions">
-        <v-btn variant="text" @click="grantDialog.show = false">取消</v-btn>
-        <v-btn color="primary" variant="flat" @click="handleGrant">确认授予</v-btn>
+        <v-btn variant="text" @click="grantDialog.show = false" class="mr-2">
+          取消
+        </v-btn>
+        <v-btn
+          color="primary"
+          variant="flat"
+          @click="handleGrant"
+          :disabled="!formValid"
+        >
+          <v-icon class="mr-1">mdi-check</v-icon>
+          确认授予
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -46,6 +79,8 @@ import { confirm, success, error } from '../../utils/modal'
 const titles = ref([])
 const users = ref([])
 const loading = ref(true)
+const grantForm = ref(null)
+const formValid = ref(false)
 
 const grantDialog = ref({
   show: false,
@@ -56,17 +91,23 @@ const grantDialog = ref({
 const usersForSelect = computed(() => {
   return users.value.map(u => ({
     id: u.id,
-    display_name: u.display_name
+    display_name: u.display_name,
+    username: u.username,
+    avatar: u.avatar
   }))
 })
+
+const rules = {
+  required: v => !!v || '此字段为必填项'
+}
 
 const loadTitles = async () => {
   loading.value = true
   try {
     const response = await api.get('/titles')
     titles.value = response.data.titles || []
-  } catch (error) {
-    console.error('加载头衔列表失败', error)
+  } catch (err) {
+    console.error('加载头衔列表失败', err)
   } finally {
     loading.value = false
   }
@@ -76,22 +117,22 @@ const loadUsers = async () => {
   try {
     const response = await api.get('/admin/users')
     users.value = response.data.users || []
-  } catch (error) {
-    console.error('加载用户列表失败', error)
+  } catch (err) {
+    console.error('加载用户列表失败', err)
   }
 }
 
 const addTitle = async () => {
   const titleName = prompt('请输入头衔名称：')
   if (!titleName) return
-  
+
   try {
     await api.post('/titles', { name: titleName })
     success('添加成功')
     loadTitles()
-  } catch (error) {
-    console.error('添加头衔失败', error)
-    error(error.response?.data?.error || '添加失败')
+  } catch (err) {
+    console.error('添加头衔失败', err)
+    error(err.response?.data?.error || '添加失败')
   }
 }
 
@@ -108,7 +149,7 @@ const handleGrant = async () => {
     error('请选择用户')
     return
   }
-  
+
   try {
     await api.post('/titles/grant', {
       title_id: grantDialog.value.titleId,
@@ -117,37 +158,37 @@ const handleGrant = async () => {
     success('授予成功')
     grantDialog.value.show = false
     loadTitles()
-  } catch (error) {
-    console.error('授予头衔失败', error)
-    error(error.response?.data?.error || '授予失败')
+  } catch (err) {
+    console.error('授予头衔失败', err)
+    error(err.response?.data?.error || '授予失败')
   }
 }
 
 const revokeTitle = async (titleId, userId) => {
   const confirmed = await confirm('确定要撤销此头衔吗？')
   if (!confirmed) return
-  
+
   try {
     await api.post('/titles/revoke', { title_id: titleId, user_id: userId })
     success('撤销成功')
     loadTitles()
-  } catch (error) {
-    console.error('撤销头衔失败', error)
-    error(error.response?.data?.error || '撤销失败')
+  } catch (err) {
+    console.error('撤销头衔失败', err)
+    error(err.response?.data?.error || '撤销失败')
   }
 }
 
 const handleDeleteTitle = async (title) => {
-  const confirmed = await confirm(`确定要删除头衔 "${title.name}" 吗？`)
+  const confirmed = await confirm(`确定要删除头衔 "${title.name}" 吗？此操作不可恢复。`)
   if (!confirmed) return
-  
+
   try {
     await api.delete(`/titles/${title.id}`)
     success('删除成功')
     loadTitles()
-  } catch (error) {
-    console.error('删除头衔失败', error)
-    error(error.response?.data?.error || '删除失败')
+  } catch (err) {
+    console.error('删除头衔失败', err)
+    error(err.response?.data?.error || '删除失败')
   }
 }
 
@@ -173,14 +214,6 @@ onMounted(() => {
   background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
 }
 
-.title-icon {
-  width: 40px;
-  height: 40px;
-  padding: 8px;
-  border-radius: 10px;
-  background: rgba(103, 80, 164, 0.1);
-}
-
 .dialog-body {
   padding: 24px !important;
 }
@@ -188,5 +221,21 @@ onMounted(() => {
 .dialog-actions {
   padding: 16px 24px 24px;
   gap: 12px;
+}
+
+:deep(.v-field) {
+  border-radius: 12px;
+}
+
+:deep(.v-field--outlined .v-field__outline) {
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+:deep(.v-field--focused .v-field__outline) {
+  border-color: rgb(var(--v-theme-primary));
+}
+
+:deep(.v-select .v-field) {
+  border-radius: 12px;
 }
 </style>
