@@ -2,19 +2,18 @@
   <v-app v-if="isInitialized && isAdmin" class="admin-page">
     <v-navigation-drawer
       v-model="drawerOpen"
-      :rail="isMobile ? false : sidebarCollapsed"
+      :rail="sidebarCollapsed"
       :permanent="!isMobile"
       :temporary="isMobile"
       :width="240"
       class="admin-sidebar"
     >
       <div class="sidebar-inner">
-        <div class="sidebar-header" @click="isMobile ? toggleDrawer() : toggleSidebar()">
+        <div class="sidebar-header" @click="toggleSidebar()">
           <v-icon size="24" color="primary">mdi-shield-crown</v-icon>
-          <span v-if="!sidebarCollapsed || isMobile" class="header-title">管理后台</span>
+          <span v-if="!sidebarCollapsed" class="header-title">管理后台</span>
           <v-spacer />
           <v-btn
-            v-if="!isMobile"
             icon
             variant="text"
             size="x-small"
@@ -24,44 +23,49 @@
               {{ sidebarCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-left' }}
             </v-icon>
           </v-btn>
-          <v-btn
-            v-if="isMobile"
-            icon
-            variant="text"
-            size="small"
-            @click.stop="drawerOpen = false"
-          >
-            <v-icon size="20">mdi-close</v-icon>
-          </v-btn>
         </div>
 
         <v-divider class="sidebar-divider" />
 
         <nav class="sidebar-nav">
+          <div v-if="sidebarItems.length > 0">
+            <router-link
+              v-for="item in sidebarItems"
+              :key="item.link"
+              :to="item.link"
+              class="nav-item"
+              :class="{ 'active': isActive(item.link) }"
+              @click="drawerOpen = false"
+            >
+              <v-icon size="22" class="nav-icon">{{ getIcon(item.icon) }}</v-icon>
+              <span v-if="!sidebarCollapsed" class="nav-text">{{ item.title }}</span>
+            </router-link>
+          </div>
+
+          <v-divider class="sidebar-divider mt-4" />
+
+          <div class="admin-section-title" v-if="!sidebarCollapsed">
+            管理功能
+          </div>
+
           <router-link
-            v-for="item in navItems"
+            v-for="item in adminItems"
             :key="item.route"
             :to="{ name: item.route }"
             class="nav-item"
             :class="{ 'active': route.name === item.route }"
-            @click="isMobile && (drawerOpen = false)"
+            @click="drawerOpen = false"
           >
             <v-icon size="22" class="nav-icon">{{ item.icon }}</v-icon>
-            <span v-if="!sidebarCollapsed || isMobile" class="nav-text">{{ item.title }}</span>
+            <span v-if="!sidebarCollapsed" class="nav-text">{{ item.title }}</span>
             <v-chip
-              v-if="item.badge && item.badge() > 0 && (!sidebarCollapsed || isMobile)"
+              v-if="item.badge && item.badge() > 0 && !sidebarCollapsed"
               size="x-small"
               color="error"
               class="nav-badge"
             >
               {{ item.badge() }}
             </v-chip>
-            <v-badge
-              v-if="item.badge && item.badge() > 0 && sidebarCollapsed && !isMobile"
-              :content="item.badge()"
-              color="error"
-              class="nav-badge-inline"
-            />
           </router-link>
         </nav>
 
@@ -80,17 +84,9 @@
     </v-navigation-drawer>
 
     <v-app-bar flat class="admin-header">
-      <v-btn
-        v-if="isMobile"
-        icon
-        variant="text"
-        @click="drawerOpen = true"
-      >
-        <v-icon>mdi-menu</v-icon>
-      </v-btn>
-      <div class="header-content" :class="{ 'ml-0': isMobile }">
+      <div class="header-content">
         <div class="header-brand">
-          <v-icon v-if="!isMobile" size="24" color="primary">mdi-shield-crown</v-icon>
+          <v-icon size="24" color="primary">mdi-shield-crown</v-icon>
           <div class="brand-text">
             <div class="brand-title">{{ currentPageTitle }}</div>
           </div>
@@ -99,10 +95,26 @@
     </v-app-bar>
 
     <v-main class="admin-main">
-      <div class="admin-page-container">
-        <router-view />
-      </div>
+      <router-view />
     </v-main>
+
+    <div class="floating-ball" @click="toggleDrawer">
+      <v-btn
+        icon
+        size="large"
+        color="primary"
+        elevation="4"
+        class="floating-btn"
+      >
+        <v-icon size="28">{{ drawerOpen ? 'mdi-close' : 'mdi-menu' }}</v-icon>
+      </v-btn>
+    </div>
+
+    <div
+      v-if="drawerOpen"
+      class="drawer-overlay"
+      @click="drawerOpen = false"
+    />
   </v-app>
 
   <div v-else-if="isInitialized && !isAdmin" class="error-page">
@@ -132,11 +144,12 @@ const isInitialized = ref(false)
 const isAdmin = ref(false)
 const isRefreshing = ref(false)
 const isMobile = ref(false)
+const sidebarItems = ref([])
 const deletionCount = ref(0)
 const sidebarCollapsed = ref(false)
-const drawerOpen = ref(true)
+const drawerOpen = ref(false)
 
-const navItems = [
+const adminItems = [
   { route: 'AdminIndex', title: '概览', icon: 'mdi-view-dashboard' },
   { route: 'AdminUsers', title: '用户管理', icon: 'mdi-account-group' },
   { route: 'AdminArticles', title: '文章管理', icon: 'mdi-file-document-edit' },
@@ -168,6 +181,16 @@ const pageTitles = {
 
 const currentPageTitle = computed(() => pageTitles[route.name] || '概览')
 
+const getIcon = (icon) => {
+  if (!icon) return 'mdi-link'
+  if (icon.match(/[\u{1F600}-\u{1F64F}]/u)) return icon
+  return icon.startsWith('mdi-') ? icon : `mdi-${icon}`
+}
+
+const isActive = (link) => {
+  return route.path === link
+}
+
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value
 }
@@ -189,6 +212,16 @@ const handleRefresh = () => {
   setTimeout(() => {
     window.location.reload()
   }, 800)
+}
+
+const loadSidebarConfig = async () => {
+  try {
+    const response = await api.get('/sidebar-config')
+    sidebarItems.value = response.data.items || []
+  } catch (error) {
+    console.error('加载侧边栏配置失败', error)
+    sidebarItems.value = []
+  }
 }
 
 const checkAdmin = async () => {
@@ -215,6 +248,7 @@ const loadDeletionCount = async () => {
 onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
+  loadSidebarConfig()
   checkAdmin()
   loadDeletionCount()
 })
@@ -232,12 +266,16 @@ watch(() => route.path, () => {
 .admin-sidebar {
   background: #fff;
   border-right: 1px solid #E5E5E5;
+  height: calc(100vh - 64px);
+  top: 64px;
+  z-index: 1000 !important;
 }
 
 .sidebar-inner {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
 }
 
 .sidebar-header {
@@ -312,10 +350,13 @@ watch(() => route.path, () => {
   margin-left: auto;
 }
 
-.nav-badge-inline {
-  position: absolute;
-  top: 6px;
-  right: 6px;
+.admin-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  padding: 12px 12px 4px;
+  letter-spacing: 0.5px;
 }
 
 .sidebar-footer {
@@ -332,6 +373,11 @@ watch(() => route.path, () => {
 .admin-header {
   background: #fff;
   border-bottom: 1px solid #E5E5E5;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 900;
 }
 
 .header-content {
@@ -355,7 +401,13 @@ watch(() => route.path, () => {
 
 .admin-main {
   background: #FAFAFA;
-  min-height: 100vh;
+  min-height: calc(100vh - 64px);
+  padding-top: 64px;
+}
+
+.admin-main > div {
+  margin: 0;
+  padding: 0;
 }
 
 .loading-page,
@@ -383,24 +435,46 @@ watch(() => route.path, () => {
   to { transform: rotate(360deg); }
 }
 
+.floating-ball {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2000;
+}
+
+.floating-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+}
+
+.floating-btn:hover {
+  transform: scale(1.1);
+}
+
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
 @media (max-width: 960px) {
   .admin-sidebar {
     position: fixed;
-    z-index: 1000;
-  }
-
-  .admin-header {
-    padding-left: 0;
-  }
-
-  .header-content {
-    padding: 0 12px;
+    height: 100vh;
+    top: 0;
   }
 }
 
 @media (max-width: 600px) {
-  .admin-sidebar .sidebar-inner {
-    padding-bottom: 60px;
+  .floating-ball {
+    bottom: 20px;
+    right: 20px;
   }
 
   .sidebar-nav {
@@ -419,14 +493,6 @@ watch(() => route.path, () => {
 
   .nav-text {
     font-size: 15px;
-  }
-
-  .header-title {
-    font-size: 18px;
-  }
-
-  .admin-page-container {
-    padding: 12px;
   }
 }
 </style>

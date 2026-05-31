@@ -1334,6 +1334,13 @@ const handlePreviewScroll = () => {
   background: #000;
 }
 
+.markdown-body :deep(audio) {
+  width: 100%;
+  max-width: 100%;
+  margin: 16px 0;
+  display: block;
+}
+
 .markdown-body :deep(table) {
   border-collapse: collapse;
   width: 100%;

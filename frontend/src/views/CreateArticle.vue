@@ -300,6 +300,29 @@ export default {
       }
     }
 
+    const escapeRegExp = (value) => {
+      return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    }
+
+    const insertVoiceTagIntoContent = (url) => {
+      if (!url) return
+      const trimmedContent = form.value.content.trim()
+      const audioMarker = `<audio controls src="${url}"></audio>`
+      if (trimmedContent.includes(audioMarker) || trimmedContent.includes(`src="${url}"`)) {
+        return
+      }
+      form.value.content = trimmedContent
+        ? `${trimmedContent}\n\n${audioMarker}\n`
+        : `${audioMarker}\n`
+    }
+
+    const removeVoiceTagFromContent = (url) => {
+      if (!url) return
+      const escapedUrl = escapeRegExp(url)
+      const audioRegex = new RegExp(`\\n?<audio[^>]*src=\"${escapedUrl}\"[^>]*>(?:<\\/audio>)?\\n?`, 'g')
+      form.value.content = form.value.content.replace(audioRegex, '').trim()
+    }
+
     const submitArticle = async () => {
       if (!form.value.title.trim()) {
         await showAlert('请输入标题')
@@ -308,6 +331,10 @@ export default {
       if (!form.value.content.trim()) {
         await showAlert('请输入内容')
         return
+      }
+
+      if (voiceUrl.value) {
+        insertVoiceTagIntoContent(voiceUrl.value)
       }
 
       submitting.value = true
@@ -357,6 +384,7 @@ export default {
         })
 
         voiceUrl.value = response.data.url
+        insertVoiceTagIntoContent(voiceUrl.value)
         showVoiceDialog.value = false
         await showAlert('语音上传成功')
       } catch (error) {
@@ -471,6 +499,7 @@ export default {
     }
 
     const removeVoice = () => {
+      removeVoiceTagFromContent(voiceUrl.value)
       voiceUrl.value = ''
     }
 

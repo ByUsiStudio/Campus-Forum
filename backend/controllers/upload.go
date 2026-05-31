@@ -172,6 +172,13 @@ func UploadVoice(c *gin.Context) {
 
 	// 检查文件类型
 	ext := strings.ToLower(filepath.Ext(file.Filename))
+	
+	// 检查文件是否有扩展名
+	if ext == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "文件没有扩展名，请确保文件格式正确"})
+		return
+	}
+	
 	allowedExts := []string{".mp3", ".webm", ".ogg", ".wav", ".m4a", ".aac"}
 	allowed := false
 	for _, allowedExt := range allowedExts {
@@ -181,7 +188,7 @@ func UploadVoice(c *gin.Context) {
 		}
 	}
 	if !allowed {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的语音格式"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的语音格式，支持的格式: MP3, WAV, AAC, OGG, M4A, WebM"})
 		return
 	}
 

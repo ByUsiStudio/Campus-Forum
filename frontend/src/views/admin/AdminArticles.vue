@@ -118,7 +118,7 @@ const handleDeleteArticle = async (article) => {
   const confirmed = await confirm(`确定要删除文章 "${article.title}" 吗？`)
   if (!confirmed) return
   try {
-    await api.delete(`/admin/articles/${article.id}`)
+    await api.delete(`/articles/${article.id}`)
     success('删除成功')
     loadArticles()
   } catch (error) {

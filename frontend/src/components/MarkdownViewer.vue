@@ -213,6 +213,13 @@ const renderedContent = computed(() => {
   border-bottom-color: #6750A4;
 }
 
+.markdown-viewer :deep(audio) {
+  width: 100%;
+  max-width: 100%;
+  margin: 16px 0;
+  display: block;
+}
+
 .markdown-viewer :deep(code) {
   background: #f5f5f5;
   padding: 2px 6px;

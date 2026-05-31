@@ -297,7 +297,7 @@ func GetAllArticles(c *gin.Context) {
 
 	query := database.DB.Model(&models.Article{}).Preload("User").Preload("Category")
 
-	if status != "" {
+	if status != "" && status != "all" {
 		query = query.Where("status = ?", status)
 	}
 
@@ -382,7 +382,14 @@ func UpdateArticleStatus(c *gin.Context) {
 		return
 	}
 
-	if input.Status != "published" && input.Status != "pending" && input.Status != "deleted" {
+	validStatuses := map[string]bool{
+		"published": true,
+		"pending":   true,
+		"rejected":  true,
+		"deleted":   true,
+	}
+
+	if !validStatuses[input.Status] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的状态"})
 		return
 	}
