@@ -6,8 +6,6 @@ import (
 	"forum/utils"
 	"net/http"
 	"strconv"
-	_ "strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,6 +21,23 @@ func getUserTitles(userID uint) []models.Title {
 		}
 	}
 	return titles
+}
+
+func maskAnonymousUser(article *models.Article, isOwner bool) {
+	if article.IsAnonymous && !isOwner {
+		article.User = models.User{
+			ID:       0,
+			Username: "匿名用户",
+			Avatar:   "",
+		}
+	}
+}
+
+func maskAnonymousUsers(articles *[]models.Article, currentUserID uint) {
+	for i := range *articles {
+		isOwner := (*articles)[i].UserID == currentUserID
+		maskAnonymousUser(&(*articles)[i], isOwner)
+	}
 }
 
 func CreateArticle(c *gin.Context) {
@@ -108,38 +123,25 @@ func GetArticles(c *gin.Context) {
 	query.Count(&total)
 	query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&articles)
 
-	type ArticleResponse struct {
-		models.Article
-		User struct {
-			ID          uint           `json:"id"`
-			Username    string         `json:"username"`
-			DisplayName string         `json:"display_name"`
-			Avatar      string         `json:"avatar"`
-			Titles      []models.Title `json:"titles"`
-		} `json:"user"`
+	var currentUserID uint
+	if userID, exists := c.Get("user_id"); exists {
+		currentUserID = userID.(uint)
 	}
 
-	var response []ArticleResponse
-	for _, article := range articles {
-		titles := getUserTitles(article.UserID)
-		resp := ArticleResponse{
-			Article: article,
-		}
-		resp.User.ID = article.User.ID
-		resp.User.Username = article.User.Username
-		if article.IsAnonymous {
-			resp.User.DisplayName = "匿名用户"
-			resp.User.Avatar = ""
-		} else {
-			resp.User.DisplayName = article.User.DisplayName
-			resp.User.Avatar = article.User.Avatar
-		}
-		resp.User.Titles = titles
-		response = append(response, resp)
+	for i := range articles {
+		var likeCount int64
+		database.DB.Model(&models.Like{}).Where("article_id = ?", articles[i].ID).Count(&likeCount)
+		articles[i].LikeCount = int(likeCount)
+
+		var commentCount int64
+		database.DB.Model(&models.Comment{}).Where("article_id = ?", articles[i].ID).Count(&commentCount)
+		articles[i].CommentCount = int(commentCount)
 	}
+
+	maskAnonymousUsers(&articles, currentUserID)
 
 	c.JSON(http.StatusOK, gin.H{
-		"articles":    response,
+		"articles":    articles,
 		"total":       total,
 		"page":        page,
 		"page_size":   pageSize,
@@ -149,160 +151,91 @@ func GetArticles(c *gin.Context) {
 
 func GetArticle(c *gin.Context) {
 	id := c.Param("id")
-	var article models.Article
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 
-	if result := database.DB.Preload("User").Preload("Category").Where("id = ? AND status = ?", id, "published").First(&article); result.Error != nil {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	offset := (page - 1) * pageSize
+
+	var article models.Article
+	if result := database.DB.Preload("User").Preload("Category").First(&article, id); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "文章不存在"})
 		return
 	}
 
-	clientIP := c.ClientIP()
-	articleIDUint := uint(parseUint(id))
+	database.DB.Model(&article).UpdateColumn("view_count", article.ViewCount+1)
 
-	canIncreaseView := false
-	if userID, exists := c.Get("user_id"); exists {
-		uid := userID.(uint)
-		oneMinuteAgo := time.Now().Add(-time.Minute)
+	var likeCount int64
+	database.DB.Model(&models.Like{}).Where("article_id = ?", article.ID).Count(&likeCount)
+	article.LikeCount = int(likeCount)
 
-		var existingView models.ViewHistory
-		if result := database.DB.Where("article_id = ? AND user_id = ? AND created_at > ?", articleIDUint, uid, oneMinuteAgo).First(&existingView); result.Error != nil {
-			canIncreaseView = true
-		}
-	}
-
-	if canIncreaseView {
-		database.DB.Model(&article).UpdateColumn("view_count", article.ViewCount+1)
-
-		userIDPtr := new(uint)
-		if userID, exists := c.Get("user_id"); exists {
-			*userIDPtr = userID.(uint)
-		}
-
-		viewHistory := models.ViewHistory{
-			ArticleID: articleIDUint,
-			IP:        clientIP,
-			UserID:    userIDPtr,
-		}
-		database.DB.Create(&viewHistory)
-
-		article.ViewCount++
-	}
+	var commentCount int64
+	database.DB.Model(&models.Comment{}).Where("article_id = ?", article.ID).Count(&commentCount)
+	article.CommentCount = int(commentCount)
 
 	var comments []models.Comment
-	database.DB.Preload("User").Where("article_id = ? AND parent_id IS NULL", article.ID).Order("created_at DESC").Find(&comments)
+	var total int64
+	database.DB.Model(&models.Comment{}).Where("article_id = ?", article.ID).Count(&total)
+	database.DB.Where("article_id = ? AND parent_id = 0", article.ID).Preload("User").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&comments)
 
 	for i := range comments {
-		var replies []models.Comment
-		database.DB.Preload("User").Where("parent_id = ?", comments[i].ID).Order("created_at ASC").Find(&replies)
-		comments[i].Replies = replies
+		var replyCount int64
+		database.DB.Model(&models.Comment{}).Where("parent_id = ?", comments[i].ID).Count(&replyCount)
+		comments[i].ReplyCount = int(replyCount)
 	}
 
-	articleTitles := getUserTitles(article.UserID)
-
-	type CommentResponse struct {
-		models.Comment
-		User struct {
-			ID          uint           `json:"id"`
-			Username    string         `json:"username"`
-			DisplayName string         `json:"display_name"`
-			Avatar      string         `json:"avatar"`
-			Titles      []models.Title `json:"titles"`
-		} `json:"user"`
-		Replies []CommentResponse `json:"replies"`
-	}
-
-	var commentResponses []CommentResponse
-	for _, comment := range comments {
-		commentTitles := getUserTitles(comment.UserID)
-		resp := CommentResponse{
-			Comment: comment,
-		}
-		resp.User.ID = comment.User.ID
-		resp.User.Username = comment.User.Username
-		if comment.IsAnonymous {
-			resp.User.DisplayName = "匿名用户"
-			resp.User.Avatar = ""
-			resp.User.Titles = []models.Title{}
-		} else {
-			resp.User.DisplayName = comment.User.DisplayName
-			resp.User.Avatar = comment.User.Avatar
-			resp.User.Titles = commentTitles
-		}
-
-		for _, reply := range comment.Replies {
-			replyTitles := getUserTitles(reply.UserID)
-			replyResp := CommentResponse{
-				Comment: reply,
-			}
-			replyResp.User.ID = reply.User.ID
-			replyResp.User.Username = reply.User.Username
-			if reply.IsAnonymous {
-				replyResp.User.DisplayName = "匿名用户"
-				replyResp.User.Avatar = ""
-				replyResp.User.Titles = []models.Title{}
-			} else {
-				replyResp.User.DisplayName = reply.User.DisplayName
-				replyResp.User.Avatar = reply.User.Avatar
-				replyResp.User.Titles = replyTitles
-			}
-			resp.Replies = append(resp.Replies, replyResp)
-		}
-		commentResponses = append(commentResponses, resp)
-	}
-
-	var liked bool
+	var liked = false
 	if userID, exists := c.Get("user_id"); exists {
 		var like models.Like
-		if database.DB.Where("user_id = ? AND article_id = ?", userID, article.ID).First(&like).Error == nil {
+		if result := database.DB.Where("user_id = ? AND article_id = ?", userID, id).First(&like); result.Error == nil {
 			liked = true
 		}
 	}
 
-	var commentLikedMap = make(map[uint]bool)
+	commentLiked := make(map[uint]bool)
 	if userID, exists := c.Get("user_id"); exists {
-		for _, comment := range commentResponses {
-			var commentLike models.CommentLike
-			if database.DB.Where("user_id = ? AND comment_id = ?", userID, comment.ID).First(&commentLike).Error == nil {
-				commentLikedMap[comment.ID] = true
-			}
-			for _, reply := range comment.Replies {
-				if database.DB.Where("user_id = ? AND comment_id = ?", userID, reply.ID).First(&commentLike).Error == nil {
-					commentLikedMap[reply.ID] = true
-				}
+		var likes []models.Like
+		database.DB.Where("user_id = ? AND article_id = ?", userID, id).Find(&likes)
+		for _, like := range likes {
+			commentLiked[like.ID] = true
+		}
+	}
+
+	var currentUserID uint
+	isOwner := article.UserID == currentUserID
+	if userID, exists := c.Get("user_id"); exists {
+		currentUserID = userID.(uint)
+		isOwner = article.UserID == currentUserID
+	}
+
+	maskAnonymousUser(&article, isOwner)
+
+	for i := range comments {
+		isCommentOwner := comments[i].UserID == currentUserID
+		if comments[i].IsAnonymous && !isCommentOwner {
+			comments[i].User = models.User{
+				ID:       0,
+				Username: "匿名用户",
+				Avatar:   "",
 			}
 		}
 	}
 
-	type ArticleResponse struct {
-		models.Article
-		User struct {
-			ID          uint           `json:"id"`
-			Username    string         `json:"username"`
-			DisplayName string         `json:"display_name"`
-			Avatar      string         `json:"avatar"`
-			Titles      []models.Title `json:"titles"`
-		} `json:"user"`
-	}
-
-	articleResp := ArticleResponse{
-		Article: article,
-	}
-	articleResp.User.ID = article.User.ID
-	articleResp.User.Username = article.User.Username
-	if article.IsAnonymous {
-		articleResp.User.DisplayName = "匿名用户"
-		articleResp.User.Avatar = ""
-	} else {
-		articleResp.User.DisplayName = article.User.DisplayName
-		articleResp.User.Avatar = article.User.Avatar
-	}
-	articleResp.User.Titles = articleTitles
-
 	c.JSON(http.StatusOK, gin.H{
-		"article":       articleResp,
-		"comments":      commentResponses,
+		"article":       article,
+		"comments":      comments,
+		"total":         total,
+		"page":          page,
+		"page_size":     pageSize,
+		"total_pages":   (total + int64(pageSize) - 1) / int64(pageSize),
 		"liked":         liked,
-		"comment_liked": commentLikedMap,
+		"comment_liked": commentLiked,
 	})
 }
 
@@ -316,15 +249,15 @@ func UpdateArticle(c *gin.Context) {
 		return
 	}
 
-	if article.UserID != userID && c.GetString("role") != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "无权限修改"})
+	if article.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "无权修改此文章"})
 		return
 	}
 
 	var input struct {
 		Title       string `json:"title"`
 		Content     string `json:"content"`
-		CategoryID  uint   `json:"category_id"`
+		CategoryID  *uint  `json:"category_id"`
 		VoiceURL    string `json:"voice_url"`
 		IsAnonymous *bool  `json:"is_anonymous"`
 	}
@@ -341,8 +274,8 @@ func UpdateArticle(c *gin.Context) {
 		article.Content = input.Content
 		article.ContentHTML = utils.MarkdownToHTML(input.Content)
 	}
-	if input.CategoryID != 0 {
-		article.CategoryID = input.CategoryID
+	if input.CategoryID != nil {
+		article.CategoryID = *input.CategoryID
 	}
 	if input.VoiceURL != "" {
 		article.VoiceURL = input.VoiceURL
@@ -395,6 +328,61 @@ func DeleteArticle(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "删除申请已提交，等待审核"})
 }
 
+func LikeArticle(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	articleID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的文章ID"})
+		return
+	}
+
+	var article models.Article
+	if result := database.DB.First(&article, articleID); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "文章不存在"})
+		return
+	}
+
+	var existingLike models.Like
+	if result := database.DB.Where("user_id = ? AND article_id = ?", userID, articleID).First(&existingLike); result.Error == nil {
+		c.JSON(http.StatusOK, gin.H{"message": "已经点赞过了"})
+		return
+	}
+
+	like := models.Like{
+		UserID:    uint(userID),
+		ArticleID: uint(articleID),
+	}
+
+	if result := database.DB.Create(&like); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "点赞失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "点赞成功"})
+}
+
+func UnlikeArticle(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	articleID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的文章ID"})
+		return
+	}
+
+	var like models.Like
+	if result := database.DB.Where("user_id = ? AND article_id = ?", userID, articleID).First(&like); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "未点赞此文章"})
+		return
+	}
+
+	if result := database.DB.Delete(&like); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "取消点赞失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "取消点赞成功"})
+}
+
 func GetMyArticles(c *gin.Context) {
 	userID := c.GetUint("user_id")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -414,6 +402,16 @@ func GetMyArticles(c *gin.Context) {
 
 	database.DB.Model(&models.Article{}).Where("user_id = ?", userID).Count(&total)
 	database.DB.Where("user_id = ?", userID).Preload("User").Preload("Category").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&articles)
+
+	for i := range articles {
+		var likeCount int64
+		database.DB.Model(&models.Like{}).Where("article_id = ?", articles[i].ID).Count(&likeCount)
+		articles[i].LikeCount = int(likeCount)
+
+		var commentCount int64
+		database.DB.Model(&models.Comment{}).Where("article_id = ?", articles[i].ID).Count(&commentCount)
+		articles[i].CommentCount = int(commentCount)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"articles":    articles,

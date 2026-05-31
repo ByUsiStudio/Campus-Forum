@@ -14,6 +14,7 @@ type Article struct {
 	CategoryID    uint      `gorm:"index" json:"category_id"`
 	Category      Category  `gorm:"foreignKey:CategoryID" json:"category"`
 	LikeCount     int       `gorm:"default:0" json:"like_count"`
+	CommentCount  int       `gorm:"default:0" json:"comment_count"`
 	FavoriteCount int       `gorm:"default:0" json:"favorite_count"`
 	ViewCount     int       `gorm:"default:0" json:"view_count"`
 	Status        string    `gorm:"default:published" json:"status"` // published, deleted, pending
