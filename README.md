@@ -150,6 +150,52 @@ npm run dev
 npm run build
 ```
 
+## 使用已经打包好的镜像
+> Github仓库更新提交后自动更新 docker 镜像
+
+### 1. 拉取镜像
+
+```bash
+docker pull beiane1/campus-forum:latest
+```
+
+### 2. 创建 Docker 网络
+
+```bash
+docker network create forum-network
+```
+
+### 3. 启动 MySQL（独立部署）
+
+```bash
+docker run -d \
+  --name forum-mysql \
+  --network forum-network \
+  -e MYSQL_ROOT_PASSWORD=your_root_password \
+  -e MYSQL_DATABASE=forum \
+  -e MYSQL_USER=forum_user \
+  -e MYSQL_PASSWORD=your_forum_password \
+  -v mysql-data:/var/lib/mysql \
+  -p 3306:3306 \
+  mysql:8.0
+```
+
+### 4. 启动 Forum 应用
+
+```bash
+docker run -d \
+  --name campus-forum \
+  --network forum-network \
+  -e DB_HOST=forum-mysql \
+  -e DB_PORT=3306 \
+  -e DB_USER=forum_user \
+  -e DB_PASSWORD=your_forum_password \
+  -e DB_NAME=forum \
+  -p 80:80 \
+  -p 8080:8080 \
+  beiane1/campus-forum:1.3.11
+```
+
 ## 配置说明
 
 ### 后端配置 (backend/config.json)

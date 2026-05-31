@@ -71,7 +71,7 @@ jobs:
         
         RUN printf '#!/bin/sh\nnginx -g "daemon off;" &\n/app/forum-server' > /start.sh && chmod +x /start.sh
         
-        EXPOSE 80 8080
+        EXPOSE 80 3620
         
         CMD ["/start.sh"]
         EOF
@@ -133,7 +133,7 @@ jobs:
           -e DB_PASSWORD=your_forum_password \
           -e DB_NAME=forum \
           -p 80:80 \
-          -p 8080:8080 \
+          -p 3620:3620 \
           beiane1/campus-forum:$VERSION
         ```
         
@@ -173,7 +173,7 @@ jobs:
               DB_NAME: \${MYSQL_DATABASE:-forum}
             ports:
               - "80:80"
-              - "8080:8080"
+              - "3620:3620"
             depends_on:
               - mysql
             networks:
@@ -249,7 +249,7 @@ jobs:
           -e DB_PASSWORD=your_forum_password \
           -e DB_NAME=forum \
           -p 80:80 \
-          -p 8080:8080 \
+          -p 3620:3620 \
           beiane1/campus-forum:新版本号
         ```
         
