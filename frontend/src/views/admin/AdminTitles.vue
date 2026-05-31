@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="pa-6">
+  <v-container fluid class="pa-4 pa-md-6">
     <TitlesPanel
       :titles="titles"
       :users="users"
@@ -12,13 +12,17 @@
     />
   </v-container>
 
-  <v-dialog v-model="grantDialog.show" max-width="500">
+  <v-dialog v-model="grantDialog.show" :max-width="isMobile ? '100%' : '500'" :fullscreen="isMobile" transition="dialog-bottom-transition">
     <v-card class="dialog-card">
       <v-card-title class="dialog-title">
         <v-avatar color="primary" size="40" class="mr-3">
           <v-icon color="white" size="20">mdi-medal</v-icon>
         </v-avatar>
-        授予头衔
+        <span>授予头衔</span>
+        <v-spacer />
+        <v-btn v-if="isMobile" icon variant="text" @click="grantDialog.show = false">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
       </v-card-title>
       <v-card-text class="dialog-body">
         <v-form ref="grantForm" v-model="formValid">
@@ -52,8 +56,8 @@
           </v-select>
         </v-form>
       </v-card-text>
-      <v-card-actions class="dialog-actions">
-        <v-btn variant="text" @click="grantDialog.show = false" class="mr-2">
+      <v-card-actions class="dialog-actions" :class="{ 'flex-column': isMobile }">
+        <v-btn variant="text" @click="grantDialog.show = false" :block="isMobile" class="mb-2 mb-md-0">
           取消
         </v-btn>
         <v-btn
@@ -61,6 +65,7 @@
           variant="flat"
           @click="handleGrant"
           :disabled="!formValid"
+          :block="isMobile"
         >
           <v-icon class="mr-1">mdi-check</v-icon>
           确认授予
@@ -71,7 +76,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import TitlesPanel from './TitlesPanel.vue'
 import api from '../../api'
 import { confirm, success, error } from '../../utils/modal'
@@ -81,6 +86,7 @@ const users = ref([])
 const loading = ref(true)
 const grantForm = ref(null)
 const formValid = ref(false)
+const isMobile = ref(false)
 
 const grantDialog = ref({
   show: false,
@@ -99,6 +105,10 @@ const usersForSelect = computed(() => {
 
 const rules = {
   required: v => !!v || '此字段为必填项'
+}
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 600
 }
 
 const loadTitles = async () => {
@@ -193,8 +203,14 @@ const handleDeleteTitle = async (title) => {
 }
 
 onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
   loadTitles()
   loadUsers()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
 })
 </script>
 
@@ -202,6 +218,12 @@ onMounted(() => {
 .dialog-card {
   border-radius: 20px !important;
   overflow: hidden;
+}
+
+@media (max-width: 599px) {
+  .dialog-card {
+    border-radius: 0 !important;
+  }
 }
 
 .dialog-title {

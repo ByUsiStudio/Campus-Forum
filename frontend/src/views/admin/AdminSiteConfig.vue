@@ -119,6 +119,9 @@ const saveSiteConfig = async () => {
     success('网站配置保存成功')
     if (siteConfigForm.value.siteTitle) {
       document.title = siteConfigForm.value.siteTitle
+      window.dispatchEvent(new CustomEvent('site-title-updated', {
+        detail: siteConfigForm.value.siteTitle
+      }))
     }
   } catch (err) {
     console.error('保存网站配置失败', err)

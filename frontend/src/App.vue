@@ -4,7 +4,7 @@
     <v-app-bar v-if="!hideAppBar" elevation="1" color="surface">
       <v-app-bar-nav-icon v-if="isMobile" @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-app-bar-title>
-        <router-link to="/" class="logo-link">校园论坛</router-link>
+        <router-link to="/" class="logo-link">{{ siteTitle }}</router-link>
       </v-app-bar-title>
 
       <!-- 桌面端导航 -->
@@ -141,6 +141,7 @@ export default {
     const isMobile = ref(false)
     const hideAppBar = ref(false)
     const backendVersion = ref(null)
+    const siteTitle = ref('校园论坛')
     const frontendVersion = __FRONTEND_VERSION__ || 'unknown'
     let pollInterval = null
     
@@ -202,11 +203,34 @@ export default {
         console.error('加载版本信息失败', error)
       }
     }
+
+    const loadSiteTitle = async () => {
+      try {
+        const response = await api.get('/site-config')
+        siteTitle.value = response.data.site_title || '校园论坛'
+        document.title = siteTitle.value
+      } catch (error) {
+        console.error('加载网站标题失败', error)
+      }
+    }
+
+    const updateSiteTitle = (newTitle) => {
+      if (newTitle) {
+        siteTitle.value = newTitle
+        document.title = newTitle
+      }
+    }
+
+    watch(siteTitle, (newTitle) => {
+      if (newTitle) {
+        document.title = newTitle
+      }
+    })
     
     onMounted(() => {
       checkMobile()
       window.addEventListener('resize', checkMobile)
-      
+
       const storedUser = localStorage.getItem('user')
       if (storedUser) {
         user.value = JSON.parse(storedUser)
@@ -214,6 +238,7 @@ export default {
       loadUser()
       loadChatUnreadCount()
       loadVersion()
+      loadSiteTitle()
 
       // 每分钟刷新未读消息数量
       pollInterval = setInterval(loadChatUnreadCount, 60000)
@@ -225,6 +250,13 @@ export default {
           user.value = JSON.parse(storedUser)
         }
         token.value = localStorage.getItem('token')
+      })
+
+      window.addEventListener('site-title-updated', (event) => {
+        if (event.detail) {
+          siteTitle.value = event.detail
+          document.title = event.detail
+        }
       })
 
       window.addEventListener('user-logout', () => {
@@ -246,6 +278,8 @@ export default {
       isMobile,
       drawer,
       backendVersion,
+      siteTitle,
+      updateSiteTitle,
       frontendVersion
     }
   }

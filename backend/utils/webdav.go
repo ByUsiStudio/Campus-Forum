@@ -79,12 +79,11 @@ func ProxyWebDAVHandler(c *gin.Context) {
 
 	switch c.Request.Method {
 	case "GET", "HEAD":
-		// 下载使用代理转发（支持视频拖拽、断点续传）
-		proxyDownload(c, targetURL)
+		downloadURL := buildURLWithAuth(targetURL)
+		c.Redirect(http.StatusMovedPermanently, downloadURL)
 	case "PUT":
-		// 上传使用重定向（避免经过服务器，提高性能）
 		redirectURL := buildURLWithAuth(targetURL)
-		c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+		c.Redirect(http.StatusMovedPermanently, redirectURL)
 	case "DELETE":
 		proxyDelete(c, targetURL)
 	case "PROPFIND":
@@ -94,19 +93,15 @@ func ProxyWebDAVHandler(c *gin.Context) {
 	}
 }
 
-// proxyDownload 处理 GET 和 HEAD 请求（代理模式）
-func proxyDownload(c *gin.Context, targetURL string) {
-	// 创建请求
+func downloadFromWebDAV(c *gin.Context, targetURL string) {
 	req, err := http.NewRequest(c.Request.Method, targetURL, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建请求失败"})
 		return
 	}
 
-	// 添加认证
 	req.SetBasicAuth(webdavUsername, webdavPassword)
 
-	// 复制关键请求头（支持断点续传和缓存）
 	if rangeHeader := c.Request.Header.Get("Range"); rangeHeader != "" {
 		req.Header.Set("Range", rangeHeader)
 	}
@@ -120,7 +115,6 @@ func proxyDownload(c *gin.Context, targetURL string) {
 		req.Header.Set("If-Modified-Since", ifModifiedSince)
 	}
 
-	// 发送请求
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": fmt.Sprintf("连接WebDAV失败: %v", err)})
@@ -128,32 +122,26 @@ func proxyDownload(c *gin.Context, targetURL string) {
 	}
 	defer resp.Body.Close()
 
-	// 复制响应头
 	for key, values := range resp.Header {
 		for _, value := range values {
 			c.Header(key, value)
 		}
 	}
 
-	// 设置状态码
 	c.Status(resp.StatusCode)
 
-	// 对于 HEAD 请求，不需要传输 body
 	if c.Request.Method == "HEAD" {
 		return
 	}
 
-	// 流式传输 body
 	_, err = io.Copy(c.Writer, resp.Body)
 	if err != nil {
-		// 客户端可能主动断开连接，不记录为错误
 		if err != io.EOF && !strings.Contains(err.Error(), "broken pipe") {
 			Info("下载转发失败: %v", err)
 		}
 	}
 }
 
-// buildURLWithAuth 将认证信息编码到 URL 中（用于上传重定向）
 func buildURLWithAuth(rawURL string) string {
 	if webdavUsername == "" || webdavPassword == "" {
 		return rawURL
@@ -168,7 +156,6 @@ func buildURLWithAuth(rawURL string) string {
 	return parsedURL.String()
 }
 
-// proxyDelete 处理 DELETE 请求
 func proxyDelete(c *gin.Context, targetURL string) {
 	req, err := http.NewRequest("DELETE", targetURL, nil)
 	if err != nil {
@@ -193,7 +180,6 @@ func proxyDelete(c *gin.Context, targetURL string) {
 	c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
 }
 
-// proxyPropfind 处理 PROPFIND 请求（获取目录列表）
 func proxyPropfind(c *gin.Context, targetURL string) {
 	req, err := http.NewRequest("PROPFIND", targetURL, c.Request.Body)
 	if err != nil {
@@ -212,7 +198,6 @@ func proxyPropfind(c *gin.Context, targetURL string) {
 	}
 	defer resp.Body.Close()
 
-	// 复制响应头
 	for key, values := range resp.Header {
 		for _, value := range values {
 			c.Header(key, value)
@@ -226,7 +211,6 @@ func proxyPropfind(c *gin.Context, targetURL string) {
 	}
 }
 
-// GetFileURL 获取文件访问 URL
 func GetFileURL(remotePath string) string {
 	return "/proxy/webdav" + remotePath
 }

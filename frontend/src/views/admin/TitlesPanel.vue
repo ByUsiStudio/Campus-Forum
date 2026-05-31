@@ -5,10 +5,12 @@
         <h2 class="panel-title">头衔管理</h2>
         <p class="panel-subtitle">创建头衔并授予给用户</p>
       </div>
-      <v-btn variant="outlined" color="primary" @click="$emit('refresh')" :loading="loading">
-        <v-icon start>mdi-refresh</v-icon>
-        刷新
-      </v-btn>
+      <div class="header-actions">
+        <v-btn variant="outlined" color="primary" @click="$emit('refresh')" :loading="loading" size="small">
+          <v-icon start size="18">mdi-refresh</v-icon>
+          <span class="d-none d-sm-inline">刷新</span>
+        </v-btn>
+      </div>
     </div>
 
     <v-row>
@@ -25,7 +27,9 @@
               placeholder="例如：技术达人"
               variant="outlined"
               density="comfortable"
+              prepend-inner-icon="mdi-star"
               class="mb-3"
+              hide-details="auto"
             ></v-text-field>
             <v-text-field
               v-model="titleForm.description"
@@ -33,32 +37,39 @@
               placeholder="头衔简介"
               variant="outlined"
               density="comfortable"
+              prepend-inner-icon="mdi-text"
               class="mb-3"
+              hide-details="auto"
             ></v-text-field>
-            <v-row>
-              <v-col cols="6">
+            <v-row no-gutters>
+              <v-col cols="5">
                 <v-text-field
                   v-model="titleForm.color"
                   label="颜色"
                   variant="outlined"
                   density="comfortable"
+                  hide-details="auto"
                 >
-                  <template #append>
-                    <v-color-picker v-model="titleForm.color" mode="hex" hide-inputs></v-color-picker>
-                  </template>
                 </v-text-field>
               </v-col>
-              <v-col cols="6">
+              <v-col cols="7" class="pl-2">
                 <v-text-field
                   v-model="titleForm.icon"
                   label="图标"
                   placeholder="mdi-star"
                   variant="outlined"
                   density="comfortable"
+                  hide-details="auto"
                 ></v-text-field>
               </v-col>
             </v-row>
-            <v-btn color="primary" block size="large" @click="$emit('add-title', titleForm)" class="mt-4">
+            <div class="color-preview my-3">
+              <v-chip :color="titleForm.color" size="medium">
+                <v-icon v-if="titleForm.icon" start size="18">{{ titleForm.icon }}</v-icon>
+                {{ titleForm.name || '预览' }}
+              </v-chip>
+            </div>
+            <v-btn color="primary" block size="large" @click="$emit('add-title', titleForm)" class="mt-2">
               <v-icon start>mdi-plus</v-icon>
               添加头衔
             </v-btn>
@@ -82,6 +93,7 @@
               variant="outlined"
               density="comfortable"
               class="mb-3"
+              hide-details="auto"
             ></v-select>
             <v-select
               v-model="grantForm.title_id"
@@ -92,6 +104,7 @@
               variant="outlined"
               density="comfortable"
               class="mb-3"
+              hide-details="auto"
             ></v-select>
             <v-text-field
               v-model="grantForm.reason"
@@ -100,6 +113,7 @@
               variant="outlined"
               density="comfortable"
               class="mb-3"
+              hide-details="auto"
             ></v-text-field>
             <v-btn color="success" block size="large" @click="$emit('grant', grantForm)">
               <v-icon start>mdi-check</v-icon>
@@ -123,17 +137,19 @@
 
         <div v-else class="titles-list">
           <div v-for="title in titles" :key="title.id" class="title-item">
-            <v-chip :color="title.color" size="large">
-              <v-icon v-if="title.icon" start>{{ title.icon }}</v-icon>
-              {{ title.name }}
-            </v-chip>
+            <div class="title-item-left">
+              <v-chip :color="title.color" size="medium">
+                <v-icon v-if="title.icon" start size="16">{{ title.icon }}</v-icon>
+                {{ title.name }}
+              </v-chip>
+            </div>
             <div class="title-info">
-              <div class="title-name">{{ title.name }}</div>
+              <div class="title-name d-none d-sm-block">{{ title.name }}</div>
               <div class="title-desc">{{ title.description || '无描述' }}</div>
             </div>
-            <v-btn variant="text" size="small" color="error" @click="$emit('delete-title', title.id)">
-              <v-icon start>mdi-delete</v-icon>
-              删除
+            <v-btn variant="text" size="small" color="error" @click="$emit('delete-title', title)">
+              <v-icon size="18">mdi-delete</v-icon>
+              <span class="d-none d-sm-inline ml-1">删除</span>
             </v-btn>
           </div>
         </div>
@@ -146,39 +162,45 @@
         用户头衔一览
       </v-card-title>
       <v-card-text>
-        <div class="user-titles-table">
-          <v-table>
-            <thead>
-              <tr>
-                <th>用户</th>
-                <th>头衔</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <template v-for="user in usersWithTitles" :key="user.id">
-                <tr v-for="userTitle in user.titles" :key="userTitle.id">
-                  <td>
-                    <div class="user-cell">
-                      <UserAvatar :user="user" :size="28" />
-                      <span>{{ user.display_name }}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <v-chip :color="userTitle.color" size="small">{{ userTitle.name }}</v-chip>
-                  </td>
-                  <td>
-                    <v-btn variant="text" size="small" color="error" @click="$emit('revoke', user.id, userTitle.id)">
-                      撤销
-                    </v-btn>
-                  </td>
-                </tr>
-              </template>
-              <tr v-if="usersWithTitles.length === 0">
-                <td colspan="3" class="text-center pa-6 text-grey">暂无用户头衔数据</td>
-              </tr>
-            </tbody>
-          </v-table>
+        <div class="user-titles-container">
+          <div v-if="usersWithTitles.length === 0" class="empty-state">
+            <v-icon size="48" color="grey">mdi-account-off</v-icon>
+            <div class="empty-text">暂无用户头衔数据</div>
+          </div>
+
+          <div v-else class="user-titles-list">
+            <div v-for="user in usersWithTitles" :key="user.id" class="user-title-card">
+              <div class="user-header">
+                <UserAvatar :user="user" :size="36" />
+                <div class="user-info">
+                  <div class="user-name">{{ user.display_name }}</div>
+                  <div class="user-username">@{{ user.username }}</div>
+                </div>
+              </div>
+              <div class="user-titles-chips">
+                <v-chip
+                  v-for="userTitle in user.titles"
+                  :key="userTitle.id"
+                  :color="userTitle.color"
+                  size="small"
+                  class="mr-1 mb-1"
+                >
+                  <v-icon v-if="userTitle.icon" start size="14">{{ userTitle.icon }}</v-icon>
+                  {{ userTitle.name }}
+                  <v-btn
+                    variant="text"
+                    size="x-small"
+                    icon
+                    color="error"
+                    @click="$emit('revoke', user.id, userTitle.id)"
+                    class="ml-1"
+                  >
+                    <v-icon size="14">mdi-close-circle</v-icon>
+                  </v-btn>
+                </v-chip>
+              </div>
+            </div>
+          </div>
         </div>
       </v-card-text>
     </v-card>
@@ -268,6 +290,11 @@ export default {
   margin: 0;
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .form-card {
   border-radius: 16px;
   height: 100%;
@@ -285,6 +312,13 @@ export default {
 
 .title-icon {
   color: #6750A4 !important;
+}
+
+.color-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
 }
 
 .empty-state {
@@ -309,20 +343,26 @@ export default {
 .title-item {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   padding: 12px 16px;
   background: #f8f9ff;
   border-radius: 10px;
   transition: background 0.2s;
+  flex-wrap: wrap;
 }
 
 .title-item:hover {
   background: #f0f2ff;
 }
 
+.title-item-left {
+  flex-shrink: 0;
+}
+
 .title-info {
   flex: 1;
   min-width: 0;
+  min-width: 100px;
 }
 
 .title-name {
@@ -345,9 +385,104 @@ export default {
   gap: 8px;
 }
 
+.user-titles-container {
+  width: 100%;
+}
+
+.user-titles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.user-title-card {
+  padding: 12px 16px;
+  background: #f8f9ff;
+  border-radius: 12px;
+  border: 1px solid rgba(103, 80, 164, 0.1);
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #1a1a2e;
+  font-size: 0.95rem;
+}
+
+.user-username {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.user-titles-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+@media (max-width: 599px) {
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .form-card {
+    height: auto;
+  }
+
+  .form-title {
+    font-size: 0.9rem;
+    padding: 12px 16px !important;
+  }
+
+  .title-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .title-item-left {
+    width: 100%;
+  }
+
+  .title-info {
+    width: 100%;
+    margin: 8px 0;
+  }
+
+  .user-title-card {
+    padding: 10px 12px;
+  }
+}
+
 @media (max-width: 960px) {
   .form-card {
     height: auto;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 960px) {
+  .title-item {
+    flex-wrap: nowrap;
+  }
+
+  .title-info {
+    min-width: 150px;
   }
 }
 </style>
