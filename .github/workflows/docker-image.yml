@@ -25,9 +25,12 @@ jobs:
     - name: Build Go backend
       run: |
         cd backend
-        go mod download
+        if [ ! -f go.mod ]; then
+          go mod init forum
+        fi
         go mod tidy
-        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o forum-server -a -installsuffix cgo .
+        go mod download
+        CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o forum-server -a -installsuffix cgo .
     
     - name: Build Vue frontend
       run: |
@@ -65,3 +68,130 @@ jobs:
         EOF
         
         docker push ${{ secrets.DOCKER_USERNAME }}/campus-forum --all-tags
+    
+    - name: Generate deployment commands
+      run: |
+        echo "## 🚀 部署命令" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 1. 拉取镜像" >> $GITHUB_STEP_SUMMARY
+        echo '```bash' >> $GITHUB_STEP_SUMMARY
+        echo "docker pull ${{ secrets.DOCKER_USERNAME }}/campus-forum:latest" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### 2. 启动 MySQL（独立部署）" >> $GITHUB_STEP_SUMMARY
+        echo '```bash' >> $GITHUB_STEP_SUMMARY
+        echo "# 创建网络" >> $GITHUB_STEP_SUMMARY
+        echo "docker network create forum-network" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# 启动 MySQL 容器" >> $GITHUB_STEP_SUMMARY
+        echo "docker run -d \\" >> $GITHUB_STEP_SUMMARY
+        echo "  --name forum-mysql \\" >> $GITHUB_STEP_SUMMARY
+        echo "  --network forum-network \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -e MYSQL_ROOT_PASSWORD=your_root_password \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -e MYSQL_DATABASE=forum \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -e MYSQL_USER=forum_user \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -e MYSQL_PASSWORD=your_forum_password \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -v mysql-data:/var/lib/mysql \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -p 3306:3306 \\" >> $GITHUB_STEP_SUMMARY
+        echo "  mysql:8.0" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### 3. 启动 Forum 应用" >> $GITHUB_STEP_SUMMARY
+        echo '```bash' >> $GITHUB_STEP_SUMMARY
+        echo "# 运行 Forum 容器" >> $GITHUB_STEP_SUMMARY
+        echo "docker run -d \\" >> $GITHUB_STEP_SUMMARY
+        echo "  --name campus-forum \\" >> $GITHUB_STEP_SUMMARY
+        echo "  --network forum-network \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -e DB_HOST=forum-mysql \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -e DB_PORT=3306 \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -e DB_USER=forum_user \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -e DB_PASSWORD=your_forum_password \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -e DB_NAME=forum \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -p 80:80 \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -p 8080:8080 \\" >> $GITHUB_STEP_SUMMARY
+        echo "  ${{ secrets.DOCKER_USERNAME }}/campus-forum:latest" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### 4. 使用 Docker Compose（推荐）" >> $GITHUB_STEP_SUMMARY
+        echo '```bash' >> $GITHUB_STEP_SUMMARY
+        echo "# 创建 docker-compose.yml" >> $GITHUB_STEP_SUMMARY
+        echo "cat > docker-compose.yml << 'EOF'" >> $GITHUB_STEP_SUMMARY
+        echo "version: '3.8'" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "services:" >> $GITHUB_STEP_SUMMARY
+        echo "  mysql:" >> $GITHUB_STEP_SUMMARY
+        echo "    image: mysql:8.0" >> $GITHUB_STEP_SUMMARY
+        echo "    container_name: forum-mysql" >> $GITHUB_STEP_SUMMARY
+        echo "    restart: always" >> $GITHUB_STEP_SUMMARY
+        echo "    environment:" >> $GITHUB_STEP_SUMMARY
+        echo "      MYSQL_ROOT_PASSWORD: \${MYSQL_ROOT_PASSWORD}" >> $GITHUB_STEP_SUMMARY
+        echo "      MYSQL_DATABASE: \${MYSQL_DATABASE:-forum}" >> $GITHUB_STEP_SUMMARY
+        echo "      MYSQL_USER: \${MYSQL_USER:-forum_user}" >> $GITHUB_STEP_SUMMARY
+        echo "      MYSQL_PASSWORD: \${MYSQL_PASSWORD}" >> $GITHUB_STEP_SUMMARY
+        echo "    volumes:" >> $GITHUB_STEP_SUMMARY
+        echo "      - mysql-data:/var/lib/mysql" >> $GITHUB_STEP_SUMMARY
+        echo "    ports:" >> $GITHUB_STEP_SUMMARY
+        echo "      - \"3306:3306\"" >> $GITHUB_STEP_SUMMARY
+        echo "    networks:" >> $GITHUB_STEP_SUMMARY
+        echo "      - forum-network" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "  forum:" >> $GITHUB_STEP_SUMMARY
+        echo "    image: ${{ secrets.DOCKER_USERNAME }}/campus-forum:latest" >> $GITHUB_STEP_SUMMARY
+        echo "    container_name: campus-forum" >> $GITHUB_STEP_SUMMARY
+        echo "    restart: always" >> $GITHUB_STEP_SUMMARY
+        echo "    environment:" >> $GITHUB_STEP_SUMMARY
+        echo "      DB_HOST: mysql" >> $GITHUB_STEP_SUMMARY
+        echo "      DB_PORT: 3306" >> $GITHUB_STEP_SUMMARY
+        echo "      DB_USER: \${MYSQL_USER:-forum_user}" >> $GITHUB_STEP_SUMMARY
+        echo "      DB_PASSWORD: \${MYSQL_PASSWORD}" >> $GITHUB_STEP_SUMMARY
+        echo "      DB_NAME: \${MYSQL_DATABASE:-forum}" >> $GITHUB_STEP_SUMMARY
+        echo "    ports:" >> $GITHUB_STEP_SUMMARY
+        echo "      - \"80:80\"" >> $GITHUB_STEP_SUMMARY
+        echo "      - \"8080:8080\"" >> $GITHUB_STEP_SUMMARY
+        echo "    depends_on:" >> $GITHUB_STEP_SUMMARY
+        echo "      - mysql" >> $GITHUB_STEP_SUMMARY
+        echo "    networks:" >> $GITHUB_STEP_SUMMARY
+        echo "      - forum-network" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "volumes:" >> $GITHUB_STEP_SUMMARY
+        echo "  mysql-data:" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "networks:" >> $GITHUB_STEP_SUMMARY
+        echo "  forum-network:" >> $GITHUB_STEP_SUMMARY
+        echo "    driver: bridge" >> $GITHUB_STEP_SUMMARY
+        echo "EOF" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# 创建 .env 文件" >> $GITHUB_STEP_SUMMARY
+        echo "cat > .env << 'EOF'" >> $GITHUB_STEP_SUMMARY
+        echo "MYSQL_ROOT_PASSWORD=your_strong_root_password" >> $GITHUB_STEP_SUMMARY
+        echo "MYSQL_DATABASE=forum" >> $GITHUB_STEP_SUMMARY
+        echo "MYSQL_USER=forum_user" >> $GITHUB_STEP_SUMMARY
+        echo "MYSQL_PASSWORD=your_strong_forum_password" >> $GITHUB_STEP_SUMMARY
+        echo "EOF" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# 启动所有服务" >> $GITHUB_STEP_SUMMARY
+        echo "docker-compose up -d" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### 5. 查看日志" >> $GITHUB_STEP_SUMMARY
+        echo '```bash' >> $GITHUB_STEP_SUMMARY
+        echo "# 查看 Forum 日志" >> $GITHUB_STEP_SUMMARY
+        echo "docker logs -f campus-forum" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# 查看 MySQL 日志" >> $GITHUB_STEP_SUMMARY
+        echo "docker logs -f forum-mysql" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "### 6. 停止和删除容器" >> $GITHUB_STEP_SUMMARY
+        echo '```bash' >> $GITHUB_STEP_SUMMARY
+        echo "# 停止所有容器" >> $GITHUB_STEP_SUMMARY
+        echo "docker-compose down" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# 同时删除数据卷（清除所有数据）" >> $GITHUB_STEP_SUMMARY
+        echo "docker-compose down -v" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
