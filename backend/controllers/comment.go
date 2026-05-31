@@ -51,6 +51,14 @@ func CreateComment(c *gin.Context) {
 	var commentResp models.Comment
 	database.DB.Preload("User").First(&commentResp, comment.ID)
 
+	if commentResp.IsAnonymous {
+		commentResp.User = models.User{
+			ID:       0,
+			Username: "匿名用户",
+			Avatar:   "",
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "评论成功",
 		"comment": commentResp,

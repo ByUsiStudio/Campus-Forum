@@ -184,10 +184,32 @@ func GetArticle(c *gin.Context) {
 	database.DB.Model(&models.Comment{}).Where("article_id = ?", article.ID).Count(&total)
 	database.DB.Where("article_id = ? AND parent_id = 0", article.ID).Preload("User").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&comments)
 
+	var currentUserID uint
+	isOwner := false
+	if userID, exists := c.Get("user_id"); exists {
+		currentUserID = userID.(uint)
+		isOwner = article.UserID == currentUserID
+	}
+
 	for i := range comments {
 		var replyCount int64
 		database.DB.Model(&models.Comment{}).Where("parent_id = ?", comments[i].ID).Count(&replyCount)
 		comments[i].ReplyCount = int(replyCount)
+
+		var replies []models.Comment
+		database.DB.Where("parent_id = ?", comments[i].ID).Preload("User").Order("created_at ASC").Find(&replies)
+
+		for j := range replies {
+			isReplyOwner := replies[j].UserID == currentUserID
+			if replies[j].IsAnonymous && !isReplyOwner {
+				replies[j].User = models.User{
+					ID:       0,
+					Username: "匿名用户",
+					Avatar:   "",
+				}
+			}
+		}
+		comments[i].Replies = replies
 	}
 
 	var liked = false
@@ -205,13 +227,6 @@ func GetArticle(c *gin.Context) {
 		for _, like := range likes {
 			commentLiked[like.ID] = true
 		}
-	}
-
-	var currentUserID uint
-	isOwner := article.UserID == currentUserID
-	if userID, exists := c.Get("user_id"); exists {
-		currentUserID = userID.(uint)
-		isOwner = article.UserID == currentUserID
 	}
 
 	maskAnonymousUser(&article, isOwner)

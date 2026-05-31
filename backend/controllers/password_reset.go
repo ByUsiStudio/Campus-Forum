@@ -24,6 +24,12 @@ func generateCode(length int) string {
 	return code
 }
 
+func generateIdentifier() string {
+	b := make([]byte, 16)
+	rand.Read(b)
+	return base64.URLEncoding.EncodeToString(b)
+}
+
 func sendEmail(smtpHost string, smtpPort int, username, password, from, to, subject, body string) error {
 	auth := smtp.PlainAuth("", username, password, smtpHost)
 
@@ -96,7 +102,10 @@ func SendResetCode(c *gin.Context) {
 	}
 
 	var siteConfig models.SiteConfig
-	database.DB.First(&siteConfig, 1)
+	if result := database.DB.First(&siteConfig, 1); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "系统配置未初始化"})
+		return
+	}
 
 	if siteConfig.SMTPHost == "" || siteConfig.SMTPUsername == "" {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "邮件服务未配置"})
@@ -104,15 +113,17 @@ func SendResetCode(c *gin.Context) {
 	}
 
 	code := generateCode(6)
+	identifier := generateIdentifier()
 
 	expiry := time.Now().Add(15 * time.Minute)
 	user.ResetToken = code
+	user.ResetIdentifier = identifier
 	user.ResetExpiry = &expiry
 	database.DB.Save(&user)
 
 	email := input.QQNumber + "@qq.com"
 	subject := "密码重置验证码"
-	body := fmt.Sprintf("您的密码重置验证码是：%s，15分钟内有效。\n\n如果不是您本人操作，请忽略此邮件。", code)
+	body := fmt.Sprintf("您的密码重置验证码是：%s ，15分钟内有效。\n\n如果不是您本人操作，请忽略此邮件。", code)
 
 	err := sendEmail(
 		siteConfig.SMTPHost,
@@ -130,14 +141,18 @@ func SendResetCode(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "验证码已发送到您的QQ邮箱"})
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "验证码已发送到您的QQ邮箱",
+		"identifier": identifier,
+	})
 }
 
 func ResetPassword(c *gin.Context) {
 	var input struct {
-		QQNumber string `json:"qq_number" binding:"required"`
-		Code     string `json:"code" binding:"required"`
-		Password string `json:"password" binding:"required;min=6"`
+		QQNumber   string `json:"qq_number" binding:"required"`
+		Code       string `json:"code" binding:"required"`
+		Identifier string `json:"identifier" binding:"required"`
+		Password   string `json:"password" binding:"required;min=6"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -148,6 +163,11 @@ func ResetPassword(c *gin.Context) {
 	var user models.User
 	if result := database.DB.Where("qq_number = ?", input.QQNumber).First(&user); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "该QQ号码未注册"})
+		return
+	}
+
+	if user.ResetIdentifier != input.Identifier {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的标识token"})
 		return
 	}
 
@@ -163,6 +183,7 @@ func ResetPassword(c *gin.Context) {
 
 	user.Password = database.HashPassword(input.Password)
 	user.ResetToken = ""
+	user.ResetIdentifier = ""
 	user.ResetExpiry = nil
 	database.DB.Save(&user)
 

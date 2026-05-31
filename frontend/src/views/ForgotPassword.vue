@@ -82,6 +82,7 @@ export default {
     const loading = ref(false)
     const error = ref('')
     const success = ref('')
+    const resetIdentifier = ref('')
 
     const form = ref({
       qq_number: '',
@@ -110,6 +111,7 @@ export default {
             qq_number: form.value.qq_number
           })
           success.value = response.data.message || '验证码已发送到您的QQ邮箱'
+          resetIdentifier.value = response.data.identifier || ''
           step.value = 2
         } catch (err) {
           error.value = err.message || '发送验证码失败'
@@ -137,6 +139,7 @@ export default {
           await api.post('/password/reset', {
             qq_number: form.value.qq_number,
             code: form.value.code,
+            identifier: resetIdentifier.value,
             password: form.value.password
           })
           success.value = '密码重置成功！'
