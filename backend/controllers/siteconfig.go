@@ -24,18 +24,8 @@ func GetSiteConfig(c *gin.Context) {
 }
 
 func UpdateSiteConfig(c *gin.Context) {
-	var input struct {
-		SiteTitle            string `json:"site_title"`
-		ICPNumber            string `json:"icp_number"`
-		PublicSecurityNumber string `json:"public_security_number"`
-		SMTPHost             string `json:"smtp_host"`
-		SMTPPort             int    `json:"smtp_port"`
-		SMTPUsername         string `json:"smtp_username"`
-		SMTPPassword         string `json:"smtp_password"`
-		SMTPFrom             string `json:"smtp_from"`
-		SMTPFromName         string `json:"smtp_from_name"`
-	}
-	if err := c.ShouldBindJSON(&input); err != nil {
+	var updates map[string]interface{}
+	if err := c.ShouldBindJSON(&updates); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -43,32 +33,51 @@ func UpdateSiteConfig(c *gin.Context) {
 	var config models.SiteConfig
 	database.DB.First(&config)
 
-	if input.SiteTitle != "" {
-		config.SiteTitle = input.SiteTitle
+	// 只有在提供了值时才更新（包括空值表示删除）
+	if val, exists := updates["site_title"]; exists {
+		if str, ok := val.(string); ok {
+			config.SiteTitle = str
+		}
 	}
-	if input.ICPNumber != "" {
-		config.ICPNumber = input.ICPNumber
+	if val, exists := updates["icp_number"]; exists {
+		if str, ok := val.(string); ok {
+			config.ICPNumber = str
+		}
 	}
-	if input.PublicSecurityNumber != "" {
-		config.PublicSecurityNumber = input.PublicSecurityNumber
+	if val, exists := updates["public_security_number"]; exists {
+		if str, ok := val.(string); ok {
+			config.PublicSecurityNumber = str
+		}
 	}
-	if input.SMTPHost != "" {
-		config.SMTPHost = input.SMTPHost
+	if val, exists := updates["smtp_host"]; exists {
+		if str, ok := val.(string); ok {
+			config.SMTPHost = str
+		}
 	}
-	if input.SMTPPort != 0 {
-		config.SMTPPort = input.SMTPPort
+	if val, exists := updates["smtp_port"]; exists {
+		if num, ok := val.(float64); ok {
+			config.SMTPPort = int(num)
+		}
 	}
-	if input.SMTPUsername != "" {
-		config.SMTPUsername = input.SMTPUsername
+	if val, exists := updates["smtp_username"]; exists {
+		if str, ok := val.(string); ok {
+			config.SMTPUsername = str
+		}
 	}
-	if input.SMTPPassword != "" {
-		config.SMTPPassword = input.SMTPPassword
+	if val, exists := updates["smtp_password"]; exists {
+		if str, ok := val.(string); ok {
+			config.SMTPPassword = str
+		}
 	}
-	if input.SMTPFrom != "" {
-		config.SMTPFrom = input.SMTPFrom
+	if val, exists := updates["smtp_from"]; exists {
+		if str, ok := val.(string); ok {
+			config.SMTPFrom = str
+		}
 	}
-	if input.SMTPFromName != "" {
-		config.SMTPFromName = input.SMTPFromName
+	if val, exists := updates["smtp_from_name"]; exists {
+		if str, ok := val.(string); ok {
+			config.SMTPFromName = str
+		}
 	}
 
 	database.DB.Save(&config)

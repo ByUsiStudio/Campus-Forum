@@ -300,28 +300,8 @@ export default {
       }
     }
 
-    const escapeRegExp = (value) => {
-      return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    }
-
-    const insertVoiceTagIntoContent = (url) => {
-      if (!url) return
-      const trimmedContent = form.value.content.trim()
-      const audioMarker = `<audio controls src="${url}"></audio>`
-      if (trimmedContent.includes(audioMarker) || trimmedContent.includes(`src="${url}"`)) {
-        return
-      }
-      form.value.content = trimmedContent
-        ? `${trimmedContent}\n\n${audioMarker}\n`
-        : `${audioMarker}\n`
-    }
-
-    const removeVoiceTagFromContent = (url) => {
-      if (!url) return
-      const escapedUrl = escapeRegExp(url)
-      const audioRegex = new RegExp(`\\n?<audio[^>]*src=\"${escapedUrl}\"[^>]*>(?:<\\/audio>)?\\n?`, 'g')
-      form.value.content = form.value.content.replace(audioRegex, '').trim()
-    }
+    // 音频URL直接保存到voice_url字段，不在content中插入HTML标签
+    // 这样可以避免破坏Markdown渲染
 
     const submitArticle = async () => {
       if (!form.value.title.trim()) {
@@ -331,10 +311,6 @@ export default {
       if (!form.value.content.trim()) {
         await showAlert('请输入内容')
         return
-      }
-
-      if (voiceUrl.value) {
-        insertVoiceTagIntoContent(voiceUrl.value)
       }
 
       submitting.value = true
@@ -385,10 +361,6 @@ export default {
         })
 
         voiceUrl.value = response.data.url
-        if (oldUrl && oldUrl !== voiceUrl.value) {
-          removeVoiceTagFromContent(oldUrl)
-        }
-        insertVoiceTagIntoContent(voiceUrl.value)
         showVoiceDialog.value = false
         await showAlert('语音上传成功')
       } catch (error) {
@@ -492,10 +464,6 @@ export default {
         })
 
         voiceUrl.value = response.data.url
-        if (oldUrl && oldUrl !== voiceUrl.value) {
-          removeVoiceTagFromContent(oldUrl)
-        }
-        insertVoiceTagIntoContent(voiceUrl.value)
         showVoiceDialog.value = false
         voiceFile.value = null
         await showAlert('音频上传成功')
@@ -508,7 +476,6 @@ export default {
     }
 
     const removeVoice = () => {
-      removeVoiceTagFromContent(voiceUrl.value)
       voiceUrl.value = ''
     }
 

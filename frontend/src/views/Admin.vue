@@ -71,13 +71,8 @@
 
         <div class="sidebar-footer">
           <v-divider class="sidebar-divider" />
-          <div class="footer-actions">
-            <v-btn icon variant="text" size="small" @click="goToHome" title="返回首页">
-              <v-icon size="20">mdi-home</v-icon>
-            </v-btn>
-            <v-btn icon variant="text" size="small" @click="handleRefresh" title="刷新" :class="{ 'spin': isRefreshing }">
-              <v-icon size="20">mdi-refresh</v-icon>
-            </v-btn>
+          <div class="footer-info" v-if="!sidebarCollapsed">
+            <div class="text-caption text-medium-emphasis">管理员面板</div>
           </div>
         </div>
       </div>
@@ -91,12 +86,66 @@
             <div class="brand-title">{{ currentPageTitle }}</div>
           </div>
         </div>
+        <v-spacer />
+        <div class="header-actions">
+          <v-btn icon variant="text" size="small" @click="goToHome" title="返回首页" class="mr-2">
+            <v-icon>mdi-home</v-icon>
+          </v-btn>
+          <v-btn icon variant="text" size="small" @click="handleRefresh" :class="{ 'spin': isRefreshing }" title="刷新">
+            <v-icon>mdi-refresh</v-icon>
+          </v-btn>
+        </div>
       </div>
     </v-app-bar>
 
     <v-main class="admin-main">
       <router-view />
     </v-main>
+
+    <!-- 底部快速操作栏 -->
+    <v-footer class="admin-footer" app>
+      <div class="footer-content">
+        <div class="footer-info">
+          <span class="text-caption text-medium-emphasis">{{ currentPageTitle }}</span>
+        </div>
+        <v-spacer />
+        <div class="footer-actions">
+          <v-chip
+            v-if="deletionCount > 0"
+            color="error"
+            size="small"
+            class="mr-2"
+          >
+            <v-icon start size="16">mdi-trash-can</v-icon>
+            {{ deletionCount }} 个删除请求
+          </v-chip>
+          <v-tooltip text="刷新数据">
+            <template #activator="{ props }">
+              <v-btn
+                v-bind="props"
+                icon="mdi-refresh"
+                variant="text"
+                size="small"
+                @click="handleRefresh"
+                :loading="isRefreshing"
+              />
+            </template>
+          </v-tooltip>
+          <v-divider vertical class="mx-2" />
+          <v-tooltip text="返回首页">
+            <template #activator="{ props }">
+              <v-btn
+                v-bind="props"
+                icon="mdi-home"
+                variant="text"
+                size="small"
+                @click="goToHome"
+              />
+            </template>
+          </v-tooltip>
+        </div>
+      </div>
+    </v-footer>
 
     <div class="floating-ball" @click="toggleDrawer">
       <v-btn
@@ -363,11 +412,23 @@ watch(() => route.path, () => {
   padding: 8px;
 }
 
-.footer-actions {
+.admin-footer {
+  background: #fff;
+  border-top: 1px solid #E5E5E5;
+  padding: 8px 16px;
+  position: relative;
+  z-index: 100;
+}
+
+.footer-content {
   display: flex;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.footer-info {
+  flex: 0 0 auto;
 }
 
 .admin-header {
@@ -401,8 +462,9 @@ watch(() => route.path, () => {
 
 .admin-main {
   background: #FAFAFA;
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 128px);
   padding-top: 64px;
+  padding-bottom: 56px;
 }
 
 .admin-main > div {
