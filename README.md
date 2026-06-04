@@ -193,8 +193,8 @@ docker run -d \
   -e DB_PASSWORD=your_forum_password \
   -e DB_NAME=forum \
   -p 80:80 \
-  -p 8080:8080 \
-  beiane1/campus-forum:1.3.11
+  -p 3620:3620 \
+  beiane1/campus-forum:latest
 ```
 
 ## 配置说明
