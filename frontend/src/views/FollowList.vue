@@ -32,7 +32,7 @@
           </template>
 
           <v-list-item-title class="font-weight-bold">
-            <router-link :to="'/profile?userId=' + userItem.id" class="text-decoration-none">
+            <router-link :to="'/profile?id=' + userItem.id" class="text-decoration-none">
               {{ userItem.display_name || userItem.username }}
             </router-link>
           </v-list-item-title>
@@ -71,12 +71,12 @@ import api from '../api'
 const router = useRouter()
 const route = useRoute()
 
-const tab = ref('following')
+const tab = ref(route.query.tab || 'following')
 const loading = ref(false)
 const following = ref([])
 const followers = ref([])
 const currentUser = ref(null)
-const userId = ref(route.query.userId || null)
+const userId = ref(route.query.userId || route.query.id || null)
 const isOwnProfile = computed(() => !userId.value || currentUser.value?.id === parseInt(userId.value))
 const followingCount = ref(0)
 const followersCount = ref(0)
@@ -167,7 +167,7 @@ onMounted(async () => {
     const token = localStorage.getItem('token')
     if (token) {
       const profileRes = await api.get('/profile')
-      currentUser.value = profileRes.data.user
+      currentUser.value = profileRes.data
     }
   } catch (error) {
     console.error('获取当前用户失败', error)
@@ -180,8 +180,9 @@ onMounted(async () => {
   }
 })
 
-watch(() => route.query.userId, (newUserId) => {
-  userId.value = newUserId || null
+watch(() => [route.query.userId, route.query.id, route.query.tab], ([newUserId, newId, newTab]) => {
+  userId.value = newUserId || newId || null
+  tab.value = newTab || 'following'
   if (userId.value) {
     loadOtherUserFollowData()
   } else {

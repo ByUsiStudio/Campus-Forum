@@ -222,10 +222,10 @@ func GetArticle(c *gin.Context) {
 
 	commentLiked := make(map[uint]bool)
 	if userID, exists := c.Get("user_id"); exists {
-		var likes []models.Like
-		database.DB.Where("user_id = ? AND article_id = ?", userID, id).Find(&likes)
+		var likes []models.CommentLike
+		database.DB.Where("user_id = ? AND comment_id IN (SELECT id FROM comments WHERE article_id = ?)", userID, article.ID).Find(&likes)
 		for _, like := range likes {
-			commentLiked[like.ID] = true
+			commentLiked[like.CommentID] = true
 		}
 	}
 

@@ -181,18 +181,19 @@ export default {
       is_followed: false,
       mutual: false
     })
+    const targetUserId = computed(() => route.query.id || route.query.userId)
     const currentUser = ref(null)
     const followingCount = ref(0)
     const followersCount = ref(0)
     const articleCount = ref(0)
     const isOwnProfile = computed(() => {
-      return !route.query.id || (currentUser.value && currentUser.value.id === user.value?.id)
+      return !targetUserId.value || (currentUser.value && currentUser.value.id === user.value?.id)
     })
 
     const loadProfile = async () => {
       try {
-        if (route.query.id) {
-          const response = await api.get(`/users/${route.query.id}`)
+        if (targetUserId.value) {
+          const response = await api.get(`/users/${targetUserId.value}`)
           user.value = response.data
         } else {
           const response = await api.get('/profile')
@@ -240,20 +241,20 @@ export default {
 
     const goToFollowing = () => {
       if (user.value) {
-        router.push({ path: '/follow-list', query: { userId: user.value.id } })
+        router.push({ path: '/follow-list', query: { id: user.value.id } })
       }
     }
 
     const goToFollowers = () => {
       if (user.value) {
-        router.push({ path: '/follow-list', query: { userId: user.value.id, tab: 'followers' } })
+        router.push({ path: '/follow-list', query: { id: user.value.id, tab: 'followers' } })
       }
     }
 
     const loadFollowCounts = async () => {
       if (!user.value) return
       try {
-        const targetId = route.query.id || user.value.id
+        const targetId = targetUserId.value || user.value.id
         const [followingRes, followersRes] = await Promise.all([
           api.get(`/users/${targetId}/following`),
           api.get(`/users/${targetId}/followers`)
@@ -267,8 +268,8 @@ export default {
 
     const loadMyArticles = async () => {
       try {
-        if (route.query.id) {
-          const response = await api.get(`/users/${route.query.id}/articles`)
+        if (targetUserId.value) {
+          const response = await api.get(`/users/${targetUserId.value}/articles`)
           myArticles.value = response.data.articles || []
           articleCount.value = myArticles.value.length
         } else {

@@ -172,7 +172,7 @@
             />
             <div class="comment-content-wrapper">
               <div class="comment-header">
-                <span class="comment-author">{{ comment.user.display_name }}</span>
+                <span class="comment-author">{{ comment.user.display_name || comment.user.username || '匿名用户' }}</span>
                 <span class="comment-time">{{ formatDate(comment.created_at) }}</span>
               </div>
               <p class="comment-text">{{ comment.content }}</p>
@@ -210,7 +210,7 @@
               <div v-if="replyingTo === comment.id" class="reply-form">
                 <v-textarea
                   v-model="replyContent"
-                  :placeholder="'回复 ' + comment.user.display_name + '...'"
+                  :placeholder="'回复 ' + (comment.user.display_name || comment.user.username || '匿名用户') + '...'"
                   variant="outlined"
                   rows="2"
                   hide-details
@@ -241,7 +241,7 @@
                   />
                   <div class="reply-content-wrapper">
                     <div class="comment-header">
-                      <span class="comment-author">{{ reply.user.display_name }}</span>
+                      <span class="comment-author">{{ reply.user.display_name || reply.user.username || '匿名用户' }}</span>
                       <span class="comment-time">{{ formatDate(reply.created_at) }}</span>
                     </div>
                     <p class="comment-text">{{ reply.content }}</p>
@@ -455,6 +455,9 @@ export default {
         document.title = `${article.value.title} - ${siteTitle.value}`
 
         await nextTick()
+        if (audioRef.value) {
+          audioRef.value.load()
+        }
         
         initVideoPlayers()
         loadFollowStatus()
@@ -912,6 +915,7 @@ export default {
 
 .article-body {
   padding: 16px;
+  line-height: 1.9;
 }
 
 .article-footer {

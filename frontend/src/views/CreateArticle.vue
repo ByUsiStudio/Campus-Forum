@@ -379,11 +379,15 @@ export default {
         const extension = audioBlob.type === 'audio/webm' ? 'webm' : 'mp3'
         formData.append('voice', audioBlob, `voice.${extension}`)
 
+        const oldUrl = voiceUrl.value
         const response = await api.post('/upload/voice', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
 
         voiceUrl.value = response.data.url
+        if (oldUrl && oldUrl !== voiceUrl.value) {
+          removeVoiceTagFromContent(oldUrl)
+        }
         insertVoiceTagIntoContent(voiceUrl.value)
         showVoiceDialog.value = false
         await showAlert('语音上传成功')
@@ -479,6 +483,7 @@ export default {
 
       isUploadingVoice.value = true
       try {
+        const oldUrl = voiceUrl.value
         const formData = new FormData()
         formData.append('voice', voiceFile.value)
 
@@ -487,6 +492,10 @@ export default {
         })
 
         voiceUrl.value = response.data.url
+        if (oldUrl && oldUrl !== voiceUrl.value) {
+          removeVoiceTagFromContent(oldUrl)
+        }
+        insertVoiceTagIntoContent(voiceUrl.value)
         showVoiceDialog.value = false
         voiceFile.value = null
         await showAlert('音频上传成功')
