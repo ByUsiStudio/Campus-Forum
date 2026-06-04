@@ -61,12 +61,6 @@
           variant="outlined"
           class="mt-4"
         ></v-text-field>
-        <v-text-field
-          v-model="editUserDialog.email"
-          label="邮箱"
-          variant="outlined"
-          class="mt-4"
-        ></v-text-field>
       </v-card-text>
       <v-card-actions class="dialog-actions">
         <v-btn variant="text" @click="editUserDialog.show = false">取消</v-btn>
@@ -127,8 +121,7 @@ const editRoleDialog = ref({
 const editUserDialog = ref({
   show: false,
   user: null,
-  displayName: '',
-  email: ''
+  displayName: ''
 })
 
 const banDialog = ref({
@@ -172,8 +165,7 @@ const showEditUserDialog = (user) => {
   editUserDialog.value = {
     show: true,
     user,
-    displayName: user.display_name,
-    email: user.email
+    displayName: user.display_name
   }
 }
 
@@ -206,8 +198,7 @@ const handleEditUser = async () => {
   }
   try {
     await api.put(`/admin/users/${editUserDialog.value.user.id}`, {
-      display_name: editUserDialog.value.displayName,
-      email: editUserDialog.value.email
+      display_name: editUserDialog.value.displayName
     })
     success('保存成功')
     editUserDialog.value.show = false

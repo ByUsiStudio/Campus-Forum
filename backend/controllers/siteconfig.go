@@ -25,13 +25,15 @@ func GetSiteConfig(c *gin.Context) {
 
 func UpdateSiteConfig(c *gin.Context) {
 	var input struct {
-		SiteTitle    string `json:"site_title"`
-		SMTPHost     string `json:"smtp_host"`
-		SMTPPort     int    `json:"smtp_port"`
-		SMTPUsername string `json:"smtp_username"`
-		SMTPPassword string `json:"smtp_password"`
-		SMTPFrom     string `json:"smtp_from"`
-		SMTPFromName string `json:"smtp_from_name"`
+		SiteTitle            string `json:"site_title"`
+		ICPNumber            string `json:"icp_number"`
+		PublicSecurityNumber string `json:"public_security_number"`
+		SMTPHost             string `json:"smtp_host"`
+		SMTPPort             int    `json:"smtp_port"`
+		SMTPUsername         string `json:"smtp_username"`
+		SMTPPassword         string `json:"smtp_password"`
+		SMTPFrom             string `json:"smtp_from"`
+		SMTPFromName         string `json:"smtp_from_name"`
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -43,6 +45,12 @@ func UpdateSiteConfig(c *gin.Context) {
 
 	if input.SiteTitle != "" {
 		config.SiteTitle = input.SiteTitle
+	}
+	if input.ICPNumber != "" {
+		config.ICPNumber = input.ICPNumber
+	}
+	if input.PublicSecurityNumber != "" {
+		config.PublicSecurityNumber = input.PublicSecurityNumber
 	}
 	if input.SMTPHost != "" {
 		config.SMTPHost = input.SMTPHost

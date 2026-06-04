@@ -35,15 +35,49 @@
               </template>
             </v-text-field>
           </v-col>
-          <v-col cols="12" md="4" class="d-flex align-center">
-            <v-switch
-              v-model="siteConfigForm.maintenanceMode"
-              label="维护模式"
-              color="warning"
+        </v-row>
+
+        <v-divider class="my-4"></v-divider>
+
+        <div class="text-body-2 font-weight-bold mb-4">备案信息</div>
+        <v-row>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="siteConfigForm.icpNumber"
+              label="ICP备案号"
+              placeholder="例如：京ICP备XXXXXXXXXXXX号"
+              variant="outlined"
               density="comfortable"
-              hide-details
-              class="mt-4"
-            ></v-switch>
+              prepend-inner-icon="mdi-shield-check"
+              clearable
+              class="mb-4"
+            >
+              <template #label>
+                <span class="text-body-2">ICP备案号</span>
+              </template>
+              <template #hint>
+                <span class="text-caption">可选，留空则不显示</span>
+              </template>
+            </v-text-field>
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="siteConfigForm.publicSecurityNumber"
+              label="公安联网备案号"
+              placeholder="例如：12345678901234567890"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-police-badge"
+              clearable
+              class="mb-4"
+            >
+              <template #label>
+                <span class="text-body-2">公安联网备案号</span>
+              </template>
+              <template #hint>
+                <span class="text-caption">可选，留空则不显示</span>
+              </template>
+            </v-text-field>
           </v-col>
         </v-row>
 
@@ -82,13 +116,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import api from '../../api'
 import { success, error } from '../../utils/modal'
 
 const siteConfigForm = ref({
   siteTitle: '',
-  maintenanceMode: false
+  icpNumber: '',
+  publicSecurityNumber: ''
 })
 
 const siteForm = ref(null)
@@ -103,7 +138,8 @@ const loadSiteConfig = async () => {
   try {
     const response = await api.get('/site-config')
     siteConfigForm.value.siteTitle = response.data.site_title || ''
-    siteConfigForm.value.maintenanceMode = response.data.maintenance_mode || false
+    siteConfigForm.value.icpNumber = response.data.icp_number || ''
+    siteConfigForm.value.publicSecurityNumber = response.data.public_security_number || ''
   } catch (err) {
     console.error('加载网站配置失败', err)
   }
@@ -114,7 +150,8 @@ const saveSiteConfig = async () => {
   try {
     await api.put('/site-config', {
       site_title: siteConfigForm.value.siteTitle,
-      maintenance_mode: siteConfigForm.value.maintenanceMode
+      icp_number: siteConfigForm.value.icpNumber,
+      public_security_number: siteConfigForm.value.publicSecurityNumber
     })
     success('网站配置保存成功')
     if (siteConfigForm.value.siteTitle) {
@@ -130,11 +167,6 @@ const saveSiteConfig = async () => {
     saving.value = false
   }
 }
-
-watch(() => siteConfigForm.value.siteTitle, (newTitle) => {
-  if (newTitle && document.title !== newTitle) {
-  }
-})
 
 onMounted(() => {
   loadSiteConfig()

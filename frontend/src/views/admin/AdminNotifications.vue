@@ -199,7 +199,6 @@ const notificationTypes = [
 
 const notificationTargets = [
   { value: 'all', label: '全部用户' },
-  { value: 'online', label: '在线用户' },
   { value: 'admin', label: '管理员' }
 ]
 

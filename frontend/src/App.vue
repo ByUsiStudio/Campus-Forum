@@ -88,6 +88,16 @@
         <div class="text-caption text-medium-emphasis mt-1">
           前端版本: {{ frontendVersion }} | 后端版本: {{ backendVersion || 'unknown' }}
         </div>
+        <div v-if="icpNumber || publicSecurityNumber" class="text-caption text-medium-emphasis mt-2 space-y-1">
+          <div v-if="icpNumber" class="icp-info">
+            <v-icon size="x-small" class="mr-1">mdi-shield-check</v-icon>
+            <a href="https://beian.miit.gov.cn" target="_blank" class="open-source-link">{{ icpNumber }}</a>
+          </div>
+          <div v-if="publicSecurityNumber" class="security-info">
+            <v-icon size="x-small" class="mr-1">mdi-police-badge</v-icon>
+            <span>公安联网备案号: {{ publicSecurityNumber }}</span>
+          </div>
+        </div>
       </div>
     </v-footer>
 
@@ -142,7 +152,9 @@ export default {
     const hideAppBar = ref(false)
     const backendVersion = ref(null)
     const siteTitle = ref('校园论坛')
-    const frontendVersion = __FRONTEND_VERSION__ || 'unknown'
+    const frontendVersion = ref(typeof __FRONTEND_VERSION__ !== 'undefined' ? __FRONTEND_VERSION__ : 'unknown')
+    const icpNumber = ref(null)
+    const publicSecurityNumber = ref(null)
     let pollInterval = null
     
     // 检测屏幕宽度
@@ -198,7 +210,8 @@ export default {
     const loadVersion = async () => {
       try {
         const response = await api.get('/version')
-        backendVersion.value = response.data.backend?.version
+        backendVersion.value = response.data.backend?.version || response.data.backend_version || response.data.version
+        frontendVersion.value = response.data.frontend?.version || frontendVersion.value
       } catch (error) {
         console.error('加载版本信息失败', error)
       }
@@ -208,6 +221,8 @@ export default {
       try {
         const response = await api.get('/site-config')
         siteTitle.value = response.data.site_title || '校园论坛'
+        icpNumber.value = response.data.icp_number || null
+        publicSecurityNumber.value = response.data.public_security_number || null
         document.title = siteTitle.value
       } catch (error) {
         console.error('加载网站标题失败', error)
@@ -280,7 +295,9 @@ export default {
       backendVersion,
       siteTitle,
       updateSiteTitle,
-      frontendVersion
+      frontendVersion,
+      icpNumber,
+      publicSecurityNumber
     }
   }
 }
