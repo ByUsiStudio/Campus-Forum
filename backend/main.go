@@ -7,6 +7,7 @@ import (
 	"forum/middleware"
 	"forum/utils"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -59,6 +60,9 @@ func main() {
 	r.Use(gin.Recovery())
 	r.Use(middleware.Logger())
 	r.Use(middleware.CORS())
+	
+	// 全局速率限制（每秒100次请求）
+	r.Use(middleware.RateLimit(100, time.Second))
 
 	// 设置最大请求体大小为 20G（适用于视频上传）
 	r.MaxMultipartMemory = 20480 << 20 // 20G
@@ -75,8 +79,8 @@ func main() {
 		// 公开路由
 		auth := api.Group("/auth")
 		{
-			auth.POST("/register", controllers.Register)
-			auth.POST("/login", controllers.Login)
+			auth.POST("/register", middleware.RateLimit(5, time.Minute), controllers.Register)
+			auth.POST("/login", middleware.RateLimit(10, time.Minute), controllers.Login)
 			auth.POST("/init-admin", controllers.InitAdmin)
 			auth.GET("/check-init", controllers.CheckInit)
 		}
@@ -204,10 +208,13 @@ func main() {
 		api.GET("/users/:id/articles", controllers.GetUserArticles)
 		api.GET("/users/:id/following", controllers.GetUserFollowing)
 		api.GET("/users/:id/followers", controllers.GetUserFollowers)
+	}
 
-		// 密码重置
-		api.POST("/password/reset-code", controllers.SendResetCode)
-		api.POST("/password/reset", controllers.ResetPassword)
+	// 密码重置（公开接口，但有限制）
+	passwordReset := api.Group("/password")
+	{
+		passwordReset.POST("/reset-code", middleware.RateLimit(3, time.Minute), controllers.SendResetCode) // 每分钟最多3次
+		passwordReset.POST("/reset", middleware.RateLimit(5, time.Minute), controllers.ResetPassword) // 每分钟最多5次
 	}
 
 	// WebSocket路由

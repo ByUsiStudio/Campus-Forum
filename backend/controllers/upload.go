@@ -1,10 +1,14 @@
 package controllers
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"forum/database"
 	"forum/models"
 	"forum/utils"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -12,6 +16,38 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+// generateSecureFilename 生成安全的随机文件名
+func generateSecureFilename(ext string) string {
+	bytes := make([]byte, 16)
+	rand.Read(bytes)
+	return fmt.Sprintf("%s%s", hex.EncodeToString(bytes), ext)
+}
+
+// validateFileType 验证文件类型（通过magic number）
+func validateFileType(file multipart.File, allowedTypes []string) (string, error) {
+	// 读取文件头部512字节用于检测MIME类型
+	header := make([]byte, 512)
+	_, err := file.Read(header)
+	if err != nil && err != io.EOF {
+		return "", fmt.Errorf("读取文件失败: %w", err)
+	}
+	
+	// 重置文件指针
+	file.Seek(0, 0)
+	
+	// 检测实际的文件类型
+	contentType := http.DetectContentType(header)
+	
+	// 检查是否在允许的列表中
+	for _, allowed := range allowedTypes {
+		if strings.Contains(contentType, allowed) {
+			return contentType, nil
+		}
+	}
+	
+	return "", fmt.Errorf("不支持的文件类型: %s", contentType)
+}
 
 func UploadAvatar(c *gin.Context) {
 	userID := c.GetUint("user_id")
@@ -22,15 +58,38 @@ func UploadAvatar(c *gin.Context) {
 		return
 	}
 
-	// 检查文件类型
-	ext := strings.ToLower(filepath.Ext(file.Filename))
-	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".gif" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "只支持图片文件"})
+	// 检查文件大小（2MB）
+	if file.Size > 2*1024*1024 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "头像大小不能超过2MB"})
 		return
 	}
 
-	// 生成文件名
-	filename := fmt.Sprintf("avatar_%d_%d%s", userID, time.Now().Unix(), ext)
+	// 检查文件扩展名
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	allowedExts := map[string]bool{
+		".jpg": true, ".jpeg": true, ".png": true, ".gif": true,
+	}
+	if !allowedExts[ext] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "只支持JPG、PNG、GIF格式的图片"})
+		return
+	}
+
+	// 打开文件并验证实际类型
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "文件读取失败"})
+		return
+	}
+	defer src.Close()
+
+	allowedMIMETypes := []string{"image/jpeg", "image/png", "image/gif"}
+	if _, err := validateFileType(src, allowedMIMETypes); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 生成安全的文件名
+	filename := generateSecureFilename(ext)
 	remotePath := fmt.Sprintf("/avatars/%s", filename)
 
 	// 上传到WebDAV
@@ -68,23 +127,32 @@ func UploadImage(c *gin.Context) {
 		return
 	}
 
-	// 检查文件类型
+	// 检查文件扩展名
 	ext := strings.ToLower(filepath.Ext(file.Filename))
-	allowedExts := []string{".jpg", ".jpeg", ".png", ".gif", ".webp"}
-	allowed := false
-	for _, allowedExt := range allowedExts {
-		if ext == allowedExt {
-			allowed = true
-			break
-		}
+	allowedExts := map[string]bool{
+		".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true,
 	}
-	if !allowed {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的图片格式"})
+	if !allowedExts[ext] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的图片格式，仅支持JPG、PNG、GIF、WebP"})
 		return
 	}
 
-	// 生成文件名
-	filename := fmt.Sprintf("image_%d_%d%s", userID, time.Now().UnixNano(), ext)
+	// 打开文件并验证实际类型
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "文件读取失败"})
+		return
+	}
+	defer src.Close()
+
+	allowedMIMETypes := []string{"image/jpeg", "image/png", "image/gif", "image/webp"}
+	if _, err := validateFileType(src, allowedMIMETypes); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 生成安全的文件名
+	filename := generateSecureFilename(ext)
 	remotePath := fmt.Sprintf("/images/%s", filename)
 
 	// 上传到WebDAV
@@ -118,23 +186,32 @@ func UploadVideo(c *gin.Context) {
 		return
 	}
 
-	// 检查文件类型
+	// 检查文件扩展名
 	ext := strings.ToLower(filepath.Ext(file.Filename))
-	allowedExts := []string{".mp4", ".webm", ".ogg", ".mov"}
-	allowed := false
-	for _, allowedExt := range allowedExts {
-		if ext == allowedExt {
-			allowed = true
-			break
-		}
+	allowedExts := map[string]bool{
+		".mp4": true, ".webm": true, ".ogg": true, ".mov": true,
 	}
-	if !allowed {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的视频格式"})
+	if !allowedExts[ext] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的视频格式，仅支持MP4、WebM、OGG、MOV"})
 		return
 	}
 
-	// 生成文件名
-	filename := fmt.Sprintf("video_%d_%d%s", userID, time.Now().UnixNano(), ext)
+	// 打开文件并验证实际类型
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "文件读取失败"})
+		return
+	}
+	defer src.Close()
+
+	allowedMIMETypes := []string{"video/mp4", "video/webm", "video/ogg", "video/quicktime"}
+	if _, err := validateFileType(src, allowedMIMETypes); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 生成安全的文件名
+	filename := generateSecureFilename(ext)
 	remotePath := fmt.Sprintf("/videos/%s", filename)
 
 	// 上传到WebDAV
@@ -170,7 +247,7 @@ func UploadVoice(c *gin.Context) {
 		return
 	}
 
-	// 检查文件类型
+	// 检查文件扩展名
 	ext := strings.ToLower(filepath.Ext(file.Filename))
 	
 	// 检查文件是否有扩展名
@@ -179,21 +256,30 @@ func UploadVoice(c *gin.Context) {
 		return
 	}
 	
-	allowedExts := []string{".mp3", ".webm", ".ogg", ".wav", ".m4a", ".aac"}
-	allowed := false
-	for _, allowedExt := range allowedExts {
-		if ext == allowedExt {
-			allowed = true
-			break
-		}
+	allowedExts := map[string]bool{
+		".mp3": true, ".webm": true, ".ogg": true, ".wav": true, ".m4a": true, ".aac": true,
 	}
-	if !allowed {
+	if !allowedExts[ext] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "不支持的语音格式，支持的格式: MP3, WAV, AAC, OGG, M4A, WebM"})
 		return
 	}
 
-	// 生成文件名
-	filename := fmt.Sprintf("voice_%d_%d%s", userID, time.Now().UnixNano(), ext)
+	// 打开文件并验证实际类型
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "文件读取失败"})
+		return
+	}
+	defer src.Close()
+
+	allowedMIMETypes := []string{"audio/mpeg", "audio/webm", "audio/ogg", "audio/wav", "audio/mp4", "audio/aac"}
+	if _, err := validateFileType(src, allowedMIMETypes); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 生成安全的文件名
+	filename := generateSecureFilename(ext)
 	remotePath := fmt.Sprintf("/voices/%s", filename)
 
 	// 上传到WebDAV

@@ -21,12 +21,14 @@ import (
 var resetPasswordTemplate string
 
 func generateCode(length int) string {
-	code := ""
-	for i := 0; i < length; i++ {
-		n, _ := rand.Int(rand.Reader, big.NewInt(10))
-		code += fmt.Sprintf("%d", n.Int64())
+	// 使用字母和数字的组合，提高安全性
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	code := make([]byte, length)
+	for i := range code {
+		n, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		code[i] = charset[n.Int64()]
 	}
-	return code
+	return string(code)
 }
 
 func generateIdentifier() string {
@@ -51,7 +53,7 @@ func sendEmail(smtpHost string, smtpPort int, username, password, from, to, subj
 
 	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%d", smtpHost, smtpPort), &tls.Config{
 		ServerName:         smtpHost,
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: false, // 生产环境必须启用证书验证
 	})
 	if err != nil {
 		// TLS 连接失败，尝试使用不加密的 smtp.SendMail 作为回退
@@ -127,7 +129,7 @@ func SendResetCode(c *gin.Context) {
 		return
 	}
 
-	code := generateCode(6)
+	code := generateCode(8) // 增加到8位，提高安全性
 	identifier := generateIdentifier()
 
 	expiry := time.Now().Add(15 * time.Minute)
