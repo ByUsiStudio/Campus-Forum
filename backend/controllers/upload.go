@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -110,8 +109,6 @@ func UploadAvatar(c *gin.Context) {
 }
 
 func UploadImage(c *gin.Context) {
-	userID := c.GetUint("user_id")
-
 	file, err := c.FormFile("image")
 	if err != nil {
 		utils.Error("获取上传文件失败: %v", err)
@@ -172,8 +169,6 @@ func UploadImage(c *gin.Context) {
 }
 
 func UploadVideo(c *gin.Context) {
-	userID := c.GetUint("user_id")
-
 	file, err := c.FormFile("video")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请选择文件"})
@@ -230,8 +225,6 @@ func UploadVideo(c *gin.Context) {
 }
 
 func UploadVoice(c *gin.Context) {
-	userID := c.GetUint("user_id")
-
 	file, err := c.FormFile("voice")
 	if err != nil {
 		utils.Error("获取上传文件失败: %v", err)

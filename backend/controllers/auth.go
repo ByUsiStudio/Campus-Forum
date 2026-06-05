@@ -3,7 +3,7 @@ package controllers
 import (
 	"forum/database"
 	"forum/models"
-	_ "forum/utils"
+	"forum/utils"
 	"net/http"
 	_ "strconv"
 	"time"
