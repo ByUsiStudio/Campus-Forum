@@ -137,18 +137,24 @@
       </v-container>
     </v-main>
 
-    <!-- 移动端浮动按钮 -->
-    <v-fab
-      v-if="isMobile"
-      @click="toggleDrawer"
-      color="primary"
-      icon="mdi-menu"
-      location="bottom right"
-      app
-      appear
-      size="large"
-      elevation="3"
-    />
+    <!-- 悬浮按钮 - 打开/关闭侧边栏 -->
+    <v-tooltip :text="drawerOpen ? '关闭侧边栏' : '打开侧边栏'" location="left">
+      <template v-slot:activator="{ props }">
+        <v-fab
+          v-show="!drawerOpen || isMobile"
+          v-bind="props"
+          @click="toggleDrawer"
+          :color="drawerOpen ? 'grey' : 'primary'"
+          :icon="drawerOpen ? 'mdi-close' : 'mdi-menu'"
+          location="bottom right"
+          app
+          appear
+          size="large"
+          elevation="4"
+          class="ma-4"
+        />
+      </template>
+    </v-tooltip>
 
     <!-- 移动端遮罩层 -->
     <v-overlay
@@ -329,6 +335,11 @@ onMounted(() => {
   const savedState = localStorage.getItem('adminSidebarCollapsed')
   if (savedState !== null) {
     sidebarCollapsed.value = JSON.parse(savedState)
+  }
+  
+  // 桌面端默认打开抽屉
+  if (!isMobile.value) {
+    drawerOpen.value = true
   }
   
   loadSidebarConfig()
