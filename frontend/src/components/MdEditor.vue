@@ -53,6 +53,9 @@
         <v-btn variant="text" size="small" @click="insertVideo" title="视频">
           <v-icon size="18">mdi-video</v-icon>
         </v-btn>
+        <v-btn variant="text" size="small" :color="isRecording ? 'red' : undefined" @click="toggleRecording" :loading="isRecording" :title="isRecording ? '停止录音' : '语音输入'">
+          <v-icon size="18">mdi-microphone{{ isRecording ? '-off' : '' }}</v-icon>
+        </v-btn>
         <v-btn variant="text" size="small" @click="insertTable" title="表格">
           <v-icon size="18">mdi-table</v-icon>
         </v-btn>
@@ -387,6 +390,64 @@ const uploadError = ref('')
 const suggestions = ref([])
 const selectedSuggestion = ref(0)
 const suggestionPosition = ref({ top: 0, left: 0 })
+
+// 语音识别相关
+const isRecording = ref(false)
+const recognition = ref(null)
+const recognitionSupported = ref(false)
+
+// 初始化语音识别
+const initRecognition = () => {
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    recognition.value = new SpeechRecognition()
+    recognition.value.lang = 'zh-CN' // 设置为中文
+    recognition.value.interimResults = true // 显示中间结果
+    recognition.value.continuous = false // 不连续识别，说完一句话就停止
+    
+    recognition.value.onstart = () => {
+      isRecording.value = true
+    }
+    
+    recognition.value.onresult = (event) => {
+      let finalTranscript = ''
+      let interimTranscript = ''
+      
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript
+        } else {
+          interimTranscript += transcript
+        }
+      }
+      
+      // 插入识别结果到编辑器
+      if (finalTranscript) {
+        insertAtCursor(finalTranscript)
+      }
+    }
+    
+    recognition.value.onerror = (event) => {
+      console.error('语音识别错误:', event.error)
+      isRecording.value = false
+      if (event.error === 'no-speech') {
+        // 没有检测到语音，不显示错误
+      } else if (event.error === 'not-allowed') {
+        alert('请允许麦克风访问权限')
+      }
+    }
+    
+    recognition.value.onend = () => {
+      isRecording.value = false
+    }
+    
+    recognitionSupported.value = true
+  }
+}
+
+// 初始化时调用
+initRecognition()
 
 const md = new MarkdownIt({
   html: true,
@@ -767,6 +828,27 @@ const insertTable = () => {
   tableRows.value = 3
   tableCols.value = 3
   tableModalVisible.value = true
+}
+
+// 语音识别控制函数
+const toggleRecording = () => {
+  if (!recognitionSupported.value) {
+    alert('您的浏览器不支持语音识别功能，请使用Chrome浏览器')
+    return
+  }
+  
+  if (isRecording.value) {
+    // 停止录音
+    recognition.value?.stop()
+  } else {
+    // 开始录音
+    try {
+      recognition.value?.start()
+    } catch (error) {
+      console.error('启动语音识别失败:', error)
+      isRecording.value = false
+    }
+  }
 }
 
 const confirmTable = () => {
