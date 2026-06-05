@@ -6,10 +6,15 @@
       :rail="sidebarCollapsed"
       :permanent="!isMobile"
       :temporary="isMobile"
-      width="260"
+      :width="drawerWidth"
+      :temporary-width="drawerWidth"
       color="surface"
       border
       elevation="1"
+      touchless
+      @touchstart="handleTouchStart"
+      @touchmove="handleTouchMove"
+      @touchend="handleTouchEnd"
     >
       <!-- 头部品牌区域 -->
       <v-sheet color="primary" class="pa-4">
@@ -205,6 +210,12 @@ const sidebarCollapsed = ref(false)
 const drawerOpen = ref(false)
 const version = ref('1.0')
 
+// 触摸滑动相关
+const touchStartX = ref(0)
+const touchStartY = ref(0)
+const touchDeltaX = ref(0)
+const isSwiping = ref(false)
+
 const adminItems = [
   { route: 'AdminIndex', title: '数据概览', icon: 'mdi-view-dashboard-outline' },
   { route: 'AdminUsers', title: '用户管理', icon: 'mdi-account-group-outline' },
@@ -237,6 +248,14 @@ const pageTitles = {
 
 const currentPageTitle = computed(() => pageTitles[route.name] || '概览')
 
+// 根据屏幕大小动态计算抽屉宽度
+const drawerWidth = computed(() => {
+  if (isMobile.value) return 280
+  if (window.innerWidth < 1280) return 240
+  if (window.innerWidth < 1920) return 260
+  return 300
+})
+
 const breadcrumbs = computed(() => [
   { title: '首页', disabled: false, href: '/' },
   { title: '管理后台', disabled: true },
@@ -263,7 +282,27 @@ const toggleDrawer = () => {
 }
 
 const checkMobile = () => {
-  isMobile.value = window.innerWidth < 960
+  const width = window.innerWidth
+  isMobile.value = width < 960
+  
+  // 根据屏幕大小调整侧边栏状态
+  if (width < 600) {
+    // 小屏幕默认收起
+    sidebarCollapsed.value = false
+    drawerOpen.value = false
+  } else if (width < 960) {
+    // 中等屏幕
+    sidebarCollapsed.value = false
+  } else if (width < 1280) {
+    // 较大屏幕
+    sidebarCollapsed.value = false
+  } else {
+    // 大屏幕，恢复保存的状态
+    const savedState = localStorage.getItem('adminSidebarCollapsed')
+    if (savedState !== null) {
+      sidebarCollapsed.value = JSON.parse(savedState)
+    }
+  }
 }
 
 const goToHome = () => {
@@ -327,15 +366,50 @@ const loadVersion = async () => {
   }
 }
 
+// 触摸滑动处理
+const handleTouchStart = (e) => {
+  touchStartX.value = e.touches[0].clientX
+  touchStartY.value = e.touches[0].clientY
+  touchDeltaX.value = 0
+  isSwiping.value = false
+}
+
+const handleTouchMove = (e) => {
+  const deltaX = e.touches[0].clientX - touchStartX.value
+  const deltaY = e.touches[0].clientY - touchStartY.value
+  
+  // 判断是否为水平滑动（横向移动大于纵向移动）
+  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+    isSwiping.value = true
+    touchDeltaX.value = deltaX
+    
+    // 阻止默认的滚动行为
+    if (Math.abs(deltaX) > 20) {
+      e.preventDefault()
+    }
+  }
+}
+
+const handleTouchEnd = () => {
+  if (!isSwiping.value) return
+  
+  const threshold = 80 // 滑动阈值
+  
+  if (touchDeltaX.value > threshold && !drawerOpen.value) {
+    // 从左向右滑动，打开抽屉
+    drawerOpen.value = true
+  } else if (touchDeltaX.value < -threshold && drawerOpen.value) {
+    // 从右向左滑动，关闭抽屉
+    drawerOpen.value = false
+  }
+  
+  isSwiping.value = false
+  touchDeltaX.value = 0
+}
+
 onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
-  
-  // 恢复侧边栏状态
-  const savedState = localStorage.getItem('adminSidebarCollapsed')
-  if (savedState !== null) {
-    sidebarCollapsed.value = JSON.parse(savedState)
-  }
   
   // 桌面端默认打开抽屉
   if (!isMobile.value) {
@@ -368,9 +442,30 @@ watch(() => route.path, () => {
   to { transform: rotate(360deg); }
 }
 
+/* 侧边栏触摸优化 */
+:deep(.v-navigation-drawer) {
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+:deep(.v-navigation-drawer__content) {
+  touch-action: pan-y;
+}
+
+/* 滑动时的视觉反馈 */
+:deep(.v-navigation-drawer.temporary) {
+  will-change: transform;
+}
+
 @media (max-width: 960px) {
   .v-main {
     padding-top: 64px !important;
+  }
+}
+
+/* 小屏幕优化 */
+@media (max-width: 600px) {
+  :deep(.v-navigation-drawer) {
+    width: 100% !important;
   }
 }
 </style>
