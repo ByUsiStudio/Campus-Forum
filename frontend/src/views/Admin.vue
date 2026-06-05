@@ -1,22 +1,22 @@
 <template>
-  <v-app v-if="isInitialized && isAdmin" class="admin-page">
+  <v-app v-if="isInitialized && isAdmin">
     <!-- 左侧导航栏 -->
     <v-navigation-drawer
       v-model="drawerOpen"
       :rail="sidebarCollapsed"
       :permanent="!isMobile"
       :temporary="isMobile"
-      :width="260"
-      class="admin-sidebar"
+      width="260"
       color="surface"
       border
+      elevation="1"
     >
-      <div class="sidebar-inner">
-        <!-- 头部品牌区域 -->
-        <div class="sidebar-header">
-          <div class="brand-container">
-            <v-icon size="28" color="primary" class="brand-icon">mdi-shield-crown</v-icon>
-            <span v-if="!sidebarCollapsed" class="brand-title">管理后台</span>
+      <!-- 头部品牌区域 -->
+      <v-sheet color="primary" class="pa-4">
+        <div class="d-flex align-center justify-space-between">
+          <div class="d-flex align-center">
+            <v-icon size="28" color="white">mdi-shield-crown</v-icon>
+            <span v-if="!sidebarCollapsed" class="text-h6 font-weight-bold ml-3 text-white">管理后台</span>
           </div>
           <v-btn
             v-if="!isMobile"
@@ -24,148 +24,139 @@
             variant="text"
             size="x-small"
             @click="toggleSidebar"
-            class="collapse-btn"
+            color="white"
           >
             <v-icon size="18">
               {{ sidebarCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-left' }}
             </v-icon>
           </v-btn>
         </div>
+      </v-sheet>
 
-        <v-divider class="sidebar-divider" />
+      <v-divider />
 
-        <!-- 导航菜单 -->
-        <nav class="sidebar-nav">
-          <!-- 动态链接项 -->
-          <div v-if="sidebarItems.length > 0" class="nav-section">
-            <div v-if="!sidebarCollapsed" class="section-title">快捷链接</div>
-            <router-link
-              v-for="item in sidebarItems"
-              :key="item.link"
-              :to="item.link"
-              class="nav-item"
-              :class="{ 'active': isActive(item.link) }"
-              @click="drawerOpen = false"
-            >
-              <v-icon size="20" class="nav-icon">{{ getIcon(item.icon) }}</v-icon>
-              <span v-if="!sidebarCollapsed" class="nav-text">{{ item.title }}</span>
-            </router-link>
-          </div>
+      <!-- 导航菜单 -->
+      <v-list nav density="compact" class="pa-2">
+        <!-- 动态链接项 -->
+        <v-list-subheader v-if="sidebarItems.length > 0 && !sidebarCollapsed">快捷链接</v-list-subheader>
+        <v-list-item
+          v-for="item in sidebarItems"
+          :key="item.link"
+          :to="item.link"
+          :active="isActive(item.link)"
+          color="primary"
+          rounded="lg"
+          @click="drawerOpen = false"
+        >
+          <template v-slot:prepend>
+            <v-icon size="20">{{ getIcon(item.icon) }}</v-icon>
+          </template>
+          <v-list-item-title v-if="!sidebarCollapsed">{{ item.title }}</v-list-item-title>
+        </v-list-item>
 
-          <!-- 管理功能 -->
-          <div class="nav-section mt-4">
-            <div v-if="!sidebarCollapsed" class="section-title">管理功能</div>
-            
-            <router-link
-              v-for="item in adminItems"
-              :key="item.route"
-              :to="{ name: item.route }"
-              class="nav-item"
-              :class="{ 'active': route.name === item.route }"
-              @click="drawerOpen = false"
-            >
-              <v-icon size="20" class="nav-icon">{{ item.icon }}</v-icon>
-              <span v-if="!sidebarCollapsed" class="nav-text">{{ item.title }}</span>
-              <v-chip
-                v-if="item.badge && item.badge() > 0 && !sidebarCollapsed"
-                size="x-small"
-                color="error"
-                class="nav-badge"
-                variant="tonal"
-              >
-                {{ item.badge() }}
-              </v-chip>
-            </router-link>
-          </div>
-        </nav>
+        <!-- 管理功能 -->
+        <v-divider class="my-2" />
+        <v-list-subheader v-if="!sidebarCollapsed">管理功能</v-list-subheader>
+        
+        <v-list-item
+          v-for="item in adminItems"
+          :key="item.route"
+          :to="{ name: item.route }"
+          :active="route.name === item.route"
+          color="primary"
+          rounded="lg"
+          @click="drawerOpen = false"
+        >
+          <template v-slot:prepend>
+            <v-icon size="20">{{ item.icon }}</v-icon>
+          </template>
+          <v-list-item-title v-if="!sidebarCollapsed">{{ item.title }}</v-list-item-title>
+          <template v-slot:append v-if="item.badge && item.badge() > 0 && !sidebarCollapsed">
+            <v-badge :content="item.badge()" color="error" inline />
+          </template>
+        </v-list-item>
+      </v-list>
 
-        <!-- 底部信息 -->
-        <div class="sidebar-footer">
-          <v-divider class="sidebar-divider" />
-          <div v-if="!sidebarCollapsed" class="footer-info">
-            <div class="version-info">
-              <v-chip size="x-small" variant="tonal" color="primary">
-                v{{ version || '1.0' }}
-              </v-chip>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- 底部信息 -->
+      <template v-slot:append>
+        <v-divider />
+        <v-sheet color="grey-lighten-4" class="pa-2 text-center" v-if="!sidebarCollapsed">
+          <v-chip size="x-small" variant="tonal" color="primary">
+            v{{ version || '1.0' }}
+          </v-chip>
+        </v-sheet>
+      </template>
     </v-navigation-drawer>
 
     <!-- 顶部工具栏 -->
-    <v-app-bar flat class="admin-header" color="surface" border>
-      <div class="header-content">
-        <div class="header-brand">
-          <v-breadcrumbs :items="breadcrumbs" divider="/">
-            <template #divider>
-              <v-icon size="16">mdi-chevron-right</v-icon>
-            </template>
-          </v-breadcrumbs>
-        </div>
-        
-        <v-spacer />
-        
-        <div class="header-actions">
-          <v-tooltip text="返回首页" location="bottom">
-            <template #activator="{ props }">
-              <v-btn
-                v-bind="props"
-                icon
-                variant="text"
-                size="small"
-                @click="goToHome"
-                class="action-btn"
-              >
-                <v-icon size="20">mdi-home-outline</v-icon>
-              </v-btn>
-            </template>
-          </v-tooltip>
-          
-          <v-tooltip text="刷新页面" location="bottom">
-            <template #activator="{ props }">
-              <v-btn
-                v-bind="props"
-                icon
-                variant="text"
-                size="small"
-                @click="handleRefresh"
-                :class="{ 'refreshing': isRefreshing }"
-                class="action-btn"
-              >
-                <v-icon size="20">mdi-refresh</v-icon>
-              </v-btn>
-            </template>
-          </v-tooltip>
-        </div>
-      </div>
+    <v-app-bar flat color="surface" border elevation="1">
+      <v-app-bar-title>
+        <v-breadcrumbs :items="breadcrumbs">
+          <template v-slot:divider>
+            <v-icon icon="mdi-chevron-right" size="small"></v-icon>
+          </template>
+        </v-breadcrumbs>
+      </v-app-bar-title>
+      
+      <v-spacer />
+      
+      <v-tooltip text="返回首页" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn
+            v-bind="props"
+            icon
+            variant="text"
+            size="small"
+            @click="goToHome"
+          >
+            <v-icon size="20">mdi-home-outline</v-icon>
+          </v-btn>
+        </template>
+      </v-tooltip>
+      
+      <v-tooltip text="刷新页面" location="bottom">
+        <template v-slot:activator="{ props }">
+          <v-btn
+            v-bind="props"
+            icon
+            variant="text"
+            size="small"
+            @click="handleRefresh"
+            :class="{ 'animate-spin': isRefreshing }"
+          >
+            <v-icon size="20">mdi-refresh</v-icon>
+          </v-btn>
+        </template>
+      </v-tooltip>
     </v-app-bar>
 
     <!-- 主要内容区域 -->
-    <v-main class="admin-main">
-      <div class="main-container">
+    <v-main class="bg-grey-lighten-4">
+      <v-container fluid class="pa-6">
         <router-view />
-      </div>
+      </v-container>
     </v-main>
 
     <!-- 移动端浮动按钮 -->
-    <div v-if="isMobile" class="floating-ball" @click="toggleDrawer">
-      <v-btn
-        icon
-        size="large"
-        color="primary"
-        elevation="3"
-        class="floating-btn"
-      >
-        <v-icon size="24">{{ drawerOpen ? 'mdi-close' : 'mdi-menu' }}</v-icon>
-      </v-btn>
-    </div>
+    <v-fab
+      v-if="isMobile"
+      @click="toggleDrawer"
+      color="primary"
+      icon="mdi-menu"
+      location="bottom right"
+      app
+      appear
+      size="large"
+      elevation="3"
+    />
 
     <!-- 移动端遮罩层 -->
-    <div
-      v-if="drawerOpen && isMobile"
-      class="drawer-overlay"
-      @click="drawerOpen = false"
+    <v-overlay
+      v-model="drawerOpen"
+      v-if="isMobile"
+      scrim
+      persistent
+      z-index="999"
     />
   </v-app>
 
@@ -356,193 +347,8 @@ watch(() => route.path, () => {
 </script>
 
 <style scoped>
-.admin-sidebar {
-  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%) !important;
-  border-right: 1px solid #e8eaed !important;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04) !important;
-  height: calc(100vh - 64px);
-  top: 64px;
-  z-index: 1000 !important;
-  transition: all 0.3s ease;
-}
-
-.sidebar-inner {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-}
-
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 16px;
-  min-height: 64px;
-}
-
-.brand-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand-icon {
-  flex-shrink: 0;
-}
-
-.brand-title {
-  font-size: 18px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #6750A4 0%, #9C27B0 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  white-space: nowrap;
-  letter-spacing: 0.5px;
-}
-
-.collapse-btn {
-  opacity: 0.6;
-  transition: opacity 0.2s;
-}
-
-.collapse-btn:hover {
-  opacity: 1;
-}
-
-.sidebar-divider {
-  margin: 0;
-  border-color: #f0f0f0;
-}
-
-.sidebar-nav {
-  flex: 1;
-  padding: 12px 8px;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.nav-section {
-  margin-bottom: 8px;
-}
-
-.section-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: #999;
-  text-transform: uppercase;
-  padding: 8px 12px 4px;
-  letter-spacing: 0.5px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  color: #666;
-  text-decoration: none;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-bottom: 4px;
-  position: relative;
-  font-size: 14px;
-  border: 1px solid transparent;
-}
-
-.nav-item:hover {
-  background: linear-gradient(135deg, rgba(103, 80, 164, 0.08) 0%, rgba(156, 39, 176, 0.08) 100%);
-  color: #6750A4;
-  border-color: rgba(103, 80, 164, 0.15);
-  transform: translateX(4px);
-}
-
-.nav-item.active {
-  background: linear-gradient(135deg, #6750A4 0%, #7E6BC4 100%);
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(103, 80, 164, 0.3);
-  border-color: transparent;
-  transform: translateX(0);
-}
-
-.nav-item.active .nav-icon {
-  color: #ffffff;
-}
-
-.nav-icon {
-  flex-shrink: 0;
-  transition: transform 0.2s;
-}
-
-.nav-item:hover .nav-icon {
-  transform: scale(1.1);
-}
-
-.nav-text {
-  font-weight: 500;
-  white-space: nowrap;
-  flex: 1;
-}
-
-.nav-badge {
-  margin-left: auto;
-}
-
-.sidebar-footer {
-  padding: 8px;
-}
-
-.footer-info {
-  display: flex;
-  justify-content: center;
-  padding: 8px 0;
-}
-
-.version-info {
-  text-align: center;
-}
-
-.admin-header {
-  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
-  border-bottom: 1px solid #e8eaed;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 900;
-  height: 64px;
-  backdrop-filter: blur(10px);
-}
-
-.header-content {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: 0 24px;
-  height: 100%;
-}
-
-.header-brand {
-  display: flex;
-  align-items: center;
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.action-btn {
-  transition: all 0.2s;
-}
-
-.action-btn:hover {
-  background: #f5f5f5;
-}
-
-.refreshing {
+/* 使用 Vuetify 内置样式，仅保留必要动画 */
+.animate-spin {
   animation: spin 1s linear infinite;
 }
 
@@ -551,118 +357,9 @@ watch(() => route.path, () => {
   to { transform: rotate(360deg); }
 }
 
-.admin-main {
-  background: linear-gradient(135deg, #f5f7fa 0%, #fafbfc 100%);
-  min-height: calc(100vh - 64px);
-  padding-top: 64px;
-}
-
-.main-container {
-  padding: 24px;
-  max-width: 100%;
-}
-
-.loading-page,
-.error-page {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #fafafa 100%);
-}
-
-.error-card {
-  padding: 48px;
-  text-align: center;
-  border-radius: 16px;
-  max-width: 400px;
-}
-
-.error-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.floating-ball {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 2000;
-}
-
-.floating-btn {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 6px 20px rgba(103, 80, 164, 0.35);
-  background: linear-gradient(135deg, #6750A4 0%, #9C27B0 100%);
-}
-
-.floating-btn:hover {
-  transform: scale(1.15) rotate(90deg);
-  box-shadow: 0 8px 28px rgba(103, 80, 164, 0.5);
-}
-
-.drawer-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 999;
-  backdrop-filter: blur(2px);
-}
-
 @media (max-width: 960px) {
-  .admin-sidebar {
-    position: fixed;
-    height: 100vh;
-    top: 0;
-  }
-  
-  .admin-main {
-    padding-top: 64px;
-  }
-  
-  .main-container {
-    padding: 16px;
-  }
-}
-
-@media (max-width: 600px) {
-  .floating-ball {
-    bottom: 20px;
-    right: 20px;
-  }
-  
-  .sidebar-nav {
-    padding: 8px 4px;
-  }
-  
-  .nav-item {
-    padding: 12px 16px;
-    border-radius: 12px;
-    margin-bottom: 4px;
-  }
-  
-  .nav-icon {
-    font-size: 22px;
-  }
-  
-  .nav-text {
-    font-size: 15px;
-  }
-  
-  .header-content {
-    padding: 0 16px;
-  }
-  
-  .main-container {
-    padding: 12px;
+  .v-main {
+    padding-top: 64px !important;
   }
 }
 </style>
