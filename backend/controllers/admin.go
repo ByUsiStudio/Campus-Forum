@@ -333,7 +333,10 @@ func GetAllComments(c *gin.Context) {
 	var comments []models.Comment
 	var total int64
 
-	database.DB.Model(&models.Comment{}).Preload("User").Preload("Article").Count(&total)
+	// 先查询总数
+	database.DB.Model(&models.Comment{}).Count(&total)
+	
+	// 再查询评论列表，并预加载用户和文章信息
 	database.DB.Preload("User").Preload("Article").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&comments)
 
 	c.JSON(http.StatusOK, gin.H{

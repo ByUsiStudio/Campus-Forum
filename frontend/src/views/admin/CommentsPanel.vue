@@ -3,7 +3,7 @@
     <div class="panel-header">
       <div class="header-left">
         <h2 class="panel-title">评论管理</h2>
-        <p class="panel-subtitle">审核与删除用户评论</p>
+        <p class="panel-subtitle">审核与删除用户评论 (共 {{ pagination.total }} 条)</p>
       </div>
       <v-btn variant="outlined" color="primary" @click="$emit('refresh')" :loading="loading">
         <v-icon start>mdi-refresh</v-icon>
@@ -11,7 +11,12 @@
       </v-btn>
     </div>
 
-    <div v-if="comments.length === 0" class="empty-state">
+    <div v-if="loading" class="loading-state">
+      <v-progress-circular indeterminate color="primary" size="48" />
+      <div class="loading-text">加载中...</div>
+    </div>
+
+    <div v-else-if="comments.length === 0" class="empty-state">
       <v-icon size="64" color="grey-lighten-1">mdi-comment-text-outline</v-icon>
       <div class="empty-text">暂无评论</div>
     </div>
@@ -24,20 +29,30 @@
         variant="outlined"
       >
         <div class="comment-main">
-          <UserAvatar :user="comment.User || {}" :size="44" />
+          <UserAvatar :user="getUserInfo(comment)" :size="44" />
 
           <div class="comment-content">
             <div class="comment-header">
-              <span class="comment-author">{{ comment.User?.display_name || '未知用户' }}</span>
+              <span class="comment-author">{{ getUserName(comment) }}</span>
               <span class="comment-time">{{ formatDate(comment.created_at) }}</span>
+              <v-chip v-if="comment.is_anonymous" size="x-small" color="grey" variant="tonal">
+                匿名
+              </v-chip>
             </div>
 
-            <div class="comment-reply-info" v-if="comment.Article">
+            <div class="comment-reply-info" v-if="getArticleInfo(comment)">
               <v-icon size="14">mdi-subdirectory-arrow-right</v-icon>
-              回复文章：{{ comment.Article.title }}
+              回复文章：{{ getArticleInfo(comment).title }}
             </div>
 
             <div class="comment-text">{{ comment.content }}</div>
+
+            <div class="comment-stats">
+              <v-icon size="14" color="grey">mdi-heart</v-icon>
+              <span class="stat-text">{{ comment.like_count || 0 }}</span>
+              <v-icon size="14" color="grey" class="ml-3">mdi-reply</v-icon>
+              <span class="stat-text">{{ comment.reply_count || 0 }}</span>
+            </div>
           </div>
 
           <div class="comment-actions">
@@ -53,6 +68,16 @@
           </div>
         </div>
       </v-card>
+    </div>
+
+    <!-- 分页 -->
+    <div v-if="pagination.totalPages > 1" class="pagination-container">
+      <v-pagination
+        v-model="currentPage"
+        :length="pagination.totalPages"
+        :total-visible="7"
+        @update:model-value="handlePageChange"
+      />
     </div>
   </div>
 </template>
@@ -73,11 +98,30 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    pagination: {
+      type: Object,
+      default: () => ({
+        page: 1,
+        pageSize: 20,
+        total: 0,
+        totalPages: 0
+      })
     }
   },
-  emits: ['delete', 'refresh'],
-  setup() {
-    const formatDate = (dateString) => {
+  emits: ['delete', 'refresh', 'page-change'],
+  data() {
+    return {
+      currentPage: 1
+    }
+  },
+  watch: {
+    'pagination.page'(newVal) {
+      this.currentPage = newVal
+    }
+  },
+  methods: {
+    formatDate(dateString) {
       if (!dateString) return '-'
       const date = new Date(dateString)
       return date.toLocaleString('zh-CN', {
@@ -87,10 +131,20 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
-    }
-
-    return {
-      formatDate
+    },
+    getUserInfo(comment) {
+      // 兼容大小写
+      return comment.user || comment.User || {}
+    },
+    getUserName(comment) {
+      const user = this.getUserInfo(comment)
+      return user.display_name || user.DisplayName || user.username || user.Username || '未知用户'
+    },
+    getArticleInfo(comment) {
+      return comment.article || comment.Article || null
+    },
+    handlePageChange(page) {
+      this.$emit('page-change', page)
     }
   }
 }
@@ -128,6 +182,7 @@ export default {
   margin: 0;
 }
 
+.loading-state,
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -138,6 +193,7 @@ export default {
   border-radius: 16px;
 }
 
+.loading-text,
 .empty-text {
   margin-top: 16px;
   font-size: 1rem;
@@ -206,10 +262,30 @@ export default {
   color: #4b5563;
   line-height: 1.6;
   word-break: break-word;
+  margin-bottom: 8px;
+}
+
+.comment-stats {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.stat-text {
+  font-size: 0.85rem;
+  color: #6b7280;
 }
 
 .comment-actions {
   flex-shrink: 0;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding: 16px 0;
 }
 
 @media (max-width: 600px) {
