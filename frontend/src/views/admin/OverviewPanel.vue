@@ -258,19 +258,37 @@ export default {
 
 .stat-card {
   padding: 24px;
-  background: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
   border-radius: 16px;
-  border: 1px solid #e0e0e0;
-  transition: all 0.3s ease;
+  border: 1px solid #e8eaed;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, currentColor 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(103, 80, 164, 0.15);
   border-color: transparent;
+}
+
+.stat-card:hover::before {
+  opacity: 0.6;
 }
 
 .stat-header {
@@ -290,10 +308,22 @@ export default {
   flex-shrink: 0;
 }
 
-.stat-users .stat-icon { background: linear-gradient(135deg, #6750A4 0%, #7E6BC4 100%); }
-.stat-articles .stat-icon { background: linear-gradient(135deg, #EC4899 0%, #F472B6 100%); }
-.stat-comments .stat-icon { background: linear-gradient(135deg, #06B6D4 0%, #22D3EE 100%); }
-.stat-views .stat-icon { background: linear-gradient(135deg, #10B981 0%, #34D399 100%); }
+.stat-users .stat-icon { 
+  background: linear-gradient(135deg, #6750A4 0%, #9C27B0 100%);
+  box-shadow: 0 4px 12px rgba(103, 80, 164, 0.3);
+}
+.stat-articles .stat-icon { 
+  background: linear-gradient(135deg, #EC4899 0%, #F472B6 100%);
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+}
+.stat-comments .stat-icon { 
+  background: linear-gradient(135deg, #06B6D4 0%, #22D3EE 100%);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+}
+.stat-views .stat-icon { 
+  background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
 
 .stat-content {
   flex: 1;
@@ -322,8 +352,14 @@ export default {
 
 .content-card {
   border-radius: 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #e8eaed;
   height: 100%;
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+  transition: all 0.3s ease;
+}
+
+.content-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .card-title {

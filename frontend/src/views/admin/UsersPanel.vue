@@ -289,10 +289,16 @@ export default {
 }
 
 .table-card {
-  border-radius: 12px;
-  border: 1px solid #e0e0e0;
+  border-radius: 16px;
+  border: 1px solid #e8eaed;
   overflow: hidden;
-  background: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+}
+
+.table-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .users-table {
@@ -306,8 +312,8 @@ export default {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 16px !important;
-  background: #fafafa;
-  border-bottom: 2px solid #e0e0e0;
+  background: linear-gradient(135deg, #f8f9fa 0%, #fafbfc 100%);
+  border-bottom: 2px solid #e8eaed;
   white-space: nowrap;
 }
 
@@ -320,8 +326,8 @@ export default {
 }
 
 .user-row:hover td {
-  background: #f8f9ff;
-  transition: background 0.2s ease;
+  background: linear-gradient(135deg, rgba(103, 80, 164, 0.04) 0%, rgba(156, 39, 176, 0.04) 100%);
+  transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .user-col { width: 25%; }

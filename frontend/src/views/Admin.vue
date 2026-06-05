@@ -357,8 +357,9 @@ watch(() => route.path, () => {
 
 <style scoped>
 .admin-sidebar {
-  background: #ffffff;
-  border-right: 1px solid #e0e0e0;
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%) !important;
+  border-right: 1px solid #e8eaed !important;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04) !important;
   height: calc(100vh - 64px);
   top: 64px;
   z-index: 1000 !important;
@@ -393,8 +394,12 @@ watch(() => route.path, () => {
 .brand-title {
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  background: linear-gradient(135deg, #6750A4 0%, #9C27B0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   white-space: nowrap;
+  letter-spacing: 0.5px;
 }
 
 .collapse-btn {
@@ -439,21 +444,26 @@ watch(() => route.path, () => {
   border-radius: 8px;
   color: #666;
   text-decoration: none;
-  transition: all 0.2s ease;
-  margin-bottom: 2px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 4px;
   position: relative;
   font-size: 14px;
+  border: 1px solid transparent;
 }
 
 .nav-item:hover {
-  background: #f5f5f5;
-  color: #333;
+  background: linear-gradient(135deg, rgba(103, 80, 164, 0.08) 0%, rgba(156, 39, 176, 0.08) 100%);
+  color: #6750A4;
+  border-color: rgba(103, 80, 164, 0.15);
+  transform: translateX(4px);
 }
 
 .nav-item.active {
   background: linear-gradient(135deg, #6750A4 0%, #7E6BC4 100%);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(103, 80, 164, 0.2);
+  box-shadow: 0 4px 12px rgba(103, 80, 164, 0.3);
+  border-color: transparent;
+  transform: translateX(0);
 }
 
 .nav-item.active .nav-icon {
@@ -494,14 +504,16 @@ watch(() => route.path, () => {
 }
 
 .admin-header {
-  background: #ffffff;
-  border-bottom: 1px solid #e0e0e0;
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+  border-bottom: 1px solid #e8eaed;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 900;
   height: 64px;
+  backdrop-filter: blur(10px);
 }
 
 .header-content {
@@ -540,7 +552,7 @@ watch(() => route.path, () => {
 }
 
 .admin-main {
-  background: #fafafa;
+  background: linear-gradient(135deg, #f5f7fa 0%, #fafbfc 100%);
   min-height: calc(100vh - 64px);
   padding-top: 64px;
 }
@@ -584,13 +596,14 @@ watch(() => route.path, () => {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(103, 80, 164, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 6px 20px rgba(103, 80, 164, 0.35);
+  background: linear-gradient(135deg, #6750A4 0%, #9C27B0 100%);
 }
 
 .floating-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(103, 80, 164, 0.4);
+  transform: scale(1.15) rotate(90deg);
+  box-shadow: 0 8px 28px rgba(103, 80, 164, 0.5);
 }
 
 .drawer-overlay {
