@@ -50,16 +50,17 @@ func CreateComment(c *gin.Context) {
 		database.DB.Model(&models.Comment{}).Where("id = ?", *input.ParentID).UpdateColumn("reply_count", database.DB.Raw("reply_count + 1"))
 	}
 
-	database.DB.Preload("User").First(&comment, comment.ID)
-
+	// 重新查询评论并加载用户信息
 	var commentResp models.Comment
 	database.DB.Preload("User").First(&commentResp, comment.ID)
 
+	// 如果是匿名评论，隐藏用户真实信息
 	if commentResp.IsAnonymous {
 		commentResp.User = models.User{
-			ID:       0,
-			Username: "匿名用户",
-			Avatar:   "",
+			ID:          0,
+			Username:    "anonymous",
+			DisplayName: "匿名用户",
+			Avatar:      "",
 		}
 	}
 

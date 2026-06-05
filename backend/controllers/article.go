@@ -26,9 +26,10 @@ func getUserTitles(userID uint) []models.Title {
 func maskAnonymousUser(article *models.Article, isOwner bool) {
 	if article.IsAnonymous && !isOwner {
 		article.User = models.User{
-			ID:       0,
-			Username: "匿名用户",
-			Avatar:   "",
+			ID:          0,
+			Username:    "anonymous",
+			DisplayName: "匿名用户",
+			Avatar:      "",
 		}
 	}
 }
@@ -203,9 +204,10 @@ func GetArticle(c *gin.Context) {
 			isReplyOwner := replies[j].UserID == currentUserID
 			if replies[j].IsAnonymous && !isReplyOwner {
 				replies[j].User = models.User{
-					ID:       0,
-					Username: "匿名用户",
-					Avatar:   "",
+					ID:          0,
+					Username:    "anonymous",
+					DisplayName: "匿名用户",
+					Avatar:      "",
 				}
 			}
 		}
@@ -235,9 +237,10 @@ func GetArticle(c *gin.Context) {
 		isCommentOwner := comments[i].UserID == currentUserID
 		if comments[i].IsAnonymous && !isCommentOwner {
 			comments[i].User = models.User{
-				ID:       0,
-				Username: "匿名用户",
-				Avatar:   "",
+				ID:          0,
+				Username:    "anonymous",
+				DisplayName: "匿名用户",
+				Avatar:      "",
 			}
 		}
 	}
