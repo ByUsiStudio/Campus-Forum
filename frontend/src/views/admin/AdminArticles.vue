@@ -45,7 +45,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ArticlesPanel from './ArticlesPanel.vue'
-import api from '../../api'
+import { adminArticleApi } from '../../api/admin'
 import { confirm, success, error } from '../../utils/modal'
 
 const router = useRouter()
@@ -72,7 +72,10 @@ const statusDialog = ref({
 const loadArticles = async () => {
   loading.value = true
   try {
-    const response = await api.get(`/admin/articles?page=${articlePage.value}&status=${articleFilter.value}`)
+    const response = await adminArticleApi.getArticles({
+      page: articlePage.value,
+      status: articleFilter.value
+    })
     articles.value = response.data.articles
     articleTotalPages.value = response.data.total_pages
   } catch (error) {
@@ -102,9 +105,7 @@ const showStatusDialog = (article) => {
 
 const handleEditStatus = async () => {
   try {
-    await api.put(`/admin/articles/${statusDialog.value.article.id}/status`, {
-      status: statusDialog.value.status
-    })
+    await adminArticleApi.updateArticleStatus(statusDialog.value.article.id, statusDialog.value.status)
     success('修改成功')
     statusDialog.value.show = false
     loadArticles()

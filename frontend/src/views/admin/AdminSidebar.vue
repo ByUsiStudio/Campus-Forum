@@ -52,14 +52,14 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '../../api'
+import { adminSidebarApi } from '../../api/admin'
 import { success, error } from '../../utils/modal'
 
 const sidebarItems = ref([])
 
 const loadSidebarConfig = async () => {
   try {
-    const response = await api.get('/sidebar-config')
+    const response = await adminSidebarApi.getConfig()
     sidebarItems.value = response.data.items || []
   } catch (error) {
     console.error('加载侧边栏配置失败', error)
@@ -86,7 +86,7 @@ const removeSidebarItem = (index) => {
 
 const saveSidebarConfig = async () => {
   try {
-    await api.put('/sidebar-config', { items: sidebarItems.value })
+    await adminSidebarApi.updateConfig({ items: sidebarItems.value })
     success('保存成功')
   } catch (error) {
     console.error('保存侧边栏配置失败', error)

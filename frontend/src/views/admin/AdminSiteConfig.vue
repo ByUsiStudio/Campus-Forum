@@ -134,7 +134,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '../../api'
+import { adminSiteConfigApi } from '../../api/admin'
 import { success, error } from '../../utils/modal'
 
 const siteConfigForm = ref({
@@ -159,7 +159,7 @@ const originalConfig = ref({
 
 const loadSiteConfig = async () => {
   try {
-    const response = await api.get('/site-config')
+    const response = await adminSiteConfigApi.getConfig()
     siteConfigForm.value.siteTitle = response.data.site_title || ''
     siteConfigForm.value.icpNumber = response.data.icp_number || ''
     siteConfigForm.value.publicSecurityNumber = response.data.public_security_number || ''
@@ -177,7 +177,7 @@ const resetForm = () => {
 const saveSiteConfig = async () => {
   saving.value = true
   try {
-    await api.put('/site-config', {
+    await adminSiteConfigApi.updateConfig({
       site_title: siteConfigForm.value.siteTitle,
       icp_number: siteConfigForm.value.icpNumber,
       public_security_number: siteConfigForm.value.publicSecurityNumber

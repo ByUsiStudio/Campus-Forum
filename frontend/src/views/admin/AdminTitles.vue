@@ -78,7 +78,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import TitlesPanel from './TitlesPanel.vue'
-import api from '../../api'
+import { adminTitleApi, adminUserApi } from '../../api/admin'
 import { confirm, success, error } from '../../utils/modal'
 
 const titles = ref([])
@@ -114,7 +114,7 @@ const checkMobile = () => {
 const loadTitles = async () => {
   loading.value = true
   try {
-    const response = await api.get('/titles')
+    const response = await adminTitleApi.getTitles()
     titles.value = response.data.titles || []
   } catch (err) {
     console.error('加载头衔列表失败', err)
@@ -125,7 +125,7 @@ const loadTitles = async () => {
 
 const loadUsers = async () => {
   try {
-    const response = await api.get('/admin/users')
+    const response = await adminUserApi.getUsers()
     users.value = response.data.users || []
   } catch (err) {
     console.error('加载用户列表失败', err)
@@ -137,7 +137,7 @@ const addTitle = async () => {
   if (!titleName) return
 
   try {
-    await api.post('/titles', { name: titleName })
+    await adminTitleApi.createTitle({ name: titleName })
     success('添加成功')
     loadTitles()
   } catch (err) {
@@ -161,7 +161,7 @@ const handleGrant = async () => {
   }
 
   try {
-    await api.post('/titles/grant', {
+    await adminTitleApi.grantTitle({
       title_id: grantDialog.value.titleId,
       user_id: grantDialog.value.selectedUserId
     })
@@ -179,7 +179,7 @@ const revokeTitle = async (titleId, userId) => {
   if (!confirmed) return
 
   try {
-    await api.post('/titles/revoke', { title_id: titleId, user_id: userId })
+    await adminTitleApi.revokeTitle({ title_id: titleId, user_id: userId })
     success('撤销成功')
     loadTitles()
   } catch (err) {
@@ -193,7 +193,7 @@ const handleDeleteTitle = async (title) => {
   if (!confirmed) return
 
   try {
-    await api.delete(`/titles/${title.id}`)
+    await adminTitleApi.deleteTitle(title.id)
     success('删除成功')
     loadTitles()
   } catch (err) {

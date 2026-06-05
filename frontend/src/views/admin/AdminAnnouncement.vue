@@ -68,7 +68,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '../../api'
+import { adminAnnouncementApi } from '../../api/admin'
 import { success, error } from '../../utils/modal'
 
 const announcementContent = ref('')
@@ -82,7 +82,7 @@ const rules = {
 
 const loadAnnouncement = async () => {
   try {
-    const response = await api.get('/announcement')
+    const response = await adminAnnouncementApi.getAnnouncement()
     announcementContent.value = response.data.content || ''
   } catch (err) {
     console.error('加载公告失败', err)
@@ -92,7 +92,7 @@ const loadAnnouncement = async () => {
 const saveAnnouncement = async () => {
   saving.value = true
   try {
-    await api.put('/announcement', { content: announcementContent.value })
+    await adminAnnouncementApi.updateAnnouncement({ content: announcementContent.value })
     success('公告保存成功')
   } catch (err) {
     console.error('保存公告失败', err)

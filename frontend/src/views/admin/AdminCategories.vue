@@ -74,7 +74,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import CategoriesPanel from './CategoriesPanel.vue'
-import api from '../../api'
+import { adminCategoryApi } from '../../api/admin'
 import { confirm, success, error } from '../../utils/modal'
 
 const categories = ref([])
@@ -96,7 +96,7 @@ const rules = {
 const loadCategories = async () => {
   loading.value = true
   try {
-    const response = await api.get('/categories')
+    const response = await adminCategoryApi.getCategories()
     categories.value = response.data.categories || []
   } catch (err) {
     console.error('加载分区列表失败', err)
@@ -141,9 +141,9 @@ const handleEditCategory = async () => {
 
   try {
     if (editCategoryDialog.value.category) {
-      await api.put(`/categories/${editCategoryDialog.value.category.id}`, data)
+      await adminCategoryApi.updateCategory(editCategoryDialog.value.category.id, data)
     } else {
-      await api.post('/categories', data)
+      await adminCategoryApi.createCategory(data)
     }
     success('保存成功')
     closeCategoryDialog()
@@ -158,7 +158,7 @@ const handleDeleteCategory = async (category) => {
   const confirmed = await confirm(`确定要删除分区 "${category.name}" 吗？此操作不可恢复。`)
   if (!confirmed) return
   try {
-    await api.delete(`/categories/${category.id}`)
+    await adminCategoryApi.deleteCategory(category.id)
     success('删除成功')
     loadCategories()
   } catch (err) {

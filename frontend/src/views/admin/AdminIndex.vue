@@ -9,7 +9,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import OverviewPanel from './OverviewPanel.vue'
-import api from '../../api'
+import { adminStatsApi } from '../../api/admin'
 
 const statistics = ref({
   user_count: 0,
@@ -22,7 +22,7 @@ const loading = ref(true)
 const loadStatistics = async () => {
   loading.value = true
   try {
-    const response = await api.get('/admin/statistics')
+    const response = await adminStatsApi.getStatistics()
     statistics.value = response.data
   } catch (error) {
     console.error('加载统计数据失败', error)

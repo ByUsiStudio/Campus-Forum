@@ -55,14 +55,14 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '../../api'
+import { adminDeletionApi } from '../../api/admin'
 import { confirm, success, error } from '../../utils/modal'
 
 const deletionRequests = ref([])
 
 const loadDeletionRequests = async () => {
   try {
-    const response = await api.get('/deletion-requests')
+    const response = await adminDeletionApi.getRequests()
     deletionRequests.value = response.data.requests || []
   } catch (error) {
     console.error('加载删除申请失败', error)
@@ -80,7 +80,7 @@ const approveDeletion = async (id) => {
   if (!confirmed) return
   
   try {
-    await api.post(`/deletion-requests/${id}/approve`)
+    await adminDeletionApi.approveRequest(id)
     success('已批准删除')
     loadDeletionRequests()
   } catch (error) {
@@ -94,7 +94,7 @@ const rejectDeletion = async (id) => {
   if (!confirmed) return
   
   try {
-    await api.post(`/deletion-requests/${id}/reject`)
+    await adminDeletionApi.rejectRequest(id)
     success('已拒绝删除')
     loadDeletionRequests()
   } catch (error) {

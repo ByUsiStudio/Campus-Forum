@@ -3,6 +3,7 @@ package controllers
 import (
 	"forum/database"
 	"forum/models"
+	"forum/utils"
 	"net/http"
 	"strconv"
 	"time"
@@ -38,10 +39,14 @@ func CreateNotification(c *gin.Context) {
 		return
 	}
 
+	// XSS过滤：清理通知标题和内容
+	safeTitle := utils.SanitizeHTML(input.Title)
+	safeContent := utils.SanitizeHTML(input.Content)
+
 	notification := models.Notification{
 		Type:    input.Type,
-		Title:   input.Title,
-		Content: input.Content,
+		Title:   safeTitle,
+		Content: safeContent,
 		Target:  input.Target,
 	}
 

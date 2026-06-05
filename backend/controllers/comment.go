@@ -3,6 +3,7 @@ package controllers
 import (
 	"forum/database"
 	"forum/models"
+	"forum/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,6 +24,9 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 
+	// XSS过滤：清理评论内容
+	safeContent := utils.SanitizeHTML(input.Content)
+
 	var article models.Article
 	if result := database.DB.First(&article, articleID); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "文章不存在"})
@@ -30,7 +34,7 @@ func CreateComment(c *gin.Context) {
 	}
 
 	comment := models.Comment{
-		Content:     input.Content,
+		Content:     safeContent,
 		UserID:      userID,
 		ArticleID:   article.ID,
 		ParentID:    input.ParentID,

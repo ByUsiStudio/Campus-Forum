@@ -103,6 +103,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import UsersPanel from './UsersPanel.vue'
 import UserAvatar from '../../components/UserAvatar.vue'
+import { adminUserApi } from '../../api/admin'
 import api from '../../api'
 import { confirm, success, error } from '../../utils/modal'
 
@@ -133,7 +134,7 @@ const banDialog = ref({
 const loadUsers = async () => {
   loading.value = true
   try {
-    const response = await api.get('/admin/users')
+    const response = await adminUserApi.getUsers()
     users.value = response.data.users || []
   } catch (error) {
     console.error('加载用户列表失败', error)
@@ -179,9 +180,7 @@ const showBanDialog = (user) => {
 
 const handleEditRole = async () => {
   try {
-    await api.put(`/admin/users/${editRoleDialog.value.user.id}/role`, {
-      role: editRoleDialog.value.role
-    })
+    await adminUserApi.updateUserRole(editRoleDialog.value.user.id, editRoleDialog.value.role)
     success('修改成功')
     editRoleDialog.value.show = false
     loadUsers()
@@ -197,7 +196,7 @@ const handleEditUser = async () => {
     return
   }
   try {
-    await api.put(`/admin/users/${editUserDialog.value.user.id}`, {
+    await adminUserApi.updateUser(editUserDialog.value.user.id, {
       display_name: editUserDialog.value.displayName
     })
     success('保存成功')
@@ -211,9 +210,7 @@ const handleEditUser = async () => {
 
 const handleBan = async () => {
   try {
-    await api.post(`/admin/users/${banDialog.value.user.id}/ban`, {
-      reason: banDialog.value.reason
-    })
+    await adminUserApi.banUser(banDialog.value.user.id, banDialog.value.reason)
     success('封禁成功')
     banDialog.value.show = false
     loadUsers()
@@ -227,7 +224,7 @@ const handleUnban = async (userId) => {
   const confirmed = await confirm('确定要解封此用户吗？')
   if (!confirmed) return
   try {
-    await api.post(`/admin/users/${userId}/unban`)
+    await adminUserApi.unbanUser(userId)
     success('解封成功')
     loadUsers()
   } catch (error) {
@@ -240,7 +237,7 @@ const handleDeleteUser = async (user) => {
   const confirmed = await confirm(`确定要删除用户 "${user.display_name}" 吗？`)
   if (!confirmed) return
   try {
-    await api.delete(`/admin/users/${user.id}`)
+    await adminUserApi.deleteUser(user.id)
     success('删除成功')
     loadUsers()
   } catch (error) {

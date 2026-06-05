@@ -174,7 +174,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '../../api'
+import { adminSiteConfigApi } from '../../api/admin'
 import { success, error } from '../../utils/modal'
 
 const smtpConfigForm = ref({
@@ -200,7 +200,7 @@ const rules = {
 
 const loadSmtpConfig = async () => {
   try {
-    const response = await api.get('/site-config')
+    const response = await adminSiteConfigApi.getConfig()
     smtpConfigForm.value = {
       host: response.data.smtp_host || '',
       port: response.data.smtp_port || 587,
@@ -217,7 +217,7 @@ const loadSmtpConfig = async () => {
 const saveSmtpConfig = async () => {
   saving.value = true
   try {
-    await api.put('/site-config', {
+    await adminSiteConfigApi.updateConfig({
       smtp_host: smtpConfigForm.value.host,
       smtp_port: smtpConfigForm.value.port,
       smtp_username: smtpConfigForm.value.username,
@@ -237,7 +237,7 @@ const saveSmtpConfig = async () => {
 const testSmtpConfig = async () => {
   testing.value = true
   try {
-    await api.post('/site-config/test-smtp', {
+    await adminSiteConfigApi.testSmtp({
       smtp_host: smtpConfigForm.value.host,
       smtp_port: smtpConfigForm.value.port,
       smtp_username: smtpConfigForm.value.username,

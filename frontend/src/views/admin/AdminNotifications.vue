@@ -176,7 +176,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import api from '../../api'
+import { adminNotificationApi } from '../../api/admin'
 import { confirm, success, error } from '../../utils/modal'
 
 const notifications = ref([])
@@ -232,7 +232,7 @@ const formatTime = (timeString) => {
 
 const loadNotifications = async () => {
   try {
-    const response = await api.get('/notifications/admin')
+    const response = await adminNotificationApi.getNotifications()
     notifications.value = response.data.notifications || []
   } catch (err) {
     console.error('加载通知列表失败', err)
@@ -247,7 +247,7 @@ const handleSendNotification = async () => {
 
   sending.value = true
   try {
-    await api.post('/notifications', notificationForm.value)
+    await adminNotificationApi.createNotification(notificationForm.value)
     success('发送成功')
     notificationForm.value = { type: 'system', target: 'all', title: '', content: '' }
     loadNotifications()
@@ -264,7 +264,7 @@ const deleteNotification = async (id) => {
   if (!confirmed) return
 
   try {
-    await api.delete(`/notifications/${id}`)
+    await adminNotificationApi.deleteNotification(id)
     success('删除成功')
     loadNotifications()
   } catch (err) {

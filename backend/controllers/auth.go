@@ -224,7 +224,8 @@ func UpdateProfile(c *gin.Context) {
 		user.Avatar = input.Avatar
 	}
 	if input.Signature != "" {
-		user.Signature = input.Signature
+		// XSS过滤：清理用户签名
+		user.Signature = utils.SanitizeHTML(input.Signature)
 	}
 
 	database.DB.Save(&user)
