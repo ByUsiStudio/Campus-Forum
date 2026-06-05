@@ -4,71 +4,83 @@ import (
 	"html"
 	"regexp"
 	"strings"
+
+	"github.com/microcosm-cc/bluemonday"
 )
 
-// SanitizeHTML 清理HTML内容，防止XSS攻击
+// 创建全局XSS过滤器实例
+var (
+	// SanitizePolicy 论坛专用的HTML清理策略
+	SanitizePolicy = func() *bluemonday.Policy {
+		p := bluemonday.UGCPolicy()
+
+		// 图片
+		p.AllowElements("img")
+		p.AllowAttrs(
+			"src",
+			"alt",
+			"title",
+			"width",
+			"height",
+		).OnElements("img")
+
+		// 视频
+		p.AllowElements("video", "source")
+		p.AllowAttrs(
+			"src",
+			"type",
+			"controls",
+			"width",
+			"height",
+			"poster",
+		).OnElements("video", "source")
+
+		// 音频
+		p.AllowElements("audio")
+		p.AllowAttrs(
+			"src",
+			"type",
+			"controls",
+		).OnElements("audio")
+
+		// iframe（B站、YouTube）
+		p.AllowElements("iframe")
+		p.AllowAttrs(
+			"src",
+			"width",
+			"height",
+			"frameborder",
+			"allowfullscreen",
+			"allow",
+		).OnElements("iframe")
+
+		// 代码高亮
+		p.AllowAttrs("class").Globally()
+
+		// data-*
+		p.AllowDataAttributes()
+
+		// 允许协议
+		p.AllowURLSchemes(
+			"http",
+			"https",
+		)
+
+		return p
+	}()
+
+	// StrictPolicy 严格策略（仅文本）
+	StrictPolicy = bluemonday.StrictPolicy()
+)
+
+// SanitizeHTML 清理HTML内容，防止XSS攻击（使用论坛专用策略）
 func SanitizeHTML(input string) string {
-	// 首先转义所有HTML实体
-	sanitized := html.EscapeString(input)
+	return SanitizePolicy.Sanitize(input)
+}
 
-	// 允许的安全标签白名单
-	allowedTags := map[string]bool{
-		"b":      true,
-		"i":      true,
-		"u":      true,
-		"strong": true,
-		"em":     true,
-		"p":      true,
-		"br":     true,
-		"a":      true,
-		"img":    true,
-		"code":   true,
-		"pre":    true,
-		"h1":     true,
-		"h2":     true,
-		"h3":     true,
-		"h4":     true,
-		"h5":     true,
-		"h6":     true,
-		"ul":     true,
-		"ol":     true,
-		"li":     true,
-		"blockquote": true,
-	}
-
-	// 恢复允许的标签
-	for tag := range allowedTags {
-		openPattern := regexp.MustCompile(`&lt;` + tag + `(&gt;|\s[^&]*&gt;)`)
-		closePattern := regexp.MustCompile(`&lt;/` + tag + `&gt;`)
-
-		sanitized = openPattern.ReplaceAllStringFunc(sanitized, func(match string) string {
-			return strings.Replace(match, "&lt;", "<", 1)
-		})
-		sanitized = closePattern.ReplaceAllStringFunc(sanitized, func(match string) string {
-			return strings.Replace(match, "&lt;", "<", 1)
-		})
-		sanitized = strings.ReplaceAll(sanitized, "&gt;", ">")
-	}
-
-	// 清理a标签的href属性，只允许安全协议
-	hrefPattern := regexp.MustCompile(`<a\s+[^>]*href=["']([^"']*)["'][^>]*>`)
-	sanitized = hrefPattern.ReplaceAllStringFunc(sanitized, func(match string) string {
-		if strings.Contains(match, "javascript:") || strings.Contains(match, "data:") {
-			return ""
-		}
-		return match
-	})
-
-	// 清理img标签的src属性
-	imgPattern := regexp.MustCompile(`<img\s+[^>]*src=["']([^"']*)["'][^>]*>`)
-	sanitized = imgPattern.ReplaceAllStringFunc(sanitized, func(match string) string {
-		if strings.Contains(match, "javascript:") || strings.Contains(match, "data:") {
-			return ""
-		}
-		return match
-	})
-
-	return sanitized
+// SanitizeHTMLStrict 严格模式清理HTML（移除所有标签）
+func SanitizeHTMLStrict(input string) string {
+	return StrictPolicy.Sanitize(input)
 }
 
 // SanitizeText 清理纯文本输入

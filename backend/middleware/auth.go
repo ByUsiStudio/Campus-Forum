@@ -71,28 +71,8 @@ func AdminOnly() gin.HandlerFunc {
 
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		origin := c.Request.Header.Get("Origin")
-		
-		// 允许的来源白名单（生产环境应该配置具体的域名）
-		allowedOrigins := map[string]bool{
-			"http://localhost:5173":   true, // Vite开发服务器
-			"http://localhost:3000":   true,
-			"http://127.0.0.1:5173":   true,
-			"http://127.0.0.1:3000":   true,
-		}
-		
-		// 检查来源是否在白名单中
-		if origin != "" && allowedOrigins[origin] {
-			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
-			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		} else if origin == "" {
-			// 非浏览器请求，允许所有
-			c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		} else {
-			// 不在白名单中的来源，拒绝跨域请求
-			c.Writer.Header().Set("Access-Control-Allow-Origin", "")
-		}
-		
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
 		c.Writer.Header().Set("Access-Control-Max-Age", "86400") // 24小时
