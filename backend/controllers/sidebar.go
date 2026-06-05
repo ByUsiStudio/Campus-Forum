@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"forum/database"
 	"forum/models"
 	"net/http"
@@ -15,6 +16,7 @@ func GetSidebarConfig(c *gin.Context) {
 
 	if result.Error != nil {
 		// 返回默认配置
+		fmt.Println("侧边栏配置不存在，返回默认配置")
 		defaultItems := []models.SidebarItem{
 			{Title: "首页", Link: "/", Icon: "🏠"},
 			{Title: "表白墙", Link: "/category/1", Icon: "❤️"},
@@ -25,9 +27,17 @@ func GetSidebarConfig(c *gin.Context) {
 		return
 	}
 
+	fmt.Printf("侧边栏配置原始数据: %s\n", config.Items)
+	
 	var items []models.SidebarItem
-	json.Unmarshal([]byte(config.Items), &items)
+	if err := json.Unmarshal([]byte(config.Items), &items); err != nil {
+		fmt.Printf("解析侧边栏配置失败: %v\n", err)
+		// 解析失败时返回空数组
+		items = []models.SidebarItem{}
+	}
 
+	fmt.Printf("侧边栏项目数量: %d\n", len(items))
+	
 	c.JSON(http.StatusOK, gin.H{
 		"items": items,
 	})

@@ -78,10 +78,22 @@ export default {
 
     const loadSidebarConfig = async () => {
       try {
+        console.log('开始加载侧边栏配置...')
         const response = await api.get('/sidebar-config')
-        sidebarItems.value = response.data.items || []
+        console.log('侧边栏配置响应:', response.data)
+        
+        if (response.data && response.data.items) {
+          sidebarItems.value = response.data.items
+          console.log('侧边栏项目数量:', sidebarItems.value.length)
+        } else {
+          console.warn('侧边栏配置数据格式异常:', response.data)
+          sidebarItems.value = [
+            { title: '首页', link: '/', icon: 'mdi-home' }
+          ]
+        }
       } catch (error) {
         console.error('加载侧边栏配置失败', error)
+        console.error('错误详情:', error.response?.data || error.message)
         sidebarItems.value = [
           { title: '首页', link: '/', icon: 'mdi-home' }
         ]

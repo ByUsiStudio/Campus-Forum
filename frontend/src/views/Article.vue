@@ -616,11 +616,10 @@ export default {
           content: commentContent.value,
           is_anonymous: commentIsAnonymous.value
         })
-        // 新评论添加到列表
-        comments.value.unshift({
-          ...response.data.comment,
-          replies: []
-        })
+        
+        // 重新加载文章和评论，确保数据一致性
+        await loadArticle()
+        
         commentContent.value = ''
         commentIsAnonymous.value = false
       } catch (error) {
@@ -638,16 +637,9 @@ export default {
           is_anonymous: replyIsAnonymous.value
         })
 
-        // 找到父评论并添加回复
-        const parentComment = comments.value.find(c => c.id === parentId)
-        if (parentComment) {
-          if (!parentComment.replies) {
-            parentComment.replies = []
-          }
-          parentComment.replies.push(response.data.comment)
-          parentComment.reply_count++
-        }
-
+        // 重新加载文章和评论，确保数据一致性
+        await loadArticle()
+        
         cancelReply()
       } catch (error) {
         console.error('回复失败', error)
