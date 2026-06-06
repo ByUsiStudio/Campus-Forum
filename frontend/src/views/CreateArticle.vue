@@ -1,183 +1,206 @@
 <template>
-  <div>
-    <v-card class="pa-6" max-width="900" style="margin: 0 auto;">
-      <v-card-title class="text-h5 mb-4" style="color: rgb(var(--v-theme-primary));">
-        {{ isEdit ? '编辑文章' : '发布新文章' }}
-      </v-card-title>
+  <v-container fluid class="pa-4">
+    <v-row justify="center">
+      <v-col cols="12" lg="10" xl="8">
+        <v-card class="pa-6" elevation="2">
+          <div class="d-flex align-center mb-4">
+            <v-btn icon="mdi-arrow-left" variant="text" @click="router.back()"></v-btn>
+            <v-card-title class="text-h5 font-weight-bold" style="color: rgb(var(--v-theme-primary));">
+              {{ isEdit ? '编辑文章' : '发布新文章' }}
+            </v-card-title>
+          </div>
 
-      <v-form @submit.prevent="submitArticle">
-        <v-text-field
-          v-model="form.title"
-          label="标题"
-          variant="outlined"
-          required
-          class="mb-4"
-        ></v-text-field>
+          <v-divider class="mb-6"></v-divider>
 
-        <v-select
-          v-model="form.category_id"
-          :items="categories"
-          item-title="name"
-          item-value="id"
-          label="分区"
-          variant="outlined"
-          class="mb-4"
-        ></v-select>
+          <v-form @submit.prevent="submitArticle">
+            <v-text-field
+              v-model="form.title"
+              label="文章标题"
+              variant="outlined"
+              required
+              prepend-inner-icon="mdi-format-title"
+              class="mb-4"
+              :rules="[v => !!v || '请输入标题']"
+            ></v-text-field>
 
-        <div class="mb-4">
-          <MdEditor
-            v-model="form.content"
-            :height="500"
-            @voice-input="handleVoiceInput"
-          />
-        </div>
+            <v-select
+              v-model="form.category_id"
+              :items="categories"
+              item-title="name"
+              item-value="id"
+              label="选择分区"
+              variant="outlined"
+              prepend-inner-icon="mdi-folder"
+              class="mb-4"
+            ></v-select>
 
-        <v-expand-transition>
-          <div v-if="voiceUrl || isRecording" class="mb-4">
-            <v-card variant="outlined" class="pa-3">
-              <div class="d-flex align-center gap-3">
-                <v-icon :color="isRecording ? 'error' : 'primary'">
-                  {{ isRecording ? 'mdi-microphone' : 'mdi-volume-high' }}
-                </v-icon>
-                <div class="flex-grow-1">
-                  <div class="text-subtitle-2">
-                    {{ isRecording ? '录音中...' : '语音已添加' }}
-                  </div>
-                  <div v-if="voiceUrl && !isRecording" class="text-caption text-medium-emphasis">
-                    {{ voiceUrl.split('/').pop() }}
+            <v-card variant="outlined" class="mb-4">
+              <v-card-text>
+                <div class="text-caption text-medium-emphasis mb-2">
+                  <v-icon size="small" class="mr-1">mdi-pencil</v-icon>
+                  文章内容 (支持 Markdown)
+                </div>
+                <MdEditor
+                  v-model="form.content"
+                  :height="400"
+                  @voice-input="handleVoiceInput"
+                />
+              </v-card-text>
+            </v-card>
+
+            <v-expand-transition>
+              <v-alert
+                v-if="voiceUrl || isRecording"
+                type="info"
+                variant="tonal"
+                class="mb-4"
+                closable
+                @click:close="removeVoice"
+              >
+                <div class="d-flex align-center gap-3">
+                  <v-icon :color="isRecording ? 'error' : 'primary'">
+                    {{ isRecording ? 'mdi-microphone' : 'mdi-volume-high' }}
+                  </v-icon>
+                  <div class="flex-grow-1">
+                    <div class="text-subtitle-2">
+                      {{ isRecording ? '录音中...' : '语音已添加' }}
+                    </div>
+                    <div v-if="voiceUrl && !isRecording" class="text-caption text-medium-emphasis">
+                      {{ voiceUrl.split('/').pop() }}
+                    </div>
                   </div>
                 </div>
-                <v-btn
-                  v-if="!isRecording"
-                  variant="text"
+                <v-progress-linear
+                  v-if="isRecording"
+                  :model-value="recordingDuration"
                   color="error"
-                  size="small"
-                  @click="removeVoice"
+                  height="4"
+                  class="mt-2"
+                />
+              </v-alert>
+            </v-expand-transition>
+
+            <v-card variant="flat" class="bg-grey-lighten-4 pa-4 mb-4">
+              <div class="d-flex align-center flex-wrap gap-4">
+                <v-btn
+                  variant="outlined"
+                  color="primary"
+                  @click="showVoiceDialog = true"
+                  prepend-icon="mdi-microphone"
                 >
-                  删除
+                  添加语音
+                </v-btn>
+
+                <v-checkbox
+                  v-model="form.is_anonymous"
+                  label="匿名发布"
+                  color="primary"
+                  hide-details
+                  density="compact"
+                />
+
+                <v-spacer></v-spacer>
+
+                <v-btn
+                  variant="text"
+                  @click="router.back()"
+                >
+                  取消
+                </v-btn>
+                <v-btn
+                  type="submit"
+                  color="primary"
+                  :loading="submitting"
+                  prepend-icon="mdi-send"
+                >
+                  {{ submitting ? '提交中...' : (isEdit ? '更新文章' : '发布文章') }}
                 </v-btn>
               </div>
-              <v-progress-linear
-                v-if="isRecording"
-                :model-value="recordingDuration"
-                color="error"
-                height="4"
-                class="mt-2"
-              />
             </v-card>
-          </div>
-        </v-expand-transition>
+          </v-form>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 
-        <div class="d-flex align-center gap-4 mb-4">
-          <v-btn
-            variant="outlined"
-            color="primary"
-            size="small"
-            @click="showVoiceDialog = true"
-          >
-            <v-icon left>mdi-microphone</v-icon>
-            添加语音
-          </v-btn>
+  <v-dialog v-model="showVoiceDialog" max-width="500">
+    <v-card class="voice-dialog-card">
+      <v-card-title class="voice-dialog-title">
+        <v-icon class="mr-2">mdi-microphone</v-icon>
+        添加语音
+      </v-card-title>
+      <v-card-text class="voice-dialog-body">
+        <v-tabs v-model="voiceTab" color="primary" grow>
+          <v-tab value="record">
+            <v-icon start>mdi-microphone</v-icon>
+            录音
+          </v-tab>
+          <v-tab value="upload">
+            <v-icon start>mdi-upload</v-icon>
+            上传
+          </v-tab>
+        </v-tabs>
 
-          <v-checkbox
-            v-model="form.is_anonymous"
-            label="匿名发布"
-            color="primary"
-            hide-details
-            class="mt-0"
-          ></v-checkbox>
-        </div>
-
-        <div class="d-flex gap-4">
-          <v-btn
-            type="submit"
-            color="primary"
-            size="large"
-            :loading="submitting"
-          >
-            {{ submitting ? '提交中...' : (isEdit ? '更新文章' : '发布文章') }}
-          </v-btn>
-        </div>
-      </v-form>
-    </v-card>
-
-    <v-dialog v-model="showVoiceDialog" max-width="500">
-      <v-card class="voice-dialog-card">
-        <v-card-title class="voice-dialog-title">
-          <v-icon class="mr-2">mdi-microphone</v-icon>
-          添加语音
-        </v-card-title>
-        <v-card-text class="voice-dialog-body">
-          <v-tabs v-model="voiceTab" color="primary" grow>
-            <v-tab value="record">
-              <v-icon start>mdi-microphone</v-icon>
-              录音
-            </v-tab>
-            <v-tab value="upload">
-              <v-icon start>mdi-upload</v-icon>
-              上传
-            </v-tab>
-          </v-tabs>
-
-          <v-window v-model="voiceTab" class="mt-4">
-            <v-window-item value="record">
-              <div class="record-section">
-                <div class="record-time">
-                  <v-icon :color="isRecording ? 'error' : 'grey'" size="48" class="mb-3">
-                    mdi-microphone
-                  </v-icon>
-                  <div class="time-display">
-                    {{ formatDuration(recordingDuration) }}
-                  </div>
-                  <div class="record-status">
-                    {{ isPaused ? '已暂停' : (isRecording ? '录音中...' : '点击开始录音') }}
-                  </div>
+        <v-window v-model="voiceTab" class="mt-4">
+          <v-window-item value="record">
+            <div class="record-section">
+              <div class="record-time">
+                <v-icon :color="isRecording ? 'error' : 'grey'" size="64" class="mb-3">
+                  mdi-microphone
+                </v-icon>
+                <div class="time-display">
+                  {{ formatDuration(recordingDuration) }}
                 </div>
+                <div class="record-status">
+                  {{ isPaused ? '已暂停' : (isRecording ? '录音中...' : '点击开始录音') }}
+                </div>
+              </div>
 
-                <div class="record-controls">
+              <div class="record-controls">
+                <v-btn
+                  v-if="!isRecording && !recordedBlob"
+                  color="error"
+                  size="large"
+                  @click="startRecording"
+                >
+                  <v-icon start>mdi-microphone</v-icon>
+                  开始录音
+                </v-btn>
+
+                <template v-else>
                   <v-btn
-                    v-if="!isRecording && !recordedBlob"
+                    v-if="isRecording"
+                    color="warning"
+                    size="large"
+                    @click="pauseRecording"
+                  >
+                    <v-icon start>mdi-pause</v-icon>
+                    暂停
+                  </v-btn>
+                  <v-btn
+                    v-if="isPaused"
+                    color="success"
+                    size="large"
+                    @click="resumeRecording"
+                  >
+                    <v-icon start>mdi-play</v-icon>
+                    继续
+                  </v-btn>
+                  <v-btn
                     color="error"
                     size="large"
-                    @click="startRecording"
+                    @click="stopRecording"
                   >
-                    <v-icon start>mdi-microphone</v-icon>
-                    开始录音
+                    <v-icon start>mdi-stop</v-icon>
+                    结束
                   </v-btn>
+                </template>
+              </div>
 
-                  <template v-else>
-                    <v-btn
-                      v-if="isRecording"
-                      color="warning"
-                      size="large"
-                      @click="pauseRecording"
-                    >
-                      <v-icon start>mdi-pause</v-icon>
-                      暂停
-                    </v-btn>
-                    <v-btn
-                      v-if="isPaused"
-                      color="success"
-                      size="large"
-                      @click="resumeRecording"
-                    >
-                      <v-icon start>mdi-play</v-icon>
-                      继续
-                    </v-btn>
-                    <v-btn
-                      color="error"
-                      size="large"
-                      @click="stopRecording"
-                    >
-                      <v-icon start>mdi-stop</v-icon>
-                      结束
-                    </v-btn>
-                  </template>
-                </div>
-
+              <v-expand-transition>
                 <div v-if="recordedBlob" class="recorded-preview">
                   <audio ref="recordedAudioRef" :src="recordedAudioUrl" controls class="audio-preview" />
-                  <div class="d-flex gap-2 mt-3">
+                  <div class="d-flex gap-2 mt-3 justify-center">
                     <v-btn color="primary" @click="confirmVoice" :loading="isUploadingVoice">
                       使用此录音
                     </v-btn>
@@ -186,44 +209,45 @@
                     </v-btn>
                   </div>
                 </div>
-              </div>
-            </v-window-item>
+              </v-expand-transition>
+            </div>
+          </v-window-item>
 
-            <v-window-item value="upload">
-              <div class="upload-section">
-                <v-file-input
-                  ref="voiceFileInput"
-                  v-model="voiceFile"
-                  label="选择音频文件"
-                  accept="audio/*"
-                  variant="outlined"
-                  prepend-icon="mdi-file-music"
-                  show-size
-                  class="mb-4"
-                />
-                <v-btn
-                  color="primary"
-                  block
-                  :disabled="!voiceFile"
-                  :loading="isUploadingVoice"
-                  @click="uploadSelectedFile"
-                >
-                  <v-icon start>mdi-upload</v-icon>
-                  上传音频
-                </v-btn>
-                <div class="text-caption text-medium-emphasis mt-3">
-                  支持 MP3、WAV、AAC、OGG 等常见音频格式
-                </div>
+          <v-window-item value="upload">
+            <div class="upload-section">
+              <v-file-input
+                ref="voiceFileInput"
+                v-model="voiceFile"
+                label="选择音频文件"
+                accept="audio/*"
+                variant="outlined"
+                prepend-icon="mdi-file-music"
+                show-size
+                class="mb-4"
+              />
+              <v-btn
+                color="primary"
+                block
+                :disabled="!voiceFile"
+                :loading="isUploadingVoice"
+                @click="uploadSelectedFile"
+              >
+                <v-icon start>mdi-upload</v-icon>
+                上传音频
+              </v-btn>
+              <div class="text-caption text-medium-emphasis mt-3 text-center">
+                支持 MP3、WAV、AAC、OGG 等常见音频格式
               </div>
-            </v-window-item>
-          </v-window>
-        </v-card-text>
-        <v-card-actions class="voice-dialog-actions">
-          <v-btn variant="text" @click="showVoiceDialog = false">关闭</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </div>
+            </div>
+          </v-window-item>
+        </v-window>
+      </v-card-text>
+      <v-card-actions class="voice-dialog-actions">
+        <v-spacer></v-spacer>
+        <v-btn variant="text" @click="showVoiceDialog = false">关闭</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script>

@@ -1,157 +1,176 @@
 <template>
-  <div v-if="user">
-    <v-row>
-      <v-col cols="12" md="4">
-        <v-card class="pa-6 text-center">
-          <UserAvatar :user="user" :size="150" class="mb-4" />
-          <v-btn v-if="isOwnProfile" variant="outlined" color="primary" @click="changeAvatar" block>
-            <v-icon start>mdi-camera</v-icon>
-            更换头像
+  <v-row v-if="user">
+    <!-- 用户信息卡片 -->
+    <v-col cols="12" md="4">
+      <v-card class="pa-6 text-center" elevation="2">
+        <v-avatar size="150" class="mb-4">
+          <UserAvatar :user="user" :size="150" />
+        </v-avatar>
+        
+        <div class="mb-4">
+          <div class="text-h5 font-weight-bold mb-1">{{ user.display_name }}</div>
+          <div class="text-body-2 text-medium-emphasis">@{{ user.username }}</div>
+          <v-chip v-if="user.role === 'admin'" color="error" size="small" class="mt-2">
+            <v-icon start size="small">mdi-shield-crown</v-icon>
+            管理员
+          </v-chip>
+        </div>
+
+        <v-btn v-if="isOwnProfile" variant="outlined" color="primary" @click="changeAvatar" block>
+          <v-icon start>mdi-camera</v-icon>
+          更换头像
+        </v-btn>
+        <v-btn v-else variant="tonal" :color="followStatus.is_following ? 'default' : 'primary'" @click="handleFollow" block>
+          <v-icon start>{{ followStatus.is_following ? 'mdi-check' : 'mdi-plus' }}</v-icon>
+          {{ followStatus.is_following ? '已关注' : followStatus.is_followed ? '回关' : '关注' }}
+        </v-btn>
+
+        <v-divider class="my-4"></v-divider>
+
+        <!-- 统计数据 -->
+        <v-row dense>
+          <v-col cols="4" class="text-center cursor-pointer" @click="goToFollowing">
+            <div class="text-h6 font-weight-bold">{{ followingCount }}</div>
+            <div class="text-caption text-medium-emphasis">关注</div>
+          </v-col>
+          <v-col cols="4" class="text-center cursor-pointer" @click="goToFollowers">
+            <div class="text-h6 font-weight-bold">{{ followersCount }}</div>
+            <div class="text-caption text-medium-emphasis">粉丝</div>
+          </v-col>
+          <v-col cols="4" class="text-center">
+            <div class="text-h6 font-weight-bold">{{ articleCount }}</div>
+            <div class="text-caption text-medium-emphasis">文章</div>
+          </v-col>
+        </v-row>
+
+        <v-divider class="my-4"></v-divider>
+
+        <!-- 用户信息列表 -->
+        <v-list density="compact" class="text-left">
+          <v-list-item prepend-icon="mdi-qqchat">
+            <v-list-item-title>QQ号：{{ user.qq_number || '未设置' }}</v-list-item-title>
+          </v-list-item>
+          <v-list-item prepend-icon="mdi-pencil">
+            <v-list-item-title class="whitespace-pre-line">签名：{{ user.signature || '暂无签名' }}</v-list-item-title>
+          </v-list-item>
+          <v-list-item prepend-icon="mdi-calendar">
+            <v-list-item-title>注册时间：{{ formatDate(user.created_at) }}</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-card>
+    </v-col>
+
+    <!-- 文章和编辑资料 -->
+    <v-col cols="12" md="8">
+      <!-- 编辑资料卡片 -->
+      <v-card v-if="isOwnProfile" class="pa-6 mb-4" elevation="2">
+        <v-card-title class="d-flex align-center mb-4">
+          <v-icon class="mr-2">mdi-account-edit</v-icon>
+          编辑资料
+        </v-card-title>
+        
+        <v-form @submit.prevent="updateProfile">
+          <v-text-field
+            v-model="editForm.display_name"
+            label="显示名称"
+            variant="outlined"
+            prepend-inner-icon="mdi-card-account-details"
+            class="mb-4"
+          ></v-text-field>
+          
+          <v-textarea
+            v-model="editForm.signature"
+            label="个性化签名"
+            variant="outlined"
+            rows="3"
+            class="mb-4"
+            hint="最多200个字符"
+            persistent-hint
+            counter="200"
+          ></v-textarea>
+          
+          <v-btn type="submit" color="primary" prepend-icon="mdi-content-save">
+            保存修改
           </v-btn>
-          <div v-else class="d-flex flex-column gap-2">
-            <v-btn variant="outlined" :color="followStatus.is_following ? 'default' : 'primary'" @click="handleFollow" block>
-              {{ followStatus.is_following ? '已关注' : followStatus.is_followed ? '回关' : '关注' }}
-            </v-btn>
-          </div>
-        </v-card>
-      </v-col>
+        </v-form>
+      </v-card>
 
-      <v-col cols="12" md="8">
-        <v-card class="pa-6 mb-4">
-          <UserAvatar :user="user" :size="48" class="mb-4" />
-          <div class="d-flex justify-space-around mb-4">
-            <div class="text-center cursor-pointer" @click="goToFollowing">
-              <div class="text-h6">{{ followingCount }}</div>
-              <div class="text-caption text-medium-emphasis">关注</div>
-            </div>
-            <v-divider vertical></v-divider>
-            <div class="text-center cursor-pointer" @click="goToFollowers">
-              <div class="text-h6">{{ followersCount }}</div>
-              <div class="text-caption text-medium-emphasis">粉丝</div>
-            </div>
-            <v-divider vertical></v-divider>
-            <div class="text-center">
-              <div class="text-h6">{{ articleCount }}</div>
-              <div class="text-caption text-medium-emphasis">文章</div>
-            </div>
-          </div>
-          <v-list density="compact">
-            <v-list-item>
-              <template v-slot:prepend>
-                <v-icon>mdi-account</v-icon>
-              </template>
-              <v-list-item-title>用户名：{{ user.username }}</v-list-item-title>
-            </v-list-item>
-            <v-list-item>
-              <template v-slot:prepend>
-                <v-icon>mdi-qqchat</v-icon>
-              </template>
-              <v-list-item-title>QQ号：{{ user.qq_number }}</v-list-item-title>
-            </v-list-item>
-            <v-list-item>
-              <template v-slot:prepend>
-                <v-icon>mdi-pencil</v-icon>
-              </template>
-              <v-list-item-title class="whitespace-pre-line">签名：{{ user.signature || '暂无签名' }}</v-list-item-title>
-            </v-list-item>
-            <v-list-item>
-              <template v-slot:prepend>
-                <v-icon>mdi-shield-account</v-icon>
-              </template>
-              <v-list-item-title>
-                角色：{{ user.role === 'admin' ? '管理员' : '普通用户' }}
-              </v-list-item-title>
-            </v-list-item>
-            <v-list-item>
-              <template v-slot:prepend>
-                <v-icon>mdi-calendar</v-icon>
-              </template>
-              <v-list-item-title>注册时间：{{ formatDate(user.created_at) }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-card>
+      <!-- 文章列表 -->
+      <v-card class="pa-6" elevation="2">
+        <v-card-title class="d-flex align-center mb-4">
+          <v-icon class="mr-2">mdi-file-document</v-icon>
+          {{ isOwnProfile ? '我的文章' : '他的文章' }}
+          <v-spacer></v-spacer>
+          <span class="text-body-2 text-medium-emphasis">{{ myArticles.length }} 篇</span>
+        </v-card-title>
 
-        <v-card v-if="isOwnProfile" class="pa-6 mb-4">
-          <v-card-subtitle class="text-h6 pa-0 mb-4">编辑资料</v-card-subtitle>
-          <v-form @submit.prevent="updateProfile">
-            <v-text-field
-              v-model="editForm.display_name"
-              label="显示名称"
-              variant="outlined"
-              class="mb-4"
-            ></v-text-field>
-            <v-textarea
-              v-model="editForm.signature"
-              label="个性化签名"
-              variant="outlined"
-              rows="3"
-              class="mb-4"
-              hint="最多200个字符"
-              :maxlength="200"
-            ></v-textarea>
-            <v-btn type="submit" color="primary">保存修改</v-btn>
-          </v-form>
-        </v-card>
-      </v-col>
-    </v-row>
+        <div v-if="myArticles.length === 0" class="text-center pa-8">
+          <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-file-document-outline</v-icon>
+          <div class="text-body-1 text-medium-emphasis">暂无文章</div>
+          <v-btn v-if="isOwnProfile" color="primary" class="mt-4" to="/create">
+            <v-icon start>mdi-pencil</v-icon>
+            写文章
+          </v-btn>
+        </div>
 
-    <v-card class="pa-6 mt-4">
-      <v-card-title class="text-h6 mb-4">{{ isOwnProfile ? '我的文章' : '他的文章' }}</v-card-title>
+        <v-list v-else lines="two" class="pa-0">
+          <v-list-item
+            v-for="article in myArticles"
+            :key="article.id"
+            class="px-0"
+          >
+            <template v-slot:prepend>
+              <UserAvatar :user="article.user" :size="50" />
+            </template>
 
-      <div v-if="myArticles.length === 0" class="text-center pa-8 text-medium-emphasis">
-        暂无文章
-      </div>
+            <v-list-item-title class="font-weight-bold mb-1">
+              <router-link :to="'/article/' + article.id" class="text-decoration-none text-primary">
+                {{ article.title }}
+              </router-link>
+            </v-list-item-title>
+            
+            <v-list-item-subtitle class="d-flex align-center flex-wrap gap-2">
+              <span>
+                <v-icon size="x-small">mdi-clock</v-icon>
+                {{ formatDate(article.created_at) }}
+              </span>
+              <span>
+                <v-icon size="x-small" class="text-error">mdi-heart</v-icon>
+                {{ article.like_count }}
+              </span>
+              <span>
+                <v-icon size="x-small">mdi-eye</v-icon>
+                {{ article.view_count }}
+              </span>
+              <v-chip v-if="article.category" size="x-small" color="primary" variant="flat">
+                {{ article.category.name }}
+              </v-chip>
+            </v-list-item-subtitle>
 
-      <v-list v-else lines="two">
-        <v-list-item
-          v-for="article in myArticles"
-          :key="article.id"
-          class="px-0"
-        >
-          <template v-slot:prepend>
-            <UserAvatar :user="article.user" :size="50" />
-          </template>
+            <template v-slot:append v-if="isOwnProfile">
+              <v-btn
+                variant="text"
+                size="small"
+                :to="'/create?id=' + article.id"
+                color="primary"
+                icon="mdi-pencil"
+              ></v-btn>
+              <v-btn
+                variant="text"
+                size="small"
+                color="error"
+                @click="deleteArticle(article.id)"
+                icon="mdi-delete"
+              ></v-btn>
+            </template>
+          </v-list-item>
+        </v-list>
+      </v-card>
+    </v-col>
+  </v-row>
 
-          <v-list-item-title class="font-weight-bold">
-            <router-link :to="'/article/' + article.id" class="text-decoration-none">
-              {{ article.title }}
-            </router-link>
-          </v-list-item-title>
-          <v-list-item-subtitle>
-            <v-icon size="small">mdi-clock</v-icon>
-            {{ formatDate(article.created_at) }}
-            <v-icon size="small" class="ml-2">mdi-heart</v-icon>
-            {{ article.like_count }}
-            <v-icon size="small" class="ml-2">mdi-eye</v-icon>
-            {{ article.view_count }}
-          </v-list-item-subtitle>
-
-          <template v-slot:append>
-            <v-btn
-              v-if="isOwnProfile"
-              variant="text"
-              size="small"
-              :to="'/create?id=' + article.id"
-              color="primary"
-            >
-              编辑
-            </v-btn>
-            <v-btn
-              v-if="isOwnProfile"
-              variant="text"
-              size="small"
-              color="error"
-              @click="deleteArticle(article.id)"
-            >
-              删除
-            </v-btn>
-          </template>
-        </v-list-item>
-      </v-list>
-    </v-card>
-  </div>
-
-  <div v-else class="d-flex justify-center align-center" style="min-height: 50vh;">
+  <!-- 加载状态 -->
+  <div v-else class="d-flex justify-center align-center" style="min-height: 60vh;">
     <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
   </div>
 </template>

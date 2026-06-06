@@ -1,53 +1,108 @@
 <template>
-  <div class="grid-layout">
-    <!-- 侧边栏 -->
-    <div class="sidebar">
+  <v-row>
+    <!-- 侧边栏 - 桌面端显示 -->
+    <v-col cols="12" md="3" class="d-none d-md-block">
       <Sidebar />
-    </div>
+    </v-col>
     
     <!-- 主内容 -->
-    <div class="main-content">
-      <v-alert v-if="announcement.content" type="info" variant="tonal" class="mb-4">
-        <div class="announcement-title font-weight-bold mb-2">公告</div>
+    <v-col cols="12" md="9">
+      <!-- 公告 -->
+      <v-alert
+        v-if="announcement.content"
+        type="info"
+        variant="tonal"
+        class="mb-4"
+        prominent
+        icon="mdi-bullhorn"
+      >
+        <div class="announcement-title font-weight-bold mb-2 d-flex align-center">
+          <v-icon class="mr-2" size="small">mdi-bullhorn</v-icon>
+          公告
+        </div>
         <div class="markdown-body" v-html="announcement.content_html"></div>
       </v-alert>
       
-      <div class="d-flex align-center gap-4 mb-4">
-        <v-select
-          v-model="selectedCategory"
-          :items="categoryOptions"
-          label="选择分区"
-          variant="outlined"
-          density="compact"
-          hide-details
-          @update:model-value="loadArticles"
-          style="max-width: 200px;"
-        ></v-select>
-      </div>
+      <!-- 分区和操作栏 -->
+      <v-card class="mb-4 pa-3" variant="flat">
+        <div class="d-flex align-center flex-wrap gap-3">
+          <v-select
+            v-model="selectedCategory"
+            :items="categoryOptions"
+            label="选择分区"
+            variant="outlined"
+            density="compact"
+            hide-details
+            clearable
+            @update:model-value="loadArticles"
+            style="max-width: 200px;"
+            prepend-inner-icon="mdi-folder"
+          ></v-select>
+          
+          <v-spacer></v-spacer>
+          
+          <span class="text-caption text-medium-emphasis">
+            共 {{ totalPages }} 页
+          </span>
+        </div>
+      </v-card>
       
+      <!-- 文章列表 -->
       <ArticleList :articles="articles" :loading="loading" />
       
-      <div class="d-flex justify-center align-center gap-4 mt-4" v-if="totalPages > 1">
-        <v-btn 
-          @click="prevPage" 
-          :disabled="page === 1" 
-          variant="outlined"
-          color="primary"
-        >
-          上一页
-        </v-btn>
-        <span class="text-body-2">第 {{ page }} / {{ totalPages }} 页</span>
-        <v-btn 
-          @click="nextPage" 
-          :disabled="page === totalPages" 
-          variant="outlined"
-          color="primary"
-        >
-          下一页
-        </v-btn>
-      </div>
-    </div>
-  </div>
+      <!-- 分页 -->
+      <v-card v-if="totalPages > 1" class="mt-4 pa-3" variant="flat">
+        <div class="d-flex justify-center align-center flex-wrap gap-2">
+          <v-btn 
+            @click="prevPage" 
+            :disabled="page === 1" 
+            variant="outlined"
+            color="primary"
+            size="small"
+            prepend-icon="mdi-chevron-left"
+          >
+            上一页
+          </v-btn>
+          
+          <v-pagination
+            v-model="page"
+            :length="totalPages"
+            :total-visible="5"
+            @update:model-value="loadArticles"
+            rounded="circle"
+            density="compact"
+          ></v-pagination>
+          
+          <v-btn 
+            @click="nextPage" 
+            :disabled="page === totalPages" 
+            variant="outlined"
+            color="primary"
+            size="small"
+            append-icon="mdi-chevron-right"
+          >
+            下一页
+          </v-btn>
+        </div>
+      </v-card>
+    </v-col>
+    
+    <!-- 移动端快捷操作 -->
+    <v-col cols="12" class="d-md-none mt-4">
+      <v-card variant="flat" class="pa-3">
+        <div class="d-flex justify-center gap-2">
+          <v-btn
+            color="primary"
+            to="/create"
+            prepend-icon="mdi-pencil"
+            size="small"
+          >
+            写文章
+          </v-btn>
+        </div>
+      </v-card>
+    </v-col>
+  </v-row>
 </template>
 
 <script>
@@ -154,7 +209,19 @@ export default {
 </script>
 
 <style scoped>
-.main-content {
-  min-width: 0;
+.markdown-body {
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.markdown-body :deep(h1),
+.markdown-body :deep(h2),
+.markdown-body :deep(h3) {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-body :deep(p) {
+  margin: 0.5rem 0;
 }
 </style>

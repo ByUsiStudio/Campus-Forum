@@ -1,83 +1,102 @@
 <template>
-  <v-card class="pa-4">
-    <v-card-title class="d-flex justify-space-between align-center">
-      <span class="text-h5">我的通知</span>
-      <v-btn
-        v-if="unreadCount > 0"
-        variant="outlined"
-        color="primary"
-        @click="markAllRead"
-      >
-        全部标记已读
-      </v-btn>
-    </v-card-title>
+  <v-container fluid class="pa-4">
+    <v-row justify="center">
+      <v-col cols="12" lg="10" xl="8">
+        <v-card elevation="2">
+          <v-card-item class="pa-4">
+            <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+              <div class="d-flex align-center">
+                <v-btn icon="mdi-arrow-left" variant="text" @click="router.back()" class="mr-2"></v-btn>
+                <v-card-title class="text-h5">我的通知</v-card-title>
+              </div>
+              <v-btn
+                v-if="unreadCount > 0"
+                variant="tonal"
+                color="primary"
+                @click="markAllRead"
+                prepend-icon="mdi-check-all"
+              >
+                全部标记已读
+              </v-btn>
+            </div>
+          </v-card-item>
 
-    <v-divider class="mb-4"></v-divider>
+          <v-divider></v-divider>
 
-    <v-list lines="three" v-if="notifications.length > 0">
-      <v-list-item
-        v-for="notification in notifications"
-        :key="notification.id"
-        :class="{ 'bg-blue-lighten-5': !notification.is_read }"
-        class="mb-2 rounded"
-      >
-        <template v-slot:prepend>
-          <v-avatar :color="getTypeColor(notification.type)" size="40">
-            <v-icon color="white">{{ getTypeIcon(notification.type) }}</v-icon>
-          </v-avatar>
-        </template>
+          <v-list lines="three" v-if="notifications.length > 0" class="pa-2">
+            <v-list-item
+              v-for="notification in notifications"
+              :key="notification.id"
+              :class="{ 'bg-blue-lighten-5': !notification.is_read }"
+              class="mb-2 rounded-lg"
+            >
+              <template v-slot:prepend>
+                <v-avatar :color="getTypeColor(notification.type)" size="48">
+                  <v-icon color="white">{{ getTypeIcon(notification.type) }}</v-icon>
+                </v-avatar>
+              </template>
 
-        <v-list-item-title class="font-weight-bold mb-1">
-          <v-chip size="small" :color="getTypeColor(notification.type)" class="mr-2">
-            {{ getTypeText(notification.type) }}
-          </v-chip>
-          {{ notification.title }}
-        </v-list-item-title>
+              <v-list-item-title class="font-weight-bold mb-2">
+                <v-chip size="small" :color="getTypeColor(notification.type)" class="mr-2">
+                  {{ getTypeText(notification.type) }}
+                </v-chip>
+                {{ notification.title }}
+              </v-list-item-title>
 
-        <v-list-item-subtitle class="text-body-2 mt-2">
-          {{ notification.content }}
-        </v-list-item-subtitle>
+              <v-list-item-subtitle class="text-body-2 mt-1">
+                {{ notification.content }}
+              </v-list-item-subtitle>
 
-        <v-list-item-subtitle class="text-caption text-medium-emphasis mt-2">
-          {{ formatDate(notification.created_at) }}
-        </v-list-item-subtitle>
+              <v-list-item-subtitle class="text-caption text-medium-emphasis mt-2">
+                <v-icon size="small" class="mr-1">mdi-clock</v-icon>
+                {{ formatDate(notification.created_at) }}
+              </v-list-item-subtitle>
 
-        <template v-slot:append>
-          <v-btn
-            v-if="!notification.is_read"
-            variant="text"
-            size="small"
-            color="primary"
-            @click="markRead(notification)"
-          >
-            标记已读
-          </v-btn>
-        </template>
-      </v-list-item>
-    </v-list>
+              <template v-slot:append>
+                <v-btn
+                  v-if="!notification.is_read"
+                  variant="tonal"
+                  size="small"
+                  color="primary"
+                  @click="markRead(notification)"
+                >
+                  标记已读
+                </v-btn>
+              </template>
+            </v-list-item>
+          </v-list>
 
-    <v-card-text v-else class="text-center py-12">
-      <v-icon size="64" color="grey-lighten-1">mdi-bell-off</v-icon>
-      <div class="text-h6 text-medium-emphasis mt-4">暂无通知</div>
-    </v-card-text>
+          <v-card-text v-else class="text-center py-12">
+            <v-icon size="80" color="grey-lighten-2">mdi-bell-off-outline</v-icon>
+            <div class="text-h6 text-medium-emphasis mt-4">暂无通知</div>
+            <div class="text-body-2 text-medium-emphasis mt-2">
+              暂无新的通知消息
+            </div>
+          </v-card-text>
 
-    <v-card-actions v-if="notifications.length > 0" class="justify-center">
-      <v-pagination
-        v-model="page"
-        :length="totalPages"
-        :total-visible="5"
-      ></v-pagination>
-    </v-card-actions>
-  </v-card>
+          <v-card-actions v-if="totalPages > 1" class="justify-center pb-4">
+            <v-pagination
+              v-model="page"
+              :length="totalPages"
+              :total-visible="5"
+              rounded="circle"
+            ></v-pagination>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script>
 import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '../api'
 
 export default {
   name: 'Notifications',
   setup() {
+    const router = useRouter()
     const notifications = ref([])
     const unreadCount = ref(0)
     const page = ref(1)

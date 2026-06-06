@@ -1,237 +1,281 @@
 <template>
-  <div v-if="article" class="article-page">
-    <div class="article-container">
-      <header class="article-header">
-        <h1 class="article-title">{{ article.title }}</h1>
-
-        <div class="article-meta">
-          <div class="author-info">
+  <v-row v-if="article">
+    <!-- 主内容区域 -->
+    <v-col cols="12" md="9">
+      <v-card class="article-card mb-4" variant="flat">
+        <!-- 文章头部 -->
+        <v-card-item>
+          <template v-slot:prepend>
+            <v-btn icon="mdi-arrow-left" variant="text" @click="router.back()"></v-btn>
+          </template>
+          <v-card-title class="text-h5 font-weight-bold">
+            {{ article.title }}
+          </v-card-title>
+          <v-card-subtitle class="d-flex align-center flex-wrap gap-2 mt-2">
             <UserAvatar
               :user="article.user"
-              :size="44"
-              :showUsername="false"
+              :size="36"
+              :showUsername="true"
               class="cursor-pointer"
               @click="goToUserProfile(article.user.id)"
             />
-            <div class="author-details">
-              <span class="author-name">{{ article.user.display_name }}</span>
-              <span class="meta-separator">·</span>
-              <span class="publish-date">{{ formatDate(article.created_at) }}</span>
-            </div>
-            <v-btn
-              v-if="token && currentUser && currentUser.id !== article.user_id"
-              variant="tonal"
-              size="small"
-              :color="followStatus.is_following ? 'default' : 'primary'"
-              class="follow-btn"
-              @click="handleFollow"
-            >
-              {{ followStatus.is_following ? '已关注' : followStatus.is_followed ? '回关' : '关注' }}
-            </v-btn>
-          </div>
-
-          <div class="article-tags">
-            <v-chip size="small" color="primary" variant="flat" class="category-chip">
-              <v-icon start size="14">mdi-folder</v-icon>
+            <span class="text-caption text-medium-emphasis">
+              {{ formatDate(article.created_at) }}
+            </span>
+            <v-chip size="small" color="primary" variant="flat" prepend-icon="mdi-folder">
               {{ article.category.name }}
             </v-chip>
-            <span class="view-count">
-              <v-icon size="14">mdi-eye</v-icon>
+            <span class="text-caption text-medium-emphasis">
+              <v-icon size="small" class="mr-1">mdi-eye</v-icon>
               {{ article.view_count }} 阅读
             </span>
+          </v-card-subtitle>
+        </v-card-item>
+
+        <v-divider></v-divider>
+
+        <!-- 文章内容 -->
+        <v-card-text class="pa-4">
+          <div ref="contentRef" @click="handleContentClick">
+            <MarkdownViewer :value="article.content" />
           </div>
-        </div>
+        </v-card-text>
 
-        <div v-if="canEdit" class="article-actions">
-          <v-btn variant="outlined" color="primary" size="small" :to="'/create?id=' + article.id">
-            <v-icon start size="16">mdi-pencil</v-icon>
-            编辑
-          </v-btn>
-          <v-btn variant="outlined" color="error" size="small" @click="deleteArticle">
-            <v-icon start size="16">mdi-delete</v-icon>
-            删除
-          </v-btn>
-        </div>
-      </header>
-
-      <div ref="contentRef" class="article-body" @click="handleContentClick">
-        <MarkdownViewer :value="article.content" />
-      </div>
-
-      <div v-if="article.voice_url" class="voice-player">
-        <div class="voice-player-header">
-          <v-icon size="20" color="primary">mdi-volume-high</v-icon>
-          <span class="voice-player-title">语音朗读</span>
-        </div>
-        <div class="voice-controls">
-          <v-btn
-            :icon="isPlaying ? 'mdi-pause' : 'mdi-play'"
-            variant="flat"
-            color="primary"
-            size="large"
-            @click="toggleVoicePlay"
-          />
-          <div class="voice-progress-wrapper">
-            <div class="voice-progress">
-              <div
-                class="voice-progress-bar"
-                :style="{ width: voiceProgress + '%' }"
+        <!-- 语音播放器 -->
+        <v-card-actions v-if="article.voice_url" class="px-4 pb-4">
+          <v-expand-transition>
+            <v-sheet class="voice-player pa-3 rounded-lg" color="grey-lighten-4">
+              <div class="d-flex align-center gap-3">
+                <v-btn
+                  :icon="isPlaying ? 'mdi-pause' : 'mdi-play'"
+                  variant="flat"
+                  color="primary"
+                  size="large"
+                  @click="toggleVoicePlay"
+                />
+                <div class="flex-grow-1">
+                  <div class="d-flex align-center justify-space-between mb-1">
+                    <span class="text-caption">
+                      <v-icon size="small" class="mr-1">mdi-volume-high</v-icon>
+                      语音朗读
+                    </span>
+                    <span class="text-caption text-medium-emphasis">
+                      {{ formatVoiceTime(currentVoiceTime) }} / {{ formatVoiceTime(voiceDuration) }}
+                    </span>
+                  </div>
+                  <v-progress-linear
+                    v-model="voiceProgress"
+                    color="primary"
+                    height="4"
+                    rounded
+                  />
+                </div>
+              </div>
+              <audio
+                ref="audioRef"
+                :src="article.voice_url"
+                @timeupdate="onVoiceTimeUpdate"
+                @loadedmetadata="onVoiceLoaded"
+                @ended="onVoiceEnded"
               />
-            </div>
-            <div class="voice-time">
-              {{ formatVoiceTime(currentVoiceTime) }} / {{ formatVoiceTime(voiceDuration) }}
-            </div>
-          </div>
-        </div>
-        <audio
-          ref="audioRef"
-          :src="article.voice_url"
-          @timeupdate="onVoiceTimeUpdate"
-          @loadedmetadata="onVoiceLoaded"
-          @ended="onVoiceEnded"
-        />
-      </div>
+            </v-sheet>
+          </v-expand-transition>
+        </v-card-actions>
 
-      <footer class="article-footer">
-        <div class="interaction-bar">
-          <v-btn
-            @click="toggleLike"
-            :color="liked ? 'primary' : 'default'"
-            :variant="liked ? 'flat' : 'outlined'"
-            class="action-btn"
-          >
-            <v-icon start>mdi-thumb-up</v-icon>
-            {{ article.like_count }}
-          </v-btn>
-          <v-btn
-            @click="toggleFavorite"
-            :color="favorited ? 'primary' : 'default'"
-            :variant="favorited ? 'flat' : 'outlined'"
-            class="action-btn"
-          >
-            <v-icon start>mdi-bookmark</v-icon>
-            {{ article.favorite_count || 0 }}
-          </v-btn>
-          <v-btn
-            @click="showShareDialog = true"
-            variant="outlined"
-            class="action-btn"
-          >
-            <v-icon start>mdi-share-variant</v-icon>
-            分享
-          </v-btn>
-        </div>
-      </footer>
+        <v-divider></v-divider>
 
-      <section class="comments-section">
-        <h3 class="section-title">
-          <v-icon class="mr-2">mdi-comment-text</v-icon>
-          评论 ({{ comments.length }})
-        </h3>
-
-        <div v-if="token" class="comment-form">
-          <UserAvatar :user="currentUser" :size="40" :showUsername="false" />
-          <div class="comment-input-wrapper">
-            <v-textarea
-              v-model="commentContent"
-              placeholder="写下你的评论..."
+        <!-- 互动栏 -->
+        <v-card-actions class="pa-4">
+          <div class="d-flex flex-wrap gap-2">
+            <v-btn
+              @click="toggleLike"
+              :color="liked ? 'primary' : 'default'"
+              :variant="liked ? 'flat' : 'outlined'"
+              prepend-icon="mdi-thumb-up"
+            >
+              {{ article.like_count }} 点赞
+            </v-btn>
+            <v-btn
+              @click="toggleFavorite"
+              :color="favorited ? 'primary' : 'default'"
+              :variant="favorited ? 'flat' : 'outlined'"
+              prepend-icon="mdi-bookmark"
+            >
+              {{ article.favorite_count || 0 }} 收藏
+            </v-btn>
+            <v-btn
+              @click="showShareDialog = true"
               variant="outlined"
-              rows="3"
-              hide-details
-              class="comment-textarea"
-            />
-            <div class="comment-form-actions">
-              <v-checkbox
-                v-model="commentIsAnonymous"
-                label="匿名评论"
-                color="primary"
-                hide-details
-                density="compact"
-                class="comment-anonymous-checkbox"
-              />
-              <v-btn color="primary" size="small" @click="submitComment" class="submit-comment-btn">
-                发表
-              </v-btn>
-            </div>
+              prepend-icon="mdi-share-variant"
+            >
+              分享
+            </v-btn>
           </div>
-        </div>
+          <v-spacer></v-spacer>
+          <div v-if="canEdit" class="d-flex gap-2">
+            <v-btn
+              variant="outlined"
+              color="primary"
+              size="small"
+              :to="'/create?id=' + article.id"
+              prepend-icon="mdi-pencil"
+            >
+              编辑
+            </v-btn>
+            <v-btn
+              variant="outlined"
+              color="error"
+              size="small"
+              @click="deleteArticle"
+              prepend-icon="mdi-delete"
+            >
+              删除
+            </v-btn>
+          </div>
+        </v-card-actions>
+      </v-card>
 
-        <div v-else class="login-hint">
-          <span>登录后参与评论</span>
-          <v-btn variant="text" color="primary" size="small" @click="router.push('/login')">登录</v-btn>
-        </div>
+      <!-- 评论区域 -->
+      <v-card variant="flat">
+        <v-card-item>
+          <template v-slot:prepend>
+            <v-icon>mdi-comment-text</v-icon>
+          </template>
+          <v-card-title>评论 ({{ comments.length }})</v-card-title>
+        </v-card-item>
 
-        <div class="comments-list">
-          <div v-for="comment in comments" :key="comment.id" class="comment-item">
-            <UserAvatar
-              :user="comment.user"
-              :size="40"
-              :showUsername="false"
-              class="cursor-pointer"
-              @click="goToUserProfile(comment.user.id)"
-            />
-            <div class="comment-content-wrapper">
-              <div class="comment-header">
-                <span class="comment-author">{{ comment.user.display_name || comment.user.username || '匿名用户' }}</span>
-                <span class="comment-time">{{ formatDate(comment.created_at) }}</span>
-              </div>
-              <p class="comment-text">{{ comment.content }}</p>
-              <div class="comment-actions">
-                <v-btn
-                  variant="text"
-                  size="x-small"
-                  @click="toggleCommentLike(comment)"
-                  :color="commentLiked[comment.id] ? 'primary' : 'default'"
-                >
-                  <v-icon start size="14">mdi-thumb-up</v-icon>
-                  {{ comment.like_count }}
-                </v-btn>
-                <v-btn
-                  variant="text"
-                  size="x-small"
-                  @click="showReplyForm(comment.id)"
-                  v-if="token"
-                >
-                  <v-icon start size="14">mdi-reply</v-icon>
-                  回复 ({{ comment.reply_count }})
-                </v-btn>
-                <v-btn
-                  variant="text"
-                  size="x-small"
-                  color="error"
-                  @click="deleteComment(comment.id, comment)"
-                  v-if="canDeleteComment(comment)"
-                >
-                  <v-icon start size="14">mdi-delete</v-icon>
-                  删除
-                </v-btn>
-              </div>
-
-              <div v-if="replyingTo === comment.id" class="reply-form">
-                <v-textarea
-                  v-model="replyContent"
-                  :placeholder="'回复 ' + (comment.user.display_name || comment.user.username || '匿名用户') + '...'"
-                  variant="outlined"
-                  rows="2"
+        <v-card-text v-if="token" class="pa-4">
+          <div class="d-flex gap-3">
+            <UserAvatar :user="currentUser" :size="40" :showUsername="false" />
+            <div class="flex-grow-1">
+              <v-textarea
+                v-model="commentContent"
+                placeholder="写下你的评论..."
+                variant="outlined"
+                rows="3"
+                hide-details
+              />
+              <div class="d-flex align-center justify-space-between mt-2">
+                <v-checkbox
+                  v-model="commentIsAnonymous"
+                  label="匿名评论"
+                  color="primary"
                   hide-details
                   density="compact"
                 />
-                <div class="reply-form-actions">
-                  <v-checkbox
-                    v-model="replyIsAnonymous"
-                    label="匿名回复"
-                    color="primary"
-                    hide-details
-                    density="compact"
-                    class="reply-anonymous-checkbox"
-                  />
-                  <v-btn size="small" color="primary" @click="submitReply(comment.id)">发送</v-btn>
-                  <v-btn size="small" variant="text" @click="cancelReply">取消</v-btn>
-                </div>
+                <v-btn color="primary" @click="submitComment" :disabled="!commentContent.trim()">
+                  发表
+                </v-btn>
               </div>
+            </div>
+          </div>
+        </v-card-text>
 
-              <div v-if="comment.replies && comment.replies.length > 0" class="replies-list">
-                <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
+        <v-card-text v-else class="pa-4 text-center">
+          <span class="text-medium-emphasis">登录后参与评论</span>
+          <v-btn variant="text" color="primary" size="small" @click="router.push('/login')" class="ml-2">
+            登录
+          </v-btn>
+        </v-card-text>
+
+        <v-divider></v-divider>
+
+        <!-- 评论列表 -->
+        <v-list class="pa-2">
+          <div v-for="comment in comments" :key="comment.id" class="comment-item mb-3">
+            <v-list-item class="px-3">
+              <template v-slot:prepend>
+                <UserAvatar
+                  :user="comment.user"
+                  :size="40"
+                  :showUsername="false"
+                  class="cursor-pointer"
+                  @click="goToUserProfile(comment.user.id)"
+                />
+              </template>
+
+              <v-list-item-title class="d-flex align-center gap-2 mb-1">
+                <span class="font-weight-medium">
+                  {{ comment.user.display_name || comment.user.username || '匿名用户' }}
+                </span>
+                <span class="text-caption text-medium-emphasis">
+                  {{ formatDate(comment.created_at) }}
+                </span>
+              </v-list-item-title>
+
+              <v-list-item-subtitle class="comment-text">
+                {{ comment.content }}
+              </v-list-item-subtitle>
+
+              <template v-slot:append>
+                <div class="d-flex flex-column align-end gap-1">
+                  <div class="d-flex gap-1">
+                    <v-btn
+                      variant="text"
+                      size="x-small"
+                      @click="toggleCommentLike(comment)"
+                      :color="commentLiked[comment.id] ? 'primary' : 'default'"
+                    >
+                      <v-icon size="14">mdi-thumb-up</v-icon>
+                      {{ comment.like_count }}
+                    </v-btn>
+                    <v-btn
+                      variant="text"
+                      size="x-small"
+                      @click="showReplyForm(comment.id)"
+                      v-if="token"
+                    >
+                      <v-icon size="14">mdi-reply</v-icon>
+                      回复
+                    </v-btn>
+                    <v-btn
+                      variant="text"
+                      size="x-small"
+                      color="error"
+                      @click="deleteComment(comment.id, comment)"
+                      v-if="canDeleteComment(comment)"
+                    >
+                      <v-icon size="14">mdi-delete</v-icon>
+                    </v-btn>
+                  </div>
+
+                  <!-- 回复表单 -->
+                  <v-expand-transition>
+                    <div v-if="replyingTo === comment.id" class="reply-form mt-2">
+                      <v-textarea
+                        v-model="replyContent"
+                        :placeholder="'回复 ' + (comment.user.display_name || comment.user.username || '匿名用户')"
+                        variant="outlined"
+                        rows="2"
+                        density="compact"
+                        hide-details
+                      />
+                      <div class="d-flex align-center gap-2 mt-2">
+                        <v-checkbox
+                          v-model="replyIsAnonymous"
+                          label="匿名"
+                          color="primary"
+                          hide-details
+                          density="compact"
+                        />
+                        <v-spacer></v-spacer>
+                        <v-btn size="small" color="primary" @click="submitReply(comment.id)">发送</v-btn>
+                        <v-btn size="small" variant="text" @click="cancelReply">取消</v-btn>
+                      </div>
+                    </div>
+                  </v-expand-transition>
+                </div>
+              </template>
+            </v-list-item>
+
+            <!-- 回复列表 -->
+            <v-list v-if="comment.replies && comment.replies.length > 0" class="ml-12 bg-grey-lighten-5 rounded">
+              <v-list-item
+                v-for="reply in comment.replies"
+                :key="reply.id"
+                class="py-2"
+              >
+                <template v-slot:prepend>
                   <UserAvatar
                     :user="reply.user"
                     :size="32"
@@ -239,44 +283,87 @@
                     class="cursor-pointer"
                     @click="goToUserProfile(reply.user.id)"
                   />
-                  <div class="reply-content-wrapper">
-                    <div class="comment-header">
-                      <span class="comment-author">{{ reply.user.display_name || reply.user.username || '匿名用户' }}</span>
-                      <span class="comment-time">{{ formatDate(reply.created_at) }}</span>
-                    </div>
-                    <p class="comment-text">{{ reply.content }}</p>
-                    <div class="comment-actions">
-                      <v-btn
-                        variant="text"
-                        size="x-small"
-                        @click="toggleCommentLike(reply)"
-                        :color="commentLiked[reply.id] ? 'primary' : 'default'"
-                        density="compact"
-                      >
-                        <v-icon start size="12">mdi-thumb-up</v-icon>
-                        {{ reply.like_count }}
-                      </v-btn>
-                      <v-btn
-                        variant="text"
-                        size="x-small"
-                        color="error"
-                        @click="deleteComment(reply.id, reply)"
-                        v-if="canDeleteComment(reply)"
-                        density="compact"
-                      >
-                        <v-icon start size="12">mdi-delete</v-icon>
-                        删除
-                      </v-btn>
-                    </div>
+                </template>
+
+                <v-list-item-title class="d-flex align-center gap-2 mb-1">
+                  <span class="font-weight-medium text-body-2">
+                    {{ reply.user.display_name || reply.user.username || '匿名用户' }}
+                  </span>
+                  <span class="text-caption text-medium-emphasis">
+                    {{ formatDate(reply.created_at) }}
+                  </span>
+                </v-list-item-title>
+
+                <v-list-item-subtitle class="text-body-2">
+                  {{ reply.content }}
+                </v-list-item-subtitle>
+
+                <template v-slot:append>
+                  <div class="d-flex gap-1">
+                    <v-btn
+                      variant="text"
+                      size="x-small"
+                      @click="toggleCommentLike(reply)"
+                      :color="commentLiked[reply.id] ? 'primary' : 'default'"
+                    >
+                      <v-icon size="12">mdi-thumb-up</v-icon>
+                      {{ reply.like_count }}
+                    </v-btn>
+                    <v-btn
+                      variant="text"
+                      size="x-small"
+                      color="error"
+                      @click="deleteComment(reply.id, reply)"
+                      v-if="canDeleteComment(reply)"
+                    >
+                      <v-icon size="12">mdi-delete</v-icon>
+                    </v-btn>
                   </div>
-                </div>
+                </template>
+              </v-list-item>
+            </v-list>
+          </div>
+        </v-list>
+      </v-card>
+    </v-col>
+
+    <!-- 侧边栏 -->
+    <v-col cols="12" md="3" class="d-none d-md-block">
+      <v-card variant="flat" class="mb-4">
+        <v-card-item>
+          <v-card-title class="d-flex align-center gap-2">
+            <UserAvatar
+              :user="article.user"
+              :size="48"
+              :showUsername="false"
+              class="cursor-pointer"
+              @click="goToUserProfile(article.user.id)"
+            />
+            <div>
+              <div class="text-subtitle-1 font-weight-medium">
+                {{ article.user.display_name }}
+              </div>
+              <div class="text-caption text-medium-emphasis">
+                {{ article.user.signature || '暂无签名' }}
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-    </div>
+          </v-card-title>
+        </v-card-item>
+        <v-card-actions v-if="token && currentUser && currentUser.id !== article.user_id">
+          <v-btn
+            variant="tonal"
+            :color="followStatus.is_following ? 'default' : 'primary'"
+            block
+            @click="handleFollow"
+          >
+            <v-icon class="mr-1">{{ followStatus.is_following ? 'mdi-check' : 'mdi-plus' }}</v-icon>
+            {{ followStatus.is_following ? '已关注' : followStatus.is_followed ? '回关' : '关注' }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-col>
 
+    <!-- 分享对话框 -->
     <v-dialog v-model="showShareDialog" max-width="400">
       <v-card>
         <v-card-title class="text-h6">分享文章</v-card-title>
@@ -302,10 +389,12 @@
       </v-card>
     </v-dialog>
 
+    <!-- 图片查看器 -->
     <ImageViewer v-if="showImageViewer" :url="currentImageUrl" @close="closeImageViewer" />
-  </div>
+  </v-row>
 
-  <div v-else class="loading-container">
+  <!-- 加载状态 -->
+  <div v-else class="d-flex justify-center align-center" style="min-height: 60vh;">
     <v-progress-circular indeterminate color="primary" size="48" />
   </div>
 </template>
@@ -815,312 +904,16 @@ export default {
 </script>
 
 <style scoped>
-.article-page {
-  width: 100%;
-  min-height: 100vh;
-  margin: 0;
-  padding: 8px;
-  background: #f5f7fb;
+.article-card {
+  border-radius: 12px;
 }
 
-.article-container {
-  width: 100%;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.05);
-}
-
-.article-header {
-  padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.article-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1a1a1a;
-  line-height: 1.4;
-  margin: 0 0 12px 0;
-}
-
-.article-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.author-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.author-details {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.author-name {
-  font-weight: 500;
-  color: #333;
-  font-size: 14px;
-}
-
-.meta-separator {
-  color: #ccc;
-}
-
-.publish-date {
-  font-size: 13px;
-  color: #888;
-}
-
-.follow-btn {
-  margin-left: 8px;
-}
-
-.article-tags {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.category-chip {
-  font-size: 12px;
-}
-
-.view-count {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  color: #888;
-}
-
-.article-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.article-body {
-  padding: 16px;
-  line-height: 1.9;
-}
-
-.article-footer {
-  padding: 12px 16px;
-  border-top: 1px solid #f0f0f0;
-  background: #fafafa;
-}
-
-.interaction-bar {
-  display: flex;
-  gap: 8px;
-}
-
-.action-btn {
-  min-width: 80px;
-}
-
-.comments-section {
-  padding: 16px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 12px 0;
-}
-
-.comment-form {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.comment-input-wrapper {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.comment-textarea {
-  flex: 1;
-}
-
-.comment-form-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.submit-comment-btn {
-  margin-left: auto;
-}
-
-.comment-anonymous-checkbox {
-  flex-shrink: 0;
-}
-
-.reply-anonymous-checkbox {
-  flex-shrink: 0;
-  margin-right: auto;
-}
-
-.login-hint {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: #f5f5f5;
-  border-radius: 4px;
-  color: #666;
-  margin-bottom: 12px;
-}
-
-.comments-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.comment-item {
-  display: flex;
-  gap: 8px;
-}
-
-.comment-content-wrapper {
-  flex: 1;
-}
-
-.comment-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-.comment-author {
-  font-weight: 500;
-  color: #333;
-  font-size: 13px;
-}
-
-.comment-time {
-  font-size: 11px;
-  color: #999;
+.cursor-pointer {
+  cursor: pointer;
 }
 
 .comment-text {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #444;
-}
-
-.comment-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.reply-form {
-  margin-top: 8px;
-  padding: 8px;
-  background: #f5f5f5;
-  border-radius: 4px;
-}
-
-.reply-form-actions {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.replies-list {
-  margin-top: 8px;
-  padding-left: 12px;
-  border-left: 2px solid #e8e8e8;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.reply-item {
-  display: flex;
-  gap: 8px;
-}
-
-.reply-content-wrapper {
-  flex: 1;
-}
-
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-}
-
-.voice-player {
-  padding: 16px;
-  margin: 0 16px 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.voice-player-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.voice-player-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-}
-
-.voice-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.voice-progress-wrapper {
-  flex: 1;
-}
-
-.voice-progress {
-  height: 4px;
-  background: #e9ecef;
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.voice-progress-bar {
-  height: 100%;
-  background: #6750A4;
-  transition: width 0.1s linear;
-}
-
-.voice-time {
-  font-size: 12px;
-  color: #666;
-  margin-top: 4px;
-}
-
-.voice-volume-slider {
-  width: 100px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>

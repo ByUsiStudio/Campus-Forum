@@ -1,5 +1,6 @@
 <template>
   <div class="article-list">
+    <!-- 加载状态 -->
     <div v-if="loading" class="article-grid">
       <v-skeleton-loader
         v-for="i in 6"
@@ -8,16 +9,22 @@
         class="article-skeleton"
       />
     </div>
-    <div v-else-if="articles.length === 0" class="text-center pa-8 text-medium-emphasis">
-      <v-icon size="48" class="mb-2">mdi-text-box-outline</v-icon>
-      <div>暂无文章</div>
+    
+    <!-- 空状态 -->
+    <div v-else-if="articles.length === 0" class="text-center pa-12">
+      <v-icon size="80" color="grey-lighten-2" class="mb-4">mdi-text-box-outline</v-icon>
+      <div class="text-h6 text-medium-emphasis mb-2">暂无文章</div>
+      <div class="text-body-2 text-medium-emphasis">快来发布第一篇文章吧</div>
     </div>
+    
+    <!-- 文章列表 -->
     <div v-else class="article-grid">
       <v-card
         v-for="article in articles"
         :key="article.id"
         class="article-card"
         variant="flat"
+        rounded="lg"
       >
         <router-link
           :to="'/article/' + article.id"
@@ -25,15 +32,17 @@
         >
           <div class="article-header">
             <UserAvatar :user="article.user" :size="40" />
-            <div class="article-meta">
-              <div class="article-time text-caption text-medium-emphasis">
+            <div class="article-meta flex-grow-1">
+              <div class="text-body-2 font-weight-medium">{{ article.user?.display_name || article.user?.username }}</div>
+              <div class="text-caption text-medium-emphasis">
                 {{ formatDate(article.created_at) }}
               </div>
             </div>
             <v-chip
               v-if="article.category?.name"
               size="x-small"
-              :style="{ backgroundColor: article.category.color + '20', color: article.category.color }"
+              :color="article.category.color"
+              variant="tonal"
             >
               {{ article.category.name }}
             </v-chip>

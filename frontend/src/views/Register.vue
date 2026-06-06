@@ -1,82 +1,98 @@
 <template>
-  <div class="d-flex justify-center align-center" style="min-height: 80vh;">
-    <v-card width="100%" max-width="450" class="pa-6">
-      <v-card-title class="text-h5 text-center pb-4" style="color: rgb(var(--v-theme-primary));">
-        {{ isInit ? '初始化系统' : '注册新账号' }}
-      </v-card-title>
-      
-      <v-card-text>
-        <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
-        <v-alert v-if="success" type="success" variant="tonal" class="mb-4">{{ success }}</v-alert>
-        
-        <v-form @submit.prevent="handleRegister">
-          <v-text-field
-            v-model="form.username"
-            label="用户名"
-            variant="outlined"
-            required
-            prepend-inner-icon="mdi-account"
-            class="mb-4"
-          ></v-text-field>
+  <v-container fluid class="fill-height bg-grey-lighten-4">
+    <v-row justify="center" align="center">
+      <v-col cols="12" sm="8" md="5" lg="4">
+        <v-card class="pa-6" elevation="2">
+          <div class="text-center mb-6">
+            <v-icon size="64" color="primary" class="mb-4">mdi-account-plus</v-icon>
+            <v-card-title class="text-h5 font-weight-bold" style="color: rgb(var(--v-theme-primary));">
+              {{ isInit ? '初始化系统' : '注册新账号' }}
+            </v-card-title>
+            <v-card-subtitle class="text-body-2 text-medium-emphasis">
+              {{ isInit ? '请创建管理员账号以开始使用' : '加入我们，开始分享' }}
+            </v-card-subtitle>
+          </div>
           
-          <v-text-field
-            v-model="form.qq_number"
-            label="QQ号"
-            variant="outlined"
-            required
-            prepend-inner-icon="mdi-qqchat"
-            class="mb-4"
-            hint="头像将默认使用QQ头像"
-          ></v-text-field>
-          
-          <v-text-field
-            v-model="form.display_name"
-            label="显示名称"
-            variant="outlined"
-            required
-            prepend-inner-icon="mdi-card-account-details"
-            class="mb-4"
-          ></v-text-field>
-          
-          <v-text-field
-            v-model="form.password"
-            label="密码"
-            variant="outlined"
-            type="password"
-            required
-            minlength="6"
-            prepend-inner-icon="mdi-lock"
-            class="mb-4"
-          ></v-text-field>
-          
-          <v-text-field
-            v-if="!isInit"
-            v-model="confirmPassword"
-            label="确认密码"
-            variant="outlined"
-            type="password"
-            required
-            prepend-inner-icon="mdi-lock-check"
-            class="mb-4"
-          ></v-text-field>
-          
-          <v-btn
-            type="submit"
-            color="primary"
-            block
-            size="large"
-            :loading="loading"
-          >
-            {{ loading ? '处理中...' : (isInit ? '初始化系统' : '注册') }}
-          </v-btn>
-        </v-form>
-        
-        <div class="text-center mt-4 text-body-2" v-if="!isInit">
-          已有账号？ <router-link to="/login" class="text-primary">立即登录</router-link>
-        </div>
-      </v-card-text>
-    </v-card>
-  </div>
+          <v-card-text>
+            <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
+            <v-alert v-if="success" type="success" variant="tonal" class="mb-4">{{ success }}</v-alert>
+            
+            <v-form @submit.prevent="handleRegister">
+              <v-text-field
+                v-model="form.username"
+                label="用户名"
+                variant="outlined"
+                required
+                prepend-inner-icon="mdi-account"
+                class="mb-4"
+                :rules="[v => !!v || '请输入用户名']"
+              ></v-text-field>
+              
+              <v-text-field
+                v-model="form.qq_number"
+                label="QQ号"
+                variant="outlined"
+                required
+                prepend-inner-icon="mdi-qqchat"
+                class="mb-4"
+                hint="头像将默认使用QQ头像"
+                persistent-hint
+              ></v-text-field>
+              
+              <v-text-field
+                v-model="form.display_name"
+                label="显示名称"
+                variant="outlined"
+                required
+                prepend-inner-icon="mdi-card-account-details"
+                class="mb-4"
+              ></v-text-field>
+              
+              <v-text-field
+                v-model="form.password"
+                label="密码"
+                variant="outlined"
+                type="password"
+                required
+                prepend-inner-icon="mdi-lock"
+                class="mb-4"
+                hint="至少6个字符"
+                persistent-hint
+              ></v-text-field>
+              
+              <v-text-field
+                v-if="!isInit"
+                v-model="confirmPassword"
+                label="确认密码"
+                variant="outlined"
+                type="password"
+                required
+                prepend-inner-icon="mdi-lock-check"
+                class="mb-4"
+              ></v-text-field>
+              
+              <v-btn
+                type="submit"
+                color="primary"
+                block
+                size="large"
+                :loading="loading"
+                class="mb-4"
+              >
+                <v-icon start>{{ isInit ? 'mdi-cog' : 'mdi-account-plus' }}</v-icon>
+                {{ loading ? '处理中...' : (isInit ? '初始化系统' : '注册') }}
+              </v-btn>
+            </v-form>
+            
+            <div v-if="!isInit" class="text-center text-body-2">
+              <span class="text-medium-emphasis">已有账号？</span>
+              <router-link to="/login" class="text-primary font-weight-medium ml-1">立即登录</router-link>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script>

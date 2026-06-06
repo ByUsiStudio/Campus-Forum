@@ -1,99 +1,112 @@
 <template>
-  <div class="standalone-chat">
-    <v-card class="chat-container">
-      <v-card-title class="chat-header d-flex align-center gap-2">
-        <v-btn icon variant="text" size="small" @click="goBack">
-          <v-icon>mdi-arrow-left</v-icon>
-        </v-btn>
-        <div style="flex: 1; min-width: 0;">
-          <UserAvatar :user="currentUser" :size="32" />
-        </div>
-        <v-btn
-          v-if="!followStatus.is_following"
-          variant="outlined"
-          color="primary"
-          size="small"
-          @click="handleFollow"
-        >
-          关注
-        </v-btn>
-        <v-btn
-          v-else
-          variant="text"
-          color="secondary"
-          size="small"
-          @click="handleUnfollow"
-        >
-          取消关注
-        </v-btn>
-      </v-card-title>
-
-      <v-card-text class="chat-messages" ref="messagesContainer">
-        <div
-          v-for="message in sortedMessages"
-          :key="message.id"
-          class="message-wrapper"
-          :class="{ 'justify-end': isOwnMessage(message) }"
-        >
-          <template v-if="!isOwnMessage(message)">
-            <UserAvatar :user="currentUser" :size="32" class="message-avatar" />
-            <div class="message-content">
-              <div class="text-caption text-medium-emphasis mb-1">{{ message.sender_name }}</div>
-              <v-card class="bg-white message-card">
-                <v-card-text class="pa-2 pa-sm-3">
-                  {{ message.content }}
-                  <div class="text-caption mt-1 text-medium-emphasis">
-                    {{ formatTime(message.created_at) }}
-                  </div>
-                </v-card-text>
-              </v-card>
+  <v-container fluid class="fill-height pa-0">
+    <v-row no-gutters class="fill-height">
+      <v-col cols="12" class="fill-height">
+        <v-card class="fill-height d-flex flex-column" elevation="0">
+          <v-card-item class="chat-header pa-2">
+            <div class="d-flex align-center gap-2">
+              <v-btn icon variant="text" size="small" @click="goBack">
+                <v-icon>mdi-arrow-left</v-icon>
+              </v-btn>
+              <UserAvatar :user="currentUser" :size="36" />
+              <div class="text-body-1 font-weight-bold flex-grow-1">{{ currentUser?.display_name }}</div>
+              <v-btn
+                v-if="!followStatus.is_following"
+                variant="tonal"
+                color="primary"
+                size="small"
+                @click="handleFollow"
+              >
+                <v-icon start size="small">mdi-plus</v-icon>
+                关注
+              </v-btn>
+              <v-btn
+                v-else
+                variant="text"
+                color="secondary"
+                size="small"
+                @click="handleUnfollow"
+              >
+                取消关注
+              </v-btn>
             </div>
-          </template>
+          </v-card-item>
 
-          <template v-else>
-            <div class="message-content">
-              <v-card class="bg-primary text-white message-card">
-                <v-card-text class="pa-2 pa-sm-3">
-                  {{ message.content }}
-                  <div class="text-caption mt-1 text-white opacity-70">
-                    {{ formatTime(message.created_at) }}
-                  </div>
-                </v-card-text>
-              </v-card>
+          <v-divider></v-divider>
+
+          <v-card-text class="chat-messages flex-grow-1" ref="messagesContainer">
+            <div
+              v-for="message in sortedMessages"
+              :key="message.id"
+              class="message-wrapper"
+              :class="{ 'justify-end': isOwnMessage(message) }"
+            >
+              <template v-if="!isOwnMessage(message)">
+                <UserAvatar :user="currentUser" :size="36" class="message-avatar" />
+                <div class="message-content">
+                  <div class="text-caption text-medium-emphasis mb-1">{{ message.sender_name }}</div>
+                  <v-card class="bg-white message-card" variant="elevated">
+                    <v-card-text class="pa-2 pa-sm-3 text-body-2">
+                      {{ message.content }}
+                      <div class="text-caption mt-1 text-medium-emphasis">
+                        {{ formatTime(message.created_at) }}
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </div>
+              </template>
+
+              <template v-else>
+                <div class="message-content">
+                  <v-card class="bg-primary" variant="elevated">
+                    <v-card-text class="pa-2 pa-sm-3 text-body-2 text-white">
+                      {{ message.content }}
+                      <div class="text-caption mt-1 text-white opacity-70">
+                        {{ formatTime(message.created_at) }}
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </div>
+                <UserAvatar :user="myUser" :size="36" class="message-avatar" />
+              </template>
             </div>
-            <UserAvatar :user="myUser" :size="32" class="message-avatar" />
-          </template>
-        </div>
 
-        <div v-if="!canSendMore && !followStatus.mutual" class="text-center text-warning mt-4">
-          <v-icon size="small">mdi-alert-circle</v-icon>
-          <span class="text-caption">未互相关注，仅能发送2条消息</span>
-        </div>
-      </v-card-text>
+            <div v-if="!canSendMore && !followStatus.mutual" class="text-center mt-4">
+              <v-alert type="warning" variant="tonal" density="compact">
+                <v-icon size="small" class="mr-1">mdi-alert-circle</v-icon>
+                未互相关注，仅能发送2条消息
+              </v-alert>
+            </div>
+          </v-card-text>
 
-      <v-card-actions class="chat-input">
-        <v-text-field
-          v-model="messageInput"
-          label="输入消息..."
-          variant="outlined"
-          density="compact"
-          hide-details
-          class="flex-grow-1"
-          @keydown.enter="sendMessage"
-          :disabled="!canSendMore"
-        ></v-text-field>
-        <v-btn
-          color="primary"
-          icon
-          @click="sendMessage"
-          :disabled="!messageInput.trim() || !canSendMore"
-          class="ml-2"
-        >
-          <v-icon>mdi-send</v-icon>
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </div>
+          <v-divider></v-divider>
+
+          <v-card-actions class="chat-input pa-2">
+            <v-text-field
+              v-model="messageInput"
+              placeholder="输入消息..."
+              variant="outlined"
+              density="compact"
+              hide-details
+              class="flex-grow-1"
+              @keydown.enter="sendMessage"
+              :disabled="!canSendMore"
+              maxlength="500"
+            ></v-text-field>
+            <v-btn
+              color="primary"
+              icon
+              @click="sendMessage"
+              :disabled="!messageInput.trim() || !canSendMore"
+              class="ml-2"
+            >
+              <v-icon>mdi-send</v-icon>
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script>
