@@ -1,61 +1,114 @@
 <template>
   <v-app>
-    <!-- 根据路由meta决定是否显示顶部栏 -->
-    <v-app-bar v-if="!hideAppBar" elevation="2" color="primary" scroll-behavior="collapse">
-      <v-app-bar-nav-icon v-if="isMobile" @click="drawer = !drawer"></v-app-bar-nav-icon>
+    <!-- 主要内容区域 -->
+    <v-main :class="{ 'pb-navigation': !hideAppBar && isMobile }" class="bg-grey-lighten-4">
+      <v-container v-if="!hideAppBar" fluid class="pa-4">
+        <router-view />
+      </v-container>
+      <router-view v-else />
+    </v-main>
+
+    <!-- 移动端底部导航栏 -->
+    <v-bottom-navigation v-if="!hideAppBar && isMobile && !isAdminPage" grow color="primary" app>
+      <v-btn to="/" value="home">
+        <v-icon>mdi-home</v-icon>
+        <span>首页</span>
+      </v-btn>
       
+      <v-btn to="/create" value="create" v-if="token">
+        <v-icon>mdi-plus-circle</v-icon>
+        <span>发布</span>
+      </v-btn>
+      
+      <v-btn :to="token ? '/profile' : '/login'" :value="token ? 'profile' : 'login'">
+        <v-icon>mdi-account</v-icon>
+        <span>{{ token ? '我的' : '登录' }}</span>
+      </v-btn>
+    </v-bottom-navigation>
+
+    <!-- 移动端管理后台底部导航栏 -->
+    <v-bottom-navigation v-if="!hideAppBar && isMobile && isAdminPage" grow color="primary" app>
+      <v-btn :to="{ name: 'AdminDashboard' }" value="dashboard">
+        <v-icon>mdi-view-dashboard</v-icon>
+        <span>控制台</span>
+      </v-btn>
+      
+      <v-btn :to="{ name: 'AdminUsers' }" value="users">
+        <v-icon>mdi-account-multiple</v-icon>
+        <span>用户管理</span>
+      </v-btn>
+      
+      <v-btn :to="{ name: 'AdminArticles' }" value="articles">
+        <v-icon>mdi-file-document</v-icon>
+        <span>文章管理</span>
+      </v-btn>
+      
+      <v-btn :to="{ name: 'AdminSettings' }" value="settings">
+        <v-icon>mdi-settings</v-icon>
+        <span>系统设置</span>
+      </v-btn>
+    </v-bottom-navigation>
+
+    <!-- 桌面端顶部导航栏 -->
+    <v-app-bar v-if="!hideAppBar && !isMobile" elevation="2" color="primary" scroll-behavior="collapse">
       <v-app-bar-title class="d-flex align-center">
-        <v-icon class="mr-2">mdi-forum</v-icon>
-        <router-link to="/" class="logo-link">{{ siteTitle }}</router-link>
+        <v-icon class="mr-2">{{ isAdminPage ? 'mdi-shield-crown' : 'mdi-forum' }}</v-icon>
+        <router-link :to="isAdminPage ? '/admin' : '/'" class="logo-link">{{ isAdminPage ? '管理后台' : siteTitle }}</router-link>
       </v-app-bar-title>
 
       <v-spacer></v-spacer>
 
-      <!-- 桌面端导航 -->
-      <template v-if="!isMobile" v-slot:append>
-        <div class="nav-links">
+      <template v-slot:append>
+        <div class="nav-links" v-if="!isAdminPage">
           <v-btn variant="text" to="/" color="white" prepend-icon="mdi-home">首页</v-btn>
           <v-btn variant="text" to="/login" v-if="!token" color="white" prepend-icon="mdi-login">登录</v-btn>
           <v-btn variant="text" to="/register" v-if="!token" color="white" prepend-icon="mdi-account-plus">注册</v-btn>
           <v-btn variant="text" to="/create" v-if="token" color="white" prepend-icon="mdi-pencil">写文章</v-btn>
-          <v-btn variant="text" to="/profile" v-if="token" color="white" prepend-icon="mdi-account">个人中心</v-btn>
           <NotificationBell v-if="token" />
+          <v-btn variant="text" to="/profile" v-if="token" color="white" prepend-icon="mdi-account">我的</v-btn>
           <v-btn variant="text" to="/admin" v-if="isAdmin" color="error" prepend-icon="mdi-shield-crown">管理后台</v-btn>
           <v-btn variant="text" v-if="token" @click="logout" color="white" prepend-icon="mdi-logout">退出</v-btn>
         </div>
-      </template>
-
-      <!-- 移动端导航 -->
-      <template v-else v-slot:append>
-        <NotificationBell v-if="token" />
+        <div class="nav-links" v-else>
+          <v-btn variant="text" :to="{ name: 'AdminDashboard' }" color="white" prepend-icon="mdi-view-dashboard">控制台</v-btn>
+          <v-btn variant="text" :to="{ name: 'AdminUsers' }" color="white" prepend-icon="mdi-account-multiple">用户管理</v-btn>
+          <v-btn variant="text" :to="{ name: 'AdminArticles' }" color="white" prepend-icon="mdi-file-document">文章管理</v-btn>
+          <v-btn variant="text" :to="{ name: 'AdminSettings' }" color="white" prepend-icon="mdi-settings">系统设置</v-btn>
+          <v-btn variant="text" to="/" color="white" prepend-icon="mdi-home">返回首页</v-btn>
+        </div>
       </template>
     </v-app-bar>
 
-    <!-- 移动端抽屉导航 -->
-    <v-navigation-drawer v-if="!hideAppBar" v-model="drawer" temporary color="surface">
+    <!-- 移动端抽屉导航（桌面端不使用） -->
+    <v-navigation-drawer v-if="!hideAppBar && isMobile" v-model="drawer" temporary color="surface">
       <v-list nav density="comfortable">
-        <v-list-item to="/" @click="drawer = false" prepend-icon="mdi-home" title="首页"></v-list-item>
-        <template v-if="!token">
-          <v-list-item to="/login" @click="drawer = false" prepend-icon="mdi-login" title="登录"></v-list-item>
-          <v-list-item to="/register" @click="drawer = false" prepend-icon="mdi-account-plus" title="注册"></v-list-item>
+        <template v-if="!isAdminPage">
+          <v-list-item to="/" @click="drawer = false" prepend-icon="mdi-home" title="首页"></v-list-item>
+          <template v-if="!token">
+            <v-list-item to="/login" @click="drawer = false" prepend-icon="mdi-login" title="登录"></v-list-item>
+            <v-list-item to="/register" @click="drawer = false" prepend-icon="mdi-account-plus" title="注册"></v-list-item>
+          </template>
+          <template v-if="token">
+            <v-list-item to="/create" @click="drawer = false" prepend-icon="mdi-pencil" title="写文章"></v-list-item>
+            <v-list-item to="/profile" @click="drawer = false" prepend-icon="mdi-account" title="我的"></v-list-item>
+            <v-list-item v-if="isAdmin" to="/admin" @click="drawer = false" prepend-icon="mdi-shield-crown" title="管理后台" class="text-error"></v-list-item>
+            <v-divider class="my-2"></v-divider>
+            <v-list-item @click="logout" prepend-icon="mdi-logout" title="退出" class="text-secondary"></v-list-item>
+          </template>
         </template>
-        <template v-if="token">
-          <v-list-item to="/create" @click="drawer = false" prepend-icon="mdi-pencil" title="写文章"></v-list-item>
-          <v-list-item to="/profile" @click="drawer = false" prepend-icon="mdi-account" title="个人中心"></v-list-item>
-          <v-list-item v-if="isAdmin" to="/admin" @click="drawer = false" prepend-icon="mdi-shield-crown" title="管理后台" class="text-error"></v-list-item>
+        <template v-else>
+          <v-list-item :to="{ name: 'AdminDashboard' }" @click="drawer = false" prepend-icon="mdi-view-dashboard" title="控制台"></v-list-item>
+          <v-list-item :to="{ name: 'AdminUsers' }" @click="drawer = false" prepend-icon="mdi-account-multiple" title="用户管理"></v-list-item>
+          <v-list-item :to="{ name: 'AdminArticles' }" @click="drawer = false" prepend-icon="mdi-file-document" title="文章管理"></v-list-item>
+          <v-list-item :to="{ name: 'AdminSettings' }" @click="drawer = false" prepend-icon="mdi-settings" title="系统设置"></v-list-item>
           <v-divider class="my-2"></v-divider>
+          <v-list-item to="/" @click="drawer = false" prepend-icon="mdi-home" title="返回首页"></v-list-item>
           <v-list-item @click="logout" prepend-icon="mdi-logout" title="退出" class="text-secondary"></v-list-item>
         </template>
       </v-list>
     </v-navigation-drawer>
 
-    <!-- 根据路由meta决定是否使用v-main和v-container包装 -->
-    <v-main v-if="!hideAppBar" class="bg-grey-lighten-4">
-      <v-container fluid class="pa-4">
-        <router-view />
-      </v-container>
-    </v-main>
-
+    <!-- 页脚 -->
     <v-footer v-if="!hideAppBar" class="open-source-footer bg-transparent">
       <v-container fluid>
         <v-row justify="center" align="center">
@@ -94,9 +147,6 @@
         </v-row>
       </v-container>
     </v-footer>
-
-    <!-- 独立页面直接渲染router-view -->
-    <router-view v-else />
 
     <!-- 全局弹窗 -->
     <AppModal
@@ -140,7 +190,6 @@ export default {
     const route = useRoute()
     const token = ref(localStorage.getItem('token'))
     const user = ref(null)
-    const chatUnreadCount = ref(0)
     const drawer = ref(false)
     const isMobile = ref(false)
     const hideAppBar = ref(false)
@@ -149,7 +198,6 @@ export default {
     const frontendVersion = ref(typeof __FRONTEND_VERSION__ !== 'undefined' ? __FRONTEND_VERSION__ : 'unknown')
     const icpNumber = ref(null)
     const publicSecurityNumber = ref(null)
-    let pollInterval = null
     
     // 检测屏幕宽度
     const checkMobile = () => {
@@ -165,19 +213,9 @@ export default {
       return user.value && (user.value.role === 'admin' || user.value.role === 'system' || user.value.role === 'Admin' || user.value.role === 'System')
     })
     
-    const loadChatUnreadCount = async () => {
-      if (!token.value) return
-      try {
-        const response = await api.get('/chat/unread-count')
-        chatUnreadCount.value = response.data.unread_count || 0
-      } catch (error) {
-        console.error('加载未读消息数量失败', error)
-      }
-    }
-    
-    const goToChat = () => {
-      router.push('/chat')
-    }
+    const isAdminPage = computed(() => {
+      return route.path.startsWith('/admin')
+    })
     
     const logout = () => {
       localStorage.removeItem('token')
@@ -245,12 +283,8 @@ export default {
         user.value = JSON.parse(storedUser)
       }
       loadUser()
-      loadChatUnreadCount()
       loadVersion()
       loadSiteTitle()
-
-      // 每分钟刷新未读消息数量
-      pollInterval = setInterval(loadChatUnreadCount, 60000)
 
       // 监听登录/登出事件
       window.addEventListener('user-updated', () => {
@@ -278,12 +312,11 @@ export default {
       token,
       user,
       isAdmin,
+      isAdminPage,
       logout,
       modalState,
       handleConfirm,
       handleCancel,
-      chatUnreadCount,
-      goToChat,
       isMobile,
       drawer,
       backendVersion,
@@ -335,5 +368,10 @@ export default {
 
 .open-source-link:hover {
   text-decoration: underline;
+}
+
+/* 移动端底部导航栏 padding */
+.pb-navigation {
+  padding-bottom: 56px !important;
 }
 </style>

@@ -169,6 +169,29 @@
     </v-col>
   </v-row>
 
+  <!-- 未登录提示 -->
+  <v-container v-else-if="!isLoggedIn" fluid class="pa-4 fill-height">
+    <v-row justify="center" align="center" class="fill-height">
+      <v-col cols="12" sm="8" md="6" lg="4">
+        <v-card class="text-center pa-8" elevation="2">
+          <v-icon size="80" color="grey-lighten-1" class="mb-4">mdi-account-lock</v-icon>
+          <div class="text-h6 mb-4">登录后可查看个人中心</div>
+          <div class="text-body-2 text-medium-emphasis mb-6">
+            登录后您可以编辑个人资料、查看发布的文章、与其他人互动
+          </div>
+          <div class="d-flex gap-2 justify-center">
+            <v-btn color="primary" to="/login" prepend-icon="mdi-login">
+              登录
+            </v-btn>
+            <v-btn variant="outlined" to="/register" prepend-icon="mdi-account-plus">
+              注册
+            </v-btn>
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
+
   <!-- 加载状态 -->
   <div v-else class="d-flex justify-center align-center" style="min-height: 60vh;">
     <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
@@ -189,6 +212,7 @@ export default {
   setup() {
     const route = useRoute()
     const router = useRouter()
+    const token = ref(localStorage.getItem('token'))
     const user = ref(null)
     const myArticles = ref([])
     const editForm = ref({
@@ -208,8 +232,11 @@ export default {
     const isOwnProfile = computed(() => {
       return !targetUserId.value || (currentUser.value && currentUser.value.id === user.value?.id)
     })
+    const isLoggedIn = computed(() => !!token.value)
 
     const loadProfile = async () => {
+      if (!token.value && !targetUserId.value) return
+      
       try {
         if (targetUserId.value) {
           const response = await api.get(`/users/${targetUserId.value}`)
@@ -222,7 +249,11 @@ export default {
         }
       } catch (error) {
         console.error('加载用户信息失败', error)
-        router.push('/')
+        if (targetUserId.value) {
+          // 查看他人资料失败，保持加载状态
+        } else {
+          router.push('/')
+        }
       }
     }
 
@@ -411,7 +442,8 @@ export default {
       followingCount,
       followersCount,
       articleCount,
-      isOwnProfile
+      isOwnProfile,
+      isLoggedIn
     }
   }
 }

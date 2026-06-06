@@ -283,14 +283,14 @@ const toggleDrawer = () => {
 
 const checkMobile = () => {
   const width = window.innerWidth
-  isMobile.value = width < 960
+  isMobile.value = width < 768
   
   // 根据屏幕大小调整侧边栏状态
   if (width < 600) {
     // 小屏幕默认收起
     sidebarCollapsed.value = false
     drawerOpen.value = false
-  } else if (width < 960) {
+  } else if (width < 768) {
     // 中等屏幕
     sidebarCollapsed.value = false
   } else if (width < 1280) {

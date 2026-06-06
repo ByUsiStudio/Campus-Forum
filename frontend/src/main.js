@@ -58,8 +58,6 @@ import Admin from './views/Admin.vue'
 import Category from './views/Category.vue'
 import VideoPlayerPage from './views/VideoPlayerPage.vue'
 import Notifications from './views/Notifications.vue'
-import ChatList from './views/ChatList.vue'
-import StandaloneChat from './views/StandaloneChat.vue'
 import ForgotPassword from './views/ForgotPassword.vue'
 import FollowList from './views/FollowList.vue'
 
@@ -108,9 +106,7 @@ const routes = [
     { path: '/category/:id', component: Category, name: 'Category' },
     { path: '/video', component: VideoPlayerPage, name: 'VideoPlayer' },
     { path: '/notifications', component: Notifications, name: 'Notifications' },
-    { path: '/follow-list', component: FollowList, name: 'FollowList' },
-    { path: '/chat', component: ChatList, name: 'ChatList' },
-    { path: '/chat/:id', component: StandaloneChat, name: 'StandaloneChat', meta: { hideAppBar: true } }
+    { path: '/follow-list', component: FollowList, name: 'FollowList' }
 ]
 
 const router = createRouter({
