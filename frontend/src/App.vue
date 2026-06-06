@@ -20,6 +20,11 @@
         <span>发布</span>
       </v-btn>
       
+      <v-btn @click="appDrawer = true" value="drawer">
+        <v-icon>mdi-grid</v-icon>
+        <span>菜单</span>
+      </v-btn>
+      
       <v-btn :to="token ? '/profile' : '/login'" :value="token ? 'profile' : 'login'">
         <v-icon>mdi-account</v-icon>
         <span>{{ token ? '我的' : '登录' }}</span>
@@ -48,6 +53,44 @@
         <span>系统设置</span>
       </v-btn>
     </v-bottom-navigation>
+
+    <!-- 移动端应用抽屉（从底部弹出） -->
+    <Teleport to="body">
+      <div v-if="appDrawer" class="app-drawer-overlay" @click="appDrawer = false">
+        <div class="app-drawer-content" @click.stop>
+          <div class="app-drawer-header">
+            <div class="app-drawer-title">应用菜单</div>
+            <v-btn icon @click="appDrawer = false" class="close-btn">
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </div>
+          
+          <v-divider class="mb-4"></v-divider>
+          
+          <div class="app-drawer-grid">
+            <v-btn 
+              v-for="item in appDrawerItems" 
+              :key="item.path"
+              :to="item.path"
+              class="drawer-item"
+              @click="appDrawer = false"
+            >
+              <v-icon size="32" class="drawer-icon">{{ item.icon }}</v-icon>
+              <span class="drawer-label">{{ item.label }}</span>
+            </v-btn>
+          </div>
+          
+          <v-divider class="mt-4 mb-3"></v-divider>
+          
+          <div class="app-drawer-footer">
+            <v-btn @click="logout" class="footer-btn">
+              <v-icon>mdi-logout</v-icon>
+              <span>退出登录</span>
+            </v-btn>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- 桌面端顶部导航栏 -->
     <v-app-bar v-if="!hideAppBar && !isMobile" elevation="2" color="primary" scroll-behavior="collapse">
@@ -91,6 +134,7 @@
           <template v-if="token">
             <v-list-item to="/create" @click="drawer = false" prepend-icon="mdi-pencil" title="写文章"></v-list-item>
             <v-list-item to="/profile" @click="drawer = false" prepend-icon="mdi-account" title="我的"></v-list-item>
+            <v-list-item to="/notifications" @click="drawer = false" prepend-icon="mdi-bell" title="通知"></v-list-item>
             <v-list-item v-if="isAdmin" to="/admin" @click="drawer = false" prepend-icon="mdi-shield-crown" title="管理后台" class="text-error"></v-list-item>
             <v-divider class="my-2"></v-divider>
             <v-list-item @click="logout" prepend-icon="mdi-logout" title="退出" class="text-secondary"></v-list-item>
@@ -191,6 +235,7 @@ export default {
     const token = ref(localStorage.getItem('token'))
     const user = ref(null)
     const drawer = ref(false)
+    const appDrawer = ref(false)
     const isMobile = ref(false)
     const hideAppBar = ref(false)
     const backendVersion = ref(null)
@@ -222,8 +267,27 @@ export default {
       localStorage.removeItem('user')
       window.dispatchEvent(new Event('user-logout'))
       drawer.value = false
+      appDrawer.value = false
       router.push('/login')
     }
+    
+    const appDrawerItems = computed(() => {
+      const items = [
+        { path: '/', icon: 'mdi-home', label: '首页' },
+        { path: '/create', icon: 'mdi-pencil', label: '写文章' },
+        { path: '/notifications', icon: 'mdi-bell', label: '通知' },
+        { path: '/profile', icon: 'mdi-account', label: '我的' }
+      ]
+      if (isAdmin.value) {
+        items.push({ path: '/admin', icon: 'mdi-shield-crown', label: '管理后台' })
+      }
+      return items.filter(item => {
+        if (item.path === '/create' || item.path === '/notifications' || item.path === '/profile') {
+          return token.value
+        }
+        return true
+      })
+    })
     
     const loadUser = async () => {
       if (token.value) {
@@ -319,6 +383,8 @@ export default {
       handleCancel,
       isMobile,
       drawer,
+      appDrawer,
+      appDrawerItems,
       backendVersion,
       siteTitle,
       updateSiteTitle,
@@ -373,5 +439,108 @@ export default {
 /* 移动端底部导航栏 padding */
 .pb-navigation {
   padding-bottom: 56px !important;
+}
+
+/* 移动端应用抽屉样式 */
+.app-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.app-drawer-content {
+  width: 100%;
+  max-height: 80vh;
+  background-color: #fff;
+  border-radius: 24px 24px 0 0;
+  padding: 16px;
+  animation: slideUp 0.3s ease-out;
+}
+
+.app-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+}
+
+.app-drawer-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.close-btn {
+  color: #6b7280;
+}
+
+.app-drawer-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 0 8px;
+}
+
+.drawer-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 8px;
+  border-radius: 12px;
+  transition: background-color 0.2s;
+}
+
+.drawer-item:hover {
+  background-color: #f3f4f6;
+}
+
+.drawer-icon {
+  color: #4b5563;
+  margin-bottom: 8px;
+}
+
+.drawer-label {
+  font-size: 0.75rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.app-drawer-footer {
+  padding: 8px 16px;
+}
+
+.footer-btn {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 </style>

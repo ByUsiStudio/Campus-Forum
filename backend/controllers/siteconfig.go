@@ -20,7 +20,20 @@ func GetSiteConfig(c *gin.Context) {
 		}
 		database.DB.Create(&config)
 	}
-	c.JSON(http.StatusOK, config)
+	
+	// 隐藏敏感信息，不返回SMTP密码
+	response := gin.H{
+		"site_title":            config.SiteTitle,
+		"icp_number":            config.ICPNumber,
+		"public_security_number": config.PublicSecurityNumber,
+		"smtp_host":             config.SMTPHost,
+		"smtp_port":             config.SMTPPort,
+		"smtp_username":         config.SMTPUsername,
+		"smtp_from":             config.SMTPFrom,
+		"smtp_from_name":        config.SMTPFromName,
+		"smtp_password_set":     config.SMTPPassword != "", // 仅返回是否已设置密码的标记
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 func UpdateSiteConfig(c *gin.Context) {
@@ -66,7 +79,10 @@ func UpdateSiteConfig(c *gin.Context) {
 	}
 	if val, exists := updates["smtp_password"]; exists {
 		if str, ok := val.(string); ok {
-			config.SMTPPassword = str
+			// 只有在密码不为空时才更新（空字符串表示不修改密码）
+			if str != "" {
+				config.SMTPPassword = str
+			}
 		}
 	}
 	if val, exists := updates["smtp_from"]; exists {

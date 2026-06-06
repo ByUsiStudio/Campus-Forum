@@ -183,7 +183,7 @@ func GetArticle(c *gin.Context) {
 	var comments []models.Comment
 	var total int64
 	database.DB.Model(&models.Comment{}).Where("article_id = ?", article.ID).Count(&total)
-	database.DB.Where("article_id = ? AND parent_id = 0", article.ID).Preload("User").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&comments)
+	database.DB.Where("article_id = ? AND parent_id IS NULL", article.ID).Preload("User").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&comments)
 
 	var currentUserID uint
 	isOwner := false

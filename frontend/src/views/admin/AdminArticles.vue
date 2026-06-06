@@ -45,6 +45,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ArticlesPanel from './ArticlesPanel.vue'
+import api from '../../api'
 import { adminArticleApi } from '../../api/admin'
 import { confirm, success, error } from '../../utils/modal'
 
