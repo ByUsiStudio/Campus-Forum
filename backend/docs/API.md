@@ -161,12 +161,18 @@
 
 **GET** `/api/articles/{id}`
 
-获取单篇文章详情。
+获取单篇文章详情，包含评论列表。
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
 |------|------|------|
 | id | int | 文章 ID |
+
+**Query 参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| page | int | 评论页码，默认 1 |
+| page_size | int | 每页评论数量，默认 20 |
 
 **响应**:
 ```json
@@ -180,13 +186,33 @@
     "category": {...},
     "view_count": 100,
     "like_count": 10,
+    "comment_count": 5,
     "voice_url": "string",
     "is_anonymous": false,
     "created_at": "2024-01-01T00:00:00Z"
   },
-  "comments": [...],
+  "comments": [
+    {
+      "id": 1,
+      "content": "string",
+      "user": {...},
+      "article_id": 1,
+      "parent_id": null,
+      "like_count": 0,
+      "reply_count": 2,
+      "replies": [...],
+      "is_anonymous": false,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "total": 10,
+  "page": 1,
+  "page_size": 20,
+  "total_pages": 1,
   "liked": false,
-  "comment_liked": {}
+  "comment_liked": {
+    "1": true
+  }
 }
 ```
 
@@ -334,6 +360,11 @@ Authorization: Bearer <token>
 
 获取文章的评论列表。
 
+**路径参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| id | int | 文章 ID |
+
 **响应**:
 ```json
 {
@@ -341,10 +372,27 @@ Authorization: Bearer <token>
     {
       "id": 1,
       "content": "string",
-      "user": {...},
-      "is_anonymous": false,
+      "user": {
+        "id": 1,
+        "username": "string",
+        "display_name": "string",
+        "avatar": "string"
+      },
+      "article_id": 1,
+      "parent_id": null,
+      "like_count": 3,
       "reply_count": 5,
-      "replies": [...],
+      "replies": [
+        {
+          "id": 2,
+          "content": "string",
+          "user": {...},
+          "parent_id": 1,
+          "is_anonymous": false,
+          "created_at": "2024-01-01T00:00:00Z"
+        }
+      ],
+      "is_anonymous": false,
       "created_at": "2024-01-01T00:00:00Z"
     }
   ]
@@ -364,12 +412,31 @@ Authorization: Bearer <token>
 Authorization: Bearer <token>
 ```
 
+**路径参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| id | int | 文章 ID |
+
 **请求体**:
 ```json
 {
-  "content": "string",
-  "parent_id": null,
-  "is_anonymous": false
+  "content": "string (评论内容，支持HTML过滤)",
+  "parent_id": null (回复评论时填写父评论ID，顶级评论传null或不传),
+  "is_anonymous": false (是否匿名评论)
+}
+```
+
+**响应**:
+```json
+{
+  "message": "评论成功",
+  "comment": {
+    "id": 1,
+    "content": "string",
+    "user": {...},
+    "is_anonymous": false,
+    "created_at": "2024-01-01T00:00:00Z"
+  }
 }
 ```
 
@@ -386,6 +453,18 @@ Authorization: Bearer <token>
 Authorization: Bearer <token>
 ```
 
+**路径参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| id | int | 评论 ID |
+
+**响应**:
+```json
+{
+  "message": "删除成功"
+}
+```
+
 ---
 
 ### 点赞评论
@@ -399,6 +478,18 @@ Authorization: Bearer <token>
 Authorization: Bearer <token>
 ```
 
+**路径参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| id | int | 评论 ID |
+
+**响应**:
+```json
+{
+  "message": "点赞成功"
+}
+```
+
 ---
 
 ### 取消评论点赞
@@ -410,6 +501,18 @@ Authorization: Bearer <token>
 **Headers**:
 ```
 Authorization: Bearer <token>
+```
+
+**路径参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| id | int | 评论 ID |
+
+**响应**:
+```json
+{
+  "message": "取消点赞成功"
+}
 ```
 
 ---
@@ -1123,9 +1226,19 @@ Authorization: Bearer <token>
 ```json
 {
   "site_title": "string",
-  "site_description": "string"
+  "site_description": "string",
+  "icp_number": "string",
+  "public_security_number": "string",
+  "smtp_host": "string",
+  "smtp_port": 587,
+  "smtp_username": "string",
+  "smtp_from": "string",
+  "smtp_from_name": "string",
+  "smtp_password_set": true
 }
 ```
+
+**说明**: SMTP密码不会直接返回，`smtp_password_set`字段表示是否已设置密码。
 
 ---
 
@@ -1139,6 +1252,24 @@ Authorization: Bearer <token>
 ```
 Authorization: Bearer <token>
 ```
+
+**请求体**:
+```json
+{
+  "site_title": "string",
+  "site_description": "string",
+  "icp_number": "string",
+  "public_security_number": "string",
+  "smtp_host": "string",
+  "smtp_port": 587,
+  "smtp_username": "string",
+  "smtp_password": "string (仅在需要修改密码时提供)",
+  "smtp_from": "string",
+  "smtp_from_name": "string"
+}
+```
+
+**说明**: 仅在需要修改SMTP密码时提供`smtp_password`字段，为空或不提供则保持原密码不变。
 
 ---
 
