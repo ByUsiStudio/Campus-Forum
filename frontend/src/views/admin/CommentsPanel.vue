@@ -1,88 +1,105 @@
 <template>
-  <div class="comments-panel">
-    <div class="panel-header">
-      <div class="header-left">
-        <h2 class="panel-title">评论管理</h2>
-        <p class="panel-subtitle">审核与删除用户评论 (共 {{ pagination.total }} 条)</p>
-      </div>
-      <v-btn variant="outlined" color="primary" @click="$emit('refresh')" :loading="loading">
-        <v-icon start>mdi-refresh</v-icon>
-        刷新
-      </v-btn>
-    </div>
+  <div>
+    <!-- 搜索栏 -->
+    <v-card class="mb-4 pa-3" variant="flat" rounded="lg">
+      <v-row dense align="center">
+        <v-col cols="12" sm="8">
+          <v-text-field
+            v-model="searchQuery"
+            placeholder="搜索评论内容..."
+            prepend-inner-icon="mdi-magnify"
+            variant="outlined"
+            density="compact"
+            hide-details
+            clearable
+          />
+        </v-col>
+        <v-col cols="12" sm="4" class="text-end">
+          <v-btn variant="tonal" color="primary" @click="$emit('refresh')" :loading="loading" prepend-icon="mdi-refresh">
+            刷新
+          </v-btn>
+        </v-col>
+      </v-row>
+    </v-card>
 
-    <div v-if="loading" class="loading-state">
-      <v-progress-circular indeterminate color="primary" size="48" />
-      <div class="loading-text">加载中...</div>
-    </div>
+    <!-- 评论列表 -->
+    <v-card variant="flat" rounded="lg">
+      <v-list lines="three" v-if="filteredComments.length > 0">
+        <v-list-item v-for="comment in filteredComments" :key="comment.id" class="py-3">
+          <template v-slot:prepend>
+            <UserAvatar :user="getUserInfo(comment)" :size="48" />
+          </template>
 
-    <div v-else-if="comments.length === 0" class="empty-state">
-      <v-icon size="64" color="grey-lighten-1">mdi-comment-text-outline</v-icon>
-      <div class="empty-text">暂无评论</div>
-    </div>
+          <v-list-item-title class="font-weight-medium mb-1">
+            {{ getUserName(comment) }}
+            <v-chip size="x-small" color="grey" variant="tonal" class="ml-2" v-if="comment.is_anonymous">
+              匿名
+            </v-chip>
+          </v-list-item-title>
 
-    <div v-else class="comments-list">
-      <v-card
-        v-for="comment in comments"
-        :key="comment.id"
-        class="comment-card"
-        variant="outlined"
-      >
-        <div class="comment-main">
-          <UserAvatar :user="getUserInfo(comment)" :size="44" />
-
-          <div class="comment-content">
-            <div class="comment-header">
-              <span class="comment-author">{{ getUserName(comment) }}</span>
-              <span class="comment-time">{{ formatDate(comment.created_at) }}</span>
-              <v-chip v-if="comment.is_anonymous" size="x-small" color="grey" variant="tonal">
-                匿名
-              </v-chip>
+          <v-list-item-subtitle>
+            <div class="mb-2">{{ comment.content }}</div>
+            <div class="d-flex flex-wrap align-center ga-2">
+              <span class="d-flex align-center text-caption" v-if="getArticleInfo(comment)">
+                <v-icon size="14" color="primary" class="mr-1">mdi-file-document</v-icon>
+                {{ getArticleInfo(comment).title }}
+              </span>
+              <span class="d-flex align-center text-caption">
+                <v-icon size="14" color="pink" class="mr-1">mdi-heart</v-icon>
+                {{ comment.like_count || 0 }}
+              </span>
+              <span class="d-flex align-center text-caption">
+                <v-icon size="14" color="blue" class="mr-1">mdi-reply</v-icon>
+                {{ comment.reply_count || 0 }}
+              </span>
+              <span class="d-flex align-center text-caption">
+                <v-icon size="14" color="grey" class="mr-1">mdi-clock-outline</v-icon>
+                {{ formatDate(comment.created_at) }}
+              </span>
             </div>
+          </v-list-item-subtitle>
 
-            <div class="comment-reply-info" v-if="getArticleInfo(comment)">
-              <v-icon size="14">mdi-subdirectory-arrow-right</v-icon>
-              回复文章：{{ getArticleInfo(comment).title }}
-            </div>
+          <template v-slot:append>
+            <v-btn-group variant="text" density="compact" divided>
+              <v-btn size="small" color="info" :to="`/article/${comment.article_id}`" target="_blank" v-if="comment.article_id">
+                <v-icon>mdi-eye</v-icon>
+                <v-tooltip activator="parent">查看文章</v-tooltip>
+              </v-btn>
+              <v-btn size="small" color="error" @click="$emit('delete', comment.id)">
+                <v-icon>mdi-delete</v-icon>
+                <v-tooltip activator="parent">删除</v-tooltip>
+              </v-btn>
+            </v-btn-group>
+          </template>
+        </v-list-item>
+      </v-list>
 
-            <div class="comment-text">{{ comment.content }}</div>
-
-            <div class="comment-stats">
-              <v-icon size="14" color="grey">mdi-heart</v-icon>
-              <span class="stat-text">{{ comment.like_count || 0 }}</span>
-              <v-icon size="14" color="grey" class="ml-3">mdi-reply</v-icon>
-              <span class="stat-text">{{ comment.reply_count || 0 }}</span>
-            </div>
-          </div>
-
-          <div class="comment-actions">
-            <v-btn
-              variant="text"
-              size="small"
-              color="error"
-              @click="$emit('delete', comment.id)"
-            >
-              <v-icon start>mdi-delete</v-icon>
-              删除
-            </v-btn>
-          </div>
+      <v-card-text v-else class="text-center py-8">
+        <v-icon size="48" color="grey-lighten-1">mdi-comment-text-outline</v-icon>
+        <div class="text-body-1 text-medium-emphasis mt-2">
+          {{ searchQuery ? '未找到匹配的评论' : '暂无评论数据' }}
         </div>
-      </v-card>
-    </div>
+      </v-card-text>
+    </v-card>
 
     <!-- 分页 -->
-    <div v-if="pagination.totalPages > 1" class="pagination-container">
+    <div class="d-flex align-center justify-center ga-4 mt-4" v-if="pagination.totalPages > 1">
       <v-pagination
         v-model="currentPage"
         :length="pagination.totalPages"
-        :total-visible="7"
+        :total-visible="5"
+        rounded="lg"
         @update:model-value="handlePageChange"
       />
+      <div class="text-caption text-medium-emphasis">
+        第 {{ pagination.page }} / {{ pagination.totalPages }} 页 (共 {{ pagination.total }} 条)
+      </div>
     </div>
   </div>
 </template>
 
 <script>
+import { ref, watch, computed } from 'vue'
 import UserAvatar from '../../components/UserAvatar.vue'
 
 export default {
@@ -110,18 +127,24 @@ export default {
     }
   },
   emits: ['delete', 'refresh', 'page-change'],
-  data() {
-    return {
-      currentPage: 1
-    }
-  },
-  watch: {
-    'pagination.page'(newVal) {
-      this.currentPage = newVal
-    }
-  },
-  methods: {
-    formatDate(dateString) {
+  setup(props, { emit }) {
+    const currentPage = ref(1)
+    const searchQuery = ref('')
+
+    watch(() => props.pagination.page, (newVal) => {
+      currentPage.value = newVal
+    })
+
+    const filteredComments = computed(() => {
+      if (!searchQuery.value) return props.comments
+      const query = searchQuery.value.toLowerCase()
+      return props.comments.filter(comment => 
+        comment.content?.toLowerCase().includes(query) ||
+        getUserName(comment).toLowerCase().includes(query)
+      )
+    })
+
+    const formatDate = (dateString) => {
       if (!dateString) return '-'
       const date = new Date(dateString)
       return date.toLocaleString('zh-CN', {
@@ -131,172 +154,35 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
-    },
-    getUserInfo(comment) {
-      // 兼容大小写
+    }
+
+    const getUserInfo = (comment) => {
       return comment.user || comment.User || {}
-    },
-    getUserName(comment) {
-      const user = this.getUserInfo(comment)
+    }
+
+    const getUserName = (comment) => {
+      const user = getUserInfo(comment)
       return user.display_name || user.DisplayName || user.username || user.Username || '未知用户'
-    },
-    getArticleInfo(comment) {
+    }
+
+    const getArticleInfo = (comment) => {
       return comment.article || comment.Article || null
-    },
-    handlePageChange(page) {
-      this.$emit('page-change', page)
+    }
+
+    const handlePageChange = (page) => {
+      emit('page-change', page)
+    }
+
+    return {
+      currentPage,
+      searchQuery,
+      filteredComments,
+      formatDate,
+      getUserInfo,
+      getUserName,
+      getArticleInfo,
+      handlePageChange
     }
   }
 }
 </script>
-
-<style scoped>
-.comments-panel {
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.panel-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin: 0 0 4px 0;
-}
-
-.panel-subtitle {
-  font-size: 0.9rem;
-  color: #6b7280;
-  margin: 0;
-}
-
-.loading-state,
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 20px;
-  background: white;
-  border-radius: 16px;
-}
-
-.loading-text,
-.empty-text {
-  margin-top: 16px;
-  font-size: 1rem;
-  color: #9ca3af;
-}
-
-.comments-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.comment-card {
-  border-radius: 12px;
-  padding: 20px;
-  transition: box-shadow 0.2s;
-}
-
-.comment-card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.comment-main {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-}
-
-.comment-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.comment-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-.comment-author {
-  font-weight: 600;
-  color: #1a1a2e;
-}
-
-.comment-time {
-  font-size: 0.8rem;
-  color: #9ca3af;
-}
-
-.comment-reply-info {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.85rem;
-  color: #6b7280;
-  margin-bottom: 8px;
-  padding: 6px 10px;
-  background: #f8f9ff;
-  border-radius: 6px;
-  width: fit-content;
-}
-
-.comment-text {
-  color: #4b5563;
-  line-height: 1.6;
-  word-break: break-word;
-  margin-bottom: 8px;
-}
-
-.comment-stats {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 8px;
-}
-
-.stat-text {
-  font-size: 0.85rem;
-  color: #6b7280;
-}
-
-.comment-actions {
-  flex-shrink: 0;
-}
-
-.pagination-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 24px;
-  padding: 16px 0;
-}
-
-@media (max-width: 600px) {
-  .comment-main {
-    flex-direction: column;
-  }
-
-  .comment-actions {
-    width: 100%;
-    display: flex;
-    justify-content: flex-end;
-  }
-}
-</style>
