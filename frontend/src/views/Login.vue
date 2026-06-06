@@ -1,71 +1,51 @@
 <template>
-  <v-container fluid class="fill-height bg-grey-lighten-4">
-    <v-row justify="center" align="center">
-      <v-col cols="12" sm="8" md="5" lg="4">
-        <v-card class="pa-6" elevation="2">
-          <div class="text-center mb-6">
-            <v-icon size="64" color="primary" class="mb-4">mdi-forum</v-icon>
-            <v-card-title class="text-h5 font-weight-bold" style="color: rgb(var(--v-theme-primary));">
-              登录论坛
-            </v-card-title>
-            <v-card-subtitle class="text-body-2 text-medium-emphasis">
-              欢迎回来！请登录您的账号
-            </v-card-subtitle>
-          </div>
+  <div class="d-flex justify-center align-center" style="min-height: 80vh;">
+    <v-card width="100%" max-width="400" class="pa-6">
+      <v-card-title class="text-h5 text-center pb-4" style="color: rgb(var(--v-theme-primary));">
+        登录论坛
+      </v-card-title>
+      
+      <v-card-text>
+        <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
+        
+        <v-form @submit.prevent="handleLogin">
+          <v-text-field
+            v-model="form.username"
+            label="用户名"
+            variant="outlined"
+            required
+            prepend-inner-icon="mdi-account"
+            class="mb-4"
+          ></v-text-field>
           
-          <v-card-text>
-            <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
-            
-            <v-form @submit.prevent="handleLogin">
-              <v-text-field
-                v-model="form.username"
-                label="用户名"
-                variant="outlined"
-                required
-                prepend-inner-icon="mdi-account"
-                class="mb-4"
-                :rules="[v => !!v || '请输入用户名']"
-              ></v-text-field>
-              
-              <v-text-field
-                v-model="form.password"
-                label="密码"
-                variant="outlined"
-                type="password"
-                required
-                prepend-inner-icon="mdi-lock"
-                class="mb-4"
-                :rules="[v => !!v || '请输入密码']"
-              ></v-text-field>
-              
-              <v-btn
-                type="submit"
-                color="primary"
-                block
-                size="large"
-                :loading="loading"
-                class="mb-4"
-              >
-                <v-icon start>mdi-login</v-icon>
-                {{ loading ? '登录中...' : '登录' }}
-              </v-btn>
-            </v-form>
-            
-            <div class="d-flex justify-space-between align-center text-body-2">
-              <router-link to="/forgot-password" class="text-secondary">
-                <v-icon size="small" class="mr-1">mdi-key</v-icon>
-                忘记密码？
-              </router-link>
-              <span class="text-medium-emphasis">
-                还没有账号？
-                <router-link to="/register" class="text-primary font-weight-medium">立即注册</router-link>
-              </span>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
+          <v-text-field
+            v-model="form.password"
+            label="密码"
+            variant="outlined"
+            type="password"
+            required
+            prepend-inner-icon="mdi-lock"
+            class="mb-4"
+          ></v-text-field>
+          
+          <v-btn
+            type="submit"
+            color="primary"
+            block
+            size="large"
+            :loading="loading"
+          >
+            {{ loading ? '登录中...' : '登录' }}
+          </v-btn>
+        </v-form>
+        
+        <div class="text-center mt-4 text-body-2">
+          <router-link to="/forgot-password" class="text-secondary mr-4">忘记密码？</router-link>
+          还没有账号？ <router-link to="/register" class="text-primary">立即注册</router-link>
+        </div>
+      </v-card-text>
+    </v-card>
+  </div>
 </template>
 
 <script>
