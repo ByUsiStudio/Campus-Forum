@@ -10,19 +10,19 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
-import miuix.compose.scaffold.Scaffold
-import miuix.compose.surface.Surface
-import miuix.compose.text.Text
-import miuix.compose.button.Button
-import miuix.compose.button.FilledButton
-import miuix.compose.button.TextButton
-import miuix.compose.progress.CircularProgressIndicator
-import miuix.compose.icon.Icon
-import miuix.compose.icon.icons.MiuixIcons
-import miuix.compose.icon.icons.outlined.ArrowBack
-import miuix.compose.icon.icons.outlined.Person
-import miuix.compose.icon.icons.outlined.Lock
-import miuix.compose.textfield.TextField
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Surface
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.FilledButton
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.icons.outlined.ArrowBack
+import top.yukonga.miuix.kmp.icon.icons.outlined.Person
+import top.yukonga.miuix.kmp.icon.icons.outlined.Lock
+import top.yukonga.miuix.kmp.textfield.TextField
 
 @Composable
 fun LoginScreen(navController: NavHostController) {

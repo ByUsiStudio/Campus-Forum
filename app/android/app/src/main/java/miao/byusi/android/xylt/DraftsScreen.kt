@@ -10,17 +10,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
-import miuix.compose.scaffold.Scaffold
-import miuix.compose.surface.Surface
-import miuix.compose.text.Text
-import miuix.compose.card.Card
-import miuix.compose.button.Button
-import miuix.compose.button.FilledButton
-import miuix.compose.button.OutlinedButton
-import miuix.compose.progress.CircularProgressIndicator
-import miuix.compose.icon.Icon
-import miuix.compose.icon.icons.MiuixIcons
-import miuix.compose.icon.icons.outlined.ArrowBack
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Surface
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.FilledButton
+import top.yukonga.miuix.kmp.basic.OutlinedButton
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.icons.outlined.ArrowBack
 
 @Composable
 fun DraftsScreen(navController: NavHostController) {
@@ -197,10 +197,4 @@ private fun deleteDraft(draftId: Int) {
         override fun onError(error: String) {}
     })
 }
-
-data class Draft(
-    val id: Int,
-    val title: String,
-    val content: String,
-    val createdAt: String
-)
+// Draft 数据类统一在 Models.kt 声明。

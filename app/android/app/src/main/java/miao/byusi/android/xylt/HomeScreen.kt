@@ -6,12 +6,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Surface
+import top.yukonga.miuix.kmp.basic.SmallTopAppBar
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.Button
@@ -27,7 +29,7 @@ fun HomeScreen(navController: NavHostController) {
     var articles by remember { mutableStateOf<List<Article>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-    
+
     // 自动刷新：每30秒刷新一次
     LaunchedEffect(Unit) {
         while (true) {
@@ -44,31 +46,21 @@ fun HomeScreen(navController: NavHostController) {
             delay(30000)
         }
     }
-    
+
     Scaffold(
         topBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "校园论坛",
-                        fontSize = 20.dp
-                    )
-                }
-            }
+            // Miuix 风格小顶栏（带返回行为/滚动折叠/大标题样式）
+            SmallTopAppBar(
+                title = "校园论坛",
+                modifier = Modifier
+            )
         },
         floatingActionButton = {
-            Button(
+            FilledButton(
                 onClick = { navController.navigate("create") },
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text("创建")
+                Text("发  布")
             }
         },
         bottomBar = {
@@ -76,7 +68,7 @@ fun HomeScreen(navController: NavHostController) {
                 items = listOf(
                     NavigationBarItem("主页", MiuixIcons.Basic.Search),
                     NavigationBarItem("草稿", MiuixIcons.Basic.Search),
-                    NavigationBarItem("个人", MiuixIcons.Basic.Search)
+                    NavigationBarItem("我的", MiuixIcons.Basic.Person)
                 ),
                 selected = 0,
                 onClick = { index ->
@@ -105,7 +97,7 @@ fun HomeScreen(navController: NavHostController) {
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("加载失败: $error")
+                    Text("加载失败: $error", fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(16.dp))
                     FilledButton(onClick = {
                         loadArticles { result ->
@@ -113,7 +105,7 @@ fun HomeScreen(navController: NavHostController) {
                             .onFailure { e -> error = e.message }
                         }
                     }) {
-                        Text("重试")
+                        Text("重  试")
                     }
                 }
             }
@@ -123,7 +115,7 @@ fun HomeScreen(navController: NavHostController) {
                     .fillMaxSize()
                     .padding(padding),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(articles) { article ->
                     ArticleCard(article = article, onClick = {
@@ -146,28 +138,29 @@ fun ArticleCard(article: Article, onClick: () -> Unit) {
         ) {
             Text(
                 text = article.title,
-                fontSize = 16.dp
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = article.content.take(100) + if (article.content.length > 100) "..." else "",
-                fontSize = 14.dp,
+                fontSize = 14.sp,
                 color = Color(0xFF666666)
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
                     text = article.authorName ?: "匿名",
-                    fontSize = 12.dp,
-                    color = Color(0xFF007AFF)
+                    fontSize = 12.sp,
+                    color = Color(0xFF7C4DFF)
                 )
                 Text(
                     text = "${article.viewCount} 浏览 · ${article.likeCount} 点赞",
-                    fontSize = 12.dp,
-                    color = Color(0xFF666666)
+                    fontSize = 12.sp,
+                    color = Color(0xFF888888)
                 )
             }
         }
@@ -201,7 +194,7 @@ private fun parseArticles(response: String): List<Article> {
             id = articleJson.optInt("id", 0),
             title = articleJson.optString("title", ""),
             content = articleJson.optString("content", ""),
-            authorName = articleJson.optJSONObject("user")?.optString("display_name") 
+            authorName = articleJson.optJSONObject("user")?.optString("display_name")
                 ?: articleJson.optJSONObject("user")?.optString("nickname")
                 ?: "匿名",
             viewCount = articleJson.optInt("view_count", 0),

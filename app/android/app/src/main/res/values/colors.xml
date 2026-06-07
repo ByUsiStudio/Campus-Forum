@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#6200EE</color>
-    <color name="colorPrimaryDark">#3700B3</color>
-    <color name="colorAccent">#03DAC5</color>
+    <!--
+        基础调色板。
+        实际界面颜色由 Jetpack Compose + Miuix 主题在运行时控制；本文件中的颜色
+        保留为 Android XML 主题的兜底（避免部分低版本系统或非 Compose 控件
+        找不到颜色导致样式异常）。
+    -->
+    <color name="colorPrimary">#7C4DFF</color>
+    <color name="colorPrimaryDark">#5E35B1</color>
+    <color name="colorAccent">#B388FF</color>
     <color name="black">#000000</color>
     <color name="white">#FFFFFF</color>
-    <color name="gray">#757575</color>
-    <color name="dark_gray">#424242</color>
-    <color name="light_gray">#E0E0E0</color>
-    <color name="red">#F44336</color>
-    <color name="purple_200">#BB86FC</color>
-    <color name="purple_700">#7B1FA2</color>
-    <color name="teal_200">#00E5FF</color>
 </resources>

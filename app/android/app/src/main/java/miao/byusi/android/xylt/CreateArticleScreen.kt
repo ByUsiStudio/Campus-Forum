@@ -9,14 +9,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
-import miuix.compose.scaffold.Scaffold
-import miuix.compose.surface.Surface
-import miuix.compose.text.Text
-import miuix.compose.button.Button
-import miuix.compose.progress.CircularProgressIndicator
-import miuix.compose.icon.Icon
-import miuix.compose.icon.icons.MiuixIcons
-import miuix.compose.icon.icons.outlined.Close
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Surface
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.icons.outlined.Close
 
 @Composable
 fun CreateArticleScreen(navController: NavHostController) {
