@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+
+<BorderPane xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+            fx:controller="miao.byusi.pc.xylt.MainController"
+            prefWidth="1200" prefHeight="800">
+
+    <!-- 顶部导航栏 -->
+    <top>
+        <VBox spacing="0">
+            <HBox spacing="16" alignment="CENTER_LEFT" styleClass="header" prefHeight="60">
+                <padding>
+                    <Insets top="0" right="20" bottom="0" left="20"/>
+                </padding>
+
+                <Label text="校园论坛" styleClass="logo"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <TextField fx:id="searchField" promptText="搜索文章..." prefWidth="300" styleClass="search-field"/>
+
+                <Button text="搜索" onAction="#searchArticles" styleClass="search-button"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Button text="登录" onAction="#showLoginDialog" styleClass="auth-button"/>
+                <Button text="注册" onAction="#showRegisterDialog" styleClass="auth-button"/>
+            </HBox>
+
+            <HBox spacing="8" alignment="CENTER_LEFT" styleClass="toolbar" prefHeight="50">
+                <padding>
+                    <Insets top="0" right="20" bottom="0" left="20"/>
+                </padding>
+
+                <Button text="首页" styleClass="toolbar-button"/>
+                <Button text="最新" styleClass="toolbar-button"/>
+                <Button text="热门" styleClass="toolbar-button"/>
+                <Button text="关注" styleClass="toolbar-button"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Button text="发布文章" onAction="#createArticle" styleClass="publish-button"/>
+            </HBox>
+        </VBox>
+    </top>
+
+    <!-- 左侧边栏 -->
+    <left>
+        <VBox spacing="16" styleClass="sidebar" prefWidth="250">
+            <padding>
+                <Insets top="20" right="10" bottom="20" left="10"/>
+            </padding>
+
+            <VBox spacing="8" styleClass="sidebar-section">
+                <Label text="个人中心" styleClass="sidebar-title"/>
+                <Button text="我的文章" styleClass="sidebar-item"/>
+                <Button text="我的收藏" styleClass="sidebar-item"/>
+                <Button text="我的草稿" styleClass="sidebar-item"/>
+            </VBox>
+
+            <VBox spacing="8" styleClass="sidebar-section">
+                <Label text="分类" styleClass="sidebar-title"/>
+                <Button text="学习交流" styleClass="sidebar-item"/>
+                <Button text="生活分享" styleClass="sidebar-item"/>
+                <Button text="校园八卦" styleClass="sidebar-item"/>
+                <Button text="问答求助" styleClass="sidebar-item"/>
+            </VBox>
+
+            <VBox spacing="8" styleClass="sidebar-section">
+                <Label text="快捷入口" styleClass="sidebar-title"/>
+                <Button text="举报管理" styleClass="sidebar-item"/>
+                <Button text="系统设置" styleClass="sidebar-item"/>
+            </VBox>
+        </VBox>
+    </left>
+
+    <!-- 主内容区 -->
+    <center>
+        <ScrollPane styleClass="content-area" fitToWidth="true">
+            <VBox fx:id="articleList" spacing="16" alignment="TOP_CENTER">
+                <padding>
+                    <Insets top="20" right="20" bottom="20" left="20"/>
+                </padding>
+
+                <!-- 文章卡片示例 -->
+                <VBox spacing="12" styleClass="article-card">
+                    <HBox spacing="12">
+                        <ImageView fitWidth="48" fitHeight="48" preserveRatio="true"/>
+                        <VBox spacing="4">
+                            <Label text="用户名" styleClass="article-author"/>
+                            <Label text="2024-01-01 10:00" styleClass="article-time"/>
+                        </VBox>
+                    </HBox>
+
+                    <VBox spacing="8">
+                        <Label text="文章标题" styleClass="article-title"/>
+                        <Label text="文章内容摘要..." styleClass="article-content" wrapText="true"/>
+                    </VBox>
+
+                    <HBox spacing="24">
+                        <Label text="浏览: 100" styleClass="article-stats"/>
+                        <Label text="点赞: 10" styleClass="article-stats"/>
+                        <Label text="评论: 5" styleClass="article-stats"/>
+                    </HBox>
+
+                    <HBox spacing="8">
+                        <Button text="点赞" styleClass="action-button"/>
+                        <Button text="评论" styleClass="action-button"/>
+                        <Button text="分享" styleClass="action-button"/>
+                        <Button text="举报" styleClass="action-button"/>
+                    </HBox>
+                </VBox>
+
+            </VBox>
+        </ScrollPane>
+    </center>
+
+    <!-- 右侧边栏 -->
+    <right>
+        <VBox spacing="16" styleClass="right-sidebar" prefWidth="300">
+            <padding>
+                <Insets top="20" right="10" bottom="20" left="10"/>
+            </padding>
+
+            <VBox spacing="8" styleClass="sidebar-section">
+                <Label text="热门话题" styleClass="sidebar-title"/>
+                <Label text="# 新学期计划"/>
+                <Label text="# 校园美食推荐"/>
+                <Label text="# 学习技巧分享"/>
+                <Label text="# 兼职经验谈"/>
+            </VBox>
+
+            <VBox spacing="8" styleClass="sidebar-section">
+                <Label text="在线用户" styleClass="sidebar-title"/>
+                <Label text="当前在线: 123 人"/>
+            </VBox>
+
+            <VBox spacing="8" styleClass="sidebar-section">
+                <Label text="系统信息" styleClass="sidebar-title"/>
+                <Label text="版本: 1.0.0"/>
+                <Label text="前端: 1.0.0"/>
+                <Label text="后端: 1.0.0"/>
+            </VBox>
+        </VBox>
+    </right>
+
+    <!-- 底部状态栏 -->
+    <bottom>
+        <HBox styleClass="status-bar" prefHeight="30">
+            <padding>
+                <Insets top="0" right="20" bottom="0" left="20"/>
+            </padding>
+            <Label text="© 2024 校园论坛 版权所有"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="连接状态: 已连接"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

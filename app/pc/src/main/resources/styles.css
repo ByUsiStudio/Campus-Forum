@@ -1,0 +1,181 @@
+/* 全局样式 */
+.root {
+    -fx-background-color: #f5f5f5;
+    -fx-font-family: "Microsoft YaHei", "SimHei", sans-serif;
+}
+
+/* 顶部导航栏 */
+.header {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.logo {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #6200EE;
+}
+
+.search-field {
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-border-color: #e0e0e0;
+    -fx-padding: 8 16;
+}
+
+.search-button {
+    -fx-background-color: #6200EE;
+    -fx-text-fill: white;
+    -fx-background-radius: 4;
+    -fx-padding: 8 16;
+}
+
+.search-button:hover {
+    -fx-background-color: #3700B3;
+}
+
+.auth-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #6200EE;
+    -fx-border-color: #6200EE;
+    -fx-border-radius: 4;
+    -fx-padding: 6 16;
+}
+
+.auth-button:hover {
+    -fx-background-color: #6200EE;
+    -fx-text-fill: white;
+}
+
+/* 工具栏 */
+.toolbar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.toolbar-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #333333;
+    -fx-padding: 8 16;
+}
+
+.toolbar-button:hover {
+    -fx-background-color: #f0e6ff;
+    -fx-text-fill: #6200EE;
+}
+
+.publish-button {
+    -fx-background-color: #6200EE;
+    -fx-text-fill: white;
+    -fx-background-radius: 4;
+    -fx-padding: 8 20;
+}
+
+.publish-button:hover {
+    -fx-background-color: #3700B3;
+}
+
+/* 左侧边栏 */
+.sidebar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 1 0 0;
+}
+
+.sidebar-section {
+    -fx-padding: 12;
+    -fx-background-radius: 8;
+    -fx-background-color: #f9f9f9;
+}
+
+.sidebar-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+    -fx-padding: 0 0 8 0;
+}
+
+.sidebar-item {
+    -fx-background-color: transparent;
+    -fx-text-fill: #666666;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 8 12;
+}
+
+.sidebar-item:hover {
+    -fx-background-color: #f0e6ff;
+    -fx-text-fill: #6200EE;
+}
+
+/* 右侧边栏 */
+.right-sidebar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 0 0 1;
+}
+
+/* 内容区域 */
+.content-area {
+    -fx-background-color: #f5f5f5;
+}
+
+.article-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 8;
+    -fx-padding: 16;
+    -fx-spacing: 12;
+    -fxPrefWidth: 800;
+}
+
+.article-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+}
+
+.article-author {
+    -fx-font-size: 14px;
+    -fx-text-fill: #666666;
+}
+
+.article-time {
+    -fx-font-size: 12px;
+    -fx-text-fill: #999999;
+}
+
+.article-content {
+    -fx-font-size: 14px;
+    -fx-text-fill: #444444;
+    -fx-max-width: 700;
+}
+
+.article-stats {
+    -fx-font-size: 12px;
+    -fx-text-fill: #999999;
+}
+
+.action-button {
+    -fx-background-color: #f5f5f5;
+    -fx-text-fill: #666666;
+    -fx-background-radius: 4;
+    -fx-padding: 6 12;
+}
+
+.action-button:hover {
+    -fx-background-color: #e0e0e0;
+}
+
+/* 底部状态栏 */
+.status-bar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 4 16;
+}
+
+.status-bar Label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #999999;
+}
