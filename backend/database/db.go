@@ -25,6 +25,7 @@ func InitDB(dsn string) {
 }
 
 func AutoMigrate() {
+	DB.Exec("SET FOREIGN_KEY_CHECKS = 0")
 	err := DB.AutoMigrate(
 		&models.User{},
 		&models.Article{},
@@ -43,11 +44,15 @@ func AutoMigrate() {
 		&models.Notification{},
 		&models.UserNotification{},
 		&models.Follow{},
-		&models.ChatMessage{},
-		&models.ChatSession{},
 		&models.SiteConfig{},
 		&models.FollowNotification{},
+		&models.Report{},
+		&models.PersonalNotification{},
+		&models.PermissionGroup{},
+		&models.UserPermissionGroup{},
+		&models.SystemLog{},
 	)
+	DB.Exec("SET FOREIGN_KEY_CHECKS = 1")
 	if err != nil {
 		utils.Error("数据库迁移失败: %v", err)
 		os.Exit(1)

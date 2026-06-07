@@ -108,6 +108,15 @@
                   取消
                 </v-btn>
                 <v-btn
+                  variant="outlined"
+                  color="primary"
+                  :loading="savingDraft"
+                  @click="saveDraft"
+                  prepend-icon="mdi-content-save"
+                >
+                  {{ savingDraft ? '保存中...' : '保存草稿' }}
+                </v-btn>
+                <v-btn
                   type="submit"
                   color="primary"
                   :loading="submitting"
@@ -275,6 +284,7 @@ export default {
     const isEdit = ref(false)
     const articleId = ref(null)
     const submitting = ref(false)
+    const savingDraft = ref(false)
     const voiceUrl = ref('')
     const isRecording = ref(false)
     const isPaused = ref(false)
@@ -326,6 +336,37 @@ export default {
 
     // 音频URL直接保存到voice_url字段，不在content中插入HTML标签
     // 这样可以避免破坏Markdown渲染
+
+    const saveDraft = async () => {
+      if (!form.value.title.trim()) {
+        await showAlert('请输入标题')
+        return
+      }
+
+      savingDraft.value = true
+      try {
+        const submitData = {
+          ...form.value,
+          voice_url: voiceUrl.value,
+          status: 'draft'
+        }
+
+        let response
+        if (isEdit.value) {
+          response = await api.put(`/articles/${articleId.value}`, submitData)
+        } else {
+          response = await api.post('/articles', submitData)
+        }
+
+        await showAlert('草稿保存成功')
+        await router.push('/profile')
+      } catch (error) {
+        console.error('保存草稿失败', error)
+        await showError('保存失败: ' + (error.message || '未知错误'))
+      } finally {
+        savingDraft.value = false
+      }
+    }
 
     const submitArticle = async () => {
       if (!form.value.title.trim()) {
@@ -536,12 +577,14 @@ export default {
       form,
       isEdit,
       submitting,
+      savingDraft,
       voiceUrl,
       isRecording,
       isPaused,
       recordingDuration,
       isUploadingVoice,
       submitArticle,
+      saveDraft,
       handleVoiceInput,
       showVoiceDialog,
       voiceTab,

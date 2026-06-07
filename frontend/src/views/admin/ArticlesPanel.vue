@@ -87,15 +87,19 @@
 
           <template v-slot:append>
             <v-btn-group variant="text" density="compact" divided>
-              <v-btn size="small" color="primary" @click="$emit('change-status', article)">
+              <v-btn size="small" color="primary" @click="$emit('change-status', article)" v-if="article.status !== 'deleted'">
                 <v-icon>mdi-state-machine</v-icon>
                 <v-tooltip activator="parent">修改状态</v-tooltip>
+              </v-btn>
+              <v-btn size="small" color="success" @click="$emit('restore', article)" v-if="article.status === 'deleted'">
+                <v-icon>mdi-restore</v-icon>
+                <v-tooltip activator="parent">恢复文章</v-tooltip>
               </v-btn>
               <v-btn size="small" color="info" :to="`/article/${article.id}`" target="_blank">
                 <v-icon>mdi-eye</v-icon>
                 <v-tooltip activator="parent">查看文章</v-tooltip>
               </v-btn>
-              <v-btn size="small" color="error" @click="$emit('delete', article)" v-if="canDeleteArticle()">
+              <v-btn size="small" color="error" @click="$emit('delete', article)" v-if="canDeleteArticle() && article.status !== 'deleted'">
                 <v-icon>mdi-delete</v-icon>
                 <v-tooltip activator="parent">删除</v-tooltip>
               </v-btn>
@@ -167,7 +171,7 @@ export default {
       default: null
     }
   },
-  emits: ['change-status', 'delete', 'refresh', 'update:page', 'update:filter'],
+  emits: ['change-status', 'delete', 'restore', 'refresh', 'update:page', 'update:filter'],
   setup(props, { emit }) {
     const localPage = ref(props.page)
     const localFilter = ref(props.filter)

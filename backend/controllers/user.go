@@ -55,14 +55,53 @@ func GetUserArticles(c *gin.Context) {
 		return
 	}
 
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	offset := (page - 1) * pageSize
+
 	var articles []models.Article
+	var total int64
+
+	database.DB.Model(&models.Article{}).Where("user_id = ? AND status = ?", uint(id), "published").Count(&total)
 	database.DB.Where("user_id = ? AND status = ?", uint(id), "published").
 		Preload("User").
+		Preload("Category").
 		Order("created_at DESC").
+		Offset(offset).
+		Limit(pageSize).
 		Find(&articles)
 
+	var currentUserID uint
+	if userID, exists := c.Get("user_id"); exists {
+		currentUserID = userID.(uint)
+	}
+
+	for i := range articles {
+		var likeCount int64
+		database.DB.Model(&models.Like{}).Where("article_id = ?", articles[i].ID).Count(&likeCount)
+		articles[i].LikeCount = int(likeCount)
+
+		var commentCount int64
+		database.DB.Model(&models.Comment{}).Where("article_id = ?", articles[i].ID).Count(&commentCount)
+		articles[i].CommentCount = int(commentCount)
+	}
+
+	maskAnonymousUsers(&articles, currentUserID)
+
 	c.JSON(http.StatusOK, gin.H{
-		"articles": articles,
+		"articles":    articles,
+		"total":       total,
+		"page":        page,
+		"page_size":   pageSize,
+		"total_pages": (total + int64(pageSize) - 1) / int64(pageSize),
 	})
 }
 

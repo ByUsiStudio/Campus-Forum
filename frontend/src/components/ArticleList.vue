@@ -33,7 +33,18 @@
           <div class="article-header">
             <UserAvatar :user="article.user" :size="40" />
             <div class="article-meta flex-grow-1">
-              <div class="text-body-2 font-weight-medium">{{ article.user?.display_name || article.user?.username }}</div>
+              <div class="d-flex align-center gap-2">
+                <v-chip
+                  v-if="article.is_pinned"
+                  size="x-small"
+                  color="orange"
+                  variant="tonal"
+                  prepend-icon="mdi-pin"
+                >
+                  置顶
+                </v-chip>
+                <span class="text-body-2 font-weight-medium">{{ article.user?.display_name || article.user?.username }}</span>
+              </div>
               <div class="text-caption text-medium-emphasis">
                 {{ formatDate(article.created_at) }}
               </div>

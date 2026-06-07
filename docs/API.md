@@ -218,6 +218,121 @@
 
 ---
 
+### 搜索文章
+
+**GET** `/api/articles/search`
+
+搜索文章（支持按标题或内容搜索）。
+
+**Query 参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| keyword | string | 搜索关键词 |
+| page | int | 页码，默认 1 |
+| page_size | int | 每页数量，默认 20 |
+
+**响应**:
+```json
+{
+  "articles": [
+    {
+      "id": 1,
+      "title": "string",
+      "content": "string",
+      "content_html": "string",
+      "user": {...},
+      "category": {...},
+      "view_count": 100,
+      "like_count": 10,
+      "comment_count": 5,
+      "share_count": 0,
+      "voice_url": "string",
+      "is_anonymous": false,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "total": 100,
+  "page": 1,
+  "page_size": 20,
+  "total_pages": 5
+}
+```
+
+---
+
+### 分享文章
+
+**POST** `/api/articles/{id}/share`
+
+分享文章（需认证），增加分享次数。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**路径参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| id | int | 文章 ID |
+
+**响应**:
+```json
+{
+  "message": "分享成功",
+  "share_count": 1
+}
+```
+
+---
+
+### 获取我的文章
+
+**GET** `/api/my/articles`
+
+获取当前用户的文章列表（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**Query 参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| page | int | 页码，默认 1 |
+| page_size | int | 每页数量，默认 20 |
+
+**响应**:
+```json
+{
+  "articles": [
+    {
+      "id": 1,
+      "title": "string",
+      "content": "string",
+      "content_html": "string",
+      "user": {...},
+      "category": {...},
+      "view_count": 100,
+      "like_count": 10,
+      "comment_count": 5,
+      "share_count": 0,
+      "voice_url": "string",
+      "is_anonymous": false,
+      "status": "published",
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "total": 20,
+  "page": 1,
+  "page_size": 20,
+  "total_pages": 1
+}
+```
+
+---
+
 ### 创建文章
 
 **POST** `/api/articles`
@@ -810,12 +925,43 @@ Authorization: Bearer <token>
 
 **GET** `/api/users/{id}/articles`
 
-获取指定用户的文章列表。
+获取指定用户的文章列表（支持分页）。
+
+**路径参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| id | int | 用户 ID |
+
+**Query 参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| page | int | 页码，默认 1 |
+| page_size | int | 每页数量，默认 20 |
 
 **响应**:
 ```json
 {
-  "articles": [...]
+  "articles": [
+    {
+      "id": 1,
+      "title": "string",
+      "content": "string",
+      "content_html": "string",
+      "user": {...},
+      "category": {...},
+      "view_count": 100,
+      "like_count": 10,
+      "comment_count": 5,
+      "share_count": 0,
+      "voice_url": "string",
+      "is_anonymous": false,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "total": 50,
+  "page": 1,
+  "page_size": 20,
+  "total_pages": 3
 }
 ```
 

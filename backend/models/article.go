@@ -17,7 +17,10 @@ type Article struct {
 	CommentCount  int       `gorm:"default:0" json:"comment_count"`
 	FavoriteCount int       `gorm:"default:0" json:"favorite_count"`
 	ViewCount     int       `gorm:"default:0" json:"view_count"`
-	Status        string    `gorm:"default:published" json:"status"`   // published, deleted, pending
+	ShareCount    int       `gorm:"default:0" json:"share_count"`
+	Status        string    `gorm:"default:published" json:"status"`   // published, draft, deleted, pending
+	IsPinned      bool      `gorm:"default:false" json:"is_pinned"`    // 是否置顶
+	PinnedAt      *time.Time `json:"pinned_at"`                         // 置顶时间
 	VoiceURL      string    `gorm:"size:500" json:"voice_url"`         // 语音文件URL
 	IsAnonymous   bool      `gorm:"default:false" json:"is_anonymous"` // 是否匿名发布
 	CreatedAt     time.Time `json:"created_at"`

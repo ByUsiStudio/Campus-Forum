@@ -110,6 +110,15 @@
             >
               分享
             </v-btn>
+            <v-btn
+              @click="showReportDialog = true"
+              variant="outlined"
+              color="error"
+              prepend-icon="mdi-flag"
+              v-if="token && currentUser && currentUser.id !== article.user_id"
+            >
+              举报
+            </v-btn>
           </div>
           <v-spacer></v-spacer>
           <div v-if="canEdit" class="d-flex gap-2">
@@ -389,6 +398,68 @@
       </v-card>
     </v-dialog>
 
+    <!-- 举报对话框 -->
+    <v-dialog v-model="showReportDialog" max-width="500" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center bg-error text-white pa-4">
+          <v-icon class="mr-2">mdi-flag-variant</v-icon>
+          举报文章
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <v-alert
+            type="info"
+            variant="tonal"
+            density="compact"
+            class="mb-4"
+          >
+            感谢您对平台环境的维护。我们会认真审核每一条举报，并在3个工作日内处理。
+          </v-alert>
+          
+          <v-form ref="reportForm">
+            <div class="mb-4">
+              <div class="text-subtitle-2 mb-2">请选择举报原因 <span class="text-error">*</span></div>
+              <v-chip-group
+                v-model="reportReason"
+                column
+                mandatory
+              >
+                <v-chip
+                  v-for="reason in reportReasons"
+                  :key="reason.value"
+                  :value="reason.value"
+                  filter
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                >
+                  <v-icon start size="16">{{ reason.icon }}</v-icon>
+                  {{ reason.title }}
+                </v-chip>
+              </v-chip-group>
+            </div>
+            
+            <v-textarea
+              v-model="reportDescription"
+              label="详细说明（必填）"
+              variant="outlined"
+              rows="4"
+              :rules="[v => !!v || '请填写举报详细说明']"
+              placeholder="请详细描述您举报的原因，包括具体内容和违规证据..."
+              counter
+              maxlength="500"
+            />
+          </v-form>
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer />
+          <v-btn variant="text" @click="closeReportDialog">取消</v-btn>
+          <v-btn color="error" @click="submitReport" :loading="submittingReport" prepend-icon="mdi-send">
+            提交举报
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- 图片查看器 -->
     <ImageViewer v-if="showImageViewer" :url="currentImageUrl" @close="closeImageViewer" />
   </v-row>
@@ -434,6 +505,20 @@ export default {
     const showShareDialog = ref(false)
     const shareUrl = ref('')
     const copySuccess = ref(false)
+    const showReportDialog = ref(false)
+    const reportReason = ref('')
+    const reportDescription = ref('')
+    const submittingReport = ref(false)
+    const reportReasons = [
+      { title: '垃圾广告', value: '垃圾广告', icon: 'mdi-trash-can' },
+      { title: '色情低俗', value: '色情低俗', icon: 'mdi-alert' },
+      { title: '暴力血腥', value: '暴力血腥', icon: 'mdi-knife' },
+      { title: '政治敏感', value: '政治敏感', icon: 'mdi-account-alert' },
+      { title: '违法犯罪', value: '违法犯罪', icon: 'mdi-gavel' },
+      { title: '谣言虚假', value: '谣言虚假', icon: 'mdi-chat-alert' },
+      { title: '侵犯隐私', value: '侵犯隐私', icon: 'mdi-eye-off' },
+      { title: '其他违规', value: '其他违规', icon: 'mdi-help-circle' }
+    ]
     const token = ref(localStorage.getItem('token'))
     const currentUser = ref(null)
     const contentRef = ref(null)
@@ -845,6 +930,41 @@ export default {
         console.error('复制失败', error)
       }
     }
+
+    const submitReport = async () => {
+      if (!reportReason.value) {
+        alert('请选择举报原因')
+        return
+      }
+
+      if (!reportDescription.value.trim()) {
+        alert('请填写详细说明')
+        return
+      }
+
+      submittingReport.value = true
+      try {
+        await api.post('/reports', {
+          target_type: 'article',
+          target_id: article.value.id,
+          reason: reportReason.value,
+          description: reportDescription.value.trim()
+        })
+        showSuccess('举报已提交，感谢您的反馈')
+        closeReportDialog()
+      } catch (error) {
+        console.error('提交举报失败', error)
+        alert('提交失败，请重试')
+      } finally {
+        submittingReport.value = false
+      }
+    }
+
+    const closeReportDialog = () => {
+      showReportDialog.value = false
+      reportReason.value = ''
+      reportDescription.value = ''
+    }
     
     const formatDate = (date) => {
       return new Date(date).toLocaleString('zh-CN')
@@ -879,6 +999,10 @@ export default {
       showShareDialog,
       shareUrl,
       copySuccess,
+      showReportDialog,
+      reportReason,
+      reportDescription,
+      reportReasons,
       contentRef,
       followStatus,
       toggleLike,
@@ -894,6 +1018,8 @@ export default {
       canDeleteComment,
       handleContentClick,
       closeImageViewer,
+      submitReport,
+      closeReportDialog,
       formatDate,
       loadFollowStatus,
       handleFollow,

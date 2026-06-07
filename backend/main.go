@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"forum/controllers"
 	"forum/database"
+	initpkg "forum/init"
 	"forum/middleware"
+	"forum/service"
 	"forum/utils"
 	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Config struct {
@@ -51,16 +51,22 @@ func main() {
 	dsn := config.Database.Username + ":" + config.Database.Password + "@tcp(" + config.Database.Host + ":" + config.Database.Port + ")/" + config.Database.DBName + "?charset=utf8mb4&parseTime=True&loc=Local"
 	database.InitDB(dsn)
 
+	// 初始化服务
+	service.InitServices()
+
 	// 自动迁移和初始化
 	database.AutoMigrate()
 	database.CheckAndInitAdmin()
+
+	// 系统初始化（权限组、头衔等）
+	initpkg.SystemInit()
 
 	// 设置路由
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(middleware.Logger())
 	r.Use(middleware.CORS())
-	
+
 	// 全局速率限制（每秒100次请求）
 	r.Use(middleware.RateLimit(100, time.Second))
 
@@ -69,9 +75,6 @@ func main() {
 
 	// WebDAV代理路由
 	r.Any("/proxy/webdav/*path", utils.ProxyWebDAVHandler)
-
-	// Swagger文档
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// API路由
 	api := r.Group("/api")
@@ -100,8 +103,21 @@ func main() {
 			protected.POST("/articles", controllers.CreateArticle)
 			protected.PUT("/articles/:id", controllers.UpdateArticle)
 			protected.DELETE("/articles/:id", controllers.DeleteArticle)
+			protected.POST("/articles/:id/restore", middleware.AdminOnly(), controllers.RestoreArticle)
 			protected.POST("/articles/:id/like", controllers.LikeArticle)
 			protected.DELETE("/articles/:id/like", controllers.UnlikeArticle)
+			protected.GET("/my/articles", controllers.GetMyArticles)
+			protected.POST("/articles/:id/share", controllers.ShareArticle)
+			protected.GET("/my/drafts", controllers.GetDraftArticles)
+			protected.POST("/articles/:id/publish", controllers.PublishDraft)
+			protected.POST("/articles/:id/pin", middleware.AdminOnly(), controllers.PinArticle)
+			protected.DELETE("/articles/:id/pin", middleware.AdminOnly(), controllers.UnpinArticle)
+
+			// 举报相关
+			protected.POST("/reports", controllers.CreateReport)
+			protected.GET("/reports", middleware.AdminOnly(), controllers.GetReports)
+			protected.GET("/reports/:id", middleware.AdminOnly(), controllers.GetReport)
+			protected.PUT("/reports/:id/handle", middleware.AdminOnly(), controllers.HandleReport)
 
 			// 评论相关
 			protected.POST("/articles/:id/comments", controllers.CreateComment)
@@ -149,6 +165,29 @@ func main() {
 			protected.POST("/follow-notifications/read-all", controllers.MarkAllFollowNotificationsRead)
 			protected.GET("/follow-notifications/unread-count", controllers.GetFollowNotificationUnreadCount)
 
+			// 用户个人通知（单独通知）
+			protected.POST("/user-notifications/send", middleware.AdminOnly(), controllers.SendUserNotification)
+			protected.POST("/user-notifications/send-batch", middleware.AdminOnly(), controllers.SendBatchNotifications)
+			protected.GET("/user-notifications", controllers.GetUserNotifications)
+			protected.GET("/user-notifications/:id", controllers.GetNotification)
+			protected.POST("/user-notifications/:id/read", controllers.MarkNotificationAsRead)
+			protected.POST("/user-notifications/read-all", controllers.MarkAllNotificationsAsRead)
+			protected.DELETE("/user-notifications/:id", controllers.DeletePersonalNotification)
+			protected.DELETE("/user-notifications/clear", controllers.ClearAllNotifications)
+			protected.GET("/admin/user-notifications/:user_id", middleware.AdminOnly(), controllers.AdminGetUserNotifications)
+
+			// 权限组管理
+			protected.GET("/permission-groups", controllers.GetPermissionGroups)
+			protected.GET("/permission-groups/:id", controllers.GetPermissionGroup)
+			protected.POST("/permission-groups", middleware.AdminOnly(), controllers.CreatePermissionGroup)
+			protected.PUT("/permission-groups/:id", middleware.AdminOnly(), controllers.UpdatePermissionGroup)
+			protected.DELETE("/permission-groups/:id", middleware.AdminOnly(), controllers.DeletePermissionGroup)
+			protected.POST("/permission-groups/grant", middleware.AdminOnly(), controllers.GrantPermissionGroup)
+			protected.DELETE("/permission-groups/:id/revoke-user/:user_id", middleware.AdminOnly(), controllers.RevokePermissionGroup)
+			protected.GET("/users/:id/permission-groups", controllers.GetUserPermissionGroups)
+			protected.GET("/permissions/check", controllers.CheckUserPermissions)
+			protected.POST("/permission-groups/init", middleware.AdminOnly(), controllers.InitializeDefaultPermissionGroups)
+
 			// 关注相关
 			protected.POST("/follow/:id", controllers.FollowUser)
 			protected.DELETE("/follow/:id", controllers.UnfollowUser)
@@ -162,13 +201,6 @@ func main() {
 			protected.DELETE("/articles/:id/favorite", controllers.RemoveFavorite)
 			protected.GET("/favorites", controllers.GetFavorites)
 			protected.GET("/articles/:id/favorite/check", controllers.CheckFavorite)
-
-			// 聊天相关
-			protected.GET("/chat/messages/:id", controllers.GetChatMessages)
-			protected.POST("/chat/messages/:id", controllers.GetChatMessages) // POST方式获取聊天记录
-			protected.GET("/chat/sessions", controllers.GetChatSessions)
-			protected.POST("/chat/send", controllers.SendChatMessage)
-			protected.GET("/chat/unread-count", controllers.GetChatUnreadCount)
 
 			// 后台管理
 			protected.GET("/admin/check", controllers.CheckAdmin)
@@ -184,6 +216,13 @@ func main() {
 			protected.GET("/admin/comments", middleware.AdminOnly(), controllers.GetAllComments)
 			protected.DELETE("/admin/comments/:id", middleware.AdminOnly(), controllers.DeleteCommentAdmin)
 
+			// 用户在线状态管理
+			protected.POST("/user/status", controllers.UpdateUserStatus)
+			protected.GET("/user/status/:id", controllers.GetUserStatus)
+			protected.GET("/users/status", middleware.AdminOnly(), controllers.GetAllUserStatuses)
+			protected.GET("/users/online", middleware.AdminOnly(), controllers.GetOnlineUsers)
+			protected.POST("/users/status/cleanup", middleware.AdminOnly(), controllers.CleanupUserStatuses)
+
 			// 头衔管理
 			protected.GET("/titles", controllers.GetAllTitles)
 			protected.POST("/titles", middleware.AdminOnly(), controllers.CreateTitle)
@@ -192,11 +231,18 @@ func main() {
 			protected.POST("/titles/grant", middleware.AdminOnly(), controllers.GrantTitle)
 			protected.POST("/titles/revoke", middleware.AdminOnly(), controllers.RevokeTitle)
 			protected.GET("/users/:id/titles", controllers.GetUserTitles)
+
+			// 系统日志
+			protected.GET("/system-logs", middleware.AdminOnly(), controllers.GetSystemLogs)
+			protected.GET("/system-logs/modules", middleware.AdminOnly(), controllers.GetLogModules)
+			protected.DELETE("/system-logs/old", middleware.AdminOnly(), controllers.DeleteOldLogs)
+			protected.GET("/my-logs", controllers.GetMyLogs)
 		}
 
 		// 公开路由
 		api.GET("/articles", controllers.GetArticles)
 		api.GET("/articles/:id", controllers.GetArticle)
+		api.GET("/articles/search", controllers.SearchArticles)
 		api.GET("/categories", controllers.GetCategories)
 		api.GET("/announcement", controllers.GetAnnouncement)
 		api.GET("/sidebar-config", controllers.GetSidebarConfig)
@@ -214,15 +260,11 @@ func main() {
 	passwordReset := api.Group("/password")
 	{
 		passwordReset.POST("/reset-code", middleware.RateLimit(3, time.Minute), controllers.SendResetCode) // 每分钟最多3次
-		passwordReset.POST("/reset", middleware.RateLimit(5, time.Minute), controllers.ResetPassword) // 每分钟最多5次
+		passwordReset.POST("/reset", middleware.RateLimit(5, time.Minute), controllers.ResetPassword)      // 每分钟最多5次
 	}
-
-	// WebSocket路由
-	r.GET("/ws/chat", controllers.WebSocketHandler)
 
 	utils.Section("服务启动")
 	utils.Info("服务器地址: http://0.0.0.0:%s", config.Port)
-	utils.Info("API 文档: http://0.0.0.0:%s/swagger/index.html", config.Port)
 	utils.Section("")
 
 	r.Run(":" + config.Port)

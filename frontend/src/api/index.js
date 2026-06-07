@@ -31,18 +31,18 @@ api.interceptors.response.use(
       showError('服务器返回的数据格式不正确', { title: '数据解析错误' })
       return Promise.reject(new Error('Invalid response data'))
     }
-    
+
     // 检查是否有错误字段
     if (response.data.error) {
       showError(response.data.error, { title: '操作失败' })
       return Promise.reject(new Error(response.data.error))
     }
-    
+
     return response
   },
   error => {
     const errorMsg = getErrorMessage(error)
-    
+
     // 401 未授权 - 跳转到登录页
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('token')
@@ -50,19 +50,19 @@ api.interceptors.response.use(
       window.location.href = '/login'
       return Promise.reject(error)
     }
-    
+
     // 403 禁止访问
     if (error.response && error.response.status === 403) {
       showError('您没有权限执行此操作', { title: '权限不足' })
       return Promise.reject(error)
     }
-    
+
     // 404 资源不存在
     if (error.response && error.response.status === 404) {
       showWarning('请求的资源不存在', { title: '资源未找到' })
       return Promise.reject(error)
     }
-    
+
     // 其他错误
     showError(errorMsg, { title: '操作失败' })
     return Promise.reject(error)
@@ -84,10 +84,10 @@ function getErrorMessage(error) {
     }
     return '网络错误，请稍后重试'
   }
-  
+
   // 服务器返回的错误
   const response = error.response
-  
+
   // 尝试解析响应数据中的错误信息
   if (response.data) {
     if (typeof response.data === 'string') {
@@ -100,7 +100,7 @@ function getErrorMessage(error) {
       return response.data.message
     }
   }
-  
+
   // 根据状态码返回通用错误信息
   const statusText = {
     400: '请求参数错误',
@@ -114,10 +114,19 @@ function getErrorMessage(error) {
     503: '服务暂时不可用',
     504: '网关超时'
   }
-  
+
   return statusText[response.status] || `请求失败，状态码: ${response.status}`
 }
 
 export default api
 
-export const getVersion = () => api.get('/version')
+// 导出所有API模块
+export { authApi } from './auth'
+export { articleApi, reportApi } from './article'
+export { commentApi } from './comment'
+export { userApi } from './user'
+export { followApi } from './follow'
+export { notificationApi } from './notification'
+export { commonApi } from './common'
+export { uploadApi } from './upload'
+export { default as adminApi, userNotificationApi, permissionGroupApi, adminUserApi } from './admin'

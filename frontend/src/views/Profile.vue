@@ -101,16 +101,143 @@
           <v-icon class="mr-2">mdi-file-document</v-icon>
           {{ isOwnProfile ? '我的文章' : '他的文章' }}
           <v-spacer></v-spacer>
-          <span class="text-body-2 text-medium-emphasis">{{ myArticles.length }} 篇</span>
         </v-card-title>
+
+        <v-tabs v-if="isOwnProfile" v-model="activeTab" color="primary" class="mb-4">
+          <v-tab value="published">已发布 ({{ myArticles.length }})</v-tab>
+          <v-tab value="drafts">草稿 ({{ drafts.length }})</v-tab>
+        </v-tabs>
+
+        <v-window v-if="isOwnProfile" v-model="activeTab">
+          <v-window-item value="published">
+            <div v-if="myArticles.length === 0" class="text-center pa-8">
+              <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-file-document-outline</v-icon>
+              <div class="text-body-1 text-medium-emphasis">暂无文章</div>
+              <v-btn color="primary" class="mt-4" to="/create">
+                <v-icon start>mdi-pencil</v-icon>
+                写文章
+              </v-btn>
+            </div>
+
+            <v-list v-else lines="two" class="pa-0">
+              <v-list-item
+                v-for="article in myArticles"
+                :key="article.id"
+                class="px-0"
+              >
+                <template v-slot:prepend>
+                  <UserAvatar :user="article.user" :size="50" />
+                </template>
+
+                <v-list-item-title class="font-weight-bold mb-1">
+                  <router-link :to="'/article/' + article.id" class="text-decoration-none text-primary">
+                    {{ article.title }}
+                  </router-link>
+                </v-list-item-title>
+                
+                <v-list-item-subtitle class="d-flex align-center flex-wrap gap-2">
+                  <span>
+                    <v-icon size="x-small">mdi-clock</v-icon>
+                    {{ formatDate(article.created_at) }}
+                  </span>
+                  <span>
+                    <v-icon size="x-small" class="text-error">mdi-heart</v-icon>
+                    {{ article.like_count }}
+                  </span>
+                  <span>
+                    <v-icon size="x-small">mdi-eye</v-icon>
+                    {{ article.view_count }}
+                  </span>
+                  <v-chip v-if="article.category" size="x-small" color="primary" variant="flat">
+                    {{ article.category.name }}
+                  </v-chip>
+                </v-list-item-subtitle>
+
+                <template v-slot:append>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    :to="'/create?id=' + article.id"
+                    color="primary"
+                    icon="mdi-pencil"
+                  ></v-btn>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    color="error"
+                    @click="deleteArticle(article.id)"
+                    icon="mdi-delete"
+                  ></v-btn>
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-window-item>
+
+          <v-window-item value="drafts">
+            <div v-if="drafts.length === 0" class="text-center pa-8">
+              <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-file-edit-outline</v-icon>
+              <div class="text-body-1 text-medium-emphasis">暂无草稿</div>
+              <v-btn color="primary" class="mt-4" to="/create">
+                <v-icon start>mdi-pencil</v-icon>
+                写文章
+              </v-btn>
+            </div>
+
+            <v-list v-else lines="two" class="pa-0">
+              <v-list-item
+                v-for="article in drafts"
+                :key="article.id"
+                class="px-0"
+              >
+                <template v-slot:prepend>
+                  <v-icon color="grey">mdi-file-document-outline</v-icon>
+                </template>
+
+                <v-list-item-title class="font-weight-bold mb-1">
+                  {{ article.title }}
+                </v-list-item-title>
+                
+                <v-list-item-subtitle class="d-flex align-center flex-wrap gap-2">
+                  <span>
+                    <v-icon size="x-small">mdi-clock</v-icon>
+                    最后修改：{{ formatDate(article.updated_at) }}
+                  </span>
+                  <v-chip v-if="article.category" size="x-small" color="default" variant="flat">
+                    {{ article.category.name }}
+                  </v-chip>
+                </v-list-item-subtitle>
+
+                <template v-slot:append>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    :to="'/create?id=' + article.id"
+                    color="primary"
+                    icon="mdi-pencil"
+                  ></v-btn>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    color="success"
+                    @click="publishDraft(article.id)"
+                    icon="mdi-send"
+                  ></v-btn>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    color="error"
+                    @click="deleteDraft(article.id)"
+                    icon="mdi-delete"
+                  ></v-btn>
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-window-item>
+        </v-window>
 
         <div v-if="myArticles.length === 0" class="text-center pa-8">
           <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-file-document-outline</v-icon>
           <div class="text-body-1 text-medium-emphasis">暂无文章</div>
-          <v-btn v-if="isOwnProfile" color="primary" class="mt-4" to="/create">
-            <v-icon start>mdi-pencil</v-icon>
-            写文章
-          </v-btn>
         </div>
 
         <v-list v-else lines="two" class="pa-0">
@@ -146,23 +273,6 @@
                 {{ article.category.name }}
               </v-chip>
             </v-list-item-subtitle>
-
-            <template v-slot:append v-if="isOwnProfile">
-              <v-btn
-                variant="text"
-                size="small"
-                :to="'/create?id=' + article.id"
-                color="primary"
-                icon="mdi-pencil"
-              ></v-btn>
-              <v-btn
-                variant="text"
-                size="small"
-                color="error"
-                @click="deleteArticle(article.id)"
-                icon="mdi-delete"
-              ></v-btn>
-            </template>
           </v-list-item>
         </v-list>
       </v-card>
@@ -201,7 +311,7 @@
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import api from '../api'
+import api, { articleApi } from '../api'
 import UserAvatar from '../components/UserAvatar.vue'
 
 export default {
@@ -215,6 +325,8 @@ export default {
     const token = ref(localStorage.getItem('token'))
     const user = ref(null)
     const myArticles = ref([])
+    const drafts = ref([])
+    const activeTab = ref('published')
     const editForm = ref({
       display_name: '',
       signature: ''
@@ -338,6 +450,41 @@ export default {
       }
     }
 
+    const loadDrafts = async () => {
+      if (!isOwnProfile.value) return
+      try {
+        const response = await articleApi.getDrafts()
+        drafts.value = response.data.articles || []
+      } catch (error) {
+        console.error('加载草稿失败', error)
+      }
+    }
+
+    const publishDraft = async (id) => {
+      if (!confirm('确定要发布这篇草稿吗？')) return
+      try {
+        await articleApi.publishDraft(id)
+        await loadDrafts()
+        await loadMyArticles()
+        alert('发布成功')
+      } catch (error) {
+        console.error('发布失败', error)
+        alert('发布失败')
+      }
+    }
+
+    const deleteDraft = async (id) => {
+      if (!confirm('确定要删除这篇草稿吗？')) return
+      try {
+        await api.delete(`/articles/${id}`)
+        await loadDrafts()
+        alert('删除成功')
+      } catch (error) {
+        console.error('删除失败', error)
+        alert('删除失败')
+      }
+    }
+
     const updateProfile = async () => {
       try {
         await api.put('/profile', {
@@ -422,6 +569,7 @@ export default {
       }
       loadProfile().then(() => {
         loadMyArticles()
+        loadDrafts()
         loadFollowStatus()
         loadFollowCounts()
       })
@@ -430,10 +578,15 @@ export default {
     return {
       user,
       myArticles,
+      drafts,
+      activeTab,
       editForm,
       updateProfile,
       changeAvatar,
       deleteArticle,
+      loadDrafts,
+      publishDraft,
+      deleteDraft,
       formatDate,
       followStatus,
       handleFollow,

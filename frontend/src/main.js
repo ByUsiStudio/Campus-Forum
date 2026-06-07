@@ -60,6 +60,7 @@ import VideoPlayerPage from './views/VideoPlayerPage.vue'
 import Notifications from './views/Notifications.vue'
 import ForgotPassword from './views/ForgotPassword.vue'
 import FollowList from './views/FollowList.vue'
+import Search from './views/Search.vue'
 
 // 导入后台管理子组件
 import AdminIndex from './views/admin/AdminIndex.vue'
@@ -70,7 +71,10 @@ import AdminCategories from './views/admin/AdminCategories.vue'
 import AdminTitles from './views/admin/AdminTitles.vue'
 import AdminSidebar from './views/admin/AdminSidebar.vue'
 import AdminDeletions from './views/admin/AdminDeletions.vue'
+import AdminReports from './views/admin/AdminReports.vue'
 import AdminAnnouncement from './views/admin/AdminAnnouncement.vue'
+import AdminUserNotifications from './views/admin/AdminUserNotifications.vue'
+import AdminSystemLogs from './views/admin/AdminSystemLogs.vue'
 import AdminSiteConfig from './views/admin/AdminSiteConfig.vue'
 import AdminSMTPConfig from './views/admin/AdminSMTPConfig.vue'
 import AdminNotifications from './views/admin/AdminNotifications.vue'
@@ -97,16 +101,20 @@ const routes = [
         { path: 'titles', name: 'AdminTitles', component: AdminTitles },
         { path: 'sidebar', name: 'AdminSidebar', component: AdminSidebar },
         { path: 'deletions', name: 'AdminDeletions', component: AdminDeletions },
+        { path: 'reports', name: 'AdminReports', component: AdminReports },
         { path: 'announcement', name: 'AdminAnnouncement', component: AdminAnnouncement },
+        { path: 'notifications', name: 'AdminUserNotifications', component: AdminUserNotifications },
+        { path: 'system-logs', name: 'AdminSystemLogs', component: AdminSystemLogs },
         { path: 'siteconfig', name: 'AdminSiteConfig', component: AdminSiteConfig },
         { path: 'smtpconfig', name: 'AdminSMTPConfig', component: AdminSMTPConfig },
-        { path: 'notifications', name: 'AdminNotifications', component: AdminNotifications }
+        { path: 'admin-notifications', name: 'AdminNotifications', component: AdminNotifications }
       ]
     },
     { path: '/category/:id', component: Category, name: 'Category' },
     { path: '/video', component: VideoPlayerPage, name: 'VideoPlayer' },
     { path: '/notifications', component: Notifications, name: 'Notifications' },
-    { path: '/follow-list', component: FollowList, name: 'FollowList' }
+    { path: '/follow-list', component: FollowList, name: 'FollowList' },
+    { path: '/search', component: Search, name: 'Search' }
 ]
 
 const router = createRouter({
@@ -115,7 +123,7 @@ const router = createRouter({
 })
 
 // 路由守卫
-const publicPaths = ['/login', '/register', '/forgot-password', '/']
+const publicPaths = ['/login', '/register', '/forgot-password', '/', '/search']
 
 router.beforeEach((to, from, next) => {
     const token = localStorage.getItem('token')

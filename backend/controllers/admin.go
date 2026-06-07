@@ -50,19 +50,77 @@ func GetStatistics(c *gin.Context) {
 
 // GetAllUsers 获取所有用户（管理员）
 func GetAllUsers(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	search := c.Query("search")
+	role := c.Query("role")
+	status := c.Query("status")
+	online := c.Query("online")
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	offset := (page - 1) * pageSize
+
+	query := database.DB.Model(&models.User{})
+
+	// 搜索筛选
+	if search != "" {
+		searchPattern := "%" + search + "%"
+		query = query.Where("username LIKE ? OR display_name LIKE ?", searchPattern, searchPattern)
+	}
+
+	// 角色筛选
+	if role != "" {
+		query = query.Where("role = ?", role)
+	}
+
+	// 状态筛选
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	// 在线状态筛选
+	if online != "" {
+		query = query.Where("online_status = ?", online)
+	}
+
 	var users []models.User
-	database.DB.Order("created_at DESC").Find(&users)
+	var total int64
+
+	// 获取总数
+	query.Count(&total)
+
+	// 获取分页数据
+	query.Select("id, username, display_name, avatar, qq_number, role, status, online_status, last_active_at, signature, created_at, updated_at").
+		Order("online_status DESC, last_active_at DESC, created_at DESC").
+		Offset(offset).
+		Limit(pageSize).
+		Find(&users)
+
+	// 统计在线用户数和管理员数
+	var onlineCount, bannedCount, adminCount int64
+	database.DB.Model(&models.User{}).Where("online_status = ?", "online").Count(&onlineCount)
+	database.DB.Model(&models.User{}).Where("status = ?", "banned").Count(&bannedCount)
+	database.DB.Model(&models.User{}).Where("role = ?", "admin").Count(&adminCount)
 
 	type UserResponse struct {
-		ID          uint           `json:"id"`
-		Username    string         `json:"username"`
-		DisplayName string         `json:"display_name"`
-		Avatar      string         `json:"avatar"`
-		QQNumber    string         `json:"qq_number"`
-		Role        string         `json:"role"`
-		Status      string         `json:"status"`
-		CreatedAt   time.Time      `json:"created_at"`
-		Titles      []models.Title `json:"titles"`
+		ID           uint           `json:"id"`
+		Username     string         `json:"username"`
+		DisplayName  string         `json:"display_name"`
+		Avatar       string         `json:"avatar"`
+		QQNumber     string         `json:"qq_number"`
+		Role         string         `json:"role"`
+		Status       string         `json:"status"`
+		Signature    string         `json:"signature"`
+		OnlineStatus string         `json:"online_status"`
+		LastActiveAt *time.Time     `json:"last_active_at"`
+		CreatedAt    time.Time      `json:"created_at"`
+		Titles       []models.Title `json:"titles"`
 	}
 
 	var response []UserResponse
@@ -78,20 +136,32 @@ func GetAllUsers(c *gin.Context) {
 		}
 
 		resp := UserResponse{
-			ID:          user.ID,
-			Username:    user.Username,
-			DisplayName: user.DisplayName,
-			Avatar:      user.Avatar,
-			QQNumber:    user.QQNumber,
-			Role:        user.Role,
-			Status:      user.Status,
-			CreatedAt:   user.CreatedAt,
-			Titles:      titles,
+			ID:           user.ID,
+			Username:     user.Username,
+			DisplayName:  user.DisplayName,
+			Avatar:       user.Avatar,
+			QQNumber:     user.QQNumber,
+			Role:         user.Role,
+			Status:       user.Status,
+			Signature:    user.Signature,
+			OnlineStatus: user.OnlineStatus,
+			LastActiveAt: user.LastActiveAt,
+			CreatedAt:    user.CreatedAt,
+			Titles:       titles,
 		}
 		response = append(response, resp)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"users": response})
+	c.JSON(http.StatusOK, gin.H{
+		"users":        response,
+		"total":        total,
+		"page":         page,
+		"page_size":    pageSize,
+		"total_pages":  (total + int64(pageSize) - 1) / int64(pageSize),
+		"online_count": onlineCount,
+		"banned_count": bannedCount,
+		"admin_count":  adminCount,
+	})
 }
 
 // UpdateUser 管理员更新用户信息
@@ -100,6 +170,8 @@ func UpdateUser(c *gin.Context) {
 
 	var input struct {
 		DisplayName string `json:"display_name"`
+		Signature   string `json:"signature"`
+		Role        string `json:"role"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -123,11 +195,24 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
+	updates := make(map[string]interface{})
+
 	if input.DisplayName != "" {
-		targetUser.DisplayName = input.DisplayName
+		updates["display_name"] = input.DisplayName
 	}
 
-	database.DB.Save(&targetUser)
+	if input.Signature != "" {
+		updates["signature"] = input.Signature
+	}
+
+	if input.Role != "" && (input.Role == "admin" || input.Role == "user") {
+		updates["role"] = input.Role
+	}
+
+	if len(updates) > 0 {
+		database.DB.Model(&targetUser).Updates(updates)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "更新成功"})
 }
 
@@ -335,7 +420,7 @@ func GetAllComments(c *gin.Context) {
 
 	// 先查询总数
 	database.DB.Model(&models.Comment{}).Count(&total)
-	
+
 	// 再查询评论列表，并预加载用户和文章信息
 	database.DB.Preload("User").Preload("Article").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&comments)
 

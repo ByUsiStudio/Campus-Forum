@@ -6,40 +6,10 @@ import (
 	"forum/utils"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
-
-func getUserTitles(userID uint) []models.Title {
-	var userTitles []models.UserTitle
-	database.DB.Where("user_id = ?", userID).Preload("Title").Find(&userTitles)
-
-	var titles []models.Title
-	for _, ut := range userTitles {
-		if ut.Title.IsActive {
-			titles = append(titles, ut.Title)
-		}
-	}
-	return titles
-}
-
-func maskAnonymousUser(article *models.Article, isOwner bool) {
-	if article.IsAnonymous && !isOwner {
-		article.User = models.User{
-			ID:          0,
-			Username:    "anonymous",
-			DisplayName: "匿名用户",
-			Avatar:      "",
-		}
-	}
-}
-
-func maskAnonymousUsers(articles *[]models.Article, currentUserID uint) {
-	for i := range *articles {
-		isOwner := (*articles)[i].UserID == currentUserID
-		maskAnonymousUser(&(*articles)[i], isOwner)
-	}
-}
 
 func CreateArticle(c *gin.Context) {
 	userID := c.GetUint("user_id")
@@ -50,11 +20,18 @@ func CreateArticle(c *gin.Context) {
 		CategoryID  uint   `json:"category_id" binding:"required"`
 		VoiceURL    string `json:"voice_url"`
 		IsAnonymous bool   `json:"is_anonymous"`
+		Status      string `json:"status"` // draft, published
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	// 默认为发布状态
+	status := "published"
+	if input.Status == "draft" {
+		status = "draft"
 	}
 
 	contentHTML := utils.MarkdownToHTML(input.Content)
@@ -65,7 +42,7 @@ func CreateArticle(c *gin.Context) {
 		ContentHTML: contentHTML,
 		UserID:      userID,
 		CategoryID:  input.CategoryID,
-		Status:      "published",
+		Status:      status,
 		VoiceURL:    input.VoiceURL,
 		IsAnonymous: input.IsAnonymous,
 	}
@@ -77,7 +54,8 @@ func CreateArticle(c *gin.Context) {
 
 	database.DB.Preload("User").Preload("Category").First(&article, article.ID)
 
-	if !input.IsAnonymous {
+	// 只有发布的文章才发送通知
+	if status == "published" && !input.IsAnonymous {
 		var follows []models.Follow
 		database.DB.Where("following_id = ?", userID).Find(&follows)
 
@@ -122,7 +100,7 @@ func GetArticles(c *gin.Context) {
 	var total int64
 
 	query.Count(&total)
-	query.Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&articles)
+	query.Order("is_pinned DESC, created_at DESC").Offset(offset).Limit(pageSize).Find(&articles)
 
 	var currentUserID uint
 	if userID, exists := c.Get("user_id"); exists {
@@ -317,33 +295,57 @@ func DeleteArticle(c *gin.Context) {
 	id := c.Param("id")
 
 	var article models.Article
+	if result := database.DB.Where("status != ?", "deleted").First(&article, id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "文章不存在或已删除"})
+		return
+	}
+
+	// 权限检查：管理员可以删除任何文章，普通用户只能删除自己的文章
+	if role != "admin" && role != "system" && article.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "您没有权限删除此文章"})
+		return
+	}
+
+	// 软删除：将状态设置为 deleted
+	article.Status = "deleted"
+	if err := database.DB.Save(&article).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "删除失败"})
+		return
+	}
+
+	// 记录操作日志
+	logOperation(c, ActionDelete, ModuleArticle,
+		"删除文章 - 文章ID: "+strconv.FormatUint(uint64(article.ID), 10)+", 标题: "+article.Title)
+
+	c.JSON(http.StatusOK, gin.H{"message": "文章已删除"})
+}
+
+// RestoreArticle 恢复已删除的文章
+func RestoreArticle(c *gin.Context) {
+	id := c.Param("id")
+
+	var article models.Article
 	if result := database.DB.First(&article, id); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "文章不存在"})
 		return
 	}
 
-	if role == "admin" || role == "system" {
-		database.DB.Delete(&article)
-		c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
+	if article.Status != "deleted" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "文章未被删除，无需恢复"})
 		return
 	}
 
-	var input struct {
-		Reason string `json:"reason"`
-	}
-	if err := c.ShouldBindJSON(&input); err != nil {
-		input.Reason = "用户请求删除"
+	article.Status = "published"
+	if err := database.DB.Save(&article).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "恢复失败"})
+		return
 	}
 
-	deletionRequest := models.DeletionRequest{
-		ArticleID: article.ID,
-		UserID:    userID,
-		Reason:    input.Reason,
-		Status:    "pending",
-	}
-	database.DB.Create(&deletionRequest)
+	// 记录操作日志
+	logOperation(c, ActionUpdate, ModuleArticle,
+		"恢复文章 - 文章ID: "+strconv.FormatUint(uint64(article.ID), 10)+", 标题: "+article.Title)
 
-	c.JSON(http.StatusOK, gin.H{"message": "删除申请已提交，等待审核"})
+	c.JSON(http.StatusOK, gin.H{"message": "文章已恢复"})
 }
 
 func LikeArticle(c *gin.Context) {
@@ -418,8 +420,8 @@ func GetMyArticles(c *gin.Context) {
 	var articles []models.Article
 	var total int64
 
-	database.DB.Model(&models.Article{}).Where("user_id = ?", userID).Count(&total)
-	database.DB.Where("user_id = ?", userID).Preload("User").Preload("Category").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&articles)
+	database.DB.Model(&models.Article{}).Where("user_id = ? AND status != ?", userID, "deleted").Count(&total)
+	database.DB.Where("user_id = ? AND status != ?", userID, "deleted").Preload("User").Preload("Category").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&articles)
 
 	for i := range articles {
 		var likeCount int64
@@ -440,7 +442,190 @@ func GetMyArticles(c *gin.Context) {
 	})
 }
 
-func parseUint(s string) uint {
-	i, _ := strconv.ParseUint(s, 10, 64)
-	return uint(i)
+func SearchArticles(c *gin.Context) {
+	keyword := c.Query("keyword")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	if keyword == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "搜索关键词不能为空"})
+		return
+	}
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	offset := (page - 1) * pageSize
+
+	var articles []models.Article
+	var total int64
+
+	query := database.DB.Model(&models.Article{}).
+		Where("status = ? AND (title LIKE ? OR content LIKE ?)", "published", "%"+keyword+"%", "%"+keyword+"%")
+
+	query.Count(&total)
+	query.Preload("User").Preload("Category").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&articles)
+
+	var currentUserID uint
+	if userID, exists := c.Get("user_id"); exists {
+		currentUserID = userID.(uint)
+	}
+
+	for i := range articles {
+		var likeCount int64
+		database.DB.Model(&models.Like{}).Where("article_id = ?", articles[i].ID).Count(&likeCount)
+		articles[i].LikeCount = int(likeCount)
+
+		var commentCount int64
+		database.DB.Model(&models.Comment{}).Where("article_id = ?", articles[i].ID).Count(&commentCount)
+		articles[i].CommentCount = int(commentCount)
+	}
+
+	maskAnonymousUsers(&articles, currentUserID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"articles":    articles,
+		"total":       total,
+		"page":        page,
+		"page_size":   pageSize,
+		"total_pages": (total + int64(pageSize) - 1) / int64(pageSize),
+	})
+}
+
+func ShareArticle(c *gin.Context) {
+	id := c.Param("id")
+
+	var article models.Article
+	if result := database.DB.First(&article, id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "文章不存在"})
+		return
+	}
+
+	database.DB.Model(&article).UpdateColumn("share_count", article.ShareCount+1)
+
+	c.JSON(http.StatusOK, gin.H{"message": "分享成功", "share_count": article.ShareCount + 1})
+}
+
+// 置顶文章（管理员）
+func PinArticle(c *gin.Context) {
+	id := c.Param("id")
+
+	var article models.Article
+	if result := database.DB.First(&article, id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "文章不存在"})
+		return
+	}
+
+	now := time.Now()
+	database.DB.Model(&article).Updates(map[string]interface{}{
+		"is_pinned": true,
+		"pinned_at": &now,
+	})
+
+	c.JSON(http.StatusOK, gin.H{"message": "置顶成功", "article": article})
+}
+
+// 取消置顶文章（管理员）
+func UnpinArticle(c *gin.Context) {
+	id := c.Param("id")
+
+	var article models.Article
+	if result := database.DB.First(&article, id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "文章不存在"})
+		return
+	}
+
+	database.DB.Model(&article).Updates(map[string]interface{}{
+		"is_pinned": false,
+		"pinned_at": nil,
+	})
+
+	c.JSON(http.StatusOK, gin.H{"message": "取消置顶成功", "article": article})
+}
+
+// 获取用户草稿列表
+func GetDraftArticles(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 20
+	}
+
+	offset := (page - 1) * pageSize
+
+	var articles []models.Article
+	var total int64
+
+	database.DB.Model(&models.Article{}).Where("user_id = ? AND status = ?", userID, "draft").Count(&total)
+	database.DB.Where("user_id = ? AND status = ?", userID, "draft").Preload("User").Preload("Category").Order("updated_at DESC").Offset(offset).Limit(pageSize).Find(&articles)
+
+	for i := range articles {
+		var likeCount int64
+		database.DB.Model(&models.Like{}).Where("article_id = ?", articles[i].ID).Count(&likeCount)
+		articles[i].LikeCount = int(likeCount)
+
+		var commentCount int64
+		database.DB.Model(&models.Comment{}).Where("article_id = ?", articles[i].ID).Count(&commentCount)
+		articles[i].CommentCount = int(commentCount)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"articles":    articles,
+		"total":       total,
+		"page":        page,
+		"page_size":   pageSize,
+		"total_pages": (total + int64(pageSize) - 1) / int64(pageSize),
+	})
+}
+
+// 发布草稿
+func PublishDraft(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	id := c.Param("id")
+
+	var article models.Article
+	if result := database.DB.First(&article, id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "文章不存在"})
+		return
+	}
+
+	if article.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "无权操作"})
+		return
+	}
+
+	if article.Status != "draft" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "不是草稿状态"})
+		return
+	}
+
+	// 更新为发布状态
+	database.DB.Model(&article).Update("status", "published")
+
+	// 发送通知
+	if !article.IsAnonymous {
+		var follows []models.Follow
+		database.DB.Where("following_id = ?", userID).Find(&follows)
+
+		for _, follow := range follows {
+			notification := models.FollowNotification{
+				UserID:    follow.FollowerID,
+				SenderID:  userID,
+				ArticleID: article.ID,
+				Type:      "new_article",
+			}
+			database.DB.Create(&notification)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "发布成功", "article": article})
 }

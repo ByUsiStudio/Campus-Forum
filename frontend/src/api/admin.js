@@ -151,6 +151,69 @@ export const adminAuthApi = {
   checkInit: () => api.get('/auth/check-init')
 }
 
+// ==================== 用户通知API ====================
+export const userNotificationApi = {
+  // 发送单独通知给用户
+  sendNotification: (data) => api.post('/user-notifications/send', data),
+  
+  // 批量发送通知
+  sendBatchNotifications: (data) => api.post('/user-notifications/send-batch', data),
+  
+  // 获取我的通知
+  getNotifications: (params = {}) => api.get('/user-notifications', { params }),
+  
+  // 获取单个通知
+  getNotification: (id) => api.get(`/user-notifications/${id}`),
+  
+  // 标记通知为已读
+  markAsRead: (id) => api.post(`/user-notifications/${id}/read`),
+  
+  // 标记所有通知为已读
+  markAllAsRead: () => api.post('/user-notifications/read-all'),
+  
+  // 删除通知
+  deleteNotification: (id) => api.delete(`/user-notifications/${id}`),
+  
+  // 清空所有通知
+  clearAll: () => api.delete('/user-notifications/clear'),
+  
+  // 管理员获取用户通知
+  getAdminUserNotifications: (userId, params = {}) => api.get(`/admin/user-notifications/${userId}`, { params })
+}
+
+// ==================== 权限组API ====================
+export const permissionGroupApi = {
+  // 获取所有权限组
+  getGroups: () => api.get('/permission-groups'),
+  
+  // 获取单个权限组
+  getGroup: (id) => api.get(`/permission-groups/${id}`),
+  
+  // 创建权限组
+  createGroup: (data) => api.post('/permission-groups', data),
+  
+  // 更新权限组
+  updateGroup: (id, data) => api.put(`/permission-groups/${id}`, data),
+  
+  // 删除权限组
+  deleteGroup: (id) => api.delete(`/permission-groups/${id}`),
+  
+  // 授予用户权限组
+  grantGroup: (data) => api.post('/permission-groups/grant', data),
+  
+  // 撤销用户权限组
+  revokeGroup: (groupId, userId) => api.delete(`/permission-groups/${groupId}/revoke-user/${userId}`),
+  
+  // 获取用户的权限组
+  getUserGroups: (userId) => api.get(`/users/${userId}/permission-groups`),
+  
+  // 检查用户权限
+  checkPermissions: (permissions) => api.get('/permissions/check', { params: { permissions } }),
+  
+  // 初始化默认权限组
+  initDefaults: () => api.post('/permission-groups/init')
+}
+
 // 导出所有API
 export default {
   user: adminUserApi,
@@ -164,5 +227,7 @@ export default {
   notification: adminNotificationApi,
   title: adminTitleApi,
   category: adminCategoryApi,
-  auth: adminAuthApi
+  auth: adminAuthApi,
+  userNotification: userNotificationApi,
+  permissionGroup: permissionGroupApi
 }

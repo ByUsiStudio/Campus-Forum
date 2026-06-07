@@ -10,13 +10,11 @@ import (
 var (
 	FrontendVersion = "unknown"
 	BackendVersion  = "unknown"
-	SwaggerVersion  = "unknown"
 )
 
 func GetVersion(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"frontend": gin.H{"version": FrontendVersion},
 		"backend":  gin.H{"version": BackendVersion},
-		"swagger":  gin.H{"version": SwaggerVersion},
 	})
 }

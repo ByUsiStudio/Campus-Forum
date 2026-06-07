@@ -2,10 +2,28 @@
   <v-app>
     <!-- 主要内容区域 -->
     <v-main :class="{ 'pb-navigation': !hideAppBar && isMobile }" class="bg-grey-lighten-4">
+      <!-- 移动端顶部搜索栏 -->
+      <div v-if="!hideAppBar && isMobile && !isAdminPage" class="mobile-search-bar px-4 pt-3 pb-2">
+        <v-text-field
+          v-model="searchQuery"
+          prepend-inner-icon="mdi-magnify"
+          variant="solo"
+          density="compact"
+          placeholder="搜索..."
+          hide-details
+          rounded="pill"
+          bg-color="white"
+          @keyup.enter="handleSearch"
+          class="mobile-search-field"
+        ></v-text-field>
+      </div>
+      
       <v-container v-if="!hideAppBar" fluid class="pa-4">
         <router-view />
       </v-container>
-      <router-view v-else />
+      <v-container v-else>
+        <router-view />
+      </v-container>
     </v-main>
 
     <!-- 移动端底部导航栏 -->
@@ -103,6 +121,17 @@
 
       <template v-slot:append>
         <div class="nav-links" v-if="!isAdminPage">
+          <v-text-field
+            v-model="searchQuery"
+            prepend-inner-icon="mdi-magnify"
+            variant="outlined"
+            density="compact"
+            color="white"
+            placeholder="搜索..."
+            @keyup.enter="handleSearch"
+            @click:prepend-inner="handleSearch"
+            class="search-field"
+          ></v-text-field>
           <v-btn variant="text" to="/" color="white" prepend-icon="mdi-home">首页</v-btn>
           <v-btn variant="text" to="/login" v-if="!token" color="white" prepend-icon="mdi-login">登录</v-btn>
           <v-btn variant="text" to="/register" v-if="!token" color="white" prepend-icon="mdi-account-plus">注册</v-btn>
@@ -243,6 +272,13 @@ export default {
     const frontendVersion = ref(typeof __FRONTEND_VERSION__ !== 'undefined' ? __FRONTEND_VERSION__ : 'unknown')
     const icpNumber = ref(null)
     const publicSecurityNumber = ref(null)
+    const searchQuery = ref('')
+    
+    const handleSearch = () => {
+      if (searchQuery.value.trim()) {
+        router.push({ path: '/search', query: { q: searchQuery.value.trim() } })
+      }
+    }
     
     // 检测屏幕宽度
     const checkMobile = () => {
@@ -390,7 +426,9 @@ export default {
       updateSiteTitle,
       frontendVersion,
       icpNumber,
-      publicSecurityNumber
+      publicSecurityNumber,
+      searchQuery,
+      handleSearch
     }
   }
 }
@@ -413,6 +451,23 @@ export default {
 
 .nav-links .v-btn {
   font-weight: 500;
+}
+
+.search-field {
+  width: 240px;
+}
+
+.search-field :deep(.v-field__outline) {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.search-field :deep(.v-label),
+.search-field :deep(.v-field__input) {
+  color: white !important;
+}
+
+.search-field :deep(.v-icon) {
+  color: white !important;
 }
 
 .chat-badge {
@@ -439,6 +494,22 @@ export default {
 /* 移动端底部导航栏 padding */
 .pb-navigation {
   padding-bottom: 56px !important;
+}
+
+/* 移动端搜索栏样式 */
+.mobile-search-bar {
+  background: rgb(var(--v-theme-background));
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.mobile-search-field {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.mobile-search-field :deep(.v-field) {
+  border-radius: 24px;
 }
 
 /* 移动端应用抽屉样式 */

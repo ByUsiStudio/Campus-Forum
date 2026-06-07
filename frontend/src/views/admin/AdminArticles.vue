@@ -10,6 +10,7 @@
       :current-user-role="currentUserRole"
       @change-status="showStatusDialog"
       @delete="handleDeleteArticle"
+      @restore="handleRestoreArticle"
       @refresh="loadArticles"
       @update:page="articlePage = $event; loadArticles()"
       @update:filter="articleFilter = $event; articlePage = 1; loadArticles()"
@@ -61,7 +62,8 @@ const articleStatusOptions = [
   { value: 'all', label: '全部' },
   { value: 'pending', label: '待审核' },
   { value: 'published', label: '已发布' },
-  { value: 'rejected', label: '已拒绝' }
+  { value: 'rejected', label: '已拒绝' },
+  { value: 'deleted', label: '已删除' }
 ]
 
 const statusDialog = ref({
@@ -126,6 +128,19 @@ const handleDeleteArticle = async (article) => {
   } catch (error) {
     console.error('删除文章失败', error)
     error(error.response?.data?.error || '删除失败')
+  }
+}
+
+const handleRestoreArticle = async (article) => {
+  const confirmed = await confirm(`确定要恢复文章 "${article.title}" 吗？`)
+  if (!confirmed) return
+  try {
+    await api.post(`/articles/${article.id}/restore`)
+    success('恢复成功')
+    loadArticles()
+  } catch (error) {
+    console.error('恢复文章失败', error)
+    error(error.response?.data?.error || '恢复失败')
   }
 }
 
