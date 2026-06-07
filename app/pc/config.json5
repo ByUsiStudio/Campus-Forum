@@ -1,7 +1,0 @@
-{
-    "baseApi": "https://xylt.cdfifit.cn",
-    "database": {
-        "type": "sqlite", //支持类型 sqlite, mysql
-        "file": "database.db"
-    }
-}
