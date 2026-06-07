@@ -1,0 +1,28 @@
+{
+  "name": "pc-integration",
+  "leadAgentId": "c1f32ce9802547fcb066955e0176c358",
+  "workspacePath": "d:/ByUsi/Projects/Campus Forum",
+  "createdAt": "2026-06-07T07:07:47.888Z",
+  "options": {
+    "workspacePath": "d:/ByUsi/Projects/Campus Forum",
+    "isAutoTeam": false
+  },
+  "members": [
+    {
+      "memberId": "team-lead@pc-integration",
+      "name": "team-lead",
+      "role": "Team Lead - coordinates the team and interacts with the user"
+    },
+    {
+      "memberId": "reader-main@pc-integration",
+      "name": "reader-main",
+      "role": "Read MainController full content"
+    },
+    {
+      "memberId": "reader-profile@pc-integration",
+      "name": "reader-profile",
+      "role": "Read ProfileController full content"
+    }
+  ],
+  "isAutoTeam": false
+}

@@ -1,1 +1,3 @@
-/target
+.token
+__pycache__/
+*.pyc
