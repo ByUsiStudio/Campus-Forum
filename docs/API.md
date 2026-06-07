@@ -333,6 +333,36 @@ Authorization: Bearer <token>
 
 ---
 
+### 获取我的草稿
+
+**GET** `/api/my/drafts`
+
+获取当前用户的草稿列表（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**Query 参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| page | int | 页码，默认 1 |
+| page_size | int | 每页数量，默认 20 |
+
+**响应**:
+```json
+{
+  "articles": [...],
+  "total": 10,
+  "page": 1,
+  "page_size": 20,
+  "total_pages": 1
+}
+```
+
+---
+
 ### 创建文章
 
 **POST** `/api/articles`
@@ -351,7 +381,8 @@ Authorization: Bearer <token>
   "content": "string (Markdown)",
   "category_id": 1,
   "voice_url": "string (可选，语音文件URL)",
-  "is_anonymous": false
+  "is_anonymous": false,
+  "status": "published (published/draft)"
 }
 ```
 
@@ -393,7 +424,59 @@ Authorization: Bearer <token>
 
 **DELETE** `/api/articles/{id}`
 
-删除文章（需认证，仅作者或管理员）。
+删除文章（软删除）（需认证，仅作者或管理员）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 恢复文章
+
+**POST** `/api/articles/{id}/restore`
+
+恢复已删除的文章（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 置顶文章
+
+**POST** `/api/articles/{id}/pin`
+
+置顶文章（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 取消置顶
+
+**DELETE** `/api/articles/{id}/pin`
+
+取消文章置顶（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 发布草稿
+
+**POST** `/api/articles/{id}/publish`
+
+发布草稿（需认证，仅作者）。
 
 **Headers**:
 ```
@@ -446,6 +529,19 @@ Authorization: Bearer <token>
 **DELETE** `/api/articles/{id}/favorite`
 
 取消收藏（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 检查收藏状态
+
+**GET** `/api/articles/{id}/favorite/check`
+
+检查文章收藏状态（需认证）。
 
 **Headers**:
 ```
@@ -1215,39 +1311,13 @@ Authorization: Bearer <token>
 
 ---
 
-## 聊天接口
+## 举报接口
 
-### 获取聊天会话列表
+### 创建举报
 
-**GET** `/api/chat/sessions`
+**POST** `/api/reports`
 
-获取当前用户的聊天会话列表（需认证）。
-
-**Headers**:
-```
-Authorization: Bearer <token>
-```
-
----
-
-### 获取聊天记录
-
-**GET** `/api/chat/messages/{id}`
-
-获取与指定用户的聊天记录（需认证）。
-
-**Headers**:
-```
-Authorization: Bearer <token>
-```
-
----
-
-### 发送消息
-
-**POST** `/api/chat/send`
-
-发送消息（需认证）。
+创建举报（需认证）。
 
 **Headers**:
 ```
@@ -1257,18 +1327,531 @@ Authorization: Bearer <token>
 **请求体**:
 ```json
 {
-  "receiver_id": 1,
-  "content": "string"
+  "target_type": "article",
+  "target_id": 1,
+  "reason": "string",
+  "description": "string"
+}
+```
+
+**响应**:
+```json
+{
+  "message": "举报已提交"
 }
 ```
 
 ---
 
-### 获取聊天未读数量
+### 获取举报列表
 
-**GET** `/api/chat/unread-count`
+**GET** `/api/reports`
 
-获取聊天未读消息数量（需认证）。
+获取举报列表（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**Query 参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| page | int | 页码，默认 1 |
+| page_size | int | 每页数量，默认 20 |
+| status | string | 状态筛选（pending/resolved/dismissed） |
+
+**响应**:
+```json
+{
+  "reports": [...],
+  "total": 100,
+  "page": 1,
+  "total_pages": 5
+}
+```
+
+---
+
+### 获取举报详情
+
+**GET** `/api/reports/:id`
+
+获取举报详情（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 处理举报
+
+**PUT** `/api/reports/:id/handle`
+
+处理举报（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**请求体**:
+```json
+{
+  "status": "resolved",
+  "action_taken": "string"
+}
+```
+
+---
+
+## 用户通知接口
+
+### 获取用户通知列表
+
+**GET** `/api/user-notifications`
+
+获取当前用户的通知列表（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**Query 参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| page | int | 页码，默认 1 |
+| page_size | int | 每页数量，默认 20 |
+| type | string | 通知类型筛选 |
+
+---
+
+### 获取单个通知
+
+**GET** `/api/user-notifications/:id`
+
+获取单个通知详情（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 标记通知为已读
+
+**POST** `/api/user-notifications/:id/read`
+
+标记通知为已读（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 标记所有通知为已读
+
+**POST** `/api/user-notifications/read-all`
+
+标记所有通知为已读（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 删除通知
+
+**DELETE** `/api/user-notifications/:id`
+
+删除通知（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 清空所有通知
+
+**DELETE** `/api/user-notifications/clear`
+
+清空所有通知（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 发送单独通知
+
+**POST** `/api/user-notifications/send`
+
+发送通知给指定用户（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**请求体**:
+```json
+{
+  "user_id": 1,
+  "title": "string",
+  "content": "string",
+  "type": "system",
+  "priority": "normal",
+  "link": "/article/123"
+}
+```
+
+---
+
+### 批量发送通知
+
+**POST** `/api/user-notifications/send-batch`
+
+批量发送通知（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**请求体**:
+```json
+{
+  "user_ids": [1, 2, 3],
+  "title": "string",
+  "content": "string",
+  "type": "system",
+  "priority": "normal",
+  "link": "/article/123"
+}
+```
+
+---
+
+### 管理员获取用户通知
+
+**GET** `/api/admin/user-notifications/:user_id`
+
+管理员获取指定用户的通知（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+## 权限组接口
+
+### 获取所有权限组
+
+**GET** `/api/permission-groups`
+
+获取所有权限组。
+
+**响应**:
+```json
+{
+  "groups": [
+    {
+      "id": 1,
+      "name": "string",
+      "description": "string",
+      "level": 1,
+      "is_default": true,
+      "permissions": ["permission1", "permission2"],
+      "user_count": 100,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### 获取单个权限组
+
+**GET** `/api/permission-groups/:id`
+
+获取单个权限组详情。
+
+---
+
+### 创建权限组
+
+**POST** `/api/permission-groups`
+
+创建权限组（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**请求体**:
+```json
+{
+  "name": "string",
+  "description": "string",
+  "level": 1,
+  "permissions": ["permission1", "permission2"]
+}
+```
+
+---
+
+### 更新权限组
+
+**PUT** `/api/permission-groups/:id`
+
+更新权限组（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 删除权限组
+
+**DELETE** `/api/permission-groups/:id`
+
+删除权限组（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 授予用户权限组
+
+**POST** `/api/permission-groups/grant`
+
+授予用户权限组（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**请求体**:
+```json
+{
+  "user_id": 1,
+  "group_id": 1
+}
+```
+
+---
+
+### 撤销用户权限组
+
+**DELETE** `/api/permission-groups/:id/revoke-user/:user_id`
+
+撤销用户权限组（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 初始化默认权限组
+
+**POST** `/api/permission-groups/init`
+
+初始化默认权限组（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 获取用户权限组
+
+**GET** `/api/users/:id/permission-groups`
+
+获取指定用户的权限组。
+
+---
+
+### 检查用户权限
+
+**GET** `/api/permissions/check`
+
+检查当前用户权限。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**Query 参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| permissions | string | 权限列表，逗号分隔 |
+
+**响应**:
+```json
+{
+  "has_permissions": true
+}
+```
+
+---
+
+## 用户在线状态接口
+
+### 获取用户状态
+
+**GET** `/api/user/status/:id`
+
+获取用户在线状态。
+
+**响应**:
+```json
+{
+  "user_id": 1,
+  "is_online": true,
+  "last_active": "2024-01-01T00:00:00Z"
+}
+```
+
+---
+
+### 更新用户状态
+
+**POST** `/api/user/status`
+
+更新当前用户在线状态（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 获取所有用户状态
+
+**GET** `/api/users/status`
+
+获取所有用户状态（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 获取在线用户
+
+**GET** `/api/users/online`
+
+获取在线用户列表（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 清理离线用户状态
+
+**POST** `/api/users/status/cleanup`
+
+清理离线用户状态（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+## 系统日志接口
+
+### 获取系统日志
+
+**GET** `/api/system-logs`
+
+获取系统日志（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**Query 参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| page | int | 页码，默认 1 |
+| page_size | int | 每页数量，默认 20 |
+| module | string | 模块筛选 |
+| user_id | int | 用户ID筛选 |
+
+---
+
+### 获取日志模块列表
+
+**GET** `/api/system-logs/modules`
+
+获取日志模块列表（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 删除旧日志
+
+**DELETE** `/api/system-logs/old`
+
+删除旧日志（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**Query 参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| days | int | 保留天数，默认30 |
+
+---
+
+### 获取我的操作日志
+
+**GET** `/api/my-logs`
+
+获取当前用户的操作日志（需认证）。
 
 **Headers**:
 ```
@@ -1432,9 +2015,6 @@ Authorization: Bearer <token>
     "version": "string"
   },
   "backend": {
-    "version": "string"
-  },
-  "swagger": {
     "version": "string"
   }
 }
@@ -1624,6 +2204,52 @@ Authorization: Bearer <token>
 
 ---
 
+### 删除用户
+
+**DELETE** `/api/admin/users/{id}`
+
+删除用户（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
+### 更新文章状态
+
+**PUT** `/api/admin/articles/:id/status`
+
+更新文章状态（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**请求体**:
+```json
+{
+  "status": "published/hidden/deleted"
+}
+```
+
+---
+
+### 管理员删除评论
+
+**DELETE** `/api/admin/comments/:id`
+
+管理员删除评论（需管理员权限）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+---
+
 ## 错误响应
 
 所有接口错误时返回以下格式：
@@ -1643,9 +2269,3 @@ Authorization: Bearer <token>
 - `500` - 服务器内部错误
 
 ---
-
-## 交互式文档
-
-启动服务后，可访问以下地址获取交互式 API 文档：
-
-**Swagger UI**: http://localhost:3620/swagger/index.html
