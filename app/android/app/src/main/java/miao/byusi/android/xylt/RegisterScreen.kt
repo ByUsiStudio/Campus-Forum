@@ -2,28 +2,18 @@ package miao.byusi.android.xylt
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.FilledButton
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.outlined.ArrowBack
-import top.yukonga.miuix.kmp.icon.icons.outlined.Person
-import top.yukonga.miuix.kmp.icon.icons.outlined.Chat
-import top.yukonga.miuix.kmp.icon.icons.outlined.Edit
-import top.yukonga.miuix.kmp.icon.icons.outlined.Lock
-import top.yukonga.miuix.kmp.textfield.TextField
 
 @Composable
 fun RegisterScreen(navController: NavHostController) {
@@ -48,13 +38,13 @@ fun RegisterScreen(navController: NavHostController) {
                 ) {
                     Button(onClick = { navController.popBackStack() }) {
                         Icon(
-                            imageVector = MiuixIcons.Outlined.ArrowBack,
+                            imageVector = Icons.Outlined.ArrowBack,
                             contentDescription = "返回"
                         )
                     }
                     Text(
                         text = "注册",
-                        fontSize = 20.dp
+                        fontSize = 20.sp
                     )
                 }
             }
@@ -71,7 +61,7 @@ fun RegisterScreen(navController: NavHostController) {
             
             Text(
                 text = "创建新账户",
-                fontSize = 28.dp,
+                fontSize = 28.sp,
                 color = Color(0xFF007AFF)
             )
             
@@ -81,11 +71,11 @@ fun RegisterScreen(navController: NavHostController) {
             TextField(
                 value = username,
                 onValueChange = { username = it },
-                label = "用户名",
+                label = { Text("用户名") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = {
                     Icon(
-                        imageVector = MiuixIcons.Outlined.Person,
+                        imageVector = Icons.Outlined.Person,
                         contentDescription = null
                     )
                 }
@@ -97,12 +87,12 @@ fun RegisterScreen(navController: NavHostController) {
             TextField(
                 value = qqNumber,
                 onValueChange = { qqNumber = it },
-                label = "QQ号码",
+                label = { Text("QQ号码") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = {
                     Icon(
-                        imageVector = MiuixIcons.Outlined.Chat,
+                        imageVector = Icons.Outlined.Chat,
                         contentDescription = null
                     )
                 }
@@ -114,11 +104,11 @@ fun RegisterScreen(navController: NavHostController) {
             TextField(
                 value = displayName,
                 onValueChange = { displayName = it },
-                label = "显示名称",
+                label = { Text("显示名称") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = {
                     Icon(
-                        imageVector = MiuixIcons.Outlined.Edit,
+                        imageVector = Icons.Outlined.Edit,
                         contentDescription = null
                     )
                 }
@@ -130,13 +120,13 @@ fun RegisterScreen(navController: NavHostController) {
             TextField(
                 value = password,
                 onValueChange = { password = it },
-                label = "密码",
+                label = { Text("密码") },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = {
                     Icon(
-                        imageVector = MiuixIcons.Outlined.Lock,
+                        imageVector = Icons.Outlined.Lock,
                         contentDescription = null
                     )
                 }
@@ -148,13 +138,13 @@ fun RegisterScreen(navController: NavHostController) {
             TextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = "确认密码",
+                label = { Text("确认密码") },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = {
                     Icon(
-                        imageVector = MiuixIcons.Outlined.Lock,
+                        imageVector = Icons.Outlined.Lock,
                         contentDescription = null
                     )
                 }
@@ -165,37 +155,37 @@ fun RegisterScreen(navController: NavHostController) {
                 Text(
                     text = error ?: "",
                     color = Color(0xFFFF3B30),
-                    fontSize = 12.dp
+                    fontSize = 12.sp
                 )
             }
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            FilledButton(
+            Button(
                 onClick = {
                     if (username.isEmpty()) {
                         error = "请输入用户名"
-                        return
+                        return@Button
                     }
                     if (qqNumber.isEmpty()) {
                         error = "请输入QQ号码"
-                        return
+                        return@Button
                     }
                     if (displayName.isEmpty()) {
                         error = "请输入显示名称"
-                        return
+                        return@Button
                     }
                     if (password.isEmpty()) {
                         error = "请输入密码"
-                        return
+                        return@Button
                     }
                     if (password.length < 6) {
                         error = "密码至少6位"
-                        return
+                        return@Button
                     }
                     if (password != confirmPassword) {
                         error = "两次密码不一致"
-                        return
+                        return@Button
                     }
                     isLoading = true
                     error = null

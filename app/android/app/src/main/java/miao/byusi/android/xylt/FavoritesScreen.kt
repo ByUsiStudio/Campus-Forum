@@ -3,6 +3,9 @@ package miao.byusi.android.xylt
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -10,16 +13,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.FilledButton
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.outlined.ArrowBack
-import top.yukonga.miuix.kmp.icon.icons.outlined.Bookmark
 
 @Composable
 fun FavoritesScreen(navController: NavHostController) {
@@ -58,7 +51,7 @@ fun FavoritesScreen(navController: NavHostController) {
                 ) {
                     Button(onClick = { navController.popBackStack() }) {
                         Icon(
-                            imageVector = MiuixIcons.Outlined.ArrowBack,
+                            imageVector = Icons.Outlined.ArrowBack,
                             contentDescription = "返回"
                         )
                     }
@@ -89,7 +82,7 @@ fun FavoritesScreen(navController: NavHostController) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("加载失败: $error", fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(16.dp))
-                    FilledButton(onClick = loadData) {
+                    Button(onClick = loadData) {
                         Text("重试")
                     }
                 }
@@ -104,7 +97,7 @@ fun FavoritesScreen(navController: NavHostController) {
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            imageVector = MiuixIcons.Outlined.Bookmark,
+                            imageVector = Icons.Outlined.Bookmark,
                             contentDescription = null,
                             modifier = Modifier.size(64.dp),
                             tint = Color(0xFFCCCCCC)
@@ -140,7 +133,7 @@ private fun loadFavorites(callback: (Result<List<Article>>) -> Unit) {
     ApiClient.getFavorites(1, 50, object : ApiCallback {
         override fun onSuccess(response: String) {
             try {
-                val list = parseArticles(response)
+                val list = parseFavoriteArticles(response)
                 callback(Result.success(list))
             } catch (e: Exception) {
                 callback(Result.failure(e))
@@ -150,4 +143,33 @@ private fun loadFavorites(callback: (Result<List<Article>>) -> Unit) {
             callback(Result.failure(Exception(error)))
         }
     })
+}
+
+private fun parseFavoriteArticles(response: String): List<Article> {
+    val json = org.json.JSONObject(response)
+    val articlesArray = json.optJSONArray("articles") ?: json.optJSONArray("favorites") ?: org.json.JSONArray()
+    val list = mutableListOf<Article>()
+    for (i in 0 until articlesArray.length()) {
+        val articleJson = articlesArray.getJSONObject(i)
+        val userJson = articleJson.optJSONObject("user")
+        val user = userJson?.let {
+            User(
+                id = it.optInt("id", 0),
+                username = it.optString("username", ""),
+                displayName = it.optString("display_name", it.optString("nickname", null)),
+                avatar = it.optString("avatar_url", it.optString("avatar", null))
+            )
+        }
+        val article = Article(
+            id = articleJson.optInt("id", 0),
+            title = articleJson.optString("title", ""),
+            content = articleJson.optString("content", ""),
+            user = user,
+            viewCount = articleJson.optInt("view_count", 0),
+            likeCount = articleJson.optInt("like_count", 0),
+            createdAt = articleJson.optString("created_at", "")
+        )
+        list.add(article)
+    }
+    return list
 }

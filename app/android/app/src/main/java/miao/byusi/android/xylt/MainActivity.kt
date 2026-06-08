@@ -6,6 +6,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,10 +26,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
-import top.yukonga.miuix.kmp.theme.ColorSchemeMode
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.theme.ThemeController
-import top.yukonga.miuix.kmp.utils.platformCompositionLocals
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,27 +45,49 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// 校园论坛主题色
+private val CampusPurple = Color(0xFF6366F1)
+private val CampusPurpleDark = Color(0xFF4F46E5)
+
+private val LightColorScheme = lightColorScheme(
+    primary = CampusPurple,
+    onPrimary = Color.White,
+    primaryContainer = CampusPurple.copy(alpha = 0.1f),
+    secondary = CampusPurpleDark,
+    onSecondary = Color.White,
+    background = Color(0xFFFAFAFA),
+    onBackground = Color(0xFF1F2937),
+    surface = Color.White,
+    onSurface = Color(0xFF1F2937),
+    surfaceVariant = Color(0xFFF3F4F6),
+    onSurfaceVariant = Color(0xFF6B7280)
+)
+
+private val DarkColorScheme = darkColorScheme(
+    primary = CampusPurple,
+    onPrimary = Color.White,
+    primaryContainer = CampusPurpleDark,
+    secondary = CampusPurpleDark,
+    onSecondary = Color.White,
+    background = Color(0xFF111827),
+    onBackground = Color(0xFFF9FAFB),
+    surface = Color(0xFF1F2937),
+    onSurface = Color(0xFFF9FAFB),
+    surfaceVariant = Color(0xFF374151),
+    onSurfaceVariant = Color(0xFF9CA3AF)
+)
+
 /**
- * 应用主题：基于 Miuix 0.8.x。
- *  - [ColorSchemeMode.System] 跟随系统深色模式
- *  - [themeColor] 取校园论坛主色（紫）
- *  - [platformCompositionLocals] 提供 MIUI/HyperOS 平台本地化支持
+ * 应用主题：基于 Material 3，支持跟随系统深色模式
  */
 @Composable
 fun AppTheme(
     content: @Composable () -> Unit
 ) {
-    val controller = remember { ThemeController(ColorSchemeMode.System) }
-    MiuixTheme(
-        controller = controller,
-        enableDynamicColor = false,
-        basicColors = null,
-        colorScheme = null,
-        content = {
-            platformCompositionLocals {
-                content()
-            }
-        }
+    val darkTheme = isSystemInDarkTheme()
+    MaterialTheme(
+        colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
+        content = content
     )
 }
 

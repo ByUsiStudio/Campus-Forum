@@ -3,34 +3,18 @@ package miao.byusi.android.xylt
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import coil.compose.AsyncImage
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.FilledButton
-import top.yukonga.miuix.kmp.basic.OutlinedButton
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.basic.Dialog
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.outlined.ArrowBack
-import top.yukonga.miuix.kmp.icon.icons.outlined.Favorite
-import top.yukonga.miuix.kmp.icon.icons.outlined.FavoriteBorder
-import top.yukonga.miuix.kmp.icon.icons.outlined.Comment
-import top.yukonga.miuix.kmp.icon.icons.outlined.Report
-import top.yukonga.miuix.kmp.icon.icons.outlined.Bookmark
-import top.yukonga.miuix.kmp.icon.icons.outlined.BookmarkBorder
-import top.yukonga.miuix.kmp.icon.icons.outlined.Share
-import top.yukonga.miuix.kmp.icon.icons.outlined.Reply
 
 @Composable
 fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
@@ -99,13 +83,13 @@ fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
                 ) {
                     Button(onClick = { navController.popBackStack() }) {
                         Icon(
-                            imageVector = MiuixIcons.Outlined.ArrowBack,
+                            imageVector = Icons.Outlined.ArrowBack,
                             contentDescription = "返回"
                         )
                     }
                     Text(
                         text = "文章详情",
-                        fontSize = 20.dp
+                        fontSize = 20.sp
                     )
                 }
             }
@@ -128,9 +112,9 @@ fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("加载失败: $error")
+                    Text(text = "加载失败: $error")
                     Spacer(modifier = Modifier.height(16.dp))
-                    FilledButton(onClick = refreshData) {
+                    Button(onClick = refreshData) {
                         Text("重试")
                     }
                 }
@@ -156,11 +140,11 @@ fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = article?.authorName ?: "匿名",
-                            fontSize = 16.dp
+                            fontSize = 16.sp
                         )
                         Text(
                             text = article?.createdAt ?: "",
-                            fontSize = 12.dp,
+                            fontSize = 12.sp,
                             color = Color(0xFF666666)
                         )
                     }
@@ -174,7 +158,7 @@ fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
                 // 文章标题
                 Text(
                     text = article?.title ?: "",
-                    fontSize = 24.dp,
+                    fontSize = 24.sp,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 
@@ -183,7 +167,7 @@ fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
                 // 文章内容
                 Text(
                     text = article?.content ?: "",
-                    fontSize = 16.dp,
+                    fontSize = 16.sp,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 
@@ -211,7 +195,7 @@ fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
                         .padding(horizontal = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    FilledButton(
+                    Button(
                         onClick = {
                             toggleLike(articleId, isLiked) { newLiked ->
                                 isLiked = newLiked
@@ -219,39 +203,39 @@ fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
                         }
                     ) {
                         Icon(
-                            imageVector = if (isLiked) MiuixIcons.Outlined.Favorite else MiuixIcons.Outlined.FavoriteBorder,
+                            imageVector = if (isLiked) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
                             contentDescription = null
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(if (isLiked) "已点赞" else "点赞")
                     }
-                    FilledButton(onClick = { 
+                    Button(onClick = { 
                         replyToComment = null
                         commentText = ""
                         showCommentDialog = true 
                     }) {
                         Icon(
-                            imageVector = MiuixIcons.Outlined.Comment,
+                            imageVector = Icons.Outlined.Comment,
                             contentDescription = null
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("评论")
                     }
-                    FilledButton(onClick = { 
+                    Button(onClick = { 
                         toggleFavorite(articleId, isFavorited) { newFavorited ->
                             isFavorited = newFavorited
                         }
                     }) {
                         Icon(
-                            imageVector = if (isFavorited) MiuixIcons.Outlined.Bookmark else MiuixIcons.Outlined.BookmarkBorder,
+                            imageVector = if (isFavorited) Icons.Outlined.Bookmark else Icons.Outlined.BookmarkBorder,
                             contentDescription = null
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(if (isFavorited) "已收藏" else "收藏")
                     }
-                    FilledButton(onClick = { shareArticle(articleId) }) {
+                    Button(onClick = { shareArticle(articleId) }) {
                         Icon(
-                            imageVector = MiuixIcons.Outlined.Share,
+                            imageVector = Icons.Outlined.Share,
                             contentDescription = null
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -267,7 +251,7 @@ fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
                 ) {
                     OutlinedButton(onClick = { showReportDialog = true }) {
                         Icon(
-                            imageVector = MiuixIcons.Outlined.Report,
+                            imageVector = Icons.Outlined.Report,
                             contentDescription = null
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -280,7 +264,7 @@ fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
                 // 评论列表
                 Text(
                     text = "评论 (${comments.size})",
-                    fontSize = 18.dp,
+                    fontSize = 18.sp,
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 
@@ -289,7 +273,7 @@ fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
                 if (comments.isEmpty()) {
                     Text(
                         text = "暂无评论",
-                        fontSize = 14.dp,
+                        fontSize = 14.sp,
                         color = Color(0xFF666666),
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
@@ -317,56 +301,54 @@ fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
     
     // 评论对话框
     if (showCommentDialog) {
-        Dialog(
+        AlertDialog(
             onDismissRequest = { showCommentDialog = false },
-            title = { Text(if (replyToComment != null) "回复评论" else "发表评论") }
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                if (replyToComment != null) {
-                    Text(
-                        text = "回复 @${replyToComment?.authorName}",
-                        fontSize = 14.dp,
-                        color = Color(0xFF666666)
+            title = { Text(if (replyToComment != null) "回复评论" else "发表评论") },
+            text = {
+                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                    if (replyToComment != null) {
+                        Text(
+                            text = "回复 @${replyToComment?.authorName}",
+                            fontSize = 14.sp,
+                            color = Color(0xFF666666)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    TextField(
+                        value = commentText,
+                        onValueChange = { commentText = it },
+                        placeholder = { Text("说点什么...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        maxLines = 5
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
                 }
-                TextField(
-                    value = commentText,
-                    onValueChange = { commentText = it },
-                    placeholder = { Text("说点什么...") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    maxLines = 5
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+            },
+            dismissButton = {
+                TextButton(onClick = { showCommentDialog = false }) {
+                    Text("取消")
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        submitComment(
+                            articleId,
+                            commentText,
+                            replyToComment?.id
+                        ) {
+                            showCommentDialog = false
+                            replyToComment = null
+                            commentText = ""
+                            refreshData()
+                        }
+                    },
+                    enabled = commentText.isNotBlank()
                 ) {
-                    OutlinedButton(onClick = { showCommentDialog = false }) {
-                        Text("取消")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    FilledButton(
-                        onClick = {
-                            submitComment(
-                                articleId,
-                                commentText,
-                                replyToComment?.id
-                            ) {
-                                showCommentDialog = false
-                                replyToComment = null
-                                commentText = ""
-                                refreshData()
-                            }
-                        },
-                        enabled = commentText.isNotBlank()
-                    ) {
-                        Text("发送")
-                    }
+                    Text("发送")
                 }
             }
-        }
+        )
     }
     
     // 举报对话框
@@ -374,48 +356,46 @@ fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
         var reportReason by remember { mutableStateOf("") }
         var reportDescription by remember { mutableStateOf("") }
         
-        Dialog(
+        AlertDialog(
             onDismissRequest = { showReportDialog = false },
-            title = { Text("举报") }
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                TextField(
-                    value = reportReason,
-                    onValueChange = { reportReason = it },
-                    placeholder = { Text("举报原因") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                TextField(
-                    value = reportDescription,
-                    onValueChange = { reportDescription = it },
-                    placeholder = { Text("详细描述") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    maxLines = 5
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+            title = { Text("举报") },
+            text = {
+                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                    TextField(
+                        value = reportReason,
+                        onValueChange = { reportReason = it },
+                        placeholder = { Text("举报原因") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextField(
+                        value = reportDescription,
+                        onValueChange = { reportDescription = it },
+                        placeholder = { Text("详细描述") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        maxLines = 5
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReportDialog = false }) {
+                    Text("取消")
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        submitReport("article", articleId, reportReason, reportDescription) {
+                            showReportDialog = false
+                        }
+                    },
+                    enabled = reportReason.isNotBlank()
                 ) {
-                    OutlinedButton(onClick = { showReportDialog = false }) {
-                        Text("取消")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    FilledButton(
-                        onClick = {
-                            submitReport("article", articleId, reportReason, reportDescription) {
-                                showReportDialog = false
-                            }
-                        },
-                        enabled = reportReason.isNotBlank()
-                    ) {
-                        Text("提交")
-                    }
+                    Text("提交")
                 }
             }
-        }
+        )
     }
 }
 
@@ -437,15 +417,15 @@ fun CommentItem(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = comment.authorName,
-                    fontSize = 14.dp,
+                    text = comment.authorName ?: "匿名",
+                    fontSize = 14.sp,
                     color = Color(0xFF007AFF)
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = comment.content,
-                fontSize = 14.dp
+                fontSize = 14.sp
             )
             Spacer(modifier = Modifier.height(4.dp))
             Row(
@@ -453,26 +433,26 @@ fun CommentItem(
             ) {
                 Text(
                     text = comment.createdAt,
-                    fontSize = 12.dp,
+                    fontSize = 12.sp,
                     color = Color(0xFF666666)
                 )
                 Button(onClick = { onLike(comment.id) }) {
                     Icon(
-                        imageVector = MiuixIcons.Outlined.FavoriteBorder,
+                        imageVector = Icons.Outlined.FavoriteBorder,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("${comment.likeCount}", fontSize = 12.dp)
+                    Text("${comment.likeCount}", fontSize = 12.sp)
                 }
                 Button(onClick = { onReply(comment) }) {
                     Icon(
-                        imageVector = MiuixIcons.Outlined.Reply,
+                        imageVector = Icons.Outlined.Reply,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("回复", fontSize = 12.dp)
+                    Text("回复", fontSize = 12.sp)
                 }
             }
             // 回复列表
@@ -487,13 +467,13 @@ fun CommentItem(
                             Column(modifier = Modifier.padding(8.dp)) {
                                 Text(
                                     text = "@${reply.authorName}",
-                                    fontSize = 12.dp,
+                                    fontSize = 12.sp,
                                     color = Color(0xFF007AFF)
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = reply.content,
-                                    fontSize = 12.dp
+                                    fontSize = 12.sp
                                 )
                             }
                         }
@@ -602,7 +582,7 @@ private fun submitReport(targetType: String, targetId: Int, reason: String, desc
 }
 
 private fun loadArticleDetail(articleId: Int, callback: (Result<Triple<ArticleDetail, List<Comment>, Boolean>>) -> Unit) {
-    ApiClient.getArticleDetail(articleId, object : ApiCallback {
+    ApiClient.getArticleDetail(articleId, 1, 20, object : ApiCallback {
         override fun onSuccess(response: String) {
             try {
                 val json = org.json.JSONObject(response)
@@ -651,10 +631,10 @@ private fun parseUser(json: org.json.JSONObject?): User? {
     return User(
         id = json.optInt("id", 0),
         username = json.optString("username", ""),
-        displayName = json.optString("display_name"),
-        avatar = json.optString("avatar"),
-        role = json.optString("role"),
-        signature = json.optString("signature")
+        displayName = json.optString("display_name", json.optString("nickname", null)),
+        avatar = json.optString("avatar", json.optString("avatar_url", null)),
+        role = json.optString("role", null),
+        signature = json.optString("signature", null)
     )
 }
 
@@ -667,29 +647,24 @@ private fun parseCategory(json: org.json.JSONObject?): Category? {
 }
 
 private fun parseComment(json: org.json.JSONObject): Comment {
-    val repliesArray = json.optJSONArray("replies")
-    val replies = if (repliesArray != null) {
-        mutableListOf<Comment>().apply {
-            for (i in 0 until repliesArray.length()) {
-                add(parseComment(repliesArray.getJSONObject(i)))
-            }
-        }
-    } else null
-    
     return Comment(
         id = json.optInt("id", 0),
         content = json.optString("content", ""),
+        articleId = json.optInt("article_id", 0),
+        parentId = json.optInt("parent_id", 0).takeIf { it > 0 },
+        isAnonymous = json.optBoolean("is_anonymous", false),
+        likeCount = json.optInt("like_count", 0),
+        createdAt = json.optString("created_at", ""),
         user = parseUser(json.optJSONObject("user")),
         authorName = json.optJSONObject("user")?.optString("display_name")
             ?: json.optJSONObject("user")?.optString("nickname")
             ?: "匿名",
-        articleId = json.optInt("article_id", 0),
-        parentId = json.optInt("parent_id").takeIf { it != 0 },
-        likeCount = json.optInt("like_count", 0),
-        replyCount = json.optInt("reply_count", 0),
-        replies = replies,
-        isAnonymous = json.optBoolean("is_anonymous", false),
-        createdAt = json.optString("created_at", "")
+        replies = json.optJSONArray("replies")?.let { array ->
+            val list = mutableListOf<Comment>()
+            for (i in 0 until array.length()) {
+                list.add(parseComment(array.getJSONObject(i)))
+            }
+            list
+        }
     )
 }
-// 数据类统一在 Models.kt，避免分散声明与重名冲突。

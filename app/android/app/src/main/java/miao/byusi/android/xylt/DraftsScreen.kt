@@ -3,24 +3,17 @@ package miao.byusi.android.xylt
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.FilledButton
-import top.yukonga.miuix.kmp.basic.OutlinedButton
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.outlined.ArrowBack
 
 @Composable
 fun DraftsScreen(navController: NavHostController) {
@@ -58,13 +51,13 @@ fun DraftsScreen(navController: NavHostController) {
                 ) {
                     Button(onClick = { navController.popBackStack() }) {
                         Icon(
-                            imageVector = MiuixIcons.Outlined.ArrowBack,
+                            imageVector = Icons.Outlined.ArrowBack,
                             contentDescription = "返回"
                         )
                     }
                     Text(
                         text = "草稿箱",
-                        fontSize = 20.dp
+                        fontSize = 20.sp
                     )
                 }
             }
@@ -127,25 +120,25 @@ fun DraftCard(draft: Draft, onPublish: () -> Unit, onDelete: () -> Unit) {
         ) {
             Text(
                 text = draft.title.ifEmpty { "无标题草稿" },
-                fontSize = 16.dp
+                fontSize = 16.sp
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = draft.content.take(100) + if (draft.content.length > 100) "..." else "",
-                fontSize = 14.dp,
+                fontSize = 14.sp,
                 color = Color(0xFF666666)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = draft.createdAt,
-                fontSize = 12.dp,
+                fontSize = 12.sp,
                 color = Color(0xFF666666)
             )
             Spacer(modifier = Modifier.height(16.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                FilledButton(onClick = onPublish) {
+                Button(onClick = onPublish) {
                     Text("发布")
                 }
                 OutlinedButton(onClick = onDelete) {

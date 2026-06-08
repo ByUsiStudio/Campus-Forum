@@ -3,6 +3,9 @@ package miao.byusi.android.xylt
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,9 +18,6 @@ import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
-import top.yukonga.miuix.kmp.basic.*
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.outlined.*
 
 @Composable
 fun ProfileScreen(navController: NavHostController) {
@@ -69,7 +69,7 @@ fun ProfileScreen(navController: NavHostController) {
                 ) {
                     Button(onClick = { navController.popBackStack() }) {
                         Icon(
-                            imageVector = MiuixIcons.Outlined.ArrowBack,
+                            imageVector = Icons.Outlined.ArrowBack,
                             contentDescription = "返回"
                         )
                     }
@@ -102,7 +102,7 @@ fun ProfileScreen(navController: NavHostController) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("请登录查看个人资料", fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(16.dp))
-                    FilledButton(onClick = { navController.navigate("login") }) {
+                    Button(onClick = { navController.navigate("login") }) {
                         Text("登录")
                     }
                 }
@@ -149,7 +149,7 @@ fun ProfileScreen(navController: NavHostController) {
 
                 OutlinedButton(onClick = { showEditDialog = true }) {
                     Icon(
-                        imageVector = MiuixIcons.Outlined.Edit,
+                        imageVector = Icons.Outlined.Edit,
                         contentDescription = null
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -186,17 +186,17 @@ fun ProfileScreen(navController: NavHostController) {
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     MenuItem(
-                        icon = MiuixIcons.Outlined.Bookmark,
+                        icon = Icons.Outlined.Bookmark,
                         title = "我的收藏",
                         onClick = { navController.navigate("favorites") }
                     )
                     MenuItem(
-                        icon = MiuixIcons.Outlined.Notifications,
+                        icon = Icons.Outlined.Notifications,
                         title = "我的通知",
                         onClick = { navController.navigate("notifications") }
                     )
                     MenuItem(
-                        icon = MiuixIcons.Outlined.Drafts,
+                        icon = Icons.Outlined.Drafts,
                         title = "草稿箱",
                         onClick = { navController.navigate("drafts") }
                     )
@@ -278,7 +278,7 @@ private fun MenuItem(
             )
             Spacer(modifier = Modifier.weight(1f))
             Icon(
-                imageVector = MiuixIcons.Outlined.ArrowForwardIos,
+                imageVector = Icons.Outlined.ArrowForwardIos,
                 contentDescription = null,
                 tint = Color(0xFFCCCCCC),
                 modifier = Modifier.size(16.dp)
@@ -297,60 +297,56 @@ private fun EditProfileDialog(
     var displayName by remember { mutableStateOf(currentDisplayName) }
     var signature by remember { mutableStateOf(currentSignature) }
     
-    Dialog(
+    AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("编辑资料") }
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "昵称",
-                fontSize = 14.sp,
-                color = Color(0xFF666666)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            TextField(
-                value = displayName,
-                onValueChange = { displayName = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("请输入昵称") }
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = "个人简介",
-                fontSize = 14.sp,
-                color = Color(0xFF666666)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            TextField(
-                value = signature,
-                onValueChange = { signature = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("请输入个人简介") },
-                minLines = 3,
-                maxLines = 5
-            )
-            
-            Spacer(modifier = Modifier.height(20.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+        title = { Text("编辑资料") },
+        text = {
+            Column(modifier = Modifier.padding(0.dp)) {
+                Text(
+                    text = "昵称",
+                    fontSize = 14.sp,
+                    color = Color(0xFF666666)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                TextField(
+                    value = displayName,
+                    onValueChange = { displayName = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("请输入昵称") }
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "个人简介",
+                    fontSize = 14.sp,
+                    color = Color(0xFF666666)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                TextField(
+                    value = signature,
+                    onValueChange = { signature = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("请输入个人简介") },
+                    minLines = 3,
+                    maxLines = 5
+                )
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(displayName, signature) },
+                enabled = displayName.isNotBlank()
             ) {
-                OutlinedButton(onClick = onDismiss) {
-                    Text("取消")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                FilledButton(
-                    onClick = { onSave(displayName, signature) },
-                    enabled = displayName.isNotBlank()
-                ) {
-                    Text("保存")
-                }
+                Text("保存")
             }
         }
-    }
+    )
 }
 
 @Composable
@@ -396,7 +392,7 @@ private fun ServerStatusCard(
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
-            FilledButton(
+            Button(
                 onClick = onReCheck,
                 modifier = Modifier
                     .fillMaxWidth()

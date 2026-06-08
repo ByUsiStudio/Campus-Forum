@@ -3,24 +3,17 @@ package miao.byusi.android.xylt
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.FilledButton
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.outlined.ArrowBack
-import top.yukonga.miuix.kmp.icon.icons.outlined.MarkEmailRead
-import top.yukonga.miuix.kmp.icon.icons.outlined.Notifications
 
 @Composable
 fun NotificationsScreen(navController: NavHostController) {
@@ -63,23 +56,23 @@ fun NotificationsScreen(navController: NavHostController) {
                 ) {
                     Button(onClick = { navController.popBackStack() }) {
                         Icon(
-                            imageVector = MiuixIcons.Outlined.ArrowBack,
+                            imageVector = Icons.Outlined.ArrowBack,
                             contentDescription = "返回"
                         )
                     }
                     Text(
                         text = "通知",
-                        fontSize = 20.dp,
+                        fontSize = 20.sp,
                         modifier = Modifier.weight(1f)
                     )
                     if (unreadCount > 0) {
-                        FilledButton(onClick = { 
+                        Button(onClick = { 
                             markAllAsRead {
                                 loadData()
                             }
                         }) {
                             Icon(
-                                imageVector = MiuixIcons.Outlined.MarkEmailRead,
+                                imageVector = Icons.Outlined.MarkEmailRead,
                                 contentDescription = null
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -109,7 +102,7 @@ fun NotificationsScreen(navController: NavHostController) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("加载失败: $error")
                     Spacer(modifier = Modifier.height(16.dp))
-                    FilledButton(onClick = loadData) {
+                    Button(onClick = loadData) {
                         Text("重试")
                     }
                 }
@@ -124,7 +117,7 @@ fun NotificationsScreen(navController: NavHostController) {
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            imageVector = MiuixIcons.Outlined.Notifications,
+                            imageVector = Icons.Outlined.Notifications,
                             contentDescription = null,
                             modifier = Modifier.size(64.dp),
                             tint = Color(0xFFCCCCCC)
@@ -132,7 +125,7 @@ fun NotificationsScreen(navController: NavHostController) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = "暂无通知",
-                            fontSize = 16.dp,
+                            fontSize = 16.sp,
                             color = Color(0xFF666666)
                         )
                     }
@@ -210,12 +203,12 @@ fun NotificationItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = getNotificationText(notification),
-                    fontSize = 14.dp
+                    fontSize = 14.sp
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = notification.createdAt,
-                    fontSize = 12.dp,
+                    fontSize = 12.sp,
                     color = Color(0xFF666666)
                 )
             }
@@ -223,7 +216,7 @@ fun NotificationItem(
             if (!notification.isRead) {
                 Button(onClick = { onMarkRead(notification.id) }) {
                     Icon(
-                        imageVector = MiuixIcons.Outlined.MarkEmailRead,
+                        imageVector = Icons.Outlined.MarkEmailRead,
                         contentDescription = "标记已读",
                         modifier = Modifier.size(20.dp)
                     )

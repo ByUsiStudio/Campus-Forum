@@ -2,27 +2,18 @@ package miao.byusi.android.xylt
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.FilledButton
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.outlined.ArrowBack
-import top.yukonga.miuix.kmp.icon.icons.outlined.Person
-import top.yukonga.miuix.kmp.icon.icons.outlined.Lock
-import top.yukonga.miuix.kmp.textfield.TextField
 
 @Composable
 fun LoginScreen(navController: NavHostController) {
@@ -44,13 +35,13 @@ fun LoginScreen(navController: NavHostController) {
                 ) {
                     Button(onClick = { navController.popBackStack() }) {
                         Icon(
-                            imageVector = MiuixIcons.Outlined.ArrowBack,
+                            imageVector = Icons.Outlined.ArrowBack,
                             contentDescription = "返回"
                         )
                     }
                     Text(
                         text = "登录",
-                        fontSize = 20.dp
+                        fontSize = 20.sp
                     )
                 }
             }
@@ -67,7 +58,7 @@ fun LoginScreen(navController: NavHostController) {
             
             Text(
                 text = "校园论坛",
-                fontSize = 28.dp,
+                fontSize = 28.sp,
                 color = Color(0xFF007AFF)
             )
             
@@ -75,7 +66,7 @@ fun LoginScreen(navController: NavHostController) {
             
             Text(
                 text = "登录您的账户",
-                fontSize = 14.dp,
+                fontSize = 14.sp,
                 color = Color(0xFF666666)
             )
             
@@ -85,11 +76,11 @@ fun LoginScreen(navController: NavHostController) {
             TextField(
                 value = username,
                 onValueChange = { username = it },
-                label = "用户名",
+                label = { Text("用户名") },
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = {
                     Icon(
-                        imageVector = MiuixIcons.Outlined.Person,
+                        imageVector = Icons.Outlined.Person,
                         contentDescription = null
                     )
                 }
@@ -101,13 +92,13 @@ fun LoginScreen(navController: NavHostController) {
             TextField(
                 value = password,
                 onValueChange = { password = it },
-                label = "密码",
+                label = { Text("密码") },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),
                 leadingIcon = {
                     Icon(
-                        imageVector = MiuixIcons.Outlined.Lock,
+                        imageVector = Icons.Outlined.Lock,
                         contentDescription = null
                     )
                 }
@@ -118,21 +109,21 @@ fun LoginScreen(navController: NavHostController) {
                 Text(
                     text = error ?: "",
                     color = Color(0xFFFF3B30),
-                    fontSize = 12.dp
+                    fontSize = 12.sp
                 )
             }
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            FilledButton(
+            Button(
                 onClick = {
                     if (username.isEmpty()) {
                         error = "请输入用户名"
-                        return
+                        return@Button
                     }
                     if (password.isEmpty()) {
                         error = "请输入密码"
-                        return
+                        return@Button
                     }
                     isLoading = true
                     error = null
@@ -164,7 +155,7 @@ fun LoginScreen(navController: NavHostController) {
             ) {
                 Text(
                     text = "没有账户？",
-                    fontSize = 14.dp,
+                    fontSize = 14.sp,
                     color = Color(0xFF666666)
                 )
                 TextButton(onClick = { navController.navigate("register") }) {

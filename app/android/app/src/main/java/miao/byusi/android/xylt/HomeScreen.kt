@@ -1,8 +1,12 @@
 package miao.byusi.android.xylt
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -12,18 +16,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.SmallTopAppBar
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.FilledButton
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.NavigationBar
-import top.yukonga.miuix.kmp.basic.NavigationBarItem
-import top.yukonga.miuix.kmp.icon.MiuixIcons
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(navController: NavHostController) {
     var articles by remember { mutableStateOf<List<Article>>(emptyList()) }
@@ -49,14 +43,13 @@ fun HomeScreen(navController: NavHostController) {
 
     Scaffold(
         topBar = {
-            // Miuix 风格小顶栏（带返回行为/滚动折叠/大标题样式）
-            SmallTopAppBar(
-                title = "校园论坛",
+            TopAppBar(
+                title = { Text("校园论坛") },
                 modifier = Modifier
             )
         },
         floatingActionButton = {
-            FilledButton(
+            ExtendedFloatingActionButton(
                 onClick = { navController.navigate("create") },
                 modifier = Modifier.padding(16.dp)
             ) {
@@ -64,20 +57,26 @@ fun HomeScreen(navController: NavHostController) {
             }
         },
         bottomBar = {
-            NavigationBar(
-                items = listOf(
-                    NavigationBarItem("主页", MiuixIcons.Basic.Search),
-                    NavigationBarItem("草稿", MiuixIcons.Basic.Search),
-                    NavigationBarItem("我的", MiuixIcons.Basic.Person)
-                ),
-                selected = 0,
-                onClick = { index ->
-                    when (index) {
-                        1 -> navController.navigate("drafts")
-                        2 -> navController.navigate("profile")
-                    }
-                }
-            )
+            NavigationBar {
+                NavigationBarItem(
+                    icon = { Icon(Icons.Outlined.Search, contentDescription = "主页") },
+                    label = { Text("主页") },
+                    selected = true,
+                    onClick = { }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Outlined.Drafts, contentDescription = "草稿") },
+                    label = { Text("草稿") },
+                    selected = false,
+                    onClick = { navController.navigate("drafts") }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Outlined.Person, contentDescription = "我的") },
+                    label = { Text("我的") },
+                    selected = false,
+                    onClick = { navController.navigate("profile") }
+                )
+            }
         }
     ) { padding ->
         if (isLoading) {
@@ -99,10 +98,10 @@ fun HomeScreen(navController: NavHostController) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("加载失败: $error", fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(16.dp))
-                    FilledButton(onClick = {
+                    Button(onClick = {
                         loadArticles { result ->
                             result.onSuccess { data -> articles = data }
-                            .onFailure { e -> error = e.message }
+                            result.onFailure { e -> error = e.message }
                         }
                     }) {
                         Text("重  试")
@@ -129,7 +128,7 @@ fun HomeScreen(navController: NavHostController) {
 
 @Composable
 fun ArticleCard(article: Article, onClick: () -> Unit) {
-    Card(
+    ElevatedCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -145,7 +144,7 @@ fun ArticleCard(article: Article, onClick: () -> Unit) {
             Text(
                 text = article.content.take(100) + if (article.content.length > 100) "..." else "",
                 fontSize = 14.sp,
-                color = Color(0xFF666666)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(10.dp))
             Row(
@@ -153,14 +152,14 @@ fun ArticleCard(article: Article, onClick: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = article.authorName ?: "匿名",
+                    text = article.user?.displayName ?: article.user?.username ?: "匿名",
                     fontSize = 12.sp,
-                    color = Color(0xFF7C4DFF)
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Text(
                     text = "${article.viewCount} 浏览 · ${article.likeCount} 点赞",
                     fontSize = 12.sp,
-                    color = Color(0xFF888888)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -169,7 +168,7 @@ fun ArticleCard(article: Article, onClick: () -> Unit) {
 
 // 数据加载函数
 private fun loadArticles(callback: (Result<List<Article>>) -> Unit) {
-    ApiClient.getArticles(1, 20, object : ApiCallback {
+    ApiClient.getArticles(1, 20, null, object : ApiCallback {
         override fun onSuccess(response: String) {
             try {
                 val articles = parseArticles(response)
@@ -190,13 +189,20 @@ private fun parseArticles(response: String): List<Article> {
     val list = mutableListOf<Article>()
     for (i in 0 until articlesArray.length()) {
         val articleJson = articlesArray.getJSONObject(i)
+        val userJson = articleJson.optJSONObject("user")
+        val user = userJson?.let {
+            User(
+                id = it.optInt("id", 0),
+                username = it.optString("username", ""),
+                displayName = it.optString("display_name", it.optString("nickname", null)),
+                avatar = it.optString("avatar_url", it.optString("avatar", null))
+            )
+        }
         val article = Article(
             id = articleJson.optInt("id", 0),
             title = articleJson.optString("title", ""),
             content = articleJson.optString("content", ""),
-            authorName = articleJson.optJSONObject("user")?.optString("display_name")
-                ?: articleJson.optJSONObject("user")?.optString("nickname")
-                ?: "匿名",
+            user = user,
             viewCount = articleJson.optInt("view_count", 0),
             likeCount = articleJson.optInt("like_count", 0),
             createdAt = articleJson.optString("created_at", "")

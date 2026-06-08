@@ -2,12 +2,10 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!--
         校园论坛 App 主题（夜间模式）。
-        实际界面由 Jetpack Compose + Miuix 主题在运行时控制；该 XML 主题仅作为
+        实际界面由 Jetpack Compose + Material 3 主题在运行时控制；该 XML 主题仅作为
         Activity 启动期间的占位背景。
     -->
-    <style name="Theme.Xylt" parent="Theme.AppCompat.DayNight.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
+    <style name="Theme.Xylt" parent="android:Theme.Material.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>

@@ -13,8 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
@@ -34,12 +33,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
-import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /**
  * 启动校验页面（Miuix 风格）
@@ -90,8 +83,8 @@ fun SplashScreen(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            MiuixTheme.colorScheme.primary,
-                            MiuixTheme.colorScheme.primaryContainer
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primaryContainer
                         )
                     )
                 ),
@@ -118,7 +111,7 @@ fun SplashScreen(
 
                 Text(
                     text = "校园论坛",
-                    color = MiuixTheme.colorScheme.onPrimary,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 26.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -127,7 +120,7 @@ fun SplashScreen(
 
                 Text(
                     text = "分享与交流的社区",
-                    color = MiuixTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                     fontSize = 13.sp
                 )
 
@@ -151,7 +144,7 @@ private fun CheckingBlock() {
     Spacer(modifier = Modifier.height(14.dp))
     Text(
         text = "正在校验服务器…",
-        color = MiuixTheme.colorScheme.onPrimary,
+        color = MaterialTheme.colorScheme.onPrimary,
         fontSize = 14.sp
     )
 }
@@ -159,13 +152,13 @@ private fun CheckingBlock() {
 @Composable
 private fun SuccessBlock(state: SplashState.Success) {
     StatusDot(
-        color = MiuixTheme.colorScheme.secondary,
+        color = MaterialTheme.colorScheme.secondary,
         modifier = Modifier.size(18.dp)
     )
     Spacer(modifier = Modifier.height(14.dp))
     Text(
         text = "服务器在线，正在进入…",
-        color = MiuixTheme.colorScheme.onPrimary,
+        color = MaterialTheme.colorScheme.onPrimary,
         fontSize = 14.sp
     )
     val ver = state.backendVersion
@@ -173,7 +166,7 @@ private fun SuccessBlock(state: SplashState.Success) {
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = "后端版本: $ver",
-            color = MiuixTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
+            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
             fontSize = 12.sp
         )
     }
@@ -200,7 +193,7 @@ private fun FailedBlock(state: SplashState.Failed, onRetry: () -> Unit) {
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = state.message,
-                color = MiuixTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center
             )
@@ -208,7 +201,7 @@ private fun FailedBlock(state: SplashState.Failed, onRetry: () -> Unit) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = state.baseUrl,
-                    color = MiuixTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
                     fontSize = 12.sp,
                     textAlign = TextAlign.Center
                 )
@@ -223,7 +216,7 @@ private fun FailedBlock(state: SplashState.Failed, onRetry: () -> Unit) {
             ) {
                 Text(
                     text = "重  试",
-                    color = MiuixTheme.colorScheme.onPrimary,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontWeight = FontWeight.SemiBold
                 )
             }
