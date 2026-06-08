@@ -164,10 +164,9 @@ fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // 文章内容
-                Text(
-                    text = article?.content ?: "",
-                    fontSize = 16.sp,
+                // 文章内容（Markdown 渲染）
+                MarkdownText(
+                    markdown = article?.content ?: "",
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
                 

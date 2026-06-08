@@ -172,10 +172,12 @@ private fun login(username: String, password: String, callback: (Result<Unit>) -
             try {
                 val json = org.json.JSONObject(response)
                 val token = json.optString("token", "")
-                if (!token.isEmpty()) {
+                if (token.isNotEmpty()) {
                     ApiClient.setAuthToken(token)
+                    callback(Result.success(Unit))
+                } else {
+                    callback(Result.failure(Exception("登录响应缺少 token")))
                 }
-                callback(Result.success(Unit))
             } catch (e: Exception) {
                 callback(Result.failure(e))
             }

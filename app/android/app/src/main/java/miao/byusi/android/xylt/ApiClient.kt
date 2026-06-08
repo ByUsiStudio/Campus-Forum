@@ -19,7 +19,24 @@ object ApiClient {
 
     /** 暴露当前 API 基础地址，供启动校验等场景使用 */
     fun getBaseUrl(): String = ConfigManager.getBaseApi()
-    
+
+    /**
+     * 解析后端错误响应体中的 message 字段。
+     * 用于把 401/4xx 的具体原因展示给用户，避免只看到干瘪的"请求失败: 401"。
+     */
+    private fun parseErrorMessage(body: String, code: Int): String {
+        if (body.isBlank()) return "请求失败: $code"
+        return try {
+            val json = org.json.JSONObject(body)
+            val msg = json.optString("message", "").takeIf { it.isNotBlank() }
+                ?: json.optString("error", "").takeIf { it.isNotBlank() }
+                ?: json.optString("msg", "").takeIf { it.isNotBlank() }
+            if (!msg.isNullOrBlank()) msg else "请求失败: $code"
+        } catch (_: Exception) {
+            "请求失败: $code"
+        }
+    }
+
     private fun buildRequest(url: String, body: RequestBody? = null, method: String = "GET"): Request {
         val builder = Request.Builder().url(url)
         if (authToken.isNotEmpty()) {
@@ -49,10 +66,13 @@ object ApiClient {
                 callback.onError(e.message ?: "网络错误")
             }
             override fun onResponse(call: Call, response: Response) {
-                if (response.isSuccessful) {
-                    callback.onSuccess(response.body?.string() ?: "")
-                } else {
-                    callback.onError("请求失败: ${response.code}")
+                response.use { r ->
+                    val respBody = r.body?.string().orEmpty()
+                    if (r.isSuccessful) {
+                        callback.onSuccess(respBody)
+                    } else {
+                        callback.onError(parseErrorMessage(respBody, r.code))
+                    }
                 }
             }
         })
@@ -73,10 +93,13 @@ object ApiClient {
                 callback.onError(e.message ?: "网络错误")
             }
             override fun onResponse(call: Call, response: Response) {
-                if (response.isSuccessful) {
-                    callback.onSuccess(response.body?.string() ?: "")
-                } else {
-                    callback.onError("请求失败: ${response.code}")
+                response.use { r ->
+                    val respBody = r.body?.string().orEmpty()
+                    if (r.isSuccessful) {
+                        callback.onSuccess(respBody)
+                    } else {
+                        callback.onError(parseErrorMessage(respBody, r.code))
+                    }
                 }
             }
         })
