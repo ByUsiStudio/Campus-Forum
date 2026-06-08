@@ -164,10 +164,13 @@ fun ArticleDetailScreen(navController: NavHostController, articleId: Int) {
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // 文章内容（Markdown 渲染）
-                MarkdownText(
-                    markdown = article?.content ?: "",
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                // 文章内容：使用 WebView 加载后端文章页，完整保留 MD / HTML 渲染
+                ArticleContentView(
+                    articleId = articleId,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 100.dp)
+                        .padding(horizontal = 16.dp)
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
