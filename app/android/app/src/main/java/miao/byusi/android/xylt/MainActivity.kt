@@ -6,9 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,30 +61,15 @@ private val LightColorScheme = lightColorScheme(
     onSurfaceVariant = Color(0xFF6B7280)
 )
 
-private val DarkColorScheme = darkColorScheme(
-    primary = CampusPurple,
-    onPrimary = Color.White,
-    primaryContainer = CampusPurpleDark,
-    secondary = CampusPurpleDark,
-    onSecondary = Color.White,
-    background = Color(0xFF111827),
-    onBackground = Color(0xFFF9FAFB),
-    surface = Color(0xFF1F2937),
-    onSurface = Color(0xFFF9FAFB),
-    surfaceVariant = Color(0xFF374151),
-    onSurfaceVariant = Color(0xFF9CA3AF)
-)
-
 /**
- * 应用主题：基于 Material 3，支持跟随系统深色模式
+ * 应用主题：基于 Material 3，强制使用亮色主题
  */
 @Composable
 fun AppTheme(
     content: @Composable () -> Unit
 ) {
-    val darkTheme = isSystemInDarkTheme()
     MaterialTheme(
-        colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
+        colorScheme = LightColorScheme,
         content = content
     )
 }
