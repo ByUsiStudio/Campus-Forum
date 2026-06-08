@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <style>
-  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  * { box-sizing: border-box; }
   body {
     margin: 0; padding: 12px 16px 40px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
@@ -12,7 +12,7 @@
     font-size: 16px;
     line-height: 1.7;
     color: #1F2937;
-    background: transparent;
+    background: #FFFFFF;
     -webkit-text-size-adjust: 100%;
     word-wrap: break-word;
     overflow-wrap: break-word;
@@ -42,15 +42,36 @@
   pre code { background: transparent; padding: 0; color: inherit; font-size: 1em; }
   hr { border: none; border-top: 1px solid #E5E7EB; margin: 1.2em 0; }
   img { max-width: 100%; height: auto; border-radius: 4px; }
-  table { border-collapse: collapse; width: 100%; margin: 0.6em 0; }
-  th, td { border: 1px solid #E5E7EB; padding: 6px 10px; text-align: left; }
+  /* 表格容器 - 支持左右滑动 */
+  .table-wrapper {
+    overflow-x: auto;
+    margin: 0.6em 0;
+    border-radius: 6px;
+    border: 1px solid #E5E7EB;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 600px; /* 确保表格足够宽时可滚动 */
+  }
+  th, td {
+    border: 1px solid #E5E7EB;
+    padding: 8px 12px;
+    text-align: left;
+  }
   th { background: #F9FAFB; font-weight: 600; }
+  tr:nth-child(even) { background: #FAFAFA; }
   iframe, video, embed, object {
     max-width: 100%; width: 100%; border: 0;
     border-radius: 6px; margin: 0.6em 0;
   }
   .loading, .error { text-align: center; padding: 20px; color: #6B7280; font-size: 14px; }
   .error { color: #EF4444; }
+  /* highlight.js 代码高亮样式 */
+  .hljs { background: #1F2937; color: #c9d1d9; }
+  .hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-name, .hljs-tag { color: #ff7b72; }
+  .hljs-string, .hljs-title, .hljs-section, .hljs-attribute, .hljs-literal, .hljs-template-tag, .hljs-template-variable, .hljs-type, .hljs-addition { color: #a5d6ff; }
+  .hljs-comment, .hljs-quote, .hljs-deletion, .hljs-meta { color: #8b949e; }
 </style>
 </head>
 <body>
@@ -62,8 +83,8 @@
 </div>
 
 <script src="marked.min.js"></script>
+<script src="highlight.min.js"></script>
 <script>
-// 读取 URL 参数中的 articleId 并解码 URL 编码值
 function getQueryParam(name) {
   var params = new URLSearchParams(window.location.search);
   return params.get(name);
@@ -72,10 +93,8 @@ function getQueryParamDecoded(name) {
   return decodeURIComponent(getQueryParam(name) || '');
 }
 
-// 读取 localStorage 中的 token（与 Android Cookie 同步）
 function getToken() {
   try {
-    // Android WebView 通过 Cookie 注入 auth_token
     var cookies = document.cookie.split(';');
     for (var i = 0; i < cookies.length; i++) {
       var pair = cookies[i].trim().split('=');
@@ -87,26 +106,140 @@ function getToken() {
   return '';
 }
 
-// 从 URL 参数读取 baseApi 配置（由 ArticleContentView.kt 传递）
 function getBaseApi() {
   return getQueryParamDecoded('baseApi') || 'https://xylt.cdifit.cn';
 }
 
-// 设置 marked.js 安全选项
-if (typeof marked !== 'undefined') {
+/**
+ * 将 Markdown 内容中的相对路径转换为绝对路径
+ * 支持: 图片、视频、音频、链接
+ */
+function resolveRelativePaths(markdown, baseUrl) {
+  if (!markdown) return '';
+  
+  // 移除末尾斜杠
+  baseUrl = baseUrl.trimEnd('/');
+  
+  var result = markdown;
+  
+  // 处理图片: ![alt](path) 或 ![alt](path "title")
+  result = result.replace(
+    /!\[([^\]]*)\]\(([^)]+)(?:\s+"[^"]+")?\)/g,
+    function(match, alt, path) {
+      var resolvedPath = resolvePath(path, baseUrl);
+      return '![' + alt + '](' + resolvedPath + ')';
+    }
+  );
+  
+  // 处理链接: [text](path) 或 [text](path "title")
+  result = result.replace(
+    /\[([^\]]*)\]\(([^)]+)(?:\s+"[^"]+")?\)/g,
+    function(match, text, path) {
+      var resolvedPath = resolvePath(path, baseUrl);
+      return '[' + text + '](' + resolvedPath + ')';
+    }
+  );
+  
+  // 处理 HTML img 标签
+  result = result.replace(
+    /<img[^>]*src\s*=\s*["']([^"']+)["'][^>]*>/gi,
+    function(match, src) {
+      var resolvedSrc = resolvePath(src, baseUrl);
+      return match.replace(src, resolvedSrc);
+    }
+  );
+  
+  // 处理 HTML video 标签
+  result = result.replace(
+    /<video[^>]*src\s*=\s*["']([^"']+)["'][^>]*>/gi,
+    function(match, src) {
+      var resolvedSrc = resolvePath(src, baseUrl);
+      return match.replace(src, resolvedSrc);
+    }
+  );
+  
+  // 处理 HTML audio 标签
+  result = result.replace(
+    /<audio[^>]*src\s*=\s*["']([^"']+)["'][^>]*>/gi,
+    function(match, src) {
+      var resolvedSrc = resolvePath(src, baseUrl);
+      return match.replace(src, resolvedSrc);
+    }
+  );
+  
+  // 处理 HTML source 标签（用于 video/audio）
+  result = result.replace(
+    /<source[^>]*src\s*=\s*["']([^"']+)["'][^>]*>/gi,
+    function(match, src) {
+      var resolvedSrc = resolvePath(src, baseUrl);
+      return match.replace(src, resolvedSrc);
+    }
+  );
+  
+  return result;
+}
+
+/**
+ * 解析单个路径
+ */
+function resolvePath(path, baseUrl) {
+  // 如果已经是绝对 URL，直接返回
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(path)) {
+    return path;
+  }
+  
+  // 如果是根路径（以 / 开头）
+  if (path.startsWith('/')) {
+    return baseUrl + path;
+  }
+  
+  // 如果是协议相对路径（以 // 开头）
+  if (path.startsWith('//')) {
+    return 'https:' + path;
+  }
+  
+  // 相对路径，拼接 baseUrl
+  return baseUrl + '/' + path;
+}
+
+/**
+ * 渲染 Markdown 为 HTML
+ */
+function renderMarkdown(markdown, baseUrl) {
+  // 先处理相对路径
+  var resolvedMarkdown = resolveRelativePaths(markdown, baseUrl);
+  
+  // 设置 marked 选项
   marked.setOptions({
     breaks: true,
     gfm: true,
     renderer: new marked.Renderer()
   });
-}
-
-function render(markdown) {
-  if (typeof marked !== 'undefined') {
-    return marked.parse(markdown);
-  }
-  // fallback：简单转义
-  return '<pre>' + markdown.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre>';
+  
+  // 自定义渲染器 - 为表格添加容器
+  var renderer = new marked.Renderer();
+  
+  // 表格渲染 - 包裹在滚动容器中
+  renderer.table = function(header, body) {
+    return '<div class="table-wrapper"><table><thead>' + header + '</thead><tbody>' + body + '</tbody></table></div>';
+  };
+  
+  // 使用自定义渲染器
+  marked.setOptions({ renderer: renderer });
+  
+  // 渲染
+  var html = marked.parse(resolvedMarkdown);
+  
+  // 对 code 块进行语法高亮
+  var tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  
+  var codeBlocks = tempDiv.querySelectorAll('pre code');
+  codeBlocks.forEach(function(block) {
+    hljs.highlightElement(block);
+  });
+  
+  return tempDiv.innerHTML;
 }
 
 function loadArticle() {
@@ -114,7 +247,7 @@ function loadArticle() {
   var token = getToken();
   var baseApi = getBaseApi();
 
-  console.log('开始加载文章:', { articleId: articleId, baseApi: baseApi, hasToken: !!token });
+  console.log('加载文章:', { articleId: articleId, baseApi: baseApi });
 
   if (!articleId) {
     showError('缺少文章 ID 参数');
@@ -129,22 +262,26 @@ function loadArticle() {
   xhr.responseType = 'json';
   xhr.onreadystatechange = function () {
     if (xhr.readyState === 4) {
-      console.log('XHR 完成:', { status: xhr.status, response: xhr.response });
       if (xhr.status === 200) {
         try {
           var data = typeof xhr.response === 'object' ? xhr.response : JSON.parse(xhr.responseText || '{}');
           var article = data.article || data;
           var content = article.content || article.content_html || '';
+          
           console.log('文章内容长度:', content.length);
+          
+          // 渲染 Markdown（包含路径解析和语法高亮）
+          var htmlContent = renderMarkdown(content, baseApi);
+          
           document.getElementById('loading').style.display = 'none';
           document.getElementById('article').style.display = 'block';
-          document.getElementById('article').innerHTML = render(content);
+          document.getElementById('article').innerHTML = htmlContent;
         } catch (e) {
           console.error('解析失败:', e);
           showError('解析文章数据失败: ' + e.message);
         }
       } else {
-        console.error('HTTP 错误:', xhr.status, xhr.responseText);
+        console.error('HTTP 错误:', xhr.status);
         showError('加载失败 (HTTP ' + xhr.status + ')');
       }
     }
@@ -157,14 +294,13 @@ function loadArticle() {
 }
 
 function showError(msg) {
-  console.error('显示错误:', msg);
+  console.error('错误:', msg);
   document.getElementById('loading').style.display = 'none';
   var el = document.getElementById('error');
   el.style.display = 'block';
   el.textContent = msg;
 }
 
-// 等待 DOM 加载完成
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', loadArticle);
 } else {
