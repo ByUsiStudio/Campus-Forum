@@ -63,7 +63,7 @@ onMounted(() => {
             <v-list-item-content>
               <v-list-item-title>{{ article.title }}</v-list-item-title>
               <v-list-item-subtitle>
-                {{ article.author?.username }}
+                {{ article.user?.display_name || article.user?.username }}
                 <span class="ml-2 text-grey">{{ formatTime(article.created_at) }}</span>
               </v-list-item-subtitle>
             </v-list-item-content>

@@ -249,10 +249,10 @@ onMounted(() => {
               <!-- 元信息 -->
               <div class="d-flex align-center flex-wrap text-caption text-grey">
                 <v-avatar size="20" class="mr-2">
-                  <v-img v-if="article.author?.avatar" :src="article.author.avatar"></v-img>
-                  <v-icon v-else size="16">mdi-account</v-icon>
-                </v-avatar>
-                <span class="mr-3">{{ article.author?.username || '未知用户' }}</span>
+                <v-img v-if="article.user?.avatar" :src="article.user.avatar"></v-img>
+                <v-icon v-else size="16">mdi-account</v-icon>
+              </v-avatar>
+              <span class="mr-3">{{ article.user?.display_name || article.user?.username || '未知用户' }}</span>
 
                 <v-chip
                   size="x-small"

@@ -23,7 +23,7 @@ const loadArticle = async () => {
   isLoading.value = true
   try {
     const response = await articleApi.getArticle(route.params.id)
-    article.value = response.data
+    article.value = response.data.article
     comments.value = response.data.comments || []
 
     if (user.value) {
@@ -185,10 +185,10 @@ onMounted(() => {
 
             <!-- 作者信息 -->
             <div class="d-flex align-center flex-wrap mb-4">
-              <UserAvatar :user="article.author" :size="40" class="mr-3" />
+              <UserAvatar :user="article.user" :size="40" class="mr-3" />
               <div>
                 <div class="text-subtitle-1 font-weight-medium">
-                  {{ article.author?.username || '未知用户' }}
+                  {{ article.user?.display_name || article.user?.username || '未知用户' }}
                 </div>
                 <div class="text-caption text-grey">
                   发布于 {{ formatTime(article.created_at) }}
@@ -304,7 +304,7 @@ onMounted(() => {
                 <div class="flex-grow-1">
                   <div class="d-flex align-center mb-1">
                     <span class="text-subtitle-2 font-weight-medium mr-2">
-                      {{ comment.user?.username || '匿名用户' }}
+                                          {{ comment.user?.display_name || comment.user?.username || '匿名用户' }}
                     </span>
                     <span class="text-caption text-grey">
                       {{ formatTime(comment.created_at) }}
@@ -373,7 +373,7 @@ onMounted(() => {
                         <div class="flex-grow-1">
                           <div class="d-flex align-center mb-1">
                             <span class="text-body-2 font-weight-medium mr-2">
-                              {{ reply.user?.username || '匿名用户' }}
+                              {{ reply.user?.display_name || reply.user?.username || '匿名用户' }}
                             </span>
                             <span class="text-caption text-grey">
                               {{ formatTime(reply.created_at) }}

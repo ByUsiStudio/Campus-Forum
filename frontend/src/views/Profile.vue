@@ -198,7 +198,7 @@ onMounted(() => {
             </template>
             <v-list-item-title class="font-weight-medium mb-1">{{ article.title }}</v-list-item-title>
             <v-list-item-subtitle class="text-grey">
-              {{ article.author?.username || '未知作者' }} · {{ formatTime(article.created_at) }}
+              {{ article.user?.display_name || article.user?.username || '未知作者' }} · {{ formatTime(article.created_at) }}
             </v-list-item-subtitle>
             <template #append>
               <v-icon color="grey-lighten-1">mdi-chevron-right</v-icon>
