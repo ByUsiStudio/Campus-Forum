@@ -1,71 +1,50 @@
-<template>
-  <v-container fluid class="pa-6">
-    <CommentsPanel
-      :comments="allComments"
-      :loading="loading"
-      :pagination="pagination"
-      @delete="handleDeleteComment"
-      @refresh="loadComments"
-      @page-change="handlePageChange"
-    />
-  </v-container>
-</template>
-
 <script setup>
-import { ref, onMounted } from 'vue'
-import CommentsPanel from './CommentsPanel.vue'
+import { ref, computed, onMounted } from 'vue'
 import { adminCommentApi } from '../../api/admin'
-import { confirm, success, error } from '../../utils/modal'
 
-const allComments = ref([])
-const loading = ref(true)
-const pagination = ref({
-  page: 1,
-  pageSize: 20,
-  total: 0,
-  totalPages: 0
-})
+const loading = ref(false)
+const comments = ref([])
+const page = ref(1)
+const pageSize = ref(20)
+const totalComments = ref(0)
+const totalPages = computed(() => Math.ceil(totalComments.value / pageSize.value))
 
-const loadComments = async (page = 1) => {
+const headers = [
+  { title: '评论内容', key: 'content', sortable: false },
+  { title: '用户', key: 'user', width: '120px' },
+  { title: '文章', key: 'article', width: '150px' },
+  { title: '创建时间', key: 'created_at', width: '150px' },
+  { title: '操作', key: 'actions', width: '80px', sortable: false }
+]
+
+const loadComments = async () => {
   loading.value = true
   try {
-    console.log('开始加载评论列表，页码:', page)
-    const response = await adminCommentApi.getComments({
-      page: page,
-      page_size: pagination.value.pageSize
-    })
-    console.log('评论列表响应:', response.data)
-    allComments.value = response.data.comments || []
-    pagination.value = {
-      page: response.data.page || 1,
-      pageSize: response.data.page_size || 20,
-      total: response.data.total || 0,
-      totalPages: response.data.total_pages || 0
+    const params = {
+      page: page.value,
+      page_size: pageSize.value
     }
-    console.log('加载的评论数量:', allComments.value.length)
-    console.log('分页信息:', pagination.value)
-  } catch (err) {
-    console.error('加载评论列表失败', err)
-    error('加载评论列表失败')
+    const response = await adminCommentApi.getComments(params)
+    comments.value = response.data.comments || []
+    totalComments.value = response.data.total || 0
+  } catch (error) {
+    console.error('加载评论失败:', error)
   } finally {
     loading.value = false
   }
 }
 
-const handlePageChange = (newPage) => {
-  loadComments(newPage)
-}
-
-const handleDeleteComment = async (commentId) => {
-  const confirmed = await confirm('确定要删除此评论吗？')
-  if (!confirmed) return
+const deleteComment = async (comment) => {
+  if (!confirm(`确定要删除这条评论吗？此操作不可恢复！`)) return
+  
+  loading.value = true
   try {
-    await adminCommentApi.deleteComment(commentId)
-    success('删除成功')
-    loadComments(pagination.value.page)
-  } catch (err) {
-    console.error('删除评论失败', err)
-    error(err.response?.data?.error || '删除失败')
+    await adminCommentApi.deleteComment(comment.id)
+    loadComments()
+  } catch (error) {
+    console.error('删除评论失败:', error)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -73,3 +52,68 @@ onMounted(() => {
   loadComments()
 })
 </script>
+
+<template>
+  <v-container fluid class="pa-0">
+    <!-- 页面标题 -->
+    <div class="mb-6">
+      <h1 class="text-h5 font-weight-bold">评论管理</h1>
+      <p class="text-body-2 text-grey">管理所有评论，删除违规评论</p>
+    </div>
+
+    <!-- 刷新按钮 -->
+    <v-card class="mb-4">
+      <v-card-text>
+        <v-btn color="primary" @click="loadComments" :loading="loading">
+          <v-icon start>mdi-refresh</v-icon>
+          刷新
+        </v-btn>
+      </v-card-text>
+    </v-card>
+
+    <!-- 评论列表 -->
+    <v-card>
+      <v-card-title class="d-flex align-center justify-space-between">
+        <span>评论列表 ({{ totalComments }})</span>
+        <v-pagination
+          v-model="page"
+          :length="totalPages"
+          :total-visible="5"
+          density="compact"
+          @update:model-value="loadComments"
+        />
+      </v-card-title>
+
+      <v-data-table
+        :headers="headers"
+        :items="comments"
+        :loading="loading"
+        :items-per-page="pageSize"
+      >
+        <template v-slot:item.content="{ item }">
+          <div class="py-2">
+            <div class="text-body-2">{{ item.content }}</div>
+          </div>
+        </template>
+
+        <template v-slot:item.user="{ item }">
+          <span>{{ item.user?.username || '未知' }}</span>
+        </template>
+
+        <template v-slot:item.article="{ item }">
+          <span>{{ item.article?.title || '未知文章' }}</span>
+        </template>
+
+        <template v-slot:item.created_at="{ item }">
+          <span class="text-caption">{{ new Date(item.created_at).toLocaleDateString('zh-CN') }}</span>
+        </template>
+
+        <template v-slot:item.actions="{ item }">
+          <v-btn icon variant="text" size="small" color="error" @click="deleteComment(item)">
+            <v-icon>mdi-delete</v-icon>
+          </v-btn>
+        </template>
+      </v-data-table>
+    </v-card>
+  </v-container>
+</template>
