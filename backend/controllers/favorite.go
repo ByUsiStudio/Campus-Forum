@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // AddFavorite 添加收藏
@@ -35,7 +36,7 @@ func AddFavorite(c *gin.Context) {
 	}
 
 	database.DB.Create(&favorite)
-	database.DB.Model(&article).UpdateColumn("favorite_count", article.FavoriteCount+1)
+	database.DB.Model(&article).UpdateColumn("favorite_count", gorm.Expr("favorite_count + 1"))
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":        "收藏成功",
@@ -62,7 +63,9 @@ func RemoveFavorite(c *gin.Context) {
 	// 更新文章收藏数
 	var article models.Article
 	if result := database.DB.First(&article, articleID); result.Error == nil {
-		database.DB.Model(&article).UpdateColumn("favorite_count", article.FavoriteCount-1)
+		if article.FavoriteCount > 0 {
+			database.DB.Model(&article).UpdateColumn("favorite_count", gorm.Expr("favorite_count - 1"))
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "取消收藏成功"})

@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"forum/database"
+	_"forum/database"
 	"forum/models"
 
 	"gorm.io/gorm"
@@ -145,7 +145,7 @@ func (r *ArticleRepository) SetPin(id uint, isPinned bool) error {
 		"is_pinned": isPinned,
 	}
 	if isPinned {
-		updates["pinned_at"] = database.DB.Raw("NOW()")
+		updates["pinned_at"] = gorm.Expr("NOW()")
 	} else {
 		updates["pinned_at"] = nil
 	}

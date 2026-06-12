@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func CreateArticle(c *gin.Context) {
@@ -148,7 +149,7 @@ func GetArticle(c *gin.Context) {
 		return
 	}
 
-	database.DB.Model(&article).UpdateColumn("view_count", article.ViewCount+1)
+	database.DB.Model(&article).UpdateColumn("view_count", gorm.Expr("view_count + 1"))
 
 	var likeCount int64
 	database.DB.Model(&models.Like{}).Where("article_id = ?", article.ID).Count(&likeCount)
@@ -378,6 +379,8 @@ func LikeArticle(c *gin.Context) {
 		return
 	}
 
+	database.DB.Model(&article).UpdateColumn("like_count", gorm.Expr("like_count + 1"))
+
 	c.JSON(http.StatusOK, gin.H{"message": "点赞成功"})
 }
 
@@ -399,6 +402,8 @@ func UnlikeArticle(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "取消点赞失败"})
 		return
 	}
+
+	database.DB.Model(&models.Article{}).Where("id = ?", articleID).UpdateColumn("like_count", gorm.Expr("like_count - 1"))
 
 	c.JSON(http.StatusOK, gin.H{"message": "取消点赞成功"})
 }
@@ -505,7 +510,7 @@ func ShareArticle(c *gin.Context) {
 		return
 	}
 
-	database.DB.Model(&article).UpdateColumn("share_count", article.ShareCount+1)
+	database.DB.Model(&article).UpdateColumn("share_count", gorm.Expr("share_count + 1"))
 
 	c.JSON(http.StatusOK, gin.H{"message": "分享成功", "share_count": article.ShareCount + 1})
 }

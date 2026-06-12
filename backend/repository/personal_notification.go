@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"forum/database"
 	"forum/models"
+
+	"gorm.io/gorm"
 )
 
 // PersonalNotificationRepository 用户通知数据访问层
@@ -51,7 +52,7 @@ func (r *PersonalNotificationRepository) GetUserNotifications(userID uint, page,
 func (r *PersonalNotificationRepository) MarkAsRead(id uint) error {
 	return r.db.Model(&models.PersonalNotification{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"is_read": true,
-		"read_at": database.DB.Raw("NOW()"),
+		"read_at": gorm.Expr("NOW()"),
 	}).Error
 }
 
@@ -61,7 +62,7 @@ func (r *PersonalNotificationRepository) MarkAllAsRead(userID uint) error {
 		Where("user_id = ? AND is_read = ?", userID, false).
 		Updates(map[string]interface{}{
 			"is_read": true,
-			"read_at": database.DB.Raw("NOW()"),
+			"read_at": gorm.Expr("NOW()"),
 		}).Error
 }
 

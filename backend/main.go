@@ -202,6 +202,11 @@ func main() {
 			protected.GET("/favorites", controllers.GetFavorites)
 			protected.GET("/articles/:id/favorite/check", controllers.CheckFavorite)
 
+			// 签到相关
+			protected.POST("/signin", controllers.SignIn)
+			protected.GET("/signin/status", controllers.GetSignInStatus)
+			protected.GET("/signin/history", controllers.GetSignInHistory)
+
 			// 后台管理
 			protected.GET("/admin/check", controllers.CheckAdmin)
 			protected.GET("/admin/statistics", middleware.AdminOnly(), controllers.GetStatistics)

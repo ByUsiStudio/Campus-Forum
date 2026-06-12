@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func CreateComment(c *gin.Context) {
@@ -47,7 +48,7 @@ func CreateComment(c *gin.Context) {
 	}
 
 	if input.ParentID != nil {
-		database.DB.Model(&models.Comment{}).Where("id = ?", *input.ParentID).UpdateColumn("reply_count", database.DB.Raw("reply_count + 1"))
+		database.DB.Model(&models.Comment{}).Where("id = ?", *input.ParentID).UpdateColumn("reply_count", gorm.Expr("reply_count + 1"))
 	}
 
 	// 重新查询评论并加载用户信息
@@ -87,7 +88,7 @@ func DeleteComment(c *gin.Context) {
 	}
 
 	if comment.ParentID != nil {
-		database.DB.Model(&models.Comment{}).Where("id = ?", *comment.ParentID).UpdateColumn("reply_count", database.DB.Raw("reply_count - 1"))
+		database.DB.Model(&models.Comment{}).Where("id = ?", *comment.ParentID).UpdateColumn("reply_count", gorm.Expr("reply_count - 1"))
 	}
 
 	database.DB.Delete(&comment)
@@ -121,7 +122,7 @@ func LikeComment(c *gin.Context) {
 		return
 	}
 
-	database.DB.Model(&comment).UpdateColumn("like_count", comment.LikeCount+1)
+	database.DB.Model(&comment).UpdateColumn("like_count", gorm.Expr("like_count + 1"))
 
 	c.JSON(http.StatusOK, gin.H{"message": "点赞成功"})
 }
@@ -145,7 +146,7 @@ func UnlikeComment(c *gin.Context) {
 	database.DB.Delete(&existingLike)
 
 	if comment.LikeCount > 0 {
-		database.DB.Model(&comment).UpdateColumn("like_count", comment.LikeCount-1)
+		database.DB.Model(&comment).UpdateColumn("like_count", gorm.Expr("like_count - 1"))
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "取消点赞成功"})

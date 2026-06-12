@@ -51,6 +51,7 @@ func AutoMigrate() {
 		&models.PermissionGroup{},
 		&models.UserPermissionGroup{},
 		&models.SystemLog{},
+		&models.SignInRecord{},
 	)
 	DB.Exec("SET FOREIGN_KEY_CHECKS = 1")
 	if err != nil {
