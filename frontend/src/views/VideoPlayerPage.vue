@@ -1,75 +1,40 @@
-<template>
-  <div class="video-page-container">
-    <v-card class="video-card" elevation="4">
-      <v-card-title class="text-center text-h5">视频播放</v-card-title>
-      
-      <v-card-text class="text-center">
-        <VideoPlayer :src="videoUrl" :poster="posterUrl" />
-      </v-card-text>
-      
-      <v-card-actions class="justify-center">
-        <v-btn color="primary" @click="goBack">
-          <v-icon start>mdi-arrow-left</v-icon>
-          返回文章
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </div>
-</template>
-
-<script>
+<script setup>
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import VideoPlayer from '../components/VideoPlayer.vue'
+import { useRouter, useRoute } from 'vue-router'
 
-export default {
-  name: 'VideoPlayerPage',
-  components: {
-    VideoPlayer
-  },
-  setup() {
-    const route = useRoute()
-    const router = useRouter()
-    const videoUrl = ref('')
-    const posterUrl = ref('')
-    const articleId = ref('')
-    
-    const goBack = () => {
-      if (articleId.value) {
-        router.push(`/article/${articleId.value}`)
-      } else {
-        router.push('/')
-      }
-    }
-    
-    onMounted(() => {
-      videoUrl.value = route.query.src || ''
-      posterUrl.value = route.query.poster || ''
-      articleId.value = route.query.articleId || ''
-    })
-    
-    return {
-      videoUrl,
-      posterUrl,
-      articleId,
-      goBack
-    }
-  }
-}
+const router = useRouter()
+const route = useRoute()
+
+const videoUrl = ref('')
+
+onMounted(() => {
+  videoUrl.value = route.query.url || ''
+})
 </script>
 
-<style scoped>
-.video-page-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.video-card {
-  max-width: 950px;
-  width: 100%;
-  border-radius: 16px;
-}
-</style>
+<template>
+  <v-app>
+    <v-app-bar app>
+      <v-btn icon @click="router.go(-1)">
+        <v-icon>mdi-arrow-left</v-icon>
+      </v-btn>
+      <v-toolbar-title>视频播放</v-toolbar-title>
+    </v-app-bar>
+    
+    <v-container class="py-6">
+      <v-card v-if="videoUrl">
+        <video 
+          :src="videoUrl" 
+          controls 
+          class="w-full"
+          style="max-height: 60vh;"
+        />
+      </v-card>
+      
+      <v-card v-else class="text-center py-12">
+        <v-icon size="64" color="grey">mdi-video-off</v-icon>
+        <p class="mt-4 text-grey">视频地址无效</p>
+      </v-card>
+    </v-container>
+  </v-app>
+</template>

@@ -111,6 +111,12 @@ const formatTime = (timeStr) => {
   }
 }
 
+const loadMore = () => {
+  if (page.value < totalPages.value && !isLoading.value) {
+    loadArticles(currentCategory.value, page.value + 1)
+  }
+}
+
 onMounted(() => {
   loadArticles()
   loadCategories()
@@ -119,260 +125,176 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-container class="max-w-7xl mx-auto px-4 py-6">
-    <!-- 头部导航 -->
-    <v-app-bar 
-      class="mb-8 rounded-2xl shadow-purple-md"
-      background-color="surface"
-      elevation="4"
-    >
-      <v-container class="flex items-center justify-between px-6">
-        <v-toolbar-title class="text-xl font-bold">
-          <v-icon size="32" class="mr-2 text-primary">mdi-forum</v-icon>
-          <span class="text-gradient">校园论坛</span>
-        </v-toolbar-title>
-        
-        <v-spacer></v-spacer>
-        
-        <v-text-field
-          v-model="searchQuery"
-          label="搜索文章..."
-          prepend-icon="mdi-magnify"
-          rounded="xl"
-          class="hidden md:flex w-80"
-          color="primary"
-          hide-details="auto"
-          @keyup.enter="router.push(`/search?keyword=${searchQuery}`)"
-        />
-        
-        <v-spacer></v-spacer>
-        
-        <div class="flex items-center gap-2">
-          <v-btn 
-            v-if="user" 
-            icon 
-            class="hidden sm:flex"
-            @click="router.push('/notifications')"
-          >
-            <v-icon size="24" color="gray-600">mdi-bell</v-icon>
-          </v-btn>
-          
-          <v-btn 
-            v-if="user" 
-            icon 
-            class="btn-gradient"
-            @click="router.push('/create')"
-          >
-            <v-icon size="20" color="white">mdi-plus</v-icon>
-          </v-btn>
-          
-          <template v-if="user">
-            <v-menu>
-              <template v-slot:activator="{ props }">
-                <v-btn 
-                  icon 
-                  v-bind="props"
-                  class="ml-2"
-                >
-                  <v-avatar size="44" color="primary" class="avatar-hover">
-                    <v-icon size="20" color="white">mdi-account</v-icon>
-                  </v-avatar>
-                </v-btn>
-              </template>
-              <v-list rounded="xl" elevation="8">
-                <v-list-item @click="router.push('/profile')" class="list-item-hover">
-                  <v-list-item-icon>
-                    <v-icon color="primary">mdi-user</v-icon>
-                  </v-list-item-icon>
-                  <v-list-item-title>个人中心</v-list-item-title>
-                </v-list-item>
-                <v-list-item v-if="user.role === 'admin'" @click="router.push('/admin')" class="list-item-hover">
-                  <v-list-item-icon>
-                    <v-icon color="primary">mdi-settings</v-icon>
-                  </v-list-item-icon>
-                  <v-list-item-title>管理后台</v-list-item-title>
-                </v-list-item>
-                <v-divider></v-divider>
-                <v-list-item @click="handleLogout" class="list-item-hover text-error">
-                  <v-list-item-icon>
-                    <v-icon color="error">mdi-logout</v-icon>
-                  </v-list-item-icon>
-                  <v-list-item-title>退出登录</v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-          </template>
-          
-          <template v-else>
-            <v-btn text color="gray-600" class="hidden sm:flex" @click="router.push('/login')">登录</v-btn>
-            <v-btn class="btn-gradient" @click="router.push('/register')">注册</v-btn>
-          </template>
-        </div>
-      </v-container>
-    </v-app-bar>
-    
-    <v-row>
-      <!-- 左侧分类栏 -->
-      <v-col md="3" class="mb-6">
-        <v-card rounded="2xl" elevation="4" class="sticky top-6 overflow-hidden">
-          <v-card-title class="gradient-purple text-white py-4 px-6">
-            <v-icon class="mr-3" size="20">mdi-folder-open</v-icon>
-            <span class="font-bold">文章分类</span>
-          </v-card-title>
-          <v-card-text class="px-0">
-            <v-list rounded="none">
-              <v-list-item 
-                :class="currentCategory === null ? 'selected-item' : ''"
-                @click="handleCategoryClick(null)"
-                class="list-item-hover px-6"
-              >
-                <v-list-item-icon>
-                  <v-icon :color="currentCategory === null ? 'primary' : 'gray-400'">mdi-home</v-icon>
-                </v-list-item-icon>
-                <v-list-item-title :class="currentCategory === null ? 'text-primary font-medium' : ''">全部文章</v-list-item-title>
-              </v-list-item>
-              <v-list-item 
-                v-for="category in categories" 
-                :key="category.id"
-                :class="currentCategory === category.id ? 'selected-item' : ''"
-                @click="handleCategoryClick(category.id)"
-                class="list-item-hover px-6"
-              >
-                <v-list-item-icon>
-                  <v-icon :color="currentCategory === category.id ? 'primary' : 'gray-400'">mdi-folder</v-icon>
-                </v-list-item-icon>
-                <v-list-item-title :class="currentCategory === category.id ? 'text-primary font-medium' : ''">{{ category.name }}</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-card-text>
-        </v-card>
-        
-        <!-- 签到卡片 -->
-        <v-card 
-          v-if="user"
-          rounded="2xl" 
-          elevation="4" 
-          class="mt-4 cursor-pointer card-hover overflow-hidden"
-          @click="handleSignin"
-        >
-          <v-card-title class="gradient-purple-light py-4 px-6">
-            <v-icon class="mr-3" size="24" color="primary">mdi-calendar-check</v-icon>
-            <span class="font-bold text-gray-800">每日签到</span>
-          </v-card-title>
-          <v-card-text class="text-center py-4">
-            <v-btn 
-              v-if="!signinStatus.hasSignedIn"
-              class="btn-gradient mb-3"
-              size="large"
-            >
-              <v-icon class="mr-2" size="18">mdi-calendar-plus</v-icon>
-              立即签到
-            </v-btn>
-            <div v-else class="flex items-center justify-center text-success mb-3">
-              <v-icon class="mr-2" size="24">mdi-check-circle</v-icon>
-              <span class="font-medium">今日已签到</span>
-            </div>
-            <div class="flex items-center justify-center gap-4 text-sm text-gray-500">
-              <span>
-                <v-icon class="mr-1" size="14">mdi-flame</v-icon>
-                连续 {{ signinStatus.signInDays }} 天
-              </span>
-              <span class="text-gray-300">|</span>
-              <span>
-                <v-icon class="mr-1" size="14">mdi-star</v-icon>
-                累计 {{ signinStatus.totalSignIns }} 次
-              </span>
-            </div>
-          </v-card-text>
-        </v-card>
-        
-        <!-- 移动端搜索 -->
-        <v-text-field
-          v-model="searchQuery"
-          label="搜索文章..."
-          prepend-icon="mdi-magnify"
-          rounded="xl"
-          class="md:hidden mt-4"
-          color="primary"
-          hide-details="auto"
-          @keyup.enter="router.push(`/search?keyword=${searchQuery}`)"
-        />
-      </v-col>
+  <v-app>
+    <!-- 顶部导航 -->
+    <v-app-bar app>
+      <v-toolbar-title>
+        <v-icon color="primary">mdi-forum</v-icon>
+        <span class="ml-2">校园论坛</span>
+      </v-toolbar-title>
       
-      <!-- 右侧文章列表 -->
-      <v-col md="9">
-        <v-card 
-          v-for="article in articles" 
-          :key="article.id" 
-          rounded="2xl" 
-          elevation="2" 
-          class="mb-4 card-hover cursor-pointer overflow-hidden"
-          @click="router.push(`/article/${article.id}`)"
-        >
-          <v-card-title class="px-6 py-5">
-            <div class="flex items-start justify-between w-full">
-              <div class="flex-1">
-                <div class="flex items-center gap-2 mb-2">
-                  <v-chip 
-                    v-if="article.category" 
-                    size="small" 
-                    class="tag-purple"
-                  >
-                    {{ article.category.name }}
-                  </v-chip>
-                </div>
-                <h3 class="text-xl font-bold text-gray-800 mb-2">{{ article.title }}</h3>
-                <p class="text-gray-600 card-text-limit">{{ article.content }}</p>
-              </div>
-            </div>
-          </v-card-title>
-          <v-card-subtitle class="px-6 py-3 flex items-center justify-between bg-gray-50">
-            <div class="flex items-center gap-3">
-              <v-avatar size="36" color="primary" class="avatar-hover">
-                <v-icon size="16" color="white">mdi-account</v-icon>
-              </v-avatar>
-              <div>
-                <span class="font-medium text-gray-800">{{ article.user?.display_name || article.user?.username }}</span>
-                <p class="text-xs text-gray-400">{{ formatTime(article.created_at) }}</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-4 text-sm text-gray-500">
-              <span class="flex items-center gap-1">
-                <v-icon size="16">mdi-eye</v-icon>
-                {{ article.view_count }}
-              </span>
-              <span class="flex items-center gap-1">
-                <v-icon size="16">mdi-heart</v-icon>
-                {{ article.like_count }}
-              </span>
-              <span class="flex items-center gap-1">
-                <v-icon size="16">mdi-comment</v-icon>
-                {{ article.comment_count }}
-              </span>
-            </div>
-          </v-card-subtitle>
-        </v-card>
-        
-        <div v-if="isLoading" class="loading-center">
-          <v-progress-circular indeterminate color="primary" :size="48" />
-        </div>
-        
-        <v-btn 
-          v-if="page < totalPages && !isLoading"
-          class="btn-gradient mx-auto d-block mt-4"
-          size="large"
-          @click="loadArticles(currentCategory, page + 1)"
-        >
-          <v-icon class="mr-2" size="18">mdi-chevron-down</v-icon>
-          加载更多
+      <v-spacer></v-spacer>
+      
+      <v-text-field
+        v-model="searchQuery"
+        placeholder="搜索文章..."
+        prepend-icon="mdi-magnify"
+        class="hidden md:flex w-64"
+        @keyup.enter="router.push(`/search?keyword=${searchQuery}`)"
+      />
+      
+      <v-spacer></v-spacer>
+      
+      <div class="flex items-center">
+        <v-btn v-if="user" icon @click="router.push('/notifications')">
+          <v-icon>mdi-bell</v-icon>
         </v-btn>
         
-        <div v-if="articles.length === 0 && !isLoading" class="empty-state">
-          <v-icon size="96" color="gray-300" class="empty-state-icon">mdi-file-question</v-icon>
-          <p class="text-gray-400 text-lg">暂无文章</p>
-          <p class="text-gray-400 text-sm mt-2">快来发布第一篇文章吧！</p>
-        </div>
-      </v-col>
-    </v-row>
-  </v-container>
+        <v-btn v-if="user" icon color="primary" @click="router.push('/create')">
+          <v-icon>mdi-plus</v-icon>
+        </v-btn>
+        
+        <v-menu v-if="user">
+          <template v-slot:activator="{ props }">
+            <v-btn icon v-bind="props">
+              <v-avatar size="40" color="primary">
+                <v-icon color="white">mdi-account</v-icon>
+              </v-avatar>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item @click="router.push('/profile')">
+              <v-list-item-icon>
+                <v-icon>mdi-user</v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>个人中心</v-list-item-title>
+            </v-list-item>
+            <v-list-item v-if="user.role === 'admin'" @click="router.push('/admin')">
+              <v-list-item-icon>
+                <v-icon>mdi-settings</v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>管理后台</v-list-item-title>
+            </v-list-item>
+            <v-divider></v-divider>
+            <v-list-item @click="handleLogout">
+              <v-list-item-icon>
+                <v-icon>mdi-logout</v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>退出登录</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+        
+        <template v-else>
+          <v-btn text @click="router.push('/login')">登录</v-btn>
+          <v-btn color="primary" @click="router.push('/register')">注册</v-btn>
+        </template>
+      </div>
+    </v-app-bar>
+    
+    <!-- 主内容区 -->
+    <v-container class="py-6">
+      <v-row>
+        <!-- 左侧分类栏 -->
+        <v-col md="3" class="mb-6">
+          <v-card>
+            <v-card-title>文章分类</v-card-title>
+            <v-list>
+              <v-list-item
+                :class="currentCategory === null ? 'active' : ''"
+                @click="handleCategoryClick(null)"
+              >
+                <v-list-item-icon>
+                  <v-icon :color="currentCategory === null ? 'primary' : 'grey'">mdi-home</v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>全部文章</v-list-item-title>
+              </v-list-item>
+              <v-list-item
+                v-for="category in categories"
+                :key="category.id"
+                :class="currentCategory === category.id ? 'active' : ''"
+                @click="handleCategoryClick(category.id)"
+              >
+                <v-list-item-icon>
+                  <v-icon :color="currentCategory === category.id ? 'primary' : 'grey'">mdi-folder</v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>{{ category.name }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-card>
+          
+          <!-- 签到卡片 -->
+          <v-card v-if="user" class="mt-4 cursor-pointer" @click="handleSignin">
+            <v-card-title class="d-flex align-center justify-between">
+              <span>每日签到</span>
+              <v-icon color="primary">mdi-calendar-check</v-icon>
+            </v-card-title>
+            <v-card-text>
+              <div class="text-center">
+                <div class="text-4xl font-bold text-primary">{{ signinStatus.signInDays }}</div>
+                <div class="text-sm text-grey">连续签到天数</div>
+                <div class="text-sm mt-2">
+                  累计签到 {{ signinStatus.totalSignIns }} 次
+                </div>
+              </div>
+              <v-btn v-if="!signinStatus.hasSignedIn" block color="primary" class="mt-4">
+                立即签到
+              </v-btn>
+              <v-btn v-else block disabled class="mt-4">
+                今日已签到
+              </v-btn>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        
+        <!-- 右侧文章列表 -->
+        <v-col md="9">
+          <v-card
+            v-for="article in articles"
+            :key="article.id"
+            class="mb-4 cursor-pointer"
+            @click="router.push(`/article/${article.id}`)"
+          >
+            <v-card-title>
+              <h3 class="text-h6">{{ article.title }}</h3>
+            </v-card-title>
+            <v-card-text>
+              <p>{{ article.content.substring(0, 100) }}...</p>
+            </v-card-text>
+            <v-card-actions>
+              <v-chip size="small" color="primary" text-color="white">
+                {{ article.category?.name || '未分类' }}
+              </v-chip>
+              <span class="ml-2 text-sm text-grey">{{ article.author?.username }}</span>
+              <span class="ml-auto text-sm text-grey">{{ formatTime(article.created_at) }}</span>
+              <v-icon class="ml-2 text-grey">mdi-eye</v-icon>
+              <span class="text-sm text-grey">{{ article.view_count }}</span>
+              <v-icon class="ml-2 text-grey">mdi-heart</v-icon>
+              <span class="text-sm text-grey">{{ article.like_count }}</span>
+            </v-card-actions>
+          </v-card>
+          
+          <!-- 加载更多 -->
+          <v-card v-if="page < totalPages" class="text-center">
+            <v-card-text>
+              <v-btn color="primary" :loading="isLoading" @click="loadMore">
+                加载更多
+              </v-btn>
+            </v-card-text>
+          </v-card>
+          
+          <v-card v-if="articles.length === 0" class="text-center py-12">
+            <v-icon size="64" color="grey">mdi-file-question</v-icon>
+            <p class="mt-4 text-grey">暂无文章</p>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+  </v-app>
 </template>
+
+<style scoped>
+.active {
+  background-color: rgba(98, 0, 238, 0.1);
+}
+</style>

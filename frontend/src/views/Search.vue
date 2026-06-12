@@ -10,13 +10,12 @@ const keyword = ref('')
 const articles = ref([])
 const isLoading = ref(false)
 
-const searchArticles = async () => {
+const search = async () => {
   if (!keyword.value.trim()) return
-  
   isLoading.value = true
   try {
     const response = await articleApi.searchArticles({ keyword: keyword.value })
-    articles.value = response.data.articles
+    articles.value = response.data.articles || []
   } catch (error) {
     console.error('搜索失败:', error)
   } finally {
@@ -29,121 +28,61 @@ const formatTime = (timeStr) => {
   const now = new Date()
   const diff = now - date
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  
   if (days === 0) {
     const hours = Math.floor(diff / (1000 * 60 * 60))
-    if (hours === 0) {
-      const minutes = Math.floor(diff / (1000 * 60))
-      return minutes <= 0 ? '刚刚' : `${minutes}分钟前`
-    }
-    return `${hours}小时前`
-  } else if (days < 7) {
-    return `${days}天前`
-  } else {
-    return date.toLocaleDateString('zh-CN')
+    return hours === 0 ? '刚刚' : `${hours}小时前`
   }
+  return `${days}天前`
 }
 
 onMounted(() => {
   const queryKeyword = route.query.keyword
   if (queryKeyword) {
     keyword.value = queryKeyword
-    searchArticles()
+    search()
   }
 })
 </script>
 
 <template>
-  <v-container class="max-w-4xl mx-auto px-4 py-8">
-    <!-- 返回按钮 -->
-    <v-btn 
-      text 
-      color="gray-600" 
-      class="mb-6 hover:text-primary transition-colors"
-      @click="router.back()"
-    >
-      <v-icon class="mr-2" size="20">mdi-arrow-left</v-icon>
-      返回
-    </v-btn>
+  <v-app>
+    <v-app-bar app>
+      <v-btn icon @click="router.push('/')">
+        <v-icon>mdi-arrow-left</v-icon>
+      </v-btn>
+      <v-text-field
+        v-model="keyword"
+        placeholder="搜索文章..."
+        prepend-icon="mdi-magnify"
+        class="flex-1 mx-4"
+        @keyup.enter="search"
+      />
+      <v-btn color="primary" @click="search">搜索</v-btn>
+    </v-app-bar>
     
-    <!-- 搜索框 -->
-    <v-card rounded="2xl" elevation="4" class="mb-6 overflow-hidden">
-      <div class="gradient-purple p-6">
-        <h2 class="text-white font-bold text-lg mb-4">搜索文章</h2>
-        <div class="flex gap-4">
-          <v-text-field
-            v-model="keyword"
-            label="输入关键词"
-            prepend-icon="mdi-magnify"
-            background-color="white"
-            rounded="xl"
-            class="flex-1"
-            @keyup.enter="searchArticles"
-          />
-          <v-btn 
-            class="btn-gradient"
-            @click="searchArticles"
+    <v-container class="py-6">
+      <v-card v-if="articles.length > 0">
+        <v-list>
+          <v-list-item
+            v-for="article in articles"
+            :key="article.id"
+            @click="router.push(`/article/${article.id}`)"
           >
-            <v-icon class="mr-2" size="18">mdi-magnify</v-icon>
-            搜索
-          </v-btn>
-        </div>
-      </div>
-    </v-card>
-    
-    <!-- 搜索结果 -->
-    <div v-if="isLoading" class="loading-center">
-      <v-progress-circular indeterminate color="primary" :size="48" />
-    </div>
-    
-    <div v-else-if="articles.length > 0" class="space-y-4">
-      <v-card 
-        v-for="article in articles" 
-        :key="article.id" 
-        rounded="2xl" 
-        elevation="2" 
-        class="card-hover cursor-pointer overflow-hidden"
-        @click="router.push(`/article/${article.id}`)"
-      >
-        <v-card-title class="px-6 py-4">
-          <h3 class="text-lg font-bold text-gray-800">{{ article.title }}</h3>
-        </v-card-title>
-        <v-card-text class="px-6 pb-2">
-          <p class="text-gray-600 text-sm card-text-limit">{{ article.content }}</p>
-        </v-card-text>
-        <v-card-subtitle class="px-6 py-3 bg-gray-50 flex items-center justify-between">
-          <div class="flex items-center">
-            <v-avatar size="32" color="primary" class="avatar-hover">
-              <v-icon size="16" color="white">mdi-account</v-icon>
-            </v-avatar>
-            <span class="ml-2 text-gray-600 text-sm">{{ article.user?.display_name || article.user?.username }}</span>
-            <v-chip v-if="article.category" size="small" class="ml-3 tag-purple">
-              {{ article.category.name }}
-            </v-chip>
-          </div>
-          <div class="flex items-center text-gray-400 text-sm">
-            <span>{{ formatTime(article.created_at) }}</span>
-            <span class="mx-2">·</span>
-            <v-icon class="mr-1" size="16">mdi-eye</v-icon>
-            <span>{{ article.view_count }}</span>
-            <span class="mx-2">·</span>
-            <v-icon class="mr-1" size="16">mdi-heart</v-icon>
-            <span>{{ article.like_count }}</span>
-          </div>
-        </v-card-subtitle>
+            <v-list-item-content>
+              <v-list-item-title>{{ article.title }}</v-list-item-title>
+              <v-list-item-subtitle>
+                {{ article.content.substring(0, 50) }}...
+                <span class="ml-2 text-grey">{{ formatTime(article.created_at) }}</span>
+              </v-list-item-subtitle>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
       </v-card>
-    </div>
-    
-    <div v-else-if="!isLoading && keyword" class="empty-state">
-      <v-icon size="96" color="gray-200" class="empty-state-icon">mdi-search-off</v-icon>
-      <p class="text-gray-400">未找到相关文章</p>
-      <p class="text-gray-400 text-sm mt-1">试试其他关键词吧</p>
-    </div>
-    
-    <div v-else class="empty-state">
-      <v-icon size="96" color="gray-200" class="empty-state-icon">mdi-magnify</v-icon>
-      <p class="text-gray-400">输入关键词开始搜索</p>
-      <p class="text-gray-400 text-sm mt-1">查找你感兴趣的文章</p>
-    </div>
-  </v-container>
+      
+      <v-card v-else class="text-center py-12">
+        <v-icon size="64" color="grey">mdi-search</v-icon>
+        <p class="mt-4 text-grey">{{ keyword ? '未找到相关文章' : '请输入关键词进行搜索' }}</p>
+      </v-card>
+    </v-container>
+  </v-app>
 </template>
