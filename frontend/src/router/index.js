@@ -50,6 +50,21 @@ const routes = [
     path: '/notifications',
     name: 'Notifications',
     component: () => import('../views/Notifications.vue')
+  },
+  {
+    path: '/friends',
+    name: 'Friends',
+    component: () => import('../views/FollowList.vue')
+  },
+  {
+    path: '/chat',
+    name: 'Chat',
+    component: () => import('../views/Chat.vue')
+  },
+  {
+    path: '/chat/:id',
+    name: 'ChatRoom',
+    component: () => import('../views/ChatRoom.vue')
   }
 ]
 
