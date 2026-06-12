@@ -17,7 +17,7 @@ if not exist "build" mkdir build
 if exist "build\web" rmdir /s /q "build\web"
 
 :: Build backend with version injection
-echo [1/3] Building backend...
+echo [1/4] Building backend...
 cd backend
 
 :: Set ldflags for version injection
@@ -55,9 +55,45 @@ echo    [OK] Linux-ARM64
 
 cd ..
 
+:: Build IM server
+echo.
+echo [2/4] Building IM server...
+cd sdk\im-server\launcher
+
+echo    - Building IM Windows-AMD64...
+set GOOS=windows
+set GOARCH=amd64
+set CGO_ENABLED=0
+go build -o "..\..\..\build\im-server-windows-amd64.exe" .
+if errorlevel 1 (
+    echo    [FAIL] IM Windows-AMD64
+    exit /b 1
+)
+echo    [OK] IM Windows-AMD64
+
+echo    - Building IM Linux-AMD64...
+set GOOS=linux
+go build -o "..\..\..\build\im-server-linux-amd64" .
+if errorlevel 1 (
+    echo    [FAIL] IM Linux-AMD64
+    exit /b 1
+)
+echo    [OK] IM Linux-AMD64
+
+echo    - Building IM Linux-ARM64...
+set GOARCH=arm64
+go build -o "..\..\..\build\im-server-linux-arm64" .
+if errorlevel 1 (
+    echo    [FAIL] IM Linux-ARM64
+    exit /b 1
+)
+echo    [OK] IM Linux-ARM64
+
+cd ..\..\..
+
 :: Build frontend
 echo.
-echo [2/3] Building frontend...
+echo [3/4] Building frontend...
 cd frontend
 call npm install
 if errorlevel 1 (
@@ -79,7 +115,7 @@ cd ..
 
 :: Create zip archive
 echo.
-echo [3/3] Creating archive...
+echo [4/4] Creating archive...
 powershell -Command "Compress-Archive -Path 'build\*' -DestinationPath 'forum_v%VERSION%.zip' -Force"
 if errorlevel 1 (
     echo    [FAIL] Create archive
@@ -93,4 +129,9 @@ echo   Build Complete: forum_v%VERSION%.zip
 echo ========================================
 echo.
 echo Output: %cd%\forum_v%VERSION%.zip
+echo.
+echo Compile artifacts:
+echo   - server-*.exe/.sh    (Forum backend)
+echo   - im-server-*.exe/.sh (IM server)
+echo   - web/                (Frontend)
 echo.

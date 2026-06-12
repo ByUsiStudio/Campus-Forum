@@ -43,7 +43,8 @@ func AutoMigrate() {
 		&models.Announcement{},
 		&models.Notification{},
 		&models.UserNotification{},
-		&models.Follow{},
+		&models.Friend{},
+		&models.FriendRequest{},
 		&models.SiteConfig{},
 		&models.FollowNotification{},
 		&models.Report{},
@@ -52,6 +53,9 @@ func AutoMigrate() {
 		&models.UserPermissionGroup{},
 		&models.SystemLog{},
 		&models.SignInRecord{},
+		&models.Conversation{},
+		&models.Message{},
+		&models.UserConversation{},
 	)
 	DB.Exec("SET FOREIGN_KEY_CHECKS = 1")
 	if err != nil {

@@ -9,6 +9,8 @@ import (
 	"forum/service"
 	"forum/utils"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,6 +21,7 @@ type Config struct {
 	JWTSecret string         `json:"jwt_secret"`
 	WebDAV    WebDAVConfig   `json:"webdav"`
 	Database  DatabaseConfig `json:"database"`
+	IM        IMConfig       `json:"im"`
 }
 
 type WebDAVConfig struct {
@@ -33,6 +36,13 @@ type DatabaseConfig struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	DBName   string `json:"dbname"`
+}
+
+type IMConfig struct {
+	Enabled        bool `json:"enabled"`
+	ApiGatewayPort int  `json:"api_gateway_port"`
+	WsPort         int  `json:"ws_port"`
+	AdminPort      int  `json:"admin_port"`
 }
 
 var config Config
@@ -54,12 +64,24 @@ func main() {
 	// 初始化服务
 	service.InitServices()
 
+	// 初始化WebSocket服务（用于聊天）
+	service.InitWebSocket()
+
 	// 自动迁移和初始化
 	database.AutoMigrate()
 	database.CheckAndInitAdmin()
 
 	// 系统初始化（权限组、头衔等）
 	initpkg.SystemInit()
+
+	// 启动IM服务子进程
+	if config.IM.Enabled {
+		if err := StartIMServer(config); err != nil {
+			utils.Error("启动IM服务失败: %v", err)
+		}
+		// 注册关闭钩子
+		defer StopIMServer()
+	}
 
 	// 设置路由
 	r := gin.New()
@@ -75,6 +97,9 @@ func main() {
 
 	// WebDAV代理路由
 	r.Any("/proxy/webdav/*path", utils.ProxyWebDAVHandler)
+
+	// WebSocket路由（需要认证）
+	r.GET("/ws", middleware.Auth(config.JWTSecret), controllers.HandleWebSocket)
 
 	// API路由
 	api := r.Group("/api")
@@ -188,13 +213,25 @@ func main() {
 			protected.GET("/permissions/check", controllers.CheckUserPermissions)
 			protected.POST("/permission-groups/init", middleware.AdminOnly(), controllers.InitializeDefaultPermissionGroups)
 
-			// 关注相关
-			protected.POST("/follow/:id", controllers.FollowUser)
-			protected.DELETE("/follow/:id", controllers.UnfollowUser)
-			protected.GET("/following", controllers.GetFollowingList)
-			protected.GET("/followers", controllers.GetFollowerList)
-			protected.GET("/follow/status/:id", controllers.CheckFollowStatus)
-			protected.GET("/mutual", controllers.GetMutualFriends)
+			// 好友相关（原关注系统改为好友系统）
+			protected.POST("/friends/request", controllers.SendFriendRequest)
+			protected.POST("/friends/request/:id/accept", controllers.AcceptFriendRequest)
+			protected.POST("/friends/request/:id/reject", controllers.RejectFriendRequest)
+			protected.DELETE("/friends/:id", controllers.DeleteFriend)
+			protected.GET("/friends", controllers.GetFriendList)
+			protected.GET("/friends/requests", controllers.GetFriendRequests)
+			protected.GET("/friends/sent-requests", controllers.GetSentFriendRequests)
+			protected.PUT("/friends/:id/display-name", controllers.UpdateFriendDisplayName)
+			protected.GET("/friends/status/:id", controllers.CheckFriendStatus)
+			protected.GET("/friends/mutual/:id", controllers.GetMutualFriends)
+
+			// 聊天相关
+			protected.GET("/chat/conversations", controllers.GetConversations)
+			protected.GET("/chat/messages", controllers.GetMessages)
+			protected.POST("/chat/messages", controllers.SendMessage)
+			protected.POST("/chat/conversations/private", controllers.CreatePrivateConversation)
+			protected.GET("/chat/unread", controllers.GetUnreadCount)
+			protected.POST("/chat/conversations/:id/read", controllers.MarkConversationRead)
 
 			// 收藏相关
 			protected.POST("/articles/:id/favorite", controllers.AddFavorite)
@@ -257,22 +294,33 @@ func main() {
 		// 用户公开信息
 		api.GET("/users/:id", controllers.GetUserByID)
 		api.GET("/users/:id/articles", controllers.GetUserArticles)
-		api.GET("/users/:id/following", controllers.GetUserFollowing)
-		api.GET("/users/:id/followers", controllers.GetUserFollowers)
 	}
 
 	// 密码重置（公开接口，但有限制）
 	passwordReset := api.Group("/password")
 	{
-		passwordReset.POST("/reset-code", middleware.RateLimit(3, time.Minute), controllers.SendResetCode) // 每分钟最多3次
-		passwordReset.POST("/reset", middleware.RateLimit(5, time.Minute), controllers.ResetPassword)      // 每分钟最多5次
+		passwordReset.POST("/reset-code", middleware.RateLimit(3, time.Minute), controllers.SendResetCode)
+		passwordReset.POST("/reset", middleware.RateLimit(5, time.Minute), controllers.ResetPassword)
 	}
 
+	// 启动服务
 	utils.Section("服务启动")
-	utils.Info("服务器地址: http://0.0.0.0:%s", config.Port)
+	utils.Info("论坛服务器地址: http://0.0.0.0:%s", config.Port)
+	utils.Info("WebSocket地址: ws://0.0.0.0:%s/ws", config.Port)
 	utils.Section("")
-
 	r.Run(":" + config.Port)
+
+	// 等待退出信号
+	closeChan := make(chan struct{})
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	go func() {
+		<-sigChan
+		signal.Stop(sigChan)
+		close(closeChan)
+	}()
+
+	<-closeChan
 }
 
 func loadConfig() {

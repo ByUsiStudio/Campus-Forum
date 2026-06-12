@@ -12,5 +12,11 @@
         "username": "root",
         "password": "123456",
         "dbname": "forum"
+    },
+    "im": {
+        "enabled": true,
+        "api_gateway_port": 9001,
+        "ws_port": 9003,
+        "admin_port": 8090
     }
 }
