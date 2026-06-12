@@ -62,6 +62,21 @@ const formatTime = (timeStr) => {
   }
 }
 
+const getNotificationIcon = (type) => {
+  switch (type) {
+    case 'like':
+      return 'mdi-heart'
+    case 'comment':
+      return 'mdi-message'
+    case 'follow':
+      return 'mdi-user-follow'
+    case 'reply':
+      return 'mdi-reply'
+    default:
+      return 'mdi-bell'
+  }
+}
+
 onMounted(() => {
   if (!user.value) {
     router.push('/login')
@@ -72,56 +87,87 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-container class="max-w-4xl mx-auto py-8">
-    <v-card rounded="xl" elevation="4">
-      <v-card-title class="gradient-purple text-white flex items-center justify-between">
+  <v-container class="max-w-2xl mx-auto px-4 py-8">
+    <!-- 返回按钮 -->
+    <v-btn 
+      text 
+      color="gray-600" 
+      class="mb-6 hover:text-primary transition-colors"
+      @click="router.back()"
+    >
+      <v-icon class="mr-2" size="20">mdi-arrow-left</v-icon>
+      返回
+    </v-btn>
+    
+    <v-card rounded="2xl" elevation="4" class="overflow-hidden">
+      <!-- 标题栏 -->
+      <v-card-title class="gradient-purple text-white py-6 px-8 flex items-center justify-between">
         <div class="flex items-center">
-          <v-icon class="mr-2">mdi-bell</v-icon>
+          <v-icon class="mr-3" size="24">mdi-bell</v-icon>
           <span class="font-bold text-xl">通知中心</span>
         </div>
         <v-btn 
+          v-if="notifications.some(n => !n.is_read)"
           text 
           color="white" 
+          class="hover:bg-white/20 rounded-lg transition-colors"
           @click="markAllAsRead"
-          v-if="notifications.some(n => !n.is_read)"
         >
+          <v-icon class="mr-1" size="18">mdi-check-all</v-icon>
           全部已读
         </v-btn>
       </v-card-title>
       
-      <v-card-text>
-        <div v-if="isLoading" class="text-center py-8">
-          <v-progress-circular indeterminate color="primary" />
+      <!-- 内容区域 -->
+      <div class="p-6">
+        <div v-if="isLoading" class="loading-center">
+          <v-progress-circular indeterminate color="primary" :size="48" />
         </div>
         
-        <v-list v-else-if="notifications.length > 0">
-          <v-list-item 
+        <v-list v-else-if="notifications.length > 0" class="space-y-3">
+          <v-card 
             v-for="notification in notifications" 
             :key="notification.id"
-            :class="notification.is_read ? '' : 'bg-primary/5'"
-            class="border-b border-gray-100 last:border-0 cursor-pointer"
+            :class="[
+              'card-hover cursor-pointer',
+              notification.is_read ? 'bg-white' : 'bg-primary/5 border border-primary/20'
+            ]"
+            rounded="xl"
             @click="markAsRead(notification.id)"
           >
-            <v-list-item-icon>
-              <v-icon 
-                :color="notification.is_read ? 'gray' : 'primary'"
-                size="24"
-              >
-                {{ notification.type === 'like' ? 'mdi-heart' : 'mdi-message' }}
-              </v-icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-list-item-title>{{ notification.content }}</v-list-item-title>
-              <v-list-item-subtitle>{{ formatTime(notification.created_at) }}</v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
+            <v-list-item class="px-4 py-3">
+              <v-list-item-icon>
+                <v-icon 
+                  :color="notification.is_read ? 'gray' : 'primary'"
+                  size="24"
+                >
+                  {{ getNotificationIcon(notification.type) }}
+                </v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title class="font-medium text-gray-800">{{ notification.content }}</v-list-item-title>
+                <v-list-item-subtitle class="text-gray-400 text-sm">{{ formatTime(notification.created_at) }}</v-list-item-subtitle>
+              </v-list-item-content>
+              <v-list-item-action>
+                <v-chip 
+                  v-if="!notification.is_read" 
+                  size="small" 
+                  color="primary"
+                  class="tag-purple"
+                >
+                  未读
+                </v-chip>
+              </v-list-item-action>
+            </v-list-item>
+          </v-card>
         </v-list>
         
-        <div v-else class="text-center py-12">
-          <v-icon size="64" color="gray" class="mx-auto mb-4">mdi-bell-off</v-icon>
-          <p class="text-gray-500">暂无通知</p>
+        <div v-else class="empty-state">
+          <v-icon size="96" color="gray-200" class="empty-state-icon">mdi-bell-off</v-icon>
+          <p class="text-gray-400">暂无通知</p>
+          <p class="text-gray-400 text-sm mt-1">有新消息时会在这里显示</p>
         </div>
-      </v-card-text>
+      </div>
     </v-card>
   </v-container>
 </template>

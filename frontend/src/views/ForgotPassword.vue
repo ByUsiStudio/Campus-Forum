@@ -1,13 +1,35 @@
 <template>
-  <div class="d-flex justify-center align-center" style="min-height: 80vh;">
-    <v-card width="100%" max-width="400" class="pa-6">
-      <v-card-title class="text-h5 text-center pb-4" style="color: rgb(var(--v-theme-primary));">
-        找回密码
+  <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <div class="absolute inset-0 overflow-hidden">
+      <div class="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl"></div>
+      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-secondary/5 rounded-full blur-3xl"></div>
+    </div>
+    
+    <v-card 
+      class="w-full max-w-md relative z-10" 
+      elevation="12"
+      rounded="2xl"
+      background-color="surface"
+    >
+      <v-card-title class="text-center py-8 px-6">
+        <div class="mb-6">
+          <v-icon 
+            size="56" 
+            color="primary"
+            class="mx-auto"
+            style="filter: drop-shadow(0 4px 12px rgba(147, 112, 219, 0.3));"
+          >
+            mdi-key
+          </v-icon>
+        </div>
+        <h1 class="text-2xl font-bold text-gradient">找回密码</h1>
+        <p class="text-gray-500 mt-2 text-sm">通过QQ邮箱验证重置密码</p>
       </v-card-title>
-
-      <v-card-text>
-        <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
-        <v-alert v-if="success" type="success" variant="tonal" class="mb-4">{{ success }}</v-alert>
+      
+      <v-card-text class="px-8 pb-8">
+        <v-alert v-if="error" type="error" variant="tonal" class="mb-4 text-sm rounded-lg"></v-alert>
+        <v-alert v-if="success" type="success" variant="tonal" class="mb-4 text-sm rounded-lg"></v-alert>
 
         <v-form @submit.prevent="handleSubmit">
           <v-text-field
@@ -17,6 +39,9 @@
             required
             prepend-inner-icon="mdi-qqchat"
             class="mb-4"
+            color="primary"
+            hide-details="auto"
+            density="comfortable"
           ></v-text-field>
 
           <div v-if="step === 2">
@@ -27,6 +52,9 @@
               required
               prepend-inner-icon="mdi-shield-check"
               class="mb-4"
+              color="primary"
+              hide-details="auto"
+              density="comfortable"
             ></v-text-field>
 
             <v-text-field
@@ -36,7 +64,11 @@
               type="password"
               required
               prepend-inner-icon="mdi-lock"
+              append-icon="mdi-eye-off"
               class="mb-4"
+              color="primary"
+              hide-details="auto"
+              density="comfortable"
             ></v-text-field>
 
             <v-text-field
@@ -46,23 +78,28 @@
               type="password"
               required
               prepend-inner-icon="mdi-lock-check"
-              class="mb-4"
+              append-icon="mdi-eye-off"
+              class="mb-6"
+              color="primary"
+              hide-details="auto"
+              density="comfortable"
             ></v-text-field>
           </div>
 
           <v-btn
             type="submit"
-            color="primary"
-            block
+            class="w-full mb-6 btn-gradient"
             size="large"
+            block
             :loading="loading"
           >
             {{ loading ? '处理中...' : buttonText }}
           </v-btn>
         </v-form>
 
-        <div class="text-center mt-4 text-body-2">
-          想起密码了？ <router-link to="/login" class="text-primary">返回登录</router-link>
+        <div class="text-center">
+          <span class="text-gray-500 text-sm">想起密码了？</span>
+          <router-link to="/login" class="text-primary ml-1 text-sm">返回登录</router-link>
         </div>
       </v-card-text>
     </v-card>

@@ -24,7 +24,7 @@ provide('setUser', setUser)
 provide('clearUser', clearUser)
 provide('siteConfig', siteConfig)
 
-axios.defaults.baseURL = '/api'
+// 使用完整API路径，不在baseURL中添加前缀
 
 axios.interceptors.request.use(
   (config) => {
@@ -54,11 +54,11 @@ onMounted(async () => {
   try {
     const token = localStorage.getItem('token')
     if (token) {
-      const response = await axios.get('/profile')
+      const response = await axios.get('/api/profile')
       user.value = response.data
     }
     
-    const configResponse = await axios.get('/site-config')
+    const configResponse = await axios.get('/api/site-config')
     siteConfig.value = configResponse.data
   } catch (error) {
     console.log('初始化失败:', error)

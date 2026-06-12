@@ -1,72 +1,117 @@
 <template>
-  <div class="follow-list-page">
-    <v-card class="pa-6">
-      <div class="d-flex align-center mb-4">
-        <v-btn icon variant="text" @click="router.back()">
-          <v-icon>mdi-arrow-left</v-icon>
-        </v-btn>
-        <v-card-title class="pa-0">{{ pageTitle }}</v-card-title>
-      </div>
-
-      <v-tabs v-model="tab" align-tabs="start" class="mb-4">
-        <v-tab value="following">关注 ({{ followingCount }})</v-tab>
-        <v-tab value="followers">粉丝 ({{ followersCount }})</v-tab>
-      </v-tabs>
-
-      <div v-if="loading" class="text-center pa-8">
-        <v-progress-circular indeterminate color="primary"></v-progress-circular>
-      </div>
-
-      <div v-else-if="currentList.length === 0" class="text-center pa-8 text-medium-emphasis">
-        暂无{{ tab === 'following' ? '关注' : '粉丝' }}
-      </div>
-
-      <v-list v-else>
-        <v-list-item
-          v-for="userItem in currentList"
-          :key="userItem.id"
-          class="px-0"
+  <v-container class="max-w-2xl mx-auto px-4 py-8">
+    <!-- 返回按钮 -->
+    <v-btn 
+      text 
+      color="gray-600" 
+      class="mb-6 hover:text-primary transition-colors"
+      @click="router.back()"
+    >
+      <v-icon class="mr-2" size="20">mdi-arrow-left</v-icon>
+      返回
+    </v-btn>
+    
+    <v-card rounded="2xl" elevation="4" class="overflow-hidden">
+      <!-- 标题 -->
+      <v-card-title class="gradient-purple text-white py-6 px-8">
+        <v-icon class="mr-3" size="24">{{ tab === 'following' ? 'mdi-user-follow' : 'mdi-users' }}</v-icon>
+        <span class="font-bold text-xl">{{ pageTitle }}</span>
+      </v-card-title>
+      
+      <!-- Tab 切换 -->
+      <v-tabs 
+        v-model="tab" 
+        background-color="surface"
+        class="border-b border-gray-100"
+      >
+        <v-tab 
+          value="following" 
+          class="text-gray-600 hover:text-primary transition-colors"
         >
-          <template v-slot:prepend>
-            <UserAvatar :user="userItem" :size="50" />
-          </template>
-
-          <v-list-item-title class="font-weight-bold">
-            <router-link :to="'/profile?id=' + userItem.id" class="text-decoration-none">
-              {{ userItem.display_name || userItem.username }}
-            </router-link>
-          </v-list-item-title>
-
-          <v-list-item-subtitle class="text-caption">
-            @{{ userItem.username }}
-            <span v-if="userItem.role === 'admin'" class="text-primary ml-1">管理员</span>
-          </v-list-item-subtitle>
-
-          <v-list-item-subtitle v-if="userItem.signature" class="text-truncate">
-            {{ userItem.signature }}
-          </v-list-item-subtitle>
-
-          <template v-slot:append>
-            <v-btn
-              v-if="!isOwnProfile && currentUser && currentUser.id !== userItem.id"
-              variant="outlined"
-              size="small"
-              :color="isFollowing(userItem.id) ? 'default' : 'primary'"
-              @click="handleFollowToggle(userItem)"
-            >
-              {{ isFollowing(userItem.id) ? '已关注' : '关注' }}
-            </v-btn>
-          </template>
-        </v-list-item>
-      </v-list>
+          <v-icon class="mr-2" size="18">mdi-user-follow</v-icon>
+          关注 ({{ followingCount }})
+        </v-tab>
+        <v-tab 
+          value="followers" 
+          class="text-gray-600 hover:text-primary transition-colors"
+        >
+          <v-icon class="mr-2" size="18">mdi-users</v-icon>
+          粉丝 ({{ followersCount }})
+        </v-tab>
+      </v-tabs>
+      
+      <!-- 内容区域 -->
+      <div class="p-6">
+        <div v-if="loading" class="loading-center">
+          <v-progress-circular indeterminate color="primary" :size="48" />
+        </div>
+        
+        <div v-else-if="currentList.length === 0" class="empty-state">
+          <v-icon size="96" color="gray-200" class="empty-state-icon">
+            {{ tab === 'following' ? 'mdi-user-follow' : 'mdi-users' }}
+          </v-icon>
+          <p class="text-gray-400">暂无{{ tab === 'following' ? '关注' : '粉丝' }}</p>
+        </div>
+        
+        <v-list v-else class="space-y-3">
+          <v-card 
+            v-for="userItem in currentList"
+            :key="userItem.id"
+            rounded="xl"
+            class="card-hover"
+          >
+            <v-list-item class="px-4 py-3">
+              <template v-slot:prepend>
+                <v-avatar size="56" color="primary" class="avatar-hover">
+                  <v-icon size="28" color="white">mdi-account</v-icon>
+                </v-avatar>
+              </template>
+              
+              <v-list-item-content>
+                <div class="flex items-center">
+                  <router-link 
+                    :to="'/profile?id=' + userItem.id" 
+                    class="text-gray-800 font-bold hover:text-primary transition-colors"
+                  >
+                    {{ userItem.display_name || userItem.username }}
+                  </router-link>
+                  <v-chip 
+                    v-if="userItem.role === 'admin'" 
+                    size="small" 
+                    class="ml-2 tag-purple"
+                  >
+                    管理员
+                  </v-chip>
+                </div>
+                <p class="text-gray-500 text-sm">@{{ userItem.username }}</p>
+                <p v-if="userItem.signature" class="text-gray-400 text-sm mt-1">{{ userItem.signature }}</p>
+              </v-list-item-content>
+              
+              <template v-slot:append>
+                <v-btn
+                  v-if="!isOwnProfile && currentUser && currentUser.id !== userItem.id"
+                  :class="[
+                    'btn-outline-purple',
+                    isFollowing(userItem.id) ? 'bg-gray-100 text-gray-600' : ''
+                  ]"
+                  size="small"
+                  @click="handleFollowToggle(userItem)"
+                >
+                  {{ isFollowing(userItem.id) ? '已关注' : '+ 关注' }}
+                </v-btn>
+              </template>
+            </v-list-item>
+          </v-card>
+        </v-list>
+      </div>
     </v-card>
-  </div>
+  </v-container>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import api from '../api'
+import { authApi, followApi } from '../api'
 
 const router = useRouter()
 const route = useRoute()
@@ -108,8 +153,8 @@ const loadFollowData = async () => {
 
   try {
     const [followingRes, followersRes] = await Promise.all([
-      api.get('/following'),
-      api.get('/followers')
+      followApi.getFollowing(),
+      followApi.getFollowers()
     ])
 
     following.value = followingRes.data.following || []
@@ -129,10 +174,9 @@ const loadOtherUserFollowData = async () => {
   loading.value = true
 
   try {
-    const [followingRes, followersRes, statusRes] = await Promise.all([
-      api.get(`/users/${userId.value}/following`),
-      api.get(`/users/${userId.value}/followers`),
-      api.get(`/follow/status/${userId.value}`)
+    const [followingRes, followersRes] = await Promise.all([
+      followApi.getUserFollowing(userId.value),
+      followApi.getUserFollowers(userId.value)
     ])
 
     following.value = followingRes.data.following || []
@@ -149,11 +193,11 @@ const loadOtherUserFollowData = async () => {
 const handleFollowToggle = async (user) => {
   try {
     if (isFollowing(user.id)) {
-      await api.delete(`/follow/${user.id}`)
+      await followApi.unfollow(user.id)
       following.value = following.value.filter(u => u.id !== user.id)
       followingCount.value--
     } else {
-      await api.post(`/follow/${user.id}`)
+      await followApi.follow(user.id)
       following.value.push(user)
       followingCount.value++
     }
@@ -164,11 +208,8 @@ const handleFollowToggle = async (user) => {
 
 onMounted(async () => {
   try {
-    const token = localStorage.getItem('token')
-    if (token) {
-      const profileRes = await api.get('/profile')
-      currentUser.value = profileRes.data
-    }
+    const profileRes = await authApi.getProfile()
+    currentUser.value = profileRes.data
   } catch (error) {
     console.error('获取当前用户失败', error)
   }
@@ -190,11 +231,3 @@ watch(() => [route.query.userId, route.query.id, route.query.tab], ([newUserId, 
   }
 })
 </script>
-
-<style scoped>
-.follow-list-page {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 16px;
-}
-</style>
