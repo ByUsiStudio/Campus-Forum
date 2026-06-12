@@ -1,6 +1,9 @@
 <script setup>
 import { provide, ref, onMounted } from 'vue'
 import axios from 'axios'
+import AppLayout from './components/AppLayout.vue'
+import AppModal from './components/AppModal.vue'
+import { alert } from './utils/modal'
 
 const user = ref(null)
 const siteConfig = ref({
@@ -17,14 +20,13 @@ const setUser = (userData) => {
 const clearUser = () => {
   user.value = null
   localStorage.removeItem('token')
+  localStorage.removeItem('user')
 }
 
 provide('user', user)
 provide('setUser', setUser)
 provide('clearUser', clearUser)
 provide('siteConfig', siteConfig)
-
-// 使用完整API路径，不在baseURL中添加前缀
 
 axios.interceptors.request.use(
   (config) => {
@@ -50,6 +52,22 @@ axios.interceptors.response.use(
   }
 )
 
+const showAnnouncement = async () => {
+  try {
+    const response = await axios.get('/api/announcement')
+    const content = response.data.content
+    if (content && content.trim()) {
+      await alert(content, {
+        title: '站点公告',
+        icon: 'mdi-bullhorn',
+        iconColor: 'primary'
+      })
+    }
+  } catch (error) {
+    console.log('加载公告失败:', error)
+  }
+}
+
 onMounted(async () => {
   try {
     const token = localStorage.getItem('token')
@@ -64,23 +82,28 @@ onMounted(async () => {
     console.log('初始化失败:', error)
   } finally {
     isLoading.value = false
+    // 显示公告弹窗
+    showAnnouncement()
   }
 })
 </script>
 
 <template>
   <v-app>
-    <v-main v-if="!isLoading">
-      <router-view />
-    </v-main>
+    <AppLayout v-if="!isLoading" />
     <v-progress-circular 
       v-else 
       indeterminate 
       color="primary" 
       class="position-fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
     />
+    <AppModal />
   </v-app>
 </template>
 
-<style scoped>
+<style>
+body {
+  margin: 0;
+  padding: 0;
+}
 </style>

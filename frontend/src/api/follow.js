@@ -1,90 +1,58 @@
-import request from './common'
+import axios from 'axios'
 
 // 好友系统 API
 
 // 发送好友请求
 export const sendFriendRequest = (friendId, message = '') => {
-  return request({
-    url: '/api/friends/request',
-    method: 'post',
-    data: {
-      friend_id: friendId,
-      message
-    }
+  return axios.post('/api/friends/request', {
+    friend_id: friendId,
+    message
   })
 }
 
 // 同意好友请求
 export const acceptFriendRequest = (requestId) => {
-  return request({
-    url: `/api/friends/request/${requestId}/accept`,
-    method: 'post'
-  })
+  return axios.post(`/api/friends/request/${requestId}/accept`)
 }
 
 // 拒绝好友请求
 export const rejectFriendRequest = (requestId) => {
-  return request({
-    url: `/api/friends/request/${requestId}/reject`,
-    method: 'post'
-  })
+  return axios.post(`/api/friends/request/${requestId}/reject`)
 }
 
 // 删除好友
 export const deleteFriend = (friendId) => {
-  return request({
-    url: `/api/friends/${friendId}`,
-    method: 'delete'
-  })
+  return axios.delete(`/api/friends/${friendId}`)
 }
 
 // 获取好友列表
 export const getFriendList = () => {
-  return request({
-    url: '/api/friends',
-    method: 'get'
-  })
+  return axios.get('/api/friends')
 }
 
 // 获取好友请求列表
 export const getFriendRequests = () => {
-  return request({
-    url: '/api/friends/requests',
-    method: 'get'
-  })
+  return axios.get('/api/friends/requests')
 }
 
 // 获取已发送的好友请求列表
 export const getSentFriendRequests = () => {
-  return request({
-    url: '/api/friends/sent-requests',
-    method: 'get'
-  })
+  return axios.get('/api/friends/sent-requests')
 }
 
 // 更新好友备注名
 export const updateFriendDisplayName = (friendId, displayName) => {
-  return request({
-    url: `/api/friends/${friendId}/display-name`,
-    method: 'put',
-    data: {
-      display_name: displayName
-    }
+  return axios.put(`/api/friends/${friendId}/display-name`, {
+    display_name: displayName
   })
 }
 
 // 检查好友状态
 export const checkFriendStatus = (userId) => {
-  return request({
-    url: `/api/friends/status/${userId}`,
-    method: 'get'
-  })
+  return axios.get(`/api/friends/status/${userId}`)
 }
 
 // 获取共同好友
 export const getMutualFriends = (userId) => {
-  return request({
-    url: `/api/friends/mutual/${userId}`,
-    method: 'get'
-  })
+  return axios.get(`/api/friends/mutual/${userId}`)
 }

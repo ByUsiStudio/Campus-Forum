@@ -1,11 +1,13 @@
 <script setup>
-import { ref, inject, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, inject, onMounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { articleApi, categoryApi, signinApi } from '../api'
 
 const router = useRouter()
+const route = useRoute()
 const user = inject('user')
 const clearUser = inject('clearUser')
+const isMobile = computed(() => window.innerWidth < 1024)
 
 const articles = ref([])
 const categories = ref([])
@@ -125,75 +127,83 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-app>
-    <!-- 顶部导航 -->
-    <v-app-bar app>
-      <v-toolbar-title>
-        <v-icon color="primary">mdi-forum</v-icon>
-        <span class="ml-2">校园论坛</span>
-      </v-toolbar-title>
-      
-      <v-spacer></v-spacer>
-      
-      <v-text-field
-        v-model="searchQuery"
-        placeholder="搜索文章..."
-        prepend-icon="mdi-magnify"
-        class="hidden md:flex w-64"
-        @keyup.enter="router.push(`/search?keyword=${searchQuery}`)"
-      />
-      
-      <v-spacer></v-spacer>
-      
-      <div class="flex items-center">
-        <v-btn v-if="user" icon @click="router.push('/notifications')">
-          <v-icon>mdi-bell</v-icon>
+  <v-container class="py-6">
+    <!-- 移动端布局：分类横向滚动 + 文章列表 -->
+    <template v-if="isMobile">
+      <!-- 分类横向滚动 -->
+      <v-scroll-x class="mb-4">
+        <v-btn
+          v-for="category in [{ id: null, name: '全部' }, ...categories]"
+          :key="category.id || 'all'"
+          :class="currentCategory === category.id ? 'primary' : ''"
+          @click="handleCategoryClick(category.id)"
+        >
+          {{ category.name }}
         </v-btn>
-        
-        <v-btn v-if="user" icon color="primary" @click="router.push('/create')">
-          <v-icon>mdi-plus</v-icon>
-        </v-btn>
-        
-        <v-menu v-if="user">
-          <template v-slot:activator="{ props }">
-            <v-btn icon v-bind="props">
-              <v-avatar size="40" color="primary">
-                <v-icon color="white">mdi-account</v-icon>
-              </v-avatar>
-            </v-btn>
-          </template>
-          <v-list>
-            <v-list-item @click="router.push('/profile')">
-              <v-list-item-icon>
-                <v-icon>mdi-user</v-icon>
-              </v-list-item-icon>
-              <v-list-item-title>个人中心</v-list-item-title>
-            </v-list-item>
-            <v-list-item v-if="user.role === 'admin'" @click="router.push('/admin')">
-              <v-list-item-icon>
-                <v-icon>mdi-settings</v-icon>
-              </v-list-item-icon>
-              <v-list-item-title>管理后台</v-list-item-title>
-            </v-list-item>
-            <v-divider></v-divider>
-            <v-list-item @click="handleLogout">
-              <v-list-item-icon>
-                <v-icon>mdi-logout</v-icon>
-              </v-list-item-icon>
-              <v-list-item-title>退出登录</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-        
-        <template v-else>
-          <v-btn text @click="router.push('/login')">登录</v-btn>
-          <v-btn color="primary" @click="router.push('/register')">注册</v-btn>
-        </template>
-      </div>
-    </v-app-bar>
-    
-    <!-- 主内容区 -->
-    <v-container class="py-6">
+      </v-scroll-x>
+
+      <!-- 签到卡片 -->
+      <v-card v-if="user" class="mb-4" @click="handleSignin">
+        <v-card-title class="d-flex align-center justify-between">
+          <span>每日签到</span>
+          <v-icon color="primary">mdi-calendar-check</v-icon>
+        </v-card-title>
+        <v-card-text>
+          <div class="text-center">
+            <div class="text-4xl font-bold text-primary">{{ signinStatus.signInDays }}</div>
+            <div class="text-sm text-grey">连续签到天数</div>
+            <div class="text-sm mt-2">
+              累计签到 {{ signinStatus.totalSignIns }} 次
+            </div>
+          </div>
+          <v-btn v-if="!signinStatus.hasSignedIn" block color="primary" class="mt-4">
+            立即签到
+          </v-btn>
+          <v-btn v-else block disabled class="mt-4">
+            今日已签到
+          </v-btn>
+        </v-card-text>
+      </v-card>
+
+      <!-- 文章列表 -->
+      <v-card
+        v-for="article in articles"
+        :key="article.id"
+        class="mb-4 cursor-pointer"
+        @click="router.push(`/article/${article.id}`)"
+      >
+        <v-card-title>
+          <h3 class="text-h6">{{ article.title }}</h3>
+        </v-card-title>
+        <v-card-text>
+          <p>{{ article.content.substring(0, 100) }}...</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-chip size="small" color="primary" text-color="white">
+            {{ article.category?.name || '未分类' }}
+          </v-chip>
+          <span class="ml-2 text-sm text-grey">{{ article.author?.username }}</span>
+          <span class="ml-auto text-sm text-grey">{{ formatTime(article.created_at) }}</span>
+        </v-card-actions>
+      </v-card>
+
+      <!-- 加载更多 -->
+      <v-card v-if="page < totalPages" class="text-center">
+        <v-card-text>
+          <v-btn color="primary" :loading="isLoading" @click="loadMore">
+            加载更多
+          </v-btn>
+        </v-card-text>
+      </v-card>
+
+      <v-card v-if="articles.length === 0" class="text-center py-12">
+        <v-icon size="64" color="grey">mdi-file-question</v-icon>
+        <p class="mt-4 text-grey">暂无文章</p>
+      </v-card>
+    </template>
+
+    <!-- PC端布局：左侧分类栏 + 右侧文章列表 -->
+    <template v-else>
       <v-row>
         <!-- 左侧分类栏 -->
         <v-col md="3" class="mb-6">
@@ -289,8 +299,8 @@ onMounted(() => {
           </v-card>
         </v-col>
       </v-row>
-    </v-container>
-  </v-app>
+    </template>
+  </v-container>
 </template>
 
 <style scoped>

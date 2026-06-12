@@ -1,195 +1,69 @@
-<template>
-  <v-dialog
-    :model-value="show"
-    @update:model-value="$emit('update:show', $event)"
-    :max-width="maxWidth"
-    :persistent="persistent"
-    scrollable
-  >
-    <v-card>
-      <!-- 头部 -->
-      <v-card-title class="d-flex align-center gap-3">
-        <v-icon
-          :color="iconColor"
-          :size="iconSize"
-        >
-          {{ icon }}
-        </v-icon>
-        <span class="text-h6">{{ title }}</span>
-      </v-card-title>
-      
-      <v-divider></v-divider>
-      
-      <!-- 内容 -->
-      <v-card-text class="pa-4">
-        <div v-if="type === 'prompt'" class="prompt-content">
-          <span>{{ message }}</span>
-          <v-text-field
-            v-model="internalValue"
-            :label="inputLabel || '输入内容'"
-            :type="inputType || 'text'"
-            :placeholder="inputPlaceholder"
-            :rows="inputRows || 1"
-            class="mt-4"
-            ref="inputRef"
-            @keydown.enter="handleConfirm"
-          ></v-text-field>
-        </div>
-        <div v-else>
-          <span>{{ message }}</span>
-        </div>
-      </v-card-text>
-      
-      <v-divider></v-divider>
-      
-      <!-- 底部按钮 -->
-      <v-card-actions class="justify-end gap-3 pa-4">
-        <v-btn
-          v-if="showCancel"
-          variant="outlined"
-          color="secondary"
-          @click="handleCancel"
-        >
-          {{ cancelText || '取消' }}
-        </v-btn>
-        <v-btn
-          :color="confirmColor"
-          :variant="confirmVariant"
-          @click="handleConfirm"
-        >
-          {{ confirmText || '确定' }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-</template>
+<script setup>
+import { inject } from 'vue'
+import { modalState, handleConfirm, handleCancel } from '../utils/modal'
 
-<script>
-import { ref, computed, watch, nextTick } from 'vue'
+const emit = defineEmits(['close'])
 
-export default {
-  name: 'AppModal',
-  props: {
-    show: {
-      type: Boolean,
-      default: false
-    },
-    type: {
-      type: String,
-      default: 'alert', // alert, confirm, prompt
-      validator: (value) => ['alert', 'confirm', 'prompt'].includes(value)
-    },
-    title: {
-      type: String,
-      default: ''
-    },
-    message: {
-      type: String,
-      default: ''
-    },
-    icon: {
-      type: String,
-      default: 'mdi-alert-circle'
-    },
-    iconColor: {
-      type: String,
-      default: 'warning'
-    },
-    iconSize: {
-      type: Number,
-      default: 24
-    },
-    confirmText: {
-      type: String,
-      default: '确定'
-    },
-    cancelText: {
-      type: String,
-      default: '取消'
-    },
-    confirmColor: {
-      type: String,
-      default: 'primary'
-    },
-    confirmVariant: {
-      type: String,
-      default: 'flat'
-    },
-    maxWidth: {
-      type: [String, Number],
-      default: '500px'
-    },
-    persistent: {
-      type: Boolean,
-      default: false
-    },
-    // Prompt specific props
-    inputValue: {
-      type: String,
-      default: ''
-    },
-    inputLabel: {
-      type: String,
-      default: ''
-    },
-    inputType: {
-      type: String,
-      default: 'text'
-    },
-    inputPlaceholder: {
-      type: String,
-      default: ''
-    },
-    inputRows: {
-      type: Number,
-      default: 1
-    }
-  },
-  emits: ['update:show', 'confirm', 'cancel'],
-  setup(props, { emit }) {
-    const inputRef = ref(null)
-    const internalValue = ref(props.inputValue)
-    
-    const showCancel = computed(() => {
-      return props.type === 'confirm' || props.type === 'prompt'
-    })
-    
-    watch(() => props.inputValue, (val) => {
-      internalValue.value = val
-    })
-    
-    watch(() => props.show, (val) => {
-      if (val && props.type === 'prompt') {
-        nextTick(() => {
-          inputRef.value?.focus()
-        })
-      }
-    })
-    
-    const handleConfirm = () => {
-      emit('confirm', internalValue.value)
-      emit('update:show', false)
-    }
-    
-    const handleCancel = () => {
-      emit('cancel')
-      emit('update:show', false)
-    }
-    
-    return {
-      inputRef,
-      internalValue,
-      showCancel,
-      handleConfirm,
-      handleCancel
-    }
-  }
+const close = () => {
+  modalState.value.show = false
+  emit('close')
 }
 </script>
 
-<style scoped>
-.prompt-content {
-  display: flex;
-  flex-direction: column;
-}
-</style>
+<template>
+  <Teleport to="body">
+    <v-dialog
+      v-model="modalState.show"
+      max-width="500px"
+      scrollable
+      @close="close"
+    >
+      <v-card>
+        <!-- 头部 -->
+        <v-card-title>
+          <v-icon :color="modalState.iconColor" size="24" class="mr-2">
+            {{ modalState.icon }}
+          </v-icon>
+          {{ modalState.title }}
+        </v-card-title>
+
+        <!-- 内容 -->
+        <v-card-text>
+          <p>{{ modalState.message }}</p>
+          
+          <!-- 输入框（Prompt类型） -->
+          <v-text-field
+            v-if="modalState.type === 'prompt'"
+            v-model="modalState.inputValue"
+            :label="modalState.inputLabel"
+            :type="modalState.inputType"
+            :placeholder="modalState.inputPlaceholder"
+            :rows="modalState.inputRows"
+            class="mt-4"
+          ></v-text-field>
+        </v-card-text>
+
+        <!-- 底部按钮 -->
+        <v-card-actions class="justify-end">
+          <!-- Cancel按钮（Confirm和Prompt类型） -->
+          <v-btn
+            v-if="modalState.type === 'confirm' || modalState.type === 'prompt'"
+            text
+            color="grey"
+            @click="handleCancel(); close()"
+          >
+            {{ modalState.cancelText }}
+          </v-btn>
+
+          <!-- Confirm按钮 -->
+          <v-btn
+            :color="modalState.confirmColor"
+            @click="handleConfirm(modalState.type === 'prompt' ? modalState.inputValue : true); close()"
+          >
+            {{ modalState.confirmText }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </Teleport>
+</template>
