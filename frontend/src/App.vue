@@ -60,7 +60,8 @@ const showAnnouncement = async () => {
       await alert(content, {
         title: '站点公告',
         icon: 'mdi-bullhorn',
-        iconColor: 'primary'
+        iconColor: 'primary',
+        markdown: true
       })
     }
   } catch (error) {

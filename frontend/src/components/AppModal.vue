@@ -1,6 +1,7 @@
 <script setup>
 import { inject } from 'vue'
 import { modalState, handleConfirm, handleCancel } from '../utils/modal'
+import MarkdownViewer from './MarkdownViewer.vue'
 
 const emit = defineEmits(['close'])
 
@@ -29,7 +30,10 @@ const close = () => {
 
         <!-- 内容 -->
         <v-card-text>
-          <p>{{ modalState.message }}</p>
+          <!-- Markdown内容 -->
+          <MarkdownViewer v-if="modalState.markdown" :value="modalState.message" />
+          <!-- 普通文本内容 -->
+          <p v-else>{{ modalState.message }}</p>
           
           <!-- 输入框（Prompt类型） -->
           <v-text-field
