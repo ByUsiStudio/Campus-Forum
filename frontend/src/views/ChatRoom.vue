@@ -1,8 +1,7 @@
 <script setup>
 import { ref, inject, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getMessages, sendMessage, markConversationRead } from '../api/chat'
-import { getFriendList } from '../api/follow'
+import { chatApi, friendApi } from '../api'
 
 const router = useRouter()
 const route = useRoute()
@@ -17,7 +16,7 @@ const messagesContainer = ref(null)
 
 const loadMessages = async () => {
   try {
-    const response = await getMessages(conversationId.value)
+    const response = await chatApi.getMessages({ conversation_id: conversationId.value })
     messages.value = response.data.messages || []
     await nextTick(() => {
       scrollToBottom()
@@ -29,7 +28,7 @@ const loadMessages = async () => {
 
 const loadFriendInfo = async () => {
   try {
-    const response = await getFriendList()
+    const response = await friendApi.getFriends()
     const friends = response.data.friends || []
     targetUser.value = friends.find(f => f.id === parseInt(conversationId.value))
   } catch (error) {
@@ -40,7 +39,7 @@ const loadFriendInfo = async () => {
 const handleSend = async () => {
   if (!newMessage.value.trim()) return
   try {
-    await sendMessage(conversationId.value, newMessage.value)
+    await chatApi.sendMessage({ conversation_id: conversationId.value, content: newMessage.value })
     newMessage.value = ''
     loadMessages()
   } catch (error) {
@@ -55,7 +54,7 @@ const scrollToBottom = () => {
 }
 
 const handleBack = () => {
-  markConversationRead(conversationId.value)
+  chatApi.markConversationRead(conversationId.value)
   router.push('/chat')
 }
 
@@ -68,7 +67,7 @@ onMounted(() => {
   }
   loadMessages()
   loadFriendInfo()
-  markConversationRead(conversationId.value)
+  chatApi.markConversationRead(conversationId.value)
   
   refreshInterval = setInterval(() => {
     loadMessages()

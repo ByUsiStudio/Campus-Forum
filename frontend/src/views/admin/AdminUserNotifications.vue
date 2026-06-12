@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { userNotificationApi } from '../../api/admin'
+import { adminApi } from '../../api'
 
 const loading = ref(false)
 const sending = ref(false)
@@ -20,7 +20,7 @@ const sendNotification = async () => {
   
   sending.value = true
   try {
-    await userNotificationApi.sendNotification(form.value)
+    await adminApi.sendUserNotification(form.value)
     form.value = { user_id: null, title: '', content: '' }
   } catch (error) {
     console.error('发送通知失败:', error)

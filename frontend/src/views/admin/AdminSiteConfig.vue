@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { adminSiteConfigApi } from '../../api/admin'
+import { adminApi, siteApi } from '../../api'
 
 const loading = ref(false)
 const saving = ref(false)
@@ -25,7 +25,7 @@ const loadConfig = async () => {
 const saveConfig = async () => {
   saving.value = true
   try {
-    await adminSiteConfigApi.updateConfig(config.value)
+    await adminApi.updateSiteConfig(config.value)
   } catch (error) {
     console.error('保存配置失败:', error)
   } finally {

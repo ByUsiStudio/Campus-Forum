@@ -1,7 +1,7 @@
 <script setup>
 import { ref, inject, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { adminAuthApi, adminStatsApi } from '../api/admin'
+import { adminApi } from '../api'
 
 const router = useRouter()
 const user = inject('user')
@@ -32,7 +32,7 @@ const menuItems = [
 
 const checkAdmin = async () => {
   try {
-    const response = await adminAuthApi.checkAdmin()
+    const response = await adminApi.checkAdmin()
     isAdmin.value = response.data.is_admin
     if (!isAdmin.value) {
       router.push('/')

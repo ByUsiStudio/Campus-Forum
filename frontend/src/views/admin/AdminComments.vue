@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { adminCommentApi } from '../../api/admin'
+import { adminApi } from '../../api'
 
 const loading = ref(false)
 const comments = ref([])
@@ -24,7 +24,7 @@ const loadComments = async () => {
       page: page.value,
       page_size: pageSize.value
     }
-    const response = await adminCommentApi.getComments(params)
+    const response = await adminApi.getComments(params)
     comments.value = response.data.comments || []
     totalComments.value = response.data.total || 0
   } catch (error) {
@@ -39,7 +39,7 @@ const deleteComment = async (comment) => {
   
   loading.value = true
   try {
-    await adminCommentApi.deleteComment(comment.id)
+    await adminApi.deleteComment(comment.id)
     loadComments()
   } catch (error) {
     console.error('删除评论失败:', error)

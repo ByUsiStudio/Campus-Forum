@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { adminArticleApi } from '../../api/admin'
+import { adminApi } from '../../api'
 
 const loading = ref(false)
 const articles = ref([])
@@ -42,7 +42,7 @@ const loadArticles = async () => {
     if (statusFilter.value !== 'all') {
       params.status = statusFilter.value
     }
-    const response = await adminArticleApi.getArticles(params)
+    const response = await adminApi.getArticles(params)
     articles.value = response.data.articles || []
     totalArticles.value = response.data.total || 0
   } catch (error) {
@@ -81,7 +81,7 @@ const changeStatus = (article) => {
 const saveStatus = async () => {
   loading.value = true
   try {
-    await adminArticleApi.updateArticleStatus(selectedArticle.value.id, newStatus.value)
+    await adminApi.updateArticleStatus(selectedArticle.value.id, newStatus.value)
     statusDialog.value = false
     loadArticles()
   } catch (error) {

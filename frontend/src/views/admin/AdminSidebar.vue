@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { adminSidebarApi } from '../../api/admin'
+import { adminApi, siteApi } from '../../api'
 
 const loading = ref(false)
 const saving = ref(false)
@@ -36,7 +36,7 @@ const removeSidebarItem = (index) => {
 const saveSidebarConfig = async () => {
   saving.value = true
   try {
-    await adminSidebarApi.updateConfig({ items: sidebarItems.value })
+    await adminApi.updateSidebarConfig({ items: sidebarItems.value })
   } catch (error) {
     console.error('保存侧边栏配置失败:', error)
   } finally {

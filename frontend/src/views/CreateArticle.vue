@@ -40,7 +40,7 @@ const handleSubmit = async () => {
   }
   isLoading.value = true
   try {
-    await articleApi.createArticle(form.value)
+    await articleApi.create(form.value)
     router.push('/')
   } catch (err) {
     error.value = err.response?.data?.error || '发布失败'

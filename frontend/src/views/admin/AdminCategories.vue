@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { adminCategoryApi } from '../../api/admin'
+import { adminApi, categoryApi } from '../../api'
 
 const loading = ref(false)
 const categories = ref([])
@@ -14,7 +14,7 @@ const saving = ref(false)
 const loadCategories = async () => {
   loading.value = true
   try {
-    const response = await adminCategoryApi.getCategories()
+    const response = await categoryApi.getCategories()
     categories.value = response.data.categories || []
   } catch (error) {
     console.error('加载分类失败:', error)
@@ -31,7 +31,7 @@ const openCreateDialog = () => {
 const createCategory = async () => {
   saving.value = true
   try {
-    await adminCategoryApi.createCategory(createForm.value)
+    await categoryApi.createCategory(createForm.value)
     createDialog.value = false
     loadCategories()
   } catch (error) {
@@ -50,7 +50,7 @@ const editCategory = (category) => {
 const saveCategory = async () => {
   saving.value = true
   try {
-    await adminCategoryApi.updateCategory(selectedCategory.value.id, editForm.value)
+    await categoryApi.updateCategory(selectedCategory.value.id, editForm.value)
     editDialog.value = false
     loadCategories()
   } catch (error) {
@@ -65,7 +65,7 @@ const deleteCategory = async (category) => {
   
   loading.value = true
   try {
-    await adminCategoryApi.deleteCategory(category.id)
+    await categoryApi.deleteCategory(category.id)
     loadCategories()
   } catch (error) {
     console.error('删除分类失败:', error)

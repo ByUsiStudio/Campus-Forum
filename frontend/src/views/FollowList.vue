@@ -1,7 +1,7 @@
 <script setup>
 import { ref, inject, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { getFriendList, getFriendRequests, getSentFriendRequests, acceptFriendRequest, rejectFriendRequest, deleteFriend, sendFriendRequest } from '../api/follow'
+import { friendApi } from '../api'
 
 const router = useRouter()
 const user = inject('user')
@@ -19,7 +19,7 @@ const tabs = [
 
 const loadFriends = async () => {
   try {
-    const response = await getFriendList()
+    const response = await friendApi.getFriends()
     friends.value = response.data.friends || []
   } catch (error) {
     console.error('加载好友失败:', error)
@@ -56,7 +56,7 @@ const handleAccept = async (requestId) => {
 
 const handleReject = async (requestId) => {
   try {
-    await rejectFriendRequest(requestId)
+    await friendApi.rejectRequest(requestId)
     loadRequests()
   } catch (error) {
     console.error('拒绝好友请求失败:', error)

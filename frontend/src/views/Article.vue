@@ -28,7 +28,7 @@ const loadArticle = async () => {
 
     if (user.value) {
       try {
-        const favoriteResponse = await favoriteApi.checkFavorite(route.params.id)
+        const favoriteResponse = await favoriteApi.check(route.params.id)
         isFavorited.value = favoriteResponse.data.is_favorited
       } catch (error) {
         console.error('检查收藏状态失败:', error)
@@ -49,9 +49,9 @@ const handleLike = async () => {
   }
   try {
     if (isLiked.value) {
-      await articleApi.unlikeArticle(route.params.id)
+      await articleApi.unlike(route.params.id)
     } else {
-      await articleApi.likeArticle(route.params.id)
+      await articleApi.like(route.params.id)
     }
     isLiked.value = !isLiked.value
     article.value.like_count += isLiked.value ? 1 : -1
@@ -67,9 +67,9 @@ const handleFavorite = async () => {
   }
   try {
     if (isFavorited.value) {
-      await favoriteApi.removeFavorite(route.params.id)
+      await favoriteApi.remove(route.params.id)
     } else {
-      await favoriteApi.addFavorite(route.params.id)
+      await favoriteApi.add(route.params.id)
     }
     isFavorited.value = !isFavorited.value
   } catch (error) {
@@ -80,7 +80,7 @@ const handleFavorite = async () => {
 const handleComment = async () => {
   if (!user.value || !newComment.value.trim()) return
   try {
-    await commentApi.createComment(route.params.id, {
+    await commentApi.create(route.params.id, {
       content: newComment.value
     })
     newComment.value = ''
@@ -93,7 +93,7 @@ const handleComment = async () => {
 const handleReply = async (parentId) => {
   if (!user.value || !replyContent.value.trim()) return
   try {
-    await commentApi.createComment(route.params.id, {
+    await commentApi.create(route.params.id, {
       content: replyContent.value,
       parent_id: parentId
     })
@@ -108,7 +108,7 @@ const handleReply = async (parentId) => {
 const deleteComment = async (commentId) => {
   if (!user.value) return
   try {
-    await commentApi.deleteComment(commentId)
+    await commentApi.delete(commentId)
     loadArticle()
   } catch (error) {
     console.error('删除评论失败:', error)

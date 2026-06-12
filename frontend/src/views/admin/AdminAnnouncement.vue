@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { adminAnnouncementApi } from '../../api/admin'
+import { adminApi, siteApi } from '../../api'
 
 const loading = ref(false)
 const saving = ref(false)
@@ -21,7 +21,7 @@ const loadAnnouncement = async () => {
 const saveAnnouncement = async () => {
   saving.value = true
   try {
-    await adminAnnouncementApi.updateAnnouncement(content.value)
+    await adminApi.updateAnnouncement(content.value)
   } catch (error) {
     console.error('保存公告失败:', error)
   } finally {

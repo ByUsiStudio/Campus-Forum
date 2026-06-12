@@ -1,8 +1,7 @@
 <script setup>
 import { ref, inject, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { getConversations, getUnreadCount } from '../api/chat'
-import { getFriendList } from '../api/follow'
+import { chatApi, friendApi } from '../api'
 
 const router = useRouter()
 const user = inject('user')
@@ -24,7 +23,7 @@ const loadConversations = async () => {
 
 const loadUnreadCount = async () => {
   try {
-    const response = await getUnreadCount()
+    const response = await chatApi.getUnreadCount()
     unreadCount.value = response.data.unread_count || 0
   } catch (error) {
     console.error('加载未读消息数失败:', error)

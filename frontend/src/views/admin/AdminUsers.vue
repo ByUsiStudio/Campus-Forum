@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { adminUserApi } from '../../api/admin'
+import { adminApi } from '../../api'
 
 const loading = ref(false)
 const users = ref([])
@@ -84,7 +84,7 @@ const loadUsers = async () => {
     if (filters.value.status) params.status = filters.value.status
     if (filters.value.online) params.online = filters.value.online
 
-    const response = await adminUserApi.getUsers({ params })
+    const response = await adminApi.getUsers({ params })
     users.value = response.data.users || []
     totalUsers.value = response.data.total || 0
     stats.value.total = response.data.total || 0
@@ -145,7 +145,7 @@ const editUser = (user) => {
 const saveUser = async () => {
   saving.value = true
   try {
-    await adminUserApi.updateUser(editForm.value.id, {
+    await adminApi.updateUser(editForm.value.id, {
       display_name: editForm.value.display_name,
       signature: editForm.value.signature,
       role: editForm.value.role
@@ -168,7 +168,7 @@ const banUser = (user) => {
 const confirmBan = async () => {
   actionLoading.value = true
   try {
-    await adminUserApi.banUser(selectedUser.value.id, banReason.value)
+    await adminApi.banUser(selectedUser.value.id, banReason.value)
     banDialog.value = false
     loadUsers()
   } catch (error) {
@@ -183,7 +183,7 @@ const unbanUser = async (user) => {
   
   actionLoading.value = true
   try {
-    await adminUserApi.unbanUser(user.id)
+    await adminApi.unbanUser(user.id)
     loadUsers()
   } catch (error) {
     console.error('解封用户失败:', error)
@@ -197,7 +197,7 @@ const deleteUser = async (user) => {
   
   actionLoading.value = true
   try {
-    await adminUserApi.deleteUser(user.id)
+    await adminApi.deleteUser(user.id)
     loadUsers()
   } catch (error) {
     console.error('删除用户失败:', error)

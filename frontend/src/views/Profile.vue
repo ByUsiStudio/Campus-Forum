@@ -1,7 +1,7 @@
 <script setup>
 import { ref, inject, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { authApi, articleApi, userApi, favoriteApi } from '../api'
+import { profileApi, articleApi, friendApi, favoriteApi } from '../api'
 import UserAvatar from '../components/UserAvatar.vue'
 
 const router = useRouter()
@@ -18,7 +18,7 @@ const isLoading = ref(false)
 const loadProfile = async () => {
   isLoading.value = true
   try {
-    const response = await authApi.getProfile()
+    const response = await profileApi.getProfile()
     profile.value = response.data
   } catch (error) {
     console.error('加载个人信息失败:', error)
@@ -47,8 +47,8 @@ const loadFavorites = async () => {
 
 const loadFollowing = async () => {
   try {
-    const response = await userApi.getFollowing()
-    following.value = response.data.users || []
+    const response = await friendApi.getFriends()
+    following.value = response.data?.friends || []
   } catch (error) {
     console.error('加载关注列表失败:', error)
     following.value = []
@@ -57,8 +57,8 @@ const loadFollowing = async () => {
 
 const loadFollowers = async () => {
   try {
-    const response = await userApi.getFollowers()
-    followers.value = response.data.users || []
+    const response = await friendApi.getRequests()
+    followers.value = response.data?.requests || []
   } catch (error) {
     console.error('加载粉丝列表失败:', error)
     followers.value = []
@@ -67,7 +67,7 @@ const loadFollowers = async () => {
 
 const handleFollow = async (userId) => {
   try {
-    await userApi.follow(userId)
+    await friendApi.sendRequest(userId)
     loadFollowers()
   } catch (error) {
     console.error('关注失败:', error)
@@ -76,7 +76,7 @@ const handleFollow = async (userId) => {
 
 const handleUnfollow = async (userId) => {
   try {
-    await userApi.unfollow(userId)
+    await friendApi.deleteFriend(userId)
     loadFollowing()
   } catch (error) {
     console.error('取消关注失败:', error)

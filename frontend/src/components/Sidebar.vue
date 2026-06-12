@@ -150,7 +150,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import api from '../api'
-import { getUnreadCount } from '../api/chat'
+import { chatApi } from '../api'
 import UserAvatar from './UserAvatar.vue'
 
 const user = ref(null)
@@ -203,7 +203,7 @@ const loadStats = async () => {
 const loadUnreadCount = async () => {
   if (!user.value) return
   try {
-    const response = await getUnreadCount()
+    const response = await chatApi.getUnreadCount()
     unreadCount.value = response.data.unread_count || 0
   } catch (error) {
     console.error('加载未读消息数失败:', error)

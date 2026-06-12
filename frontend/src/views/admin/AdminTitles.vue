@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { adminTitleApi } from '../../api/admin'
+import { adminApi, titleApi } from '../../api'
 
 const loading = ref(false)
 const titles = ref([])
@@ -14,7 +14,7 @@ const saving = ref(false)
 const loadTitles = async () => {
   loading.value = true
   try {
-    const response = await adminTitleApi.getTitles()
+    const response = await titleApi.getTitles()
     titles.value = response.data.titles || []
   } catch (error) {
     console.error('加载头衔失败:', error)
@@ -31,7 +31,7 @@ const openCreateDialog = () => {
 const createTitle = async () => {
   saving.value = true
   try {
-    await adminTitleApi.createTitle(createForm.value)
+    await titleApi.createTitle(createForm.value)
     createDialog.value = false
     loadTitles()
   } catch (error) {
@@ -50,7 +50,7 @@ const editTitle = (title) => {
 const saveTitle = async () => {
   saving.value = true
   try {
-    await adminTitleApi.updateTitle(selectedTitle.value.id, editForm.value)
+    await titleApi.updateTitle(selectedTitle.value.id, editForm.value)
     editDialog.value = false
     loadTitles()
   } catch (error) {
@@ -65,7 +65,7 @@ const deleteTitle = async (title) => {
   
   loading.value = true
   try {
-    await adminTitleApi.deleteTitle(title.id)
+    await titleApi.deleteTitle(title.id)
     loadTitles()
   } catch (error) {
     console.error('删除头衔失败:', error)
