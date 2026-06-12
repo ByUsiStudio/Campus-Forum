@@ -176,21 +176,8 @@ func GetArticle(c *gin.Context) {
 		database.DB.Model(&models.Comment{}).Where("parent_id = ?", comments[i].ID).Count(&replyCount)
 		comments[i].ReplyCount = int(replyCount)
 
-		var replies []models.Comment
-		database.DB.Where("parent_id = ?", comments[i].ID).Preload("User").Order("created_at ASC").Find(&replies)
-
-		for j := range replies {
-			isReplyOwner := replies[j].UserID == currentUserID
-			if replies[j].IsAnonymous && !isReplyOwner {
-				replies[j].User = models.User{
-					ID:          0,
-					Username:    "anonymous",
-					DisplayName: "匿名用户",
-					Avatar:      "",
-				}
-			}
-		}
-		comments[i].Replies = replies
+		// 递归获取嵌套回复
+		comments[i].Replies = getNestedReplies(comments[i].ID, currentUserID, 0)
 	}
 
 	var liked = false
@@ -633,4 +620,33 @@ func PublishDraft(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "发布成功", "article": article})
+}
+
+// getNestedReplies 递归获取嵌套回复
+// maxDepth 限制最大嵌套深度，防止无限递归
+func getNestedReplies(parentID uint, currentUserID uint, depth int) []models.Comment {
+	// 限制最大嵌套深度为5层
+	if depth >= 5 {
+		return nil
+	}
+
+	var replies []models.Comment
+	database.DB.Where("parent_id = ?", parentID).Preload("User").Order("created_at ASC").Find(&replies)
+
+	for i := range replies {
+		isReplyOwner := replies[i].UserID == currentUserID
+		if replies[i].IsAnonymous && !isReplyOwner {
+			replies[i].User = models.User{
+				ID:          0,
+				Username:    "anonymous",
+				DisplayName: "匿名用户",
+				Avatar:      "",
+			}
+		}
+
+		// 递归获取子回复
+		replies[i].Replies = getNestedReplies(replies[i].ID, currentUserID, depth+1)
+	}
+
+	return replies
 }

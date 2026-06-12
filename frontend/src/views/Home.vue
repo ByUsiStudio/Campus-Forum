@@ -1,227 +1,345 @@
-<template>
-  <v-row>
-    <!-- 侧边栏 - 桌面端显示 -->
-    <v-col cols="12" md="3" class="d-none d-md-block">
-      <Sidebar />
-    </v-col>
-    
-    <!-- 主内容 -->
-    <v-col cols="12" md="9">
-      <!-- 公告 -->
-      <v-alert
-        v-if="announcement.content"
-        type="info"
-        variant="tonal"
-        class="mb-4"
-        prominent
-        icon="mdi-bullhorn"
-      >
-        <div class="announcement-title font-weight-bold mb-2 d-flex align-center">
-          <v-icon class="mr-2" size="small">mdi-bullhorn</v-icon>
-          公告
-        </div>
-        <div class="markdown-body" v-html="announcement.content_html"></div>
-      </v-alert>
-      
-      <!-- 分区和操作栏 -->
-      <v-card class="mb-4 pa-3" variant="flat">
-        <div class="d-flex align-center flex-wrap gap-3">
-          <v-select
-            v-model="selectedCategory"
-            :items="categoryOptions"
-            label="选择分区"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            @update:model-value="loadArticles"
-            style="max-width: 200px;"
-            prepend-inner-icon="mdi-folder"
-          ></v-select>
-          
-          <v-spacer></v-spacer>
-          
-          <span class="text-caption text-medium-emphasis">
-            共 {{ totalPages }} 页
-          </span>
-        </div>
-      </v-card>
-      
-      <!-- 文章列表 -->
-      <ArticleList :articles="articles" :loading="loading" />
-      
-      <!-- 分页 -->
-      <v-card v-if="totalPages > 1" class="mt-4 pa-3" variant="flat">
-        <div class="d-flex justify-center align-center flex-wrap gap-2">
-          <v-btn 
-            @click="prevPage" 
-            :disabled="page === 1" 
-            variant="outlined"
-            color="primary"
-            size="small"
-            prepend-icon="mdi-chevron-left"
-          >
-            上一页
-          </v-btn>
-          
-          <v-pagination
-            v-model="page"
-            :length="totalPages"
-            :total-visible="5"
-            @update:model-value="loadArticles"
-            rounded="circle"
-            density="compact"
-          ></v-pagination>
-          
-          <v-btn 
-            @click="nextPage" 
-            :disabled="page === totalPages" 
-            variant="outlined"
-            color="primary"
-            size="small"
-            append-icon="mdi-chevron-right"
-          >
-            下一页
-          </v-btn>
-        </div>
-      </v-card>
-    </v-col>
-    
-    <!-- 移动端快捷操作 -->
-    <v-col cols="12" class="d-md-none mt-4">
-      <v-card variant="flat" class="pa-3">
-        <div class="d-flex justify-center gap-2">
-          <v-btn
-            color="primary"
-            to="/create"
-            prepend-icon="mdi-pencil"
-            size="small"
-          >
-            写文章
-          </v-btn>
-        </div>
-      </v-card>
-    </v-col>
-  </v-row>
-</template>
+<script setup>
+import { ref, inject, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { articleApi, categoryApi, signinApi } from '../api'
 
-<script>
-import { ref, computed, onMounted } from 'vue'
-import api from '../api'
-import Sidebar from '../components/Sidebar.vue'
-import ArticleList from '../components/ArticleList.vue'
+const router = useRouter()
+const user = inject('user')
+const clearUser = inject('clearUser')
 
-export default {
-  name: 'Home',
-  components: {
-    Sidebar,
-    ArticleList
-  },
-  setup() {
-    const articles = ref([])
-    const categories = ref([])
-    const announcement = ref({ content: '', content_html: '' })
-    const page = ref(1)
-    const totalPages = ref(1)
-    const selectedCategory = ref(null)
-    const loading = ref(false)
+const articles = ref([])
+const categories = ref([])
+const currentCategory = ref(null)
+const page = ref(1)
+const totalPages = ref(1)
+const isLoading = ref(false)
+const signinStatus = ref({
+  hasSignedIn: false,
+  signInDays: 0,
+  totalSignIns: 0
+})
 
-    const categoryOptions = computed(() => {
-      return [
-        { title: '全部分区', value: null },
-        ...categories.value.map(cat => ({ title: cat.name, value: cat.id }))
-      ]
-    })
-
-    const loadArticles = async () => {
-      loading.value = true
-      try {
-        const params = {
-          page: page.value,
-          page_size: 20
-        }
-        if (selectedCategory.value) {
-          params.category_id = selectedCategory.value
-        }
-        const response = await api.get('/articles', { params })
-        articles.value = response.data.articles
-        totalPages.value = response.data.total_pages
-      } catch (error) {
-        console.error('加载文章失败', error)
-      } finally {
-        loading.value = false
-      }
+const loadArticles = async (categoryId = null, pageNum = 1) => {
+  isLoading.value = true
+  try {
+    const params = {
+      page: pageNum,
+      page_size: 10
     }
-    
-    const loadCategories = async () => {
-      try {
-        const response = await api.get('/categories')
-        categories.value = response.data.categories
-      } catch (error) {
-        console.error('加载分区失败', error)
-      }
+    if (categoryId) {
+      params.category_id = categoryId
     }
-    
-    const loadAnnouncement = async () => {
-      try {
-        const response = await api.get('/announcement')
-        announcement.value = response.data
-      } catch (error) {
-        console.error('加载公告失败', error)
-      }
+    const response = await articleApi.getArticles(params)
+    if (pageNum === 1) {
+      articles.value = response.data.articles
+    } else {
+      articles.value = [...articles.value, ...response.data.articles]
     }
-    
-    const prevPage = () => {
-      if (page.value > 1) {
-        page.value--
-        loadArticles()
-      }
-    }
-    
-    const nextPage = () => {
-      if (page.value < totalPages.value) {
-        page.value++
-        loadArticles()
-      }
-    }
-    
-    onMounted(() => {
-      loadArticles()
-      loadCategories()
-      loadAnnouncement()
-    })
-    
-    return {
-      articles,
-      categories,
-      announcement,
-      page,
-      totalPages,
-      selectedCategory,
-      categoryOptions,
-      loading,
-      loadArticles,
-      prevPage,
-      nextPage
-    }
+    totalPages.value = response.data.total_pages
+    page.value = pageNum
+  } catch (error) {
+    console.error('加载文章失败:', error)
+  } finally {
+    isLoading.value = false
   }
 }
+
+const loadCategories = async () => {
+  try {
+    const response = await categoryApi.getCategories()
+    categories.value = response.data.categories
+  } catch (error) {
+    console.error('加载分类失败:', error)
+  }
+}
+
+const loadSigninStatus = async () => {
+  if (!user.value) return
+  try {
+    const response = await signinApi.getStatus()
+    signinStatus.value = response.data
+  } catch (error) {
+    console.error('加载签到状态失败:', error)
+  }
+}
+
+const handleSignin = async () => {
+  if (!user.value) {
+    router.push('/login')
+    return
+  }
+  try {
+    const response = await signinApi.signin()
+    signinStatus.value = {
+      hasSignedIn: true,
+      signInDays: response.data.sign_in_days,
+      totalSignIns: response.data.total_sign_ins
+    }
+  } catch (error) {
+    console.error('签到失败:', error)
+  }
+}
+
+const handleCategoryClick = (categoryId) => {
+  currentCategory.value = categoryId
+  loadArticles(categoryId, 1)
+}
+
+const handleLogout = () => {
+  clearUser()
+  router.push('/login')
+}
+
+const formatTime = (timeStr) => {
+  const date = new Date(timeStr)
+  const now = new Date()
+  const diff = now - date
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  
+  if (days === 0) {
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    if (hours === 0) {
+      const minutes = Math.floor(diff / (1000 * 60))
+      return minutes <= 0 ? '刚刚' : `${minutes}分钟前`
+    }
+    return `${hours}小时前`
+  } else if (days < 7) {
+    return `${days}天前`
+  } else {
+    return date.toLocaleDateString('zh-CN')
+  }
+}
+
+onMounted(() => {
+  loadArticles()
+  loadCategories()
+  loadSigninStatus()
+})
 </script>
 
+<template>
+  <v-container class="max-w-6xl mx-auto py-8">
+    <!-- 头部导航 -->
+    <v-app-bar 
+      color="primary" 
+      dark 
+      rounded="lg" 
+      class="mb-6"
+    >
+      <v-container class="flex items-center justify-between">
+        <v-toolbar-title class="text-xl font-bold">
+          <v-icon size="28" class="mr-2">mdi-forum</v-icon>
+          校园论坛
+        </v-toolbar-title>
+        
+        <v-spacer></v-spacer>
+        
+        <v-text-field
+          v-model="searchQuery"
+          label="搜索文章..."
+          prepend-icon="mdi-magnify"
+          rounded="lg"
+          class="hidden md:flex w-64"
+          @keyup.enter="router.push(`/search?keyword=${searchQuery}`)"
+        />
+        
+        <v-spacer></v-spacer>
+        
+        <v-btn 
+          v-if="user" 
+          icon 
+          class="mr-2"
+          @click="router.push('/notifications')"
+        >
+          <v-icon size="24">mdi-bell</v-icon>
+        </v-btn>
+        
+        <v-btn 
+          v-if="user" 
+          icon 
+          class="mr-2"
+          @click="router.push('/create')"
+        >
+          <v-icon size="24">mdi-plus</v-icon>
+        </v-btn>
+        
+        <template v-if="user">
+          <v-menu>
+            <template v-slot:activator="{ props }">
+              <v-btn 
+                icon 
+                v-bind="props"
+              >
+                <v-avatar size="40" color="secondary">
+                  <v-icon>mdi-account</v-icon>
+                </v-avatar>
+              </v-btn>
+            </template>
+            <v-list>
+              <v-list-item @click="router.push('/profile')">
+                <v-list-item-icon>
+                  <v-icon>mdi-user</v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>个人中心</v-list-item-title>
+              </v-list-item>
+              <v-list-item v-if="user.role === 'admin'" @click="router.push('/admin')">
+                <v-list-item-icon>
+                  <v-icon>mdi-settings</v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>管理后台</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="handleLogout">
+                <v-list-item-icon>
+                  <v-icon>mdi-logout</v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>退出登录</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </template>
+        
+        <template v-else>
+          <v-btn text color="white" @click="router.push('/login')">登录</v-btn>
+          <v-btn text color="white" @click="router.push('/register')">注册</v-btn>
+        </template>
+      </v-container>
+    </v-app-bar>
+    
+    <v-row>
+      <!-- 左侧分类栏 -->
+      <v-col md="3" class="mb-6">
+        <v-card rounded="xl" elevation="4" class="sticky top-4">
+          <v-card-title class="gradient-purple text-white">
+            <v-icon class="mr-2">mdi-folder-open</v-icon>
+            <span class="font-bold">文章分类</span>
+          </v-card-title>
+          <v-card-text>
+            <v-list>
+              <v-list-item 
+                :class="currentCategory === null ? 'active' : ''"
+                @click="handleCategoryClick(null)"
+              >
+                <v-list-item-icon>
+                  <v-icon :color="currentCategory === null ? 'primary' : 'gray'">mdi-home</v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>全部文章</v-list-item-title>
+              </v-list-item>
+              <v-list-item 
+                v-for="category in categories" 
+                :key="category.id"
+                :class="currentCategory === category.id ? 'active' : ''"
+                @click="handleCategoryClick(category.id)"
+              >
+                <v-list-item-icon>
+                  <v-icon :color="currentCategory === category.id ? 'primary' : 'gray'">mdi-folder</v-icon>
+                </v-list-item-icon>
+                <v-list-item-title>{{ category.name }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-card-text>
+        </v-card>
+        
+        <!-- 签到卡片 -->
+        <v-card 
+          v-if="user"
+          rounded="xl" 
+          elevation="4" 
+          class="mt-4 cursor-pointer card-hover"
+          @click="handleSignin"
+        >
+          <v-card-title class="gradient-purple-light">
+            <v-icon class="mr-2" size="24">mdi-calendar-check</v-icon>
+            <span class="font-bold">每日签到</span>
+          </v-card-title>
+          <v-card-text class="text-center">
+            <v-btn 
+              v-if="!signinStatus.hasSignedIn"
+              color="primary" 
+              rounded="lg"
+              class="mb-2"
+            >
+              立即签到
+            </v-btn>
+            <div v-else class="text-success">
+              <v-icon class="mr-1">mdi-check-circle</v-icon>
+              今日已签到
+            </div>
+            <p class="text-sm text-gray-500 mt-2">
+              连续签到 {{ signinStatus.signInDays }} 天 · 累计 {{ signinStatus.totalSignIns }} 次
+            </p>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      
+      <!-- 右侧文章列表 -->
+      <v-col md="9">
+        <v-card 
+          v-for="article in articles" 
+          :key="article.id" 
+          rounded="xl" 
+          elevation="4" 
+          class="mb-4 card-hover cursor-pointer"
+          @click="router.push(`/article/${article.id}`)"
+        >
+          <v-card-title>
+            <div class="flex items-start justify-between w-full">
+              <div class="flex-1">
+                <h3 class="text-lg font-bold text-gray-800 mb-1">{{ article.title }}</h3>
+                <p class="text-sm text-gray-500">{{ article.content.slice(0, 100) }}...</p>
+              </div>
+            </div>
+          </v-card-title>
+          <v-card-subtitle class="flex items-center justify-between text-sm">
+            <div class="flex items-center">
+              <v-avatar size="32" color="secondary">
+                <v-icon>mdi-account</v-icon>
+              </v-avatar>
+              <span class="ml-2">{{ article.user?.display_name || article.user?.username }}</span>
+              <span class="mx-2 text-gray-400">·</span>
+              <span>{{ article.category?.name }}</span>
+              <span class="mx-2 text-gray-400">·</span>
+              <span>{{ formatTime(article.created_at) }}</span>
+            </div>
+            <div class="flex items-center">
+              <v-icon class="mr-1" size="16">mdi-eye</v-icon>
+              <span class="mr-3">{{ article.view_count }}</span>
+              <v-icon class="mr-1" size="16">mdi-heart</v-icon>
+              <span class="mr-3">{{ article.like_count }}</span>
+              <v-icon class="mr-1" size="16">mdi-comment</v-icon>
+              <span>{{ article.comment_count }}</span>
+            </div>
+          </v-card-subtitle>
+        </v-card>
+        
+        <div v-if="isLoading" class="text-center py-8">
+          <v-progress-circular indeterminate color="primary" />
+        </div>
+        
+        <v-btn 
+          v-if="page < totalPages && !isLoading"
+          color="primary" 
+          class="mx-auto d-block"
+          @click="loadArticles(currentCategory, page + 1)"
+        >
+          加载更多
+        </v-btn>
+        
+        <div v-if="articles.length === 0 && !isLoading" class="text-center py-12">
+          <v-icon size="64" color="gray" class="mx-auto mb-4">mdi-file-question</v-icon>
+          <p class="text-gray-500">暂无文章</p>
+        </div>
+      </v-col>
+    </v-row>
+  </v-container>
+</template>
+
 <style scoped>
-.markdown-body {
-  font-size: 0.95rem;
-  line-height: 1.6;
+.active {
+  background-color: rgba(147, 112, 219, 0.1);
+  color: #9370DB;
 }
 
-.markdown-body :deep(h1),
-.markdown-body :deep(h2),
-.markdown-body :deep(h3) {
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.markdown-body :deep(p) {
-  margin: 0.5rem 0;
+.active .v-icon {
+  color: #9370DB !important;
 }
 </style>

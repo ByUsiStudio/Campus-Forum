@@ -87,13 +87,33 @@ func DeleteComment(c *gin.Context) {
 		return
 	}
 
-	if comment.ParentID != nil {
-		database.DB.Model(&models.Comment{}).Where("id = ?", *comment.ParentID).UpdateColumn("reply_count", gorm.Expr("reply_count - 1"))
+	// 记录父评论ID以便更新回复计数
+	var parentID *uint = comment.ParentID
+
+	// 递归删除所有子回复
+	deleteCommentWithReplies(comment.ID)
+
+	// 更新父评论的回复计数
+	if parentID != nil {
+		database.DB.Model(&models.Comment{}).Where("id = ?", *parentID).UpdateColumn("reply_count", gorm.Expr("reply_count - 1"))
 	}
 
-	database.DB.Delete(&comment)
-
 	c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
+}
+
+// deleteCommentWithReplies 递归删除评论及其所有子回复
+func deleteCommentWithReplies(commentID uint) {
+	// 先获取所有子回复
+	var replies []models.Comment
+	database.DB.Where("parent_id = ?", commentID).Find(&replies)
+
+	// 递归删除子回复
+	for _, reply := range replies {
+		deleteCommentWithReplies(reply.ID)
+	}
+
+	// 删除当前评论
+	database.DB.Delete(&models.Comment{}, commentID)
 }
 
 func LikeComment(c *gin.Context) {

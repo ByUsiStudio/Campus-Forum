@@ -1,183 +1,148 @@
-<template>
-  <v-container fluid class="fill-height bg-grey-lighten-4">
-    <v-row justify="center" align="center">
-      <v-col cols="12" sm="8" md="5" lg="4">
-        <v-card class="pa-6" elevation="2">
-          <div class="text-center mb-6">
-            <v-icon size="64" color="primary" class="mb-4">mdi-account-plus</v-icon>
-            <v-card-title class="text-h5 font-weight-bold" style="color: rgb(var(--v-theme-primary));">
-              {{ isInit ? '初始化系统' : '注册新账号' }}
-            </v-card-title>
-            <v-card-subtitle class="text-body-2 text-medium-emphasis">
-              {{ isInit ? '请创建管理员账号以开始使用' : '加入我们，开始分享' }}
-            </v-card-subtitle>
-          </div>
-          
-          <v-card-text>
-            <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
-            <v-alert v-if="success" type="success" variant="tonal" class="mb-4">{{ success }}</v-alert>
-            
-            <v-form @submit.prevent="handleRegister">
-              <v-text-field
-                v-model="form.username"
-                label="用户名"
-                variant="outlined"
-                required
-                prepend-inner-icon="mdi-account"
-                class="mb-4"
-                :rules="[v => !!v || '请输入用户名']"
-              ></v-text-field>
-              
-              <v-text-field
-                v-model="form.qq_number"
-                label="QQ号"
-                variant="outlined"
-                required
-                prepend-inner-icon="mdi-qqchat"
-                class="mb-4"
-                hint="头像将默认使用QQ头像"
-                persistent-hint
-              ></v-text-field>
-              
-              <v-text-field
-                v-model="form.display_name"
-                label="显示名称"
-                variant="outlined"
-                required
-                prepend-inner-icon="mdi-card-account-details"
-                class="mb-4"
-              ></v-text-field>
-              
-              <v-text-field
-                v-model="form.password"
-                label="密码"
-                variant="outlined"
-                type="password"
-                required
-                prepend-inner-icon="mdi-lock"
-                class="mb-4"
-                hint="至少6个字符"
-                persistent-hint
-              ></v-text-field>
-              
-              <v-text-field
-                v-if="!isInit"
-                v-model="confirmPassword"
-                label="确认密码"
-                variant="outlined"
-                type="password"
-                required
-                prepend-inner-icon="mdi-lock-check"
-                class="mb-4"
-              ></v-text-field>
-              
-              <v-btn
-                type="submit"
-                color="primary"
-                block
-                size="large"
-                :loading="loading"
-                class="mb-4"
-              >
-                <v-icon start>{{ isInit ? 'mdi-cog' : 'mdi-account-plus' }}</v-icon>
-                {{ loading ? '处理中...' : (isInit ? '初始化系统' : '注册') }}
-              </v-btn>
-            </v-form>
-            
-            <div v-if="!isInit" class="text-center text-body-2">
-              <span class="text-medium-emphasis">已有账号？</span>
-              <router-link to="/login" class="text-primary font-weight-medium ml-1">立即登录</router-link>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
-</template>
-
-<script>
-import { ref, onMounted } from 'vue'
+<script setup>
+import { ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '../api'
+import { authApi } from '../api'
 
-export default {
-  name: 'Register',
-  setup() {
-    const router = useRouter()
-    const form = ref({
-      username: '',
-      qq_number: '',
-      display_name: '',
-      password: ''
+const router = useRouter()
+const setUser = inject('setUser')
+
+const form = ref({
+  username: '',
+  qq_number: '',
+  display_name: '',
+  password: '',
+  confirm_password: ''
+})
+
+const isLoading = ref(false)
+const error = ref('')
+
+const handleRegister = async () => {
+  if (!form.value.username || !form.value.password || !form.value.qq_number) {
+    error.value = '请填写必填项'
+    return
+  }
+  
+  if (form.value.password !== form.value.confirm_password) {
+    error.value = '两次输入的密码不一致'
+    return
+  }
+
+  isLoading.value = true
+  try {
+    await authApi.register(form.value)
+    const loginResponse = await authApi.login({
+      username: form.value.username,
+      password: form.value.password
     })
-    const confirmPassword = ref('')
-    const error = ref('')
-    const success = ref('')
-    const loading = ref(false)
-    const isInit = ref(false)
-
-    const checkInit = async () => {
-      try {
-        const response = await api.get('/auth/check-init')
-        if (!response.data.initialized) {
-          isInit.value = true
-        }
-      } catch (err) {
-        console.error('检查初始化失败', err)
-      }
-    }
-
-    const handleRegister = async () => {
-      error.value = ''
-      success.value = ''
-      
-      if (!isInit.value && form.value.password !== confirmPassword.value) {
-        error.value = '两次输入的密码不一致'
-        return
-      }
-      
-      if (form.value.password.length < 6) {
-        error.value = '密码长度不能少于6位'
-        return
-      }
-      
-      loading.value = true
-      
-      try {
-        let response
-        if (isInit.value) {
-          response = await api.post('/auth/init-admin', form.value)
-          success.value = '系统初始化成功！即将跳转到登录页...'
-          setTimeout(() => {
-            router.push('/login')
-          }, 2000)
-        } else {
-          response = await api.post('/auth/register', form.value)
-          success.value = '注册成功！即将跳转到登录页...'
-          setTimeout(() => {
-            router.push('/login')
-          }, 2000)
-        }
-      } catch (err) {
-        error.value = err.response?.data?.error || '操作失败'
-      } finally {
-        loading.value = false
-      }
-    }
-
-    onMounted(() => {
-      checkInit()
-    })
-
-    return {
-      form,
-      confirmPassword,
-      error,
-      success,
-      loading,
-      isInit,
-      handleRegister
-    }
+    localStorage.setItem('token', loginResponse.data.token)
+    setUser(loginResponse.data.user)
+    router.push('/')
+  } catch (err) {
+    error.value = err.response?.data?.error || '注册失败'
+  } finally {
+    isLoading.value = false
   }
 }
 </script>
+
+<template>
+  <div class="min-h-screen gradient-purple-light d-flex align-items-center justify-center p-4">
+    <v-card 
+      class="w-full max-w-md" 
+      elevation="8"
+      rounded="xl"
+    >
+      <v-card-title class="text-center py-6">
+        <v-icon 
+          size="48" 
+          color="primary"
+          class="mx-auto mb-3"
+        >
+          mdi-user-plus
+        </v-icon>
+        <h2 class="text-2xl font-bold text-primary">注册账号</h2>
+        <p class="text-gray-500 mt-2">加入我们的校园社区</p>
+      </v-card-title>
+      
+      <v-card-text>
+        <v-form @submit.prevent="handleRegister">
+          <v-text-field
+            v-model="form.username"
+            label="用户名"
+            placeholder="请输入用户名"
+            prepend-icon="mdi-account"
+            class="mb-3"
+          />
+          
+          <v-text-field
+            v-model="form.qq_number"
+            label="QQ号"
+            placeholder="请输入QQ号"
+            prepend-icon="mdi-message-circle"
+            class="mb-3"
+          />
+          
+          <v-text-field
+            v-model="form.display_name"
+            label="昵称（可选）"
+            placeholder="请输入昵称"
+            prepend-icon="mdi-face"
+            class="mb-3"
+          />
+          
+          <v-text-field
+            v-model="form.password"
+            label="密码"
+            type="password"
+            placeholder="请输入密码"
+            prepend-icon="mdi-lock"
+            class="mb-3"
+          />
+          
+          <v-text-field
+            v-model="form.confirm_password"
+            label="确认密码"
+            type="password"
+            placeholder="请再次输入密码"
+            prepend-icon="mdi-lock-check"
+            class="mb-6"
+          />
+          
+          <v-btn
+            type="submit"
+            color="primary"
+            class="w-full mb-4"
+            :loading="isLoading"
+            block
+            size="large"
+          >
+            <span v-if="!isLoading">注册</span>
+            <span v-else>注册中...</span>
+          </v-btn>
+        </v-form>
+        
+        <div v-if="error" class="text-center mb-4">
+          <v-alert 
+            type="error" 
+            border="bottom" 
+            class="text-sm"
+          >
+            {{ error }}
+          </v-alert>
+        </div>
+        
+        <div class="text-center">
+          <span class="text-gray-500">已有账号？</span>
+          <v-btn 
+            text 
+            color="primary" 
+            @click="router.push('/login')"
+          >
+            立即登录
+          </v-btn>
+        </div>
+      </v-card-text>
+    </v-card>
+  </div>
+</template>

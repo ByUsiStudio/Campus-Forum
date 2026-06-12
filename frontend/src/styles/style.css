@@ -1,279 +1,82 @@
-/* Vuetify handles most styling, minimal custom styles here */
-html {
-  overflow-y: auto !important;
+@import "vuetify/dist/vuetify.css";
+
+* {
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  margin: 0;
-  font-family: Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background-color: #FDF5FF;
+  min-height: 100vh;
 }
 
-/* Markdown content styling */
-.markdown-body {
-  line-height: 1.6;
+#app {
+  min-height: 100vh;
 }
 
-.markdown-body h1,
-.markdown-body h2,
-.markdown-body h3,
-.markdown-body h4,
-.markdown-body h5,
-.markdown-body h6 {
-  margin-top: 1.5em;
-  margin-bottom: 0.5em;
-  font-weight: 600;
+.v-application {
+  background-color: #FDF5FF !important;
 }
 
-.markdown-body p {
-  margin-bottom: 1em;
-}
-
-.markdown-body img {
-  max-width: 100%;
-  max-height: 60vh;
-  height: auto;
-  width: auto;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  display: block;
-  margin: 1em auto;
-  object-fit: contain;
-}
-
-.markdown-body img:hover {
-  transform: scale(1.02);
-}
-
-/* 原生 video 标签样式（备用） */
-.markdown-body video {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-  display: block;
-}
-
-.markdown-body pre {
-  background: #f5f5f5;
-  padding: 16px;
-  border-radius: 8px;
-  overflow-x: auto;
-}
-
-.markdown-body code {
-  font-family: 'Fira Code', 'Consolas', monospace;
-  background: #f0f0f0;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.markdown-body pre code {
-  background: transparent;
-  padding: 0;
-}
-
-.markdown-body blockquote {
-  border-left: 4px solid #6750A4;
-  padding-left: 16px;
-  margin-left: 0;
-  color: #625B71;
-}
-
-/* Grid layout helpers */
-.grid-layout {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 20px;
-}
-
-@media (max-width: 960px) {
-  .grid-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Article list styling */
-.article-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.article-item {
-  transition: transform 0.2s;
-}
-
-.article-item:hover {
-  transform: translateY(-2px);
-}
-
-.article-title a {
-  text-decoration: none;
-  color: inherit;
-}
-
-.article-title a:hover {
-  color: rgb(var(--v-theme-primary));
-}
-
-/* Custom scrollbar */
+/* 自定义滚动条 */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+  background: #9370DB;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
+  background: #7B68EE;
 }
 
-/* Lightbox / Image Viewer Modal */
-.lightbox-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  cursor: pointer;
+/* 淡紫色主题渐变 */
+.gradient-purple {
+  background: linear-gradient(135deg, #9370DB 0%, #BA55D3 100%);
 }
 
-/* Admin page unified styles */
-.admin-page .admin-page-container {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 24px 24px 32px;
+.gradient-purple-light {
+  background: linear-gradient(135deg, #E6D5F0 0%, #F5E6FF 100%);
 }
 
-.admin-page .v-card,
-.admin-page .v-sheet {
-  border-radius: 20px;
-  border: 1px solid rgba(100, 116, 139, 0.12);
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
-  background: #ffffff;
+/* 卡片悬浮效果 */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.admin-page .v-card-title,
-.admin-page .v-sheet__title,
-.admin-page .panel-title,
-.admin-page .form-title {
-  font-weight: 700;
-  color: #111827;
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(147, 112, 219, 0.15);
 }
 
-.admin-page .v-btn {
-  border-radius: 999px;
-  text-transform: none;
+/* 动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
 }
 
-.admin-page .v-input__control {
-  border-radius: 14px;
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
-.admin-page .v-select .v-field__outline,
-.admin-page .v-text-field .v-field__outline,
-.admin-page .v-textarea .v-field__outline {
-  border-radius: 14px;
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s ease;
 }
 
-.admin-page .v-select .v-field__append-inner,
-.admin-page .v-text-field .v-field__append-inner {
-  border-radius: 0 14px 14px 0;
-}
-
-.admin-page .v-divider {
-  border-color: rgba(148, 163, 184, 0.18);
-}
-
-.admin-page .v-input--outlined .v-field__outline {
-  border-color: rgba(148, 163, 184, 0.18);
-}
-
-.admin-page .v-pagination .v-btn {
-  border-radius: 999px;
-}
-
-.admin-page .panel-subtitle,
-.admin-page .section-subtitle {
-  color: #6b7280;
-  margin-top: 4px;
-}
-
-.admin-page .panel-header,
-.admin-page .form-card {
-  background: #ffffff;
-}
-
-.admin-page .admin-sidebar {
-  border-right: 1px solid rgba(148, 163, 184, 0.12);
-}
-
-.admin-page .nav-item {
-  border-radius: 14px;
-}
-
-.admin-page .admin-main {
-  background: #eef2ff;
-}
-
-.admin-page .admin-page-container > * {
-  margin-bottom: 24px;
-}
-
-.admin-page .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 220px;
-  color: #6b7280;
-}
-
-.admin-page .empty-text {
-  margin-top: 12px;
-  font-size: 0.95rem;
-}
-
-.admin-page .v-chip {
-  border-radius: 999px;
-}
-
-.lightbox-overlay img {
-  max-width: 95%;
-  max-height: 95%;
-  object-fit: contain;
-  border-radius: 4px;
-}
-
-.lightbox-close {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  color: white;
-  font-size: 32px;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 50%;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.lightbox-close:hover {
-  background: rgba(255, 255, 255, 0.2);
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
 }
