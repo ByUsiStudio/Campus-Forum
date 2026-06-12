@@ -59,18 +59,7 @@ echo    [OK] Linux-ARM64
 :: Build IM server
 echo.
 echo [2/4] Building IM server...
-cd /d %ROOT_DIR%\sdk\im-server\launcher
-
-echo    - Building IM Windows-AMD64...
-set GOOS=windows
-set GOARCH=amd64
-set CGO_ENABLED=0
-go build -o "%ROOT_DIR%\build\im-server-windows-amd64.exe" .
-if errorlevel 1 (
-    echo    [FAIL] IM Windows-AMD64
-    exit /b 1
-)
-echo    [OK] IM Windows-AMD64
+cd /d %ROOT_DIR%\backend\sdk\im-server\launcher
 
 echo    - Building IM Linux-AMD64...
 set GOOS=linux

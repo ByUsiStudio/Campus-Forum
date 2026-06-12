@@ -36,8 +36,6 @@ echo "  编译论坛后端"
 echo "========================================"
 cd "$SCRIPT_DIR/backend"
 
-compile "Windows-AMD64" windows amd64 ../build/server-windows-amd64.exe
-compile "Windows-ARM64" windows arm64 ../build/server-windows-arm64.exe
 compile "Linux-AMD64" linux amd64 ../build/server-linux-amd64
 compile "Linux-ARM64" linux arm64 ../build/server-linux-arm64
 compile "Android-ARM64" android arm64 ../build/server-android-arm64
@@ -47,7 +45,7 @@ echo ""
 echo "========================================"
 echo "  编译IM服务"
 echo "========================================"
-cd "$SCRIPT_DIR/sdk/im-server/launcher"
+cd "$SCRIPT_DIR/backend/sdk/im-server/launcher"
 
 compile_im() {
     local target="$1"

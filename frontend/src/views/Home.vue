@@ -1,10 +1,9 @@
 <script setup>
 import { ref, inject, onMounted, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { articleApi, categoryApi, signinApi } from '../api'
 
 const router = useRouter()
-const route = useRoute()
 const user = inject('user')
 const clearUser = inject('clearUser')
 const isMobile = computed(() => window.innerWidth < 1024)
@@ -15,7 +14,6 @@ const currentCategory = ref(null)
 const page = ref(1)
 const totalPages = ref(1)
 const isLoading = ref(false)
-const searchQuery = ref('')
 const signinStatus = ref({
   hasSignedIn: false,
   signInDays: 0,
@@ -98,7 +96,7 @@ const formatTime = (timeStr) => {
   const now = new Date()
   const diff = now - date
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  
+
   if (days === 0) {
     const hours = Math.floor(diff / (1000 * 60 * 60))
     if (hours === 0) {
@@ -119,6 +117,10 @@ const loadMore = () => {
   }
 }
 
+const goToArticle = (articleId) => {
+  router.push(`/article/${articleId}`)
+}
+
 onMounted(() => {
   loadArticles()
   loadCategories()
@@ -127,184 +129,256 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-container class="py-6">
-    <!-- 移动端布局：分类横向滚动 + 文章列表 -->
-    <template v-if="isMobile">
-      <!-- 分类横向滚动 -->
-      <v-scroll-x class="mb-4">
-        <v-btn
-          v-for="category in [{ id: null, name: '全部' }, ...categories]"
-          :key="category.id || 'all'"
-          :class="currentCategory === category.id ? 'primary' : ''"
-          @click="handleCategoryClick(category.id)"
-        >
-          {{ category.name }}
-        </v-btn>
-      </v-scroll-x>
-
-      <!-- 签到卡片 -->
-      <v-card v-if="user" class="mb-4" @click="handleSignin">
-        <v-card-title class="d-flex align-center justify-between">
-          <span>每日签到</span>
-          <v-icon color="primary">mdi-calendar-check</v-icon>
-        </v-card-title>
-        <v-card-text>
-          <div class="text-center">
-            <div class="text-4xl font-bold text-primary">{{ signinStatus.signInDays }}</div>
-            <div class="text-sm text-grey">连续签到天数</div>
-            <div class="text-sm mt-2">
-              累计签到 {{ signinStatus.totalSignIns }} 次
-            </div>
-          </div>
-          <v-btn v-if="!signinStatus.hasSignedIn" block color="primary" class="mt-4">
-            立即签到
-          </v-btn>
-          <v-btn v-else block disabled class="mt-4">
-            今日已签到
-          </v-btn>
-        </v-card-text>
-      </v-card>
-
-      <!-- 文章列表 -->
-      <v-card
-        v-for="article in articles"
-        :key="article.id"
-        class="mb-4 cursor-pointer"
-        @click="router.push(`/article/${article.id}`)"
-      >
-        <v-card-title>
-          <h3 class="text-h6">{{ article.title }}</h3>
-        </v-card-title>
-        <v-card-text>
-          <p>{{ article.content.substring(0, 100) }}...</p>
-        </v-card-text>
-        <v-card-actions>
-          <v-chip size="small" color="primary" text-color="white">
-            {{ article.category?.name || '未分类' }}
-          </v-chip>
-          <span class="ml-2 text-sm text-grey">{{ article.author?.username }}</span>
-          <span class="ml-auto text-sm text-grey">{{ formatTime(article.created_at) }}</span>
-        </v-card-actions>
-      </v-card>
-
-      <!-- 加载更多 -->
-      <v-card v-if="page < totalPages" class="text-center">
-        <v-card-text>
-          <v-btn color="primary" :loading="isLoading" @click="loadMore">
-            加载更多
-          </v-btn>
-        </v-card-text>
-      </v-card>
-
-      <v-card v-if="articles.length === 0" class="text-center py-12">
-        <v-icon size="64" color="grey">mdi-file-question</v-icon>
-        <p class="mt-4 text-grey">暂无文章</p>
-      </v-card>
-    </template>
-
-    <!-- PC端布局：左侧分类栏 + 右侧文章列表 -->
-    <template v-else>
-      <v-row>
-        <!-- 左侧分类栏 -->
-        <v-col md="3" class="mb-6">
-          <v-card>
-            <v-card-title>文章分类</v-card-title>
-            <v-list>
+  <v-container class="py-6" fluid>
+    <v-row>
+      <!-- PC端左侧边栏 -->
+      <v-col v-if="!isMobile" cols="12" md="3">
+        <div class="sidebar-sticky">
+          <!-- 分类卡片 -->
+          <v-card class="mb-4">
+            <v-card-title class="text-subtitle-1 font-weight-bold pb-2">
+              <v-icon size="20" class="mr-2">mdi-folder-outline</v-icon>
+              文章分类
+            </v-card-title>
+            <v-divider></v-divider>
+            <v-list density="compact" class="py-2">
               <v-list-item
-                :class="currentCategory === null ? 'active' : ''"
+                :active="currentCategory === null"
+                :class="{ 'category-active': currentCategory === null }"
                 @click="handleCategoryClick(null)"
+                class="category-item"
               >
-                <v-list-item-icon>
-                  <v-icon :color="currentCategory === null ? 'primary' : 'grey'">mdi-home</v-icon>
-                </v-list-item-icon>
-                <v-list-item-title>全部文章</v-list-item-title>
+                <template #prepend>
+                  <v-icon size="18" class="mr-2">mdi-view-grid-outline</v-icon>
+                </template>
+                <v-list-item-title class="text-body-2">全部文章</v-list-item-title>
               </v-list-item>
               <v-list-item
                 v-for="category in categories"
                 :key="category.id"
-                :class="currentCategory === category.id ? 'active' : ''"
+                :active="currentCategory === category.id"
+                :class="{ 'category-active': currentCategory === category.id }"
                 @click="handleCategoryClick(category.id)"
+                class="category-item"
               >
-                <v-list-item-icon>
-                  <v-icon :color="currentCategory === category.id ? 'primary' : 'grey'">mdi-folder</v-icon>
-                </v-list-item-icon>
-                <v-list-item-title>{{ category.name }}</v-list-item-title>
+                <template #prepend>
+                  <v-icon size="18" class="mr-2">mdi-folder-outline</v-icon>
+                </template>
+                <v-list-item-title class="text-body-2">{{ category.name }}</v-list-item-title>
               </v-list-item>
             </v-list>
           </v-card>
-          
+
           <!-- 签到卡片 -->
-          <v-card v-if="user" class="mt-4 cursor-pointer" @click="handleSignin">
-            <v-card-title class="d-flex align-center justify-between">
-              <span>每日签到</span>
-              <v-icon color="primary">mdi-calendar-check</v-icon>
-            </v-card-title>
-            <v-card-text>
-              <div class="text-center">
-                <div class="text-4xl font-bold text-primary">{{ signinStatus.signInDays }}</div>
-                <div class="text-sm text-grey">连续签到天数</div>
-                <div class="text-sm mt-2">
-                  累计签到 {{ signinStatus.totalSignIns }} 次
-                </div>
+          <v-card v-if="user" class="signin-card" @click="handleSignin">
+            <v-card-text class="text-center pa-4">
+              <div class="d-flex align-center justify-center mb-2">
+                <v-icon color="primary" size="24" class="mr-2">mdi-calendar-check</v-icon>
+                <span class="text-subtitle-2 font-weight-bold">每日签到</span>
               </div>
-              <v-btn v-if="!signinStatus.hasSignedIn" block color="primary" class="mt-4">
-                立即签到
-              </v-btn>
-              <v-btn v-else block disabled class="mt-4">
-                今日已签到
+              <div class="signin-days">
+                <span class="text-h3 font-weight-bold text-primary">{{ signinStatus.signInDays }}</span>
+              </div>
+              <div class="text-caption text-grey mb-3">连续签到天数</div>
+              <div class="text-caption text-grey mb-3">
+                累计签到 {{ signinStatus.totalSignIns }} 次
+              </div>
+              <v-btn
+                :color="signinStatus.hasSignedIn ? 'grey' : 'primary'"
+                :variant="signinStatus.hasSignedIn ? 'outlined' : 'flat'"
+                size="small"
+                block
+                :disabled="signinStatus.hasSignedIn"
+              >
+                {{ signinStatus.hasSignedIn ? '今日已签到' : '立即签到' }}
               </v-btn>
             </v-card-text>
           </v-card>
-        </v-col>
-        
-        <!-- 右侧文章列表 -->
-        <v-col md="9">
+        </div>
+      </v-col>
+
+      <!-- 右侧文章列表 -->
+      <v-col cols="12" :md="isMobile ? 12 : 9">
+        <!-- 移动端分类横向滚动 -->
+        <v-scroll-x v-if="isMobile" class="mb-4 category-scroll">
+          <v-chip-group
+            v-model="currentCategory"
+            selected-class="bg-primary text-white"
+            class="d-inline-flex"
+          >
+            <v-chip
+              :value="null"
+              variant="outlined"
+              class="mx-1"
+              @click="handleCategoryClick(null)"
+            >
+              全部
+            </v-chip>
+            <v-chip
+              v-for="category in categories"
+              :key="category.id"
+              :value="category.id"
+              variant="outlined"
+              class="mx-1"
+              @click="handleCategoryClick(category.id)"
+            >
+              {{ category.name }}
+            </v-chip>
+          </v-chip-group>
+        </v-scroll-x>
+
+        <!-- 文章列表 -->
+        <div v-if="articles.length > 0" class="article-list">
           <v-card
             v-for="article in articles"
             :key="article.id"
-            class="mb-4 cursor-pointer"
-            @click="router.push(`/article/${article.id}`)"
+            class="article-card mb-3"
+            @click="goToArticle(article.id)"
           >
-            <v-card-title>
-              <h3 class="text-h6">{{ article.title }}</h3>
-            </v-card-title>
-            <v-card-text>
-              <p>{{ article.content.substring(0, 100) }}...</p>
+            <v-card-text class="pa-4">
+              <!-- 标题 -->
+              <h3 class="text-title-1 font-weight-bold text-grey-darken-3 mb-2 article-title">
+                {{ article.title }}
+              </h3>
+
+              <!-- 摘要 -->
+              <p class="text-body-2 text-grey mb-3 article-summary">
+                {{ article.content.replace(/[#*`]/g, '').substring(0, 120) }}...
+              </p>
+
+              <!-- 元信息 -->
+              <div class="d-flex align-center flex-wrap text-caption text-grey">
+                <v-avatar size="20" class="mr-2">
+                  <v-img v-if="article.author?.avatar" :src="article.author.avatar"></v-img>
+                  <v-icon v-else size="16">mdi-account</v-icon>
+                </v-avatar>
+                <span class="mr-3">{{ article.author?.username || '未知用户' }}</span>
+
+                <v-chip
+                  size="x-small"
+                  variant="tonal"
+                  color="primary"
+                  class="mr-3"
+                >
+                  {{ article.category?.name || '未分类' }}
+                </v-chip>
+
+                <v-icon size="14" class="mr-1">mdi-clock-outline</v-icon>
+                <span class="mr-3">{{ formatTime(article.created_at) }}</span>
+
+                <v-spacer></v-spacer>
+
+                <div class="d-flex align-center">
+                  <v-icon size="14" class="mr-1">mdi-eye-outline</v-icon>
+                  <span class="mr-3">{{ article.view_count || 0 }}</span>
+                  <v-icon size="14" class="mr-1">mdi-heart-outline</v-icon>
+                  <span>{{ article.like_count || 0 }}</span>
+                </div>
+              </div>
             </v-card-text>
-            <v-card-actions>
-              <v-chip size="small" color="primary" text-color="white">
-                {{ article.category?.name || '未分类' }}
-              </v-chip>
-              <span class="ml-2 text-sm text-grey">{{ article.author?.username }}</span>
-              <span class="ml-auto text-sm text-grey">{{ formatTime(article.created_at) }}</span>
-              <v-icon class="ml-2 text-grey">mdi-eye</v-icon>
-              <span class="text-sm text-grey">{{ article.view_count }}</span>
-              <v-icon class="ml-2 text-grey">mdi-heart</v-icon>
-              <span class="text-sm text-grey">{{ article.like_count }}</span>
-            </v-card-actions>
           </v-card>
-          
-          <!-- 加载更多 -->
-          <v-card v-if="page < totalPages" class="text-center">
-            <v-card-text>
-              <v-btn color="primary" :loading="isLoading" @click="loadMore">
-                加载更多
-              </v-btn>
-            </v-card-text>
-          </v-card>
-          
-          <v-card v-if="articles.length === 0" class="text-center py-12">
-            <v-icon size="64" color="grey">mdi-file-question</v-icon>
-            <p class="mt-4 text-grey">暂无文章</p>
-          </v-card>
-        </v-col>
-      </v-row>
-    </template>
+        </div>
+
+        <!-- 空状态 -->
+        <v-card v-else class="text-center py-16 empty-state">
+          <v-icon size="80" color="primary-lighten-2" class="mb-4">mdi-file-document-outline</v-icon>
+          <p class="text-h6 text-grey mb-2">暂无文章</p>
+          <p class="text-body-2 text-grey">快去发布第一篇文章吧</p>
+          <v-btn
+            color="primary"
+            class="mt-4"
+            to="/create"
+          >
+            发布文章
+          </v-btn>
+        </v-card>
+
+        <!-- 加载更多 -->
+        <div v-if="page < totalPages" class="text-center mt-6">
+          <v-btn
+            variant="outlined"
+            color="primary"
+            :loading="isLoading"
+            @click="loadMore"
+            class="load-more-btn"
+          >
+            加载更多
+          </v-btn>
+        </div>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
 <style scoped>
-.active {
-  background-color: rgba(98, 0, 238, 0.1);
+.sidebar-sticky {
+  position: sticky;
+  top: 80px;
+}
+
+.category-item {
+  border-radius: 8px;
+  margin: 2px 8px;
+}
+
+.category-active {
+  background-color: rgba(149, 117, 205, 0.12) !important;
+}
+
+.category-active .v-list-item__overlay {
+  opacity: 0;
+}
+
+.signin-card {
+  border: 1px solid rgba(149, 117, 205, 0.2);
+}
+
+.signin-days {
+  line-height: 1.2;
+}
+
+.article-card {
+  cursor: pointer;
+  transition: all 0.3s ease !important;
+  border: 1px solid transparent;
+}
+
+.article-card:hover {
+  border-color: rgba(149, 117, 205, 0.3);
+  transform: translateY(-2px);
+}
+
+.article-title {
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.article-summary {
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.category-scroll {
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.category-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.load-more-btn {
+  border-radius: 20px;
+  padding: 0 32px;
+}
+
+.empty-state {
+  background: linear-gradient(135deg, #FAFAFA 0%, #F3E5F5 100%);
 }
 </style>

@@ -92,6 +92,19 @@ func main() {
 	// 全局速率限制（每秒100次请求）
 	r.Use(middleware.RateLimit(100, time.Second))
 
+	// 处理404请求
+	r.NoRoute(func(c *gin.Context) {
+		// 对 OPTIONS 请求返回 204 让 CORS 中间件处理
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.JSON(404, gin.H{
+			"error":   "404 Not Found",
+			"message": "请求的接口不存在",
+		})
+	})
+
 	// 设置最大请求体大小为 20G（适用于视频上传）
 	r.MaxMultipartMemory = 20480 << 20 // 20G
 

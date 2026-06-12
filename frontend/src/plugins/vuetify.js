@@ -7,28 +7,39 @@ export default createVuetify({
   components,
   directives,
   theme: {
-    defaultTheme: 'light',
+    defaultTheme: 'lightPurple',
     themes: {
-      light: {
+      lightPurple: {
+        dark: false,
         colors: {
-          primary: '#6200EE',
-          secondary: '#03DAC6',
-          accent: '#000000',
-          error: '#B00020',
-          info: '#2196F3',
-          success: '#4CAF50',
-          warning: '#FB8C00',
+          primary: '#9575CD',
+          'primary-lighten-1': '#B39DDB',
+          'primary-lighten-2': '#D1C4E9',
+          'primary-darken-1': '#7E57C2',
+          secondary: '#CE93D8',
+          accent: '#F3E5F5',
+          background: '#FAFAFA',
+          surface: '#FFFFFF',
+          error: '#EF5350',
+          info: '#42A5F5',
+          success: '#66BB6A',
+          warning: '#FFA726',
+          // Text colors
+          'on-primary': '#FFFFFF',
+          'on-secondary': '#FFFFFF',
+          'on-surface': '#424242',
+          'on-background': '#424242',
         }
       },
       dark: {
         colors: {
-          primary: '#BB86FC',
-          secondary: '#03DAC6',
-          accent: '#FFFFFF',
-          error: '#CF6679',
-          info: '#2196F3',
-          success: '#4CAF50',
-          warning: '#FB8C00',
+          primary: '#B39DDB',
+          secondary: '#CE93D8',
+          accent: '#1E1E1E',
+          error: '#EF5350',
+          info: '#42A5F5',
+          success: '#66BB6A',
+          warning: '#FFA726',
         }
       }
     }
