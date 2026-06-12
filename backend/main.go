@@ -184,12 +184,6 @@ func main() {
 			protected.POST("/comment-reply-notifications/:id/read", controllers.MarkCommentReplyNotificationRead)
 			protected.POST("/comment-reply-notifications/read-all", controllers.MarkAllCommentReplyNotificationsRead)
 
-			// 粉丝通知（关注对象发新内容）
-			protected.GET("/follow-notifications", controllers.GetFollowNotifications)
-			protected.POST("/follow-notifications/:id/read", controllers.MarkFollowNotificationRead)
-			protected.POST("/follow-notifications/read-all", controllers.MarkAllFollowNotificationsRead)
-			protected.GET("/follow-notifications/unread-count", controllers.GetFollowNotificationUnreadCount)
-
 			// 用户个人通知（单独通知）
 			protected.POST("/user-notifications/send", middleware.AdminOnly(), controllers.SendUserNotification)
 			protected.POST("/user-notifications/send-batch", middleware.AdminOnly(), controllers.SendBatchNotifications)
@@ -230,7 +224,7 @@ func main() {
 			protected.GET("/chat/messages", controllers.GetMessages)
 			protected.POST("/chat/messages", controllers.SendMessage)
 			protected.POST("/chat/conversations/private", controllers.CreatePrivateConversation)
-			protected.GET("/chat/unread", controllers.GetUnreadCount)
+			protected.GET("/chat/unread", controllers.GetChatUnreadCount)
 			protected.POST("/chat/conversations/:id/read", controllers.MarkConversationRead)
 
 			// 收藏相关

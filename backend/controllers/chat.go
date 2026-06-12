@@ -221,8 +221,8 @@ func CreatePrivateConversation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"conversation_id": conv.ID})
 }
 
-// GetUnreadCount 获取未读消息数
-func GetUnreadCount(c *gin.Context) {
+// GetChatUnreadCount 获取聊天未读消息数
+func GetChatUnreadCount(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
 	var totalUnread int64

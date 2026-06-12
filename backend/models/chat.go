@@ -28,11 +28,12 @@ type Message struct {
 
 // UserConversation 用户会话关联（用于记录未读数等）
 type UserConversation struct {
-	ID             uint      `gorm:"primarykey" json:"id"`
-	UserID         uint      `gorm:"index" json:"user_id"`
-	ConversationID uint      `gorm:"index" json:"conversation_id"`
-	UnreadCount    int       `gorm:"default:0" json:"unread_count"`
-	LastReadTime   time.Time `json:"last_read_time"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID             uint          `gorm:"primarykey" json:"id"`
+	UserID         uint          `gorm:"index" json:"user_id"`
+	ConversationID uint          `gorm:"index" json:"conversation_id"`
+	Conversation   *Conversation `gorm:"foreignKey:ConversationID" json:"conversation,omitempty"`
+	UnreadCount    int           `gorm:"default:0" json:"unread_count"`
+	LastReadTime   time.Time     `json:"last_read_time"`
+	CreatedAt      time.Time     `json:"created_at"`
+	UpdatedAt      time.Time     `json:"updated_at"`
 }

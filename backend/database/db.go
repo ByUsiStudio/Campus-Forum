@@ -46,7 +46,6 @@ func AutoMigrate() {
 		&models.Friend{},
 		&models.FriendRequest{},
 		&models.SiteConfig{},
-		&models.FollowNotification{},
 		&models.Report{},
 		&models.PersonalNotification{},
 		&models.PermissionGroup{},
@@ -63,6 +62,22 @@ func AutoMigrate() {
 		os.Exit(1)
 	}
 	utils.Success("数据库迁移完成")
+
+	// 删除旧关注系统相关表
+	DropOldFollowTables()
+}
+
+// DropOldFollowTables 删除旧的关注系统表
+func DropOldFollowTables() {
+	oldTables := []string{"follows", "follow_notifications"}
+	for _, table := range oldTables {
+		if DB.Migrator().HasTable(table) {
+			DB.Exec("SET FOREIGN_KEY_CHECKS = 0")
+			DB.Migrator().DropTable(table)
+			utils.Info("已删除旧表: %s", table)
+			DB.Exec("SET FOREIGN_KEY_CHECKS = 1")
+		}
+	}
 }
 
 func CheckAndInitAdmin() {

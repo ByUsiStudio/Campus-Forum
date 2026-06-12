@@ -119,20 +119,16 @@ func GetUserFollowing(c *gin.Context) {
 		return
 	}
 
-	var follows []models.Follow
-	database.DB.Where("follower_id = ?", uint(id)).Find(&follows)
+	// 获取用户添加的好友（UserID为该用户的好友）
+	var friends []models.Friend
+	database.DB.Preload("Friend").Where("user_id = ? AND status = 1", uint(id)).Find(&friends)
 
-	followingIDs := make([]uint, 0)
-	for _, follow := range follows {
-		followingIDs = append(followingIDs, follow.FollowingID)
+	friendUsers := make([]models.User, 0)
+	for _, friend := range friends {
+		friendUsers = append(friendUsers, friend.Friend)
 	}
 
-	var users []models.User
-	if len(followingIDs) > 0 {
-		database.DB.Where("id IN ?", followingIDs).Find(&users)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"following": users})
+	c.JSON(http.StatusOK, gin.H{"friends": friendUsers})
 }
 
 func GetUserFollowers(c *gin.Context) {
@@ -149,18 +145,14 @@ func GetUserFollowers(c *gin.Context) {
 		return
 	}
 
-	var follows []models.Follow
-	database.DB.Where("following_id = ?", uint(id)).Find(&follows)
+	// 获取添加该用户为好友的人
+	var friends []models.Friend
+	database.DB.Preload("User").Where("friend_id = ? AND status = 1", uint(id)).Find(&friends)
 
-	followerIDs := make([]uint, 0)
-	for _, follow := range follows {
-		followerIDs = append(followerIDs, follow.FollowerID)
+	friendUsers := make([]models.User, 0)
+	for _, friend := range friends {
+		friendUsers = append(friendUsers, friend.User)
 	}
 
-	var users []models.User
-	if len(followerIDs) > 0 {
-		database.DB.Where("id IN ?", followerIDs).Find(&users)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"followers": users})
+	c.JSON(http.StatusOK, gin.H{"friends": friendUsers})
 }

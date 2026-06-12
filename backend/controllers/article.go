@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"forum/database"
 	"forum/models"
 	"forum/utils"
@@ -55,19 +56,20 @@ func CreateArticle(c *gin.Context) {
 
 	database.DB.Preload("User").Preload("Category").First(&article, article.ID)
 
-	// 只有发布的文章才发送通知
+	// 只有发布的文章才发送通知给好友
 	if status == "published" && !input.IsAnonymous {
-		var follows []models.Follow
-		database.DB.Where("following_id = ?", userID).Find(&follows)
+		var friends []models.Friend
+		database.DB.Where("friend_id = ? AND status = 1", userID).Find(&friends)
 
-		for _, follow := range follows {
-			notification := models.FollowNotification{
-				UserID:    follow.FollowerID,
-				SenderID:  userID,
-				ArticleID: article.ID,
-				Type:      "new_article",
+		for _, friend := range friends {
+			// 使用 PersonalNotification 发送通知
+			personalNotif := models.PersonalNotification{
+				UserID:  friend.UserID,
+				Type:    "new_article",
+				Title:   "好友发布新文章",
+				Content: fmt.Sprintf(`{"article_id": %d, "sender_id": %d}`, article.ID, userID),
 			}
-			database.DB.Create(&notification)
+			database.DB.Create(&personalNotif)
 		}
 	}
 
@@ -603,19 +605,20 @@ func PublishDraft(c *gin.Context) {
 	// 更新为发布状态
 	database.DB.Model(&article).Update("status", "published")
 
-	// 发送通知
+	// 发送通知给好友
 	if !article.IsAnonymous {
-		var follows []models.Follow
-		database.DB.Where("following_id = ?", userID).Find(&follows)
+		var friends []models.Friend
+		database.DB.Where("friend_id = ? AND status = 1", userID).Find(&friends)
 
-		for _, follow := range follows {
-			notification := models.FollowNotification{
-				UserID:    follow.FollowerID,
-				SenderID:  userID,
-				ArticleID: article.ID,
-				Type:      "new_article",
+		for _, friend := range friends {
+			// 使用 PersonalNotification 发送通知
+			personalNotif := models.PersonalNotification{
+				UserID:  friend.UserID,
+				Type:    "new_article",
+				Title:   "好友发布新文章",
+				Content: fmt.Sprintf(`{"article_id": %d, "sender_id": %d}`, article.ID, userID),
 			}
-			database.DB.Create(&notification)
+			database.DB.Create(&personalNotif)
 		}
 	}
 
