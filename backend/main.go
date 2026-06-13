@@ -250,6 +250,9 @@ func main() {
 			protected.POST("/signin", controllers.SignIn)
 			protected.GET("/signin/status", controllers.GetSignInStatus)
 			protected.GET("/signin/history", controllers.GetSignInHistory)
+			protected.GET("/signin/rankings", controllers.GetSignInRankings)
+			protected.GET("/signin/config", controllers.GetSignInConfig)
+			protected.PUT("/signin/config", middleware.AdminOnly(), controllers.UpdateSignInConfig)
 
 			// 后台管理
 			protected.GET("/admin/check", controllers.CheckAdmin)

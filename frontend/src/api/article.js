@@ -9,10 +9,23 @@ export const articleApi = {
   getArticle: (id, params = {}) => api.get(`/articles/${id}`, { params }),
 
   // 创建文章
-  createArticle: (data) => api.post('/articles', data),
+  createArticle: (data) => api.post('/articles', {
+    title: data.title,
+    content: data.content,
+    category_id: data.category_id,
+    voice_url: data.voice_url,
+    is_anonymous: data.is_anonymous || false,
+    status: data.status || 'published'
+  }),
 
   // 更新文章
-  updateArticle: (id, data) => api.put(`/articles/${id}`, data),
+  updateArticle: (id, data) => api.put(`/articles/${id}`, {
+    title: data.title,
+    content: data.content,
+    category_id: data.category_id,
+    voice_url: data.voice_url,
+    is_anonymous: data.is_anonymous
+  }),
 
   // 删除文章（软删除）
   deleteArticle: (id, data) => api.delete(`/articles/${id}`, data),

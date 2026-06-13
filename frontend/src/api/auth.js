@@ -3,7 +3,12 @@ import api from './index'
 // 认证相关API
 export const authApi = {
   // 用户注册
-  register: (data) => api.post('/auth/register', data),
+register: (data) => api.post('/auth/register', {
+  username: data.username,
+  qq_number: data.qq_number,
+  display_name: data.display_name,
+  password: data.password
+}),
 
   // 用户登录
   login: (data) => api.post('/auth/login', data),

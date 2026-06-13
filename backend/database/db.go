@@ -52,6 +52,7 @@ func AutoMigrate() {
 		&models.UserPermissionGroup{},
 		&models.SystemLog{},
 		&models.SignInRecord{},
+		&models.SignInConfig{},
 		&models.Conversation{},
 		&models.Message{},
 		&models.UserConversation{},

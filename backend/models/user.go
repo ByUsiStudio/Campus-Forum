@@ -21,8 +21,10 @@ type User struct {
 	ResetToken      string     `gorm:"size:100" json:"-"`                    // 密码重置验证码
 	ResetIdentifier string     `gorm:"size:100" json:"-"`                    // 密码重置标识token
 	ResetExpiry     *time.Time `json:"-"`                                    // Token过期时间
-	SignInDays      int        `gorm:"default:0" json:"sign_in_days"`        // 连续签到天数
-	TotalSignIns    int        `gorm:"default:0" json:"total_sign_ins"`      // 总签到次数
-	CreatedAt       time.Time  `json:"created_at"`
+	SignInDays        int        `gorm:"default:0" json:"sign_in_days"`         // 当前连续签到天数
+	TotalSignIns     int        `gorm:"default:0" json:"total_sign_ins"`       // 总签到次数
+	MaxContinuousDays int        `gorm:"default:0" json:"max_continuous_days"`  // 最长连续签到天数
+	TotalPoints      int        `gorm:"default:0" json:"total_points"`         // 累计积分
+	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 }

@@ -61,6 +61,9 @@ import Notifications from './views/Notifications.vue'
 import ForgotPassword from './views/ForgotPassword.vue'
 import FollowList from './views/FollowList.vue'
 import Search from './views/Search.vue'
+import SignIn from './views/SignIn.vue'
+import ChatList from './views/ChatList.vue'
+import ChatRoom from './views/ChatRoom.vue'
 
 // 导入后台管理子组件
 import AdminIndex from './views/admin/AdminIndex.vue'
@@ -114,7 +117,10 @@ const routes = [
     { path: '/video', component: VideoPlayerPage, name: 'VideoPlayer' },
     { path: '/notifications', component: Notifications, name: 'Notifications' },
     { path: '/follow-list', component: FollowList, name: 'FollowList' },
-    { path: '/search', component: Search, name: 'Search' }
+    { path: '/search', component: Search, name: 'Search' },
+    { path: '/signin', component: SignIn, name: 'SignIn' },
+    { path: '/chat', component: ChatList, name: 'ChatList' },
+    { path: '/chat/:id', component: ChatRoom, name: 'ChatRoom' }
 ]
 
 const router = createRouter({

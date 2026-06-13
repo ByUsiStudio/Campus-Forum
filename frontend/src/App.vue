@@ -164,6 +164,7 @@
             <v-list-item to="/create" @click="drawer = false" prepend-icon="mdi-pencil" title="写文章"></v-list-item>
             <v-list-item to="/profile" @click="drawer = false" prepend-icon="mdi-account" title="我的"></v-list-item>
             <v-list-item to="/notifications" @click="drawer = false" prepend-icon="mdi-bell" title="通知"></v-list-item>
+            <v-list-item to="/signin" @click="drawer = false" prepend-icon="mdi-calendar-check" title="签到"></v-list-item>
             <v-list-item v-if="isAdmin" to="/admin" @click="drawer = false" prepend-icon="mdi-shield-crown" title="管理后台" class="text-error"></v-list-item>
             <v-divider class="my-2"></v-divider>
             <v-list-item @click="logout" prepend-icon="mdi-logout" title="退出" class="text-secondary"></v-list-item>
@@ -312,13 +313,15 @@ export default {
         { path: '/', icon: 'mdi-home', label: '首页' },
         { path: '/create', icon: 'mdi-pencil', label: '写文章' },
         { path: '/notifications', icon: 'mdi-bell', label: '通知' },
+        { path: '/signin', icon: 'mdi-calendar-check', label: '签到' },
+        { path: '/chat', icon: 'mdi-chat', label: '聊天' },
         { path: '/profile', icon: 'mdi-account', label: '我的' }
       ]
       if (isAdmin.value) {
         items.push({ path: '/admin', icon: 'mdi-shield-crown', label: '管理后台' })
       }
       return items.filter(item => {
-        if (item.path === '/create' || item.path === '/notifications' || item.path === '/profile') {
+        if (item.path === '/create' || item.path === '/notifications' || item.path === '/profile' || item.path === '/signin' || item.path === '/chat') {
           return token.value
         }
         return true
