@@ -15,9 +15,9 @@ const page = ref(1)
 const totalPages = ref(1)
 const isLoading = ref(false)
 const signinStatus = ref({
-  hasSignedIn: false,
-  signInDays: 0,
-  totalSignIns: 0
+  has_signed_in: false,
+  sign_in_days: 0,
+  total_sign_ins: 0
 })
 
 const loadArticles = async (categoryId = null, pageNum = 1) => {
@@ -72,9 +72,9 @@ const handleSignin = async () => {
   try {
     const response = await signinApi.signin()
     signinStatus.value = {
-      hasSignedIn: true,
-      signInDays: response.data.sign_in_days,
-      totalSignIns: response.data.total_sign_ins
+      has_signed_in: true,
+      sign_in_days: response.data.sign_in_days,
+      total_sign_ins: response.data.total_sign_ins
     }
   } catch (error) {
     console.error('签到失败:', error)
@@ -177,20 +177,20 @@ onMounted(() => {
                 <span class="text-subtitle-2 font-weight-bold">每日签到</span>
               </div>
               <div class="signin-days">
-                <span class="text-h3 font-weight-bold text-primary">{{ signinStatus.signInDays }}</span>
+                <span class="text-h3 font-weight-bold text-primary">{{ signinStatus.sign_in_days }}</span>
               </div>
               <div class="text-caption text-grey mb-3">连续签到天数</div>
               <div class="text-caption text-grey mb-3">
-                累计签到 {{ signinStatus.totalSignIns }} 次
+                累计签到 {{ signinStatus.total_sign_ins }} 次
               </div>
               <v-btn
-                :color="signinStatus.hasSignedIn ? 'grey' : 'primary'"
-                :variant="signinStatus.hasSignedIn ? 'outlined' : 'flat'"
+                :color="signinStatus.has_signed_in ? 'grey' : 'primary'"
+                :variant="signinStatus.has_signed_in ? 'outlined' : 'flat'"
                 size="small"
                 block
-                :disabled="signinStatus.hasSignedIn"
+                :disabled="signinStatus.has_signed_in"
               >
-                {{ signinStatus.hasSignedIn ? '今日已签到' : '立即签到' }}
+                {{ signinStatus.has_signed_in ? '今日已签到' : '立即签到' }}
               </v-btn>
             </v-card-text>
           </v-card>

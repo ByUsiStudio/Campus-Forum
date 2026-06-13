@@ -1,9 +1,10 @@
 <script setup>
 import { ref, inject, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { articleApi, commentApi, favoriteApi } from '../api'
+import { articleApi, commentApi, favoriteApi, reportApi } from '../api'
 import MarkdownViewer from '../components/MarkdownViewer.vue'
 import UserAvatar from '../components/UserAvatar.vue'
+import { alert, confirm } from '../utils/modal'
 
 const router = useRouter()
 const route = useRoute()
@@ -115,6 +116,35 @@ const deleteComment = async (commentId) => {
   }
 }
 
+const handleReport = async () => {
+  if (!user.value) {
+    router.push('/login')
+    return
+  }
+  try {
+    const confirmed = await confirm('确定要举报这篇文章吗？', {
+      title: '举报文章',
+      icon: 'mdi-alert-circle',
+      iconColor: 'warning'
+    })
+    if (confirmed) {
+      await reportApi.create({ article_id: route.params.id, type: 'article' })
+      alert('举报已提交，感谢您的反馈', {
+        title: '举报成功',
+        icon: 'mdi-check-circle',
+        iconColor: 'success'
+      })
+    }
+  } catch (error) {
+    console.error('举报失败:', error)
+    alert('举报失败，请稍后重试', {
+      title: '举报失败',
+      icon: 'mdi-alert-circle',
+      iconColor: 'error'
+    })
+  }
+}
+
 const formatTime = (timeStr) => {
   const date = new Date(timeStr)
   const now = new Date()
@@ -203,7 +233,7 @@ onMounted(() => {
 
           <!-- 文章正文 -->
           <v-card-text class="pa-6">
-            <MarkdownViewer :content="article.content" />
+            <MarkdownViewer :value="article.content" />
           </v-card-text>
 
           <v-divider class="mx-6"></v-divider>
@@ -239,9 +269,9 @@ onMounted(() => {
                 </v-btn>
               </div>
 
-              <!-- 分享按钮 -->
-              <v-btn variant="text" color="grey">
-                <v-icon>mdi-share-variant-outline</v-icon>
+              <!-- 举报按钮 -->
+              <v-btn variant="text" color="grey" @click="handleReport">
+                <v-icon>mdi-flag-outline</v-icon>
               </v-btn>
             </div>
           </v-card-text>
