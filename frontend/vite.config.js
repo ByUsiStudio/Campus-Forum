@@ -34,6 +34,11 @@ export default defineConfig({
   define: {
     __FRONTEND_VERSION__: JSON.stringify(version)
   },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src')
+    }
+  },
   server: {
     port: 3000
   },

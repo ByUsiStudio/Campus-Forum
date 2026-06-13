@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"forum/controllers"
 	"forum/database"
+	"forum/im"
 	initpkg "forum/init"
 	"forum/middleware"
 	"forum/service"
@@ -39,10 +40,15 @@ type DatabaseConfig struct {
 }
 
 type IMConfig struct {
-	Enabled        bool `json:"enabled"`
-	ApiGatewayPort int  `json:"api_gateway_port"`
-	WsPort         int  `json:"ws_port"`
-	AdminPort      int  `json:"admin_port"`
+	Enabled        bool   `json:"enabled"`
+	APIURL         string `json:"api_url"`    // 野火IM API地址
+	AppID          string `json:"app_id"`     // 应用ID
+	AppSecret      string `json:"app_secret"` // 应用密钥
+	IMHost         string `json:"im_host"`    // IM服务器地址
+	IMPort         int    `json:"im_port"`    // IM服务器端口
+	ApiGatewayPort int    `json:"api_gateway_port"`
+	WsPort         int    `json:"ws_port"`
+	AdminPort      int    `json:"admin_port"`
 }
 
 var config Config
@@ -64,24 +70,12 @@ func main() {
 	// 初始化服务
 	service.InitServices()
 
-	// 初始化WebSocket服务（用于聊天）
-	service.InitWebSocket()
-
 	// 自动迁移和初始化
 	database.AutoMigrate()
 	database.CheckAndInitAdmin()
 
 	// 系统初始化（权限组、头衔等）
 	initpkg.SystemInit()
-
-	// 启动IM服务子进程
-	if config.IM.Enabled {
-		if err := StartIMServer(config); err != nil {
-			utils.Error("启动IM服务失败: %v", err)
-		}
-		// 注册关闭钩子
-		defer StopIMServer()
-	}
 
 	// 设置路由
 	r := gin.New()
@@ -111,8 +105,9 @@ func main() {
 	// WebDAV代理路由
 	r.Any("/proxy/webdav/*path", utils.ProxyWebDAVHandler)
 
-	// WebSocket路由（需要认证）
-	r.GET("/ws", middleware.Auth(config.JWTSecret), controllers.HandleWebSocket)
+	// WebSocket路由（IM服务）
+	imCtrl := im.NewController()
+	r.GET("/ws", imCtrl.WebSocketHandle)
 
 	// API路由
 	api := r.Group("/api")
@@ -208,6 +203,11 @@ func main() {
 			protected.DELETE("/user-notifications/clear", controllers.ClearAllNotifications)
 			protected.GET("/admin/user-notifications/:user_id", middleware.AdminOnly(), controllers.AdminGetUserNotifications)
 
+			// IM（goim）相关
+			protected.GET("/im/online-status", imCtrl.GetOnlineStatus)
+			protected.GET("/im/online-users", imCtrl.GetOnlineUsers)
+			protected.POST("/im/send-message", imCtrl.SendMessage)
+
 			// 权限组管理
 			protected.GET("/permission-groups", controllers.GetPermissionGroups)
 			protected.GET("/permission-groups/:id", controllers.GetPermissionGroup)
@@ -231,14 +231,6 @@ func main() {
 			protected.PUT("/friends/:id/display-name", controllers.UpdateFriendDisplayName)
 			protected.GET("/friends/status/:id", controllers.CheckFriendStatus)
 			protected.GET("/friends/mutual/:id", controllers.GetMutualFriends)
-
-			// 聊天相关
-			protected.GET("/chat/conversations", controllers.GetConversations)
-			protected.GET("/chat/messages", controllers.GetMessages)
-			protected.POST("/chat/messages", controllers.SendMessage)
-			protected.POST("/chat/conversations/private", controllers.CreatePrivateConversation)
-			protected.GET("/chat/unread", controllers.GetChatUnreadCount)
-			protected.POST("/chat/conversations/:id/read", controllers.MarkConversationRead)
 
 			// 收藏相关
 			protected.POST("/articles/:id/favorite", controllers.AddFavorite)

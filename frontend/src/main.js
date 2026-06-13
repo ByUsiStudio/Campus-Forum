@@ -120,7 +120,7 @@ const routes = [
     { path: '/search', component: Search, name: 'Search' },
     { path: '/signin', component: SignIn, name: 'SignIn' },
     { path: '/chat', component: ChatList, name: 'ChatList' },
-    { path: '/chat/:id', component: ChatRoom, name: 'ChatRoom' }
+    { path: '/chat/:type/:targetId', component: ChatRoom, name: 'ChatRoom' }
 ]
 
 const router = createRouter({

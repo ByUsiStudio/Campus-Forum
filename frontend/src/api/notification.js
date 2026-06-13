@@ -57,8 +57,8 @@ export const userNotificationApi = {
   clearAll: () => api.delete('/user-notifications/clear'),
 }
 
-// 管理员通知API
-export const adminNotificationApi = {
+// 管理员用户通知API
+export const adminUserNotificationApi = {
   // 发送单个通知
   sendNotification: (data) => api.post('/user-notifications/send', {
     user_id: data.user_id,

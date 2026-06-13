@@ -151,8 +151,8 @@ export const adminAuthApi = {
   checkInit: () => api.get('/auth/check-init')
 }
 
-// ==================== 用户通知API ====================
-export const userNotificationApi = {
+// ==================== 用户通知管理API ====================
+export const adminUserNotificationApi = {
   // 发送单独通知给用户
   sendNotification: (data) => api.post('/user-notifications/send', data),
   
@@ -228,6 +228,6 @@ export default {
   title: adminTitleApi,
   category: adminCategoryApi,
   auth: adminAuthApi,
-  userNotification: userNotificationApi,
+  userNotification: adminUserNotificationApi,
   permissionGroup: permissionGroupApi
 }
