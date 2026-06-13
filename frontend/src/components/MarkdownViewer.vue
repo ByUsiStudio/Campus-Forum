@@ -143,6 +143,7 @@ const renderedContent = computed(() => {
 .markdown-viewer {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 16px;
+  line-height: 1.9;
   color: #2d2d2d;
   word-wrap: break-word;
   white-space: pre-wrap;
@@ -154,7 +155,9 @@ const renderedContent = computed(() => {
 .markdown-viewer :deep(h4),
 .markdown-viewer :deep(h5),
 .markdown-viewer :deep(h6) {
+  margin: 28px 0 16px 0;
   font-weight: 600;
+  line-height: 1.4;
   color: #1a1a1a;
   position: relative;
 }
@@ -195,6 +198,10 @@ const renderedContent = computed(() => {
   opacity: 1;
 }
 
+.markdown-viewer :deep(p) {
+  margin: 16px 0;
+}
+
 .markdown-viewer :deep(a) {
   color: #6750A4;
   text-decoration: none;
@@ -204,6 +211,13 @@ const renderedContent = computed(() => {
 
 .markdown-viewer :deep(a:hover) {
   border-bottom-color: #6750A4;
+}
+
+.markdown-viewer :deep(audio) {
+  width: 100%;
+  max-width: 100%;
+  margin: 16px 0;
+  display: block;
 }
 
 .markdown-viewer :deep(code) {
@@ -220,6 +234,7 @@ const renderedContent = computed(() => {
   border-radius: 8px;
   padding: 16px;
   overflow-x: auto;
+  margin: 20px 0;
 }
 
 .markdown-viewer :deep(pre code) {
@@ -227,10 +242,12 @@ const renderedContent = computed(() => {
   padding: 0;
   color: #d4d4d4;
   font-size: 14px;
+  line-height: 1.6;
   white-space: pre;
 }
 
 .markdown-viewer :deep(blockquote) {
+  margin: 20px 0;
   padding: 12px 20px;
   border-left: 4px solid #6750A4;
   background: linear-gradient(135deg, #f8f7ff 0%, #f0effe 100%);
@@ -243,12 +260,14 @@ const renderedContent = computed(() => {
 }
 
 .markdown-viewer :deep(blockquote blockquote) {
+  margin: 12px 0;
   border-left-color: #9575CD;
   background: linear-gradient(135deg, #f5f3ff 0%, #ede7f6 100%);
 }
 
 .markdown-viewer :deep(ul),
 .markdown-viewer :deep(ol) {
+  margin: 16px 0;
   padding-left: 28px;
 }
 
@@ -261,14 +280,22 @@ const renderedContent = computed(() => {
 }
 
 .markdown-viewer :deep(li) {
+  margin: 8px 0;
+  line-height: 1.8;
   white-space: pre-wrap;
 }
 
+.markdown-viewer :deep(li > ul),
+.markdown-viewer :deep(li > ol) {
+  margin: 4px 0;
+}
+
 .markdown-viewer :deep(table) {
-  display: block;
-  overflow-x: auto;
+  width: 100%;
+  margin: 20px 0;
   border-collapse: collapse;
   border-radius: 8px;
+  overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
@@ -306,7 +333,6 @@ const renderedContent = computed(() => {
   height: auto;
   border-radius: 8px;
   margin: 20px auto;
-  margin: 20px auto;
   display: block;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
@@ -342,6 +368,7 @@ const renderedContent = computed(() => {
 }
 
 .markdown-viewer :deep(.footnotes) {
+  margin-top: 40px;
   padding-top: 20px;
   border-top: 2px solid #e5e5e5;
   font-size: 14px;
@@ -352,6 +379,10 @@ const renderedContent = computed(() => {
   padding-left: 20px;
 }
 
+.markdown-viewer :deep(.footnote-item) {
+  margin: 12px 0;
+}
+
 .markdown-viewer :deep(.footnote-ref) {
   color: #6750A4;
   font-weight: bold;
@@ -359,6 +390,7 @@ const renderedContent = computed(() => {
 }
 
 .markdown-viewer :deep(.custom-container) {
+  margin: 20px 0;
   padding: 16px 20px;
   border-radius: 8px;
   border-left: 4px solid;
@@ -436,6 +468,7 @@ const renderedContent = computed(() => {
 }
 
 .markdown-viewer :deep(.katex-block) {
+  margin: 20px 0;
   padding: 16px;
   background: #fafafa;
   border-radius: 8px;

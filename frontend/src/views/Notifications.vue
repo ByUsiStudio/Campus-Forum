@@ -1,111 +1,207 @@
-<script setup>
-import { ref, inject, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { notificationApi } from '../api'
-
-const router = useRouter()
-const user = inject('user')
-
-const notifications = ref([])
-const isLoading = ref(false)
-
-const loadNotifications = async () => {
-  isLoading.value = true
-  try {
-    const response = await notificationApi.getNotifications()
-    notifications.value = response.data.notifications || []
-  } catch (error) {
-    console.error('加载通知失败:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const markRead = async (id) => {
-  try {
-    await notificationApi.markRead(id)
-    const notification = notifications.value.find(n => n.id === id)
-    if (notification) {
-      notification.is_read = true
-    }
-  } catch (error) {
-    console.error('标记已读失败:', error)
-  }
-}
-
-const markAllRead = async () => {
-  try {
-    await notificationApi.markAllRead()
-    notifications.value.forEach(n => n.is_read = true)
-  } catch (error) {
-    console.error('全部标记已读失败:', error)
-  }
-}
-
-const formatTime = (timeStr) => {
-  const date = new Date(timeStr)
-  const now = new Date()
-  const diff = now - date
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  if (days === 0) {
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    return hours === 0 ? '刚刚' : `${hours}小时前`
-  }
-  return `${days}天前`
-}
-
-onMounted(() => {
-  if (!user.value) {
-    router.push('/login')
-    return
-  }
-  loadNotifications()
-})
-</script>
-
 <template>
-  <v-app>
-    <v-app-bar app>
-      <v-btn icon @click="router.push('/')">
-        <v-icon>mdi-arrow-left</v-icon>
-      </v-btn>
-      <v-toolbar-title>通知</v-toolbar-title>
-      <v-spacer></v-spacer>
-      <v-btn text @click="markAllRead">全部已读</v-btn>
-    </v-app-bar>
-    
-    <v-container class="py-6">
-      <v-card v-if="notifications.length > 0">
-        <v-list>
-          <v-list-item
-            v-for="notification in notifications"
-            :key="notification.id"
-            :class="notification.is_read ? '' : 'bg-grey-light'"
-            @click="markRead(notification.id)"
-          >
-            <v-list-item-icon>
-              <v-icon :color="notification.is_read ? 'grey' : 'primary'">
-                {{ notification.type === 'comment' ? 'mdi-comment' : 'mdi-bell' }}
-              </v-icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-list-item-title>{{ notification.content }}</v-list-item-title>
-              <v-list-item-subtitle>{{ formatTime(notification.created_at) }}</v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
-      </v-card>
-      
-      <v-card v-else class="text-center py-12">
-        <v-icon size="64" color="grey">mdi-inbox</v-icon>
-        <p class="mt-4 text-grey">暂无通知</p>
-      </v-card>
-    </v-container>
-  </v-app>
+  <v-container fluid class="pa-4">
+    <v-row justify="center">
+      <v-col cols="12" lg="10" xl="8">
+        <v-card elevation="2">
+          <v-card-item class="pa-4">
+            <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+              <div class="d-flex align-center">
+                <v-btn icon="mdi-arrow-left" variant="text" @click="router.back()" class="mr-2"></v-btn>
+                <v-card-title class="text-h5">我的通知</v-card-title>
+              </div>
+              <v-btn
+                v-if="unreadCount > 0"
+                variant="tonal"
+                color="primary"
+                @click="markAllRead"
+                prepend-icon="mdi-check-all"
+              >
+                全部标记已读
+              </v-btn>
+            </div>
+          </v-card-item>
+
+          <v-divider></v-divider>
+
+          <v-list lines="three" v-if="notifications.length > 0" class="pa-2">
+            <v-list-item
+              v-for="notification in notifications"
+              :key="notification.id"
+              :class="{ 'bg-blue-lighten-5': !notification.is_read }"
+              class="mb-2 rounded-lg"
+            >
+              <template v-slot:prepend>
+                <v-avatar :color="getTypeColor(notification.type)" size="48">
+                  <v-icon color="white">{{ getTypeIcon(notification.type) }}</v-icon>
+                </v-avatar>
+              </template>
+
+              <v-list-item-title class="font-weight-bold mb-2">
+                <v-chip size="small" :color="getTypeColor(notification.type)" class="mr-2">
+                  {{ getTypeText(notification.type) }}
+                </v-chip>
+                {{ notification.title }}
+              </v-list-item-title>
+
+              <v-list-item-subtitle class="text-body-2 mt-1">
+                {{ notification.content }}
+              </v-list-item-subtitle>
+
+              <v-list-item-subtitle class="text-caption text-medium-emphasis mt-2">
+                <v-icon size="small" class="mr-1">mdi-clock</v-icon>
+                {{ formatDate(notification.created_at) }}
+              </v-list-item-subtitle>
+
+              <template v-slot:append>
+                <v-btn
+                  v-if="!notification.is_read"
+                  variant="tonal"
+                  size="small"
+                  color="primary"
+                  @click="markRead(notification)"
+                >
+                  标记已读
+                </v-btn>
+              </template>
+            </v-list-item>
+          </v-list>
+
+          <v-card-text v-else class="text-center py-12">
+            <v-icon size="80" color="grey-lighten-2">mdi-bell-off-outline</v-icon>
+            <div class="text-h6 text-medium-emphasis mt-4">暂无通知</div>
+            <div class="text-body-2 text-medium-emphasis mt-2">
+              暂无新的通知消息
+            </div>
+          </v-card-text>
+
+          <v-card-actions v-if="totalPages > 1" class="justify-center pb-4">
+            <v-pagination
+              v-model="page"
+              :length="totalPages"
+              :total-visible="5"
+              rounded="circle"
+            ></v-pagination>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
-<style scoped>
-.bg-grey-light {
-  background-color: rgba(0, 0, 0, 0.05);
+<script>
+import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '../api'
+
+export default {
+  name: 'Notifications',
+  setup() {
+    const router = useRouter()
+    const notifications = ref([])
+    const unreadCount = ref(0)
+    const page = ref(1)
+    const totalPages = ref(1)
+    const pageSize = 20
+
+    const loadNotifications = async () => {
+      try {
+        const response = await api.get('/notifications')
+        const allNotifications = response.data.notifications || []
+        
+        const total = allNotifications.length
+        totalPages.value = Math.ceil(total / pageSize)
+        
+        const start = (page.value - 1) * pageSize
+        notifications.value = allNotifications.slice(start, start + pageSize)
+      } catch (error) {
+        console.error('加载通知失败', error)
+      }
+    }
+
+    const loadUnreadCount = async () => {
+      try {
+        const response = await api.get('/notifications/unread-count')
+        unreadCount.value = response.data.unread_count || 0
+      } catch (error) {
+        console.error('加载未读数量失败', error)
+      }
+    }
+
+    const markRead = async (notification) => {
+      try {
+        await api.post(`/notifications/${notification.id}/read`)
+        notification.is_read = true
+        unreadCount.value = Math.max(0, unreadCount.value - 1)
+      } catch (error) {
+        console.error('标记已读失败', error)
+      }
+    }
+
+    const markAllRead = async () => {
+      try {
+        await api.post('/notifications/read-all')
+        notifications.value.forEach(n => n.is_read = true)
+        unreadCount.value = 0
+      } catch (error) {
+        console.error('标记全部已读失败', error)
+      }
+    }
+
+    const getTypeColor = (type) => {
+      const colors = {
+        system: 'primary',
+        activity: 'success',
+        update: 'info',
+        warning: 'warning'
+      }
+      return colors[type] || 'default'
+    }
+
+    const getTypeIcon = (type) => {
+      const icons = {
+        system: 'mdi-information',
+        activity: 'mdi-calendar-star',
+        update: 'mdi-update',
+        warning: 'mdi-alert'
+      }
+      return icons[type] || 'mdi-bell'
+    }
+
+    const getTypeText = (type) => {
+      const texts = {
+        system: '系统通知',
+        activity: '活动公告',
+        update: '更新通知',
+        warning: '警告通知'
+      }
+      return texts[type] || type
+    }
+
+    const formatDate = (date) => {
+      return new Date(date).toLocaleString('zh-CN')
+    }
+
+    watch(page, () => {
+      loadNotifications()
+    })
+
+    onMounted(() => {
+      loadNotifications()
+      loadUnreadCount()
+    })
+
+    return {
+      notifications,
+      unreadCount,
+      page,
+      totalPages,
+      markRead,
+      markAllRead,
+      getTypeColor,
+      getTypeIcon,
+      getTypeText,
+      formatDate
+    }
+  }
 }
-</style>
+</script>

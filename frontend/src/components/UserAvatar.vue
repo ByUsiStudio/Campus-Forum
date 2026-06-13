@@ -1,8 +1,7 @@
 <template>
   <div class="user-avatar d-flex align-center">
     <v-avatar :size="size" class="flex-shrink-0">
-      <v-img v-if="user.avatar" :src="user.avatar" :alt="user.display_name" />
-      <v-icon v-else size="small">mdi-account-circle</v-icon>
+      <v-img :src="user.avatar" :alt="user.display_name" />
     </v-avatar>
     <div v-if="showUsername" class="user-info">
       <div class="user-name" :class="nameSizeClass">{{ user.display_name }}</div>

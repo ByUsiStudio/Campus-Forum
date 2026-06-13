@@ -1,215 +1,200 @@
+<template>
+  <div class="follow-list-page">
+    <v-card class="pa-6">
+      <div class="d-flex align-center mb-4">
+        <v-btn icon variant="text" @click="router.back()">
+          <v-icon>mdi-arrow-left</v-icon>
+        </v-btn>
+        <v-card-title class="pa-0">{{ pageTitle }}</v-card-title>
+      </div>
+
+      <v-tabs v-model="tab" align-tabs="start" class="mb-4">
+        <v-tab value="following">关注 ({{ followingCount }})</v-tab>
+        <v-tab value="followers">粉丝 ({{ followersCount }})</v-tab>
+      </v-tabs>
+
+      <div v-if="loading" class="text-center pa-8">
+        <v-progress-circular indeterminate color="primary"></v-progress-circular>
+      </div>
+
+      <div v-else-if="currentList.length === 0" class="text-center pa-8 text-medium-emphasis">
+        暂无{{ tab === 'following' ? '关注' : '粉丝' }}
+      </div>
+
+      <v-list v-else>
+        <v-list-item
+          v-for="userItem in currentList"
+          :key="userItem.id"
+          class="px-0"
+        >
+          <template v-slot:prepend>
+            <UserAvatar :user="userItem" :size="50" />
+          </template>
+
+          <v-list-item-title class="font-weight-bold">
+            <router-link :to="'/profile?id=' + userItem.id" class="text-decoration-none">
+              {{ userItem.display_name || userItem.username }}
+            </router-link>
+          </v-list-item-title>
+
+          <v-list-item-subtitle class="text-caption">
+            @{{ userItem.username }}
+            <span v-if="userItem.role === 'admin'" class="text-primary ml-1">管理员</span>
+          </v-list-item-subtitle>
+
+          <v-list-item-subtitle v-if="userItem.signature" class="text-truncate">
+            {{ userItem.signature }}
+          </v-list-item-subtitle>
+
+          <template v-slot:append>
+            <v-btn
+              v-if="!isOwnProfile && currentUser && currentUser.id !== userItem.id"
+              variant="outlined"
+              size="small"
+              :color="isFollowing(userItem.id) ? 'default' : 'primary'"
+              @click="handleFollowToggle(userItem)"
+            >
+              {{ isFollowing(userItem.id) ? '已关注' : '关注' }}
+            </v-btn>
+          </template>
+        </v-list-item>
+      </v-list>
+    </v-card>
+  </div>
+</template>
+
 <script setup>
-import { ref, inject, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { friendApi } from '../api'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import api from '../api'
 
 const router = useRouter()
-const user = inject('user')
-const isMobile = computed(() => window.innerWidth < 1024)
+const route = useRoute()
 
-const friends = ref([])
-const requests = ref([])
-const sentRequests = ref([])
-const activeTab = ref('friends')
-const tabs = [
-  { title: '好友', value: 'friends' },
-  { title: '好友请求', value: 'requests' },
-  { title: '已发送', value: 'sent' }
-]
+const tab = ref(route.query.tab || 'following')
+const loading = ref(false)
+const following = ref([])
+const followers = ref([])
+const currentUser = ref(null)
+const userId = ref(route.query.userId || route.query.id || null)
+const isOwnProfile = computed(() => !userId.value || currentUser.value?.id === parseInt(userId.value))
+const followingCount = ref(0)
+const followersCount = ref(0)
 
-const loadFriends = async () => {
+const pageTitle = computed(() => {
+  if (isOwnProfile.value) {
+    return tab.value === 'following' ? '我的关注' : '我的粉丝'
+  }
+  return tab.value === 'following' ? '他的关注' : '他的粉丝'
+})
+
+const currentList = computed(() => {
+  return tab.value === 'following' ? following.value : followers.value
+})
+
+const followingIds = computed(() => {
+  return new Set(following.value.map(u => u.id))
+})
+
+const isFollowing = (targetUserId) => {
+  return followingIds.value.has(targetUserId)
+}
+
+const loadFollowData = async () => {
+  if (!userId.value && !currentUser.value?.id) return
+
+  const targetId = userId.value || currentUser.value.id
+  loading.value = true
+
   try {
-    const response = await friendApi.getFriends()
-    friends.value = response.data.friends || []
+    const [followingRes, followersRes] = await Promise.all([
+      api.get('/following'),
+      api.get('/followers')
+    ])
+
+    following.value = followingRes.data.following || []
+    followers.value = followersRes.data.followers || []
+    followingCount.value = following.value.length
+    followersCount.value = followers.value.length
   } catch (error) {
-    console.error('加载好友失败:', error)
+    console.error('获取关注列表失败', error)
+  } finally {
+    loading.value = false
   }
 }
 
-const loadRequests = async () => {
+const loadOtherUserFollowData = async () => {
+  if (!userId.value) return
+
+  loading.value = true
+
   try {
-    const response = await getFriendRequests()
-    requests.value = response.data.requests || []
+    const [followingRes, followersRes, statusRes] = await Promise.all([
+      api.get(`/users/${userId.value}/following`),
+      api.get(`/users/${userId.value}/followers`),
+      api.get(`/follow/status/${userId.value}`)
+    ])
+
+    following.value = followingRes.data.following || []
+    followers.value = followersRes.data.followers || []
+    followingCount.value = following.value.length
+    followersCount.value = followers.value.length
   } catch (error) {
-    console.error('加载好友请求失败:', error)
+    console.error('获取用户关注列表失败', error)
+  } finally {
+    loading.value = false
   }
 }
 
-const loadSentRequests = async () => {
+const handleFollowToggle = async (user) => {
   try {
-    const response = await getSentFriendRequests()
-    sentRequests.value = response.data.sent_requests || []
+    if (isFollowing(user.id)) {
+      await api.delete(`/follow/${user.id}`)
+      following.value = following.value.filter(u => u.id !== user.id)
+      followingCount.value--
+    } else {
+      await api.post(`/follow/${user.id}`)
+      following.value.push(user)
+      followingCount.value++
+    }
   } catch (error) {
-    console.error('加载已发送请求失败:', error)
+    console.error('操作失败', error)
   }
 }
 
-const handleAccept = async (requestId) => {
+onMounted(async () => {
   try {
-    await acceptFriendRequest(requestId)
-    loadRequests()
-    loadFriends()
+    const token = localStorage.getItem('token')
+    if (token) {
+      const profileRes = await api.get('/profile')
+      currentUser.value = profileRes.data
+    }
   } catch (error) {
-    console.error('同意好友请求失败:', error)
+    console.error('获取当前用户失败', error)
   }
-}
 
-const handleReject = async (requestId) => {
-  try {
-    await friendApi.rejectRequest(requestId)
-    loadRequests()
-  } catch (error) {
-    console.error('拒绝好友请求失败:', error)
+  if (userId.value) {
+    loadOtherUserFollowData()
+  } else {
+    loadFollowData()
   }
-}
+})
 
-const handleDeleteFriend = async (friendId) => {
-  if (!confirm('确定要删除这个好友吗？')) return
-  try {
-    await deleteFriend(friendId)
-    loadFriends()
-  } catch (error) {
-    console.error('删除好友失败:', error)
+watch(() => [route.query.userId, route.query.id, route.query.tab], ([newUserId, newId, newTab]) => {
+  userId.value = newUserId || newId || null
+  tab.value = newTab || 'following'
+  if (userId.value) {
+    loadOtherUserFollowData()
+  } else {
+    loadFollowData()
   }
-}
-
-const switchTab = (tab) => {
-  activeTab.value = tab
-  if (tab === 'friends') loadFriends()
-  else if (tab === 'requests') loadRequests()
-  else if (tab === 'sent') loadSentRequests()
-}
-
-onMounted(() => {
-  if (!user.value) {
-    router.push('/login')
-    return
-  }
-  loadFriends()
 })
 </script>
 
-<template>
-  <v-container class="py-6">
-    <!-- 移动端返回按钮 -->
-    <div v-if="isMobile" class="mb-4">
-      <v-btn text @click="router.push('/')">
-        <v-icon left>mdi-arrow-left</v-icon>
-        返回
-      </v-btn>
-    </div>
-
-    <!-- 页面标题 -->
-    <v-card-title class="text-h5">好友管理</v-card-title>
-
-    <!-- Tab切换 -->
-    <v-tabs v-model="activeTab" @update:model-value="switchTab" class="mb-4">
-      <v-tab v-for="tab in tabs" :key="tab.value" :value="tab.value">
-        {{ tab.title }}
-        <span v-if="tab.value === 'requests' && requests.length > 0" class="ml-2">
-          <span class="badge badge-pill badge-danger">{{ requests.length }}</span>
-        </span>
-      </v-tab>
-    </v-tabs>
-
-    <!-- 好友列表 -->
-    <template v-if="activeTab === 'friends'">
-      <v-card v-if="friends.length > 0">
-        <v-list>
-          <v-list-item 
-            v-for="friend in friends" 
-            :key="friend.id"
-            @click="router.push(`/chat/${friend.id}`)"
-            class="cursor-pointer"
-          >
-            <v-list-item-avatar>
-              <v-icon color="primary">mdi-account</v-icon>
-            </v-list-item-avatar>
-            <v-list-item-content>
-              <v-list-item-title>{{ friend.display_name || friend.friend?.username }}</v-list-item-title>
-              <v-list-item-subtitle>@{{ friend.friend?.username }}</v-list-item-subtitle>
-            </v-list-item-content>
-            <v-list-item-actions>
-              <v-btn text color="error" @click.stop="handleDeleteFriend(friend.id)">删除好友</v-btn>
-            </v-list-item-actions>
-          </v-list-item>
-        </v-list>
-      </v-card>
-      
-      <v-card v-else class="text-center py-12">
-        <v-icon size="64" color="grey">mdi-users</v-icon>
-        <p class="mt-4 text-grey">暂无好友</p>
-      </v-card>
-    </template>
-    
-    <!-- 好友请求 -->
-    <template v-if="activeTab === 'requests'">
-      <v-card v-if="requests.length > 0">
-        <v-list>
-          <v-list-item v-for="request in requests" :key="request.id">
-            <v-list-item-avatar>
-              <v-icon color="primary">mdi-account</v-icon>
-            </v-list-item-avatar>
-            <v-list-item-content>
-              <v-list-item-title>{{ request.sender?.display_name || request.sender?.username }}</v-list-item-title>
-              <v-list-item-subtitle v-if="request.message">{{ request.message }}</v-list-item-subtitle>
-            </v-list-item-content>
-            <v-list-item-actions>
-              <v-btn text color="success" @click="handleAccept(request.id)">同意</v-btn>
-              <v-btn text color="error" @click="handleReject(request.id)">拒绝</v-btn>
-            </v-list-item-actions>
-          </v-list-item>
-        </v-list>
-      </v-card>
-      
-      <v-card v-else class="text-center py-12">
-        <v-icon size="64" color="grey">mdi-user-plus</v-icon>
-        <p class="mt-4 text-grey">暂无好友请求</p>
-      </v-card>
-    </template>
-    
-    <!-- 已发送请求 -->
-    <template v-if="activeTab === 'sent'">
-      <v-card v-if="sentRequests.length > 0">
-        <v-list>
-          <v-list-item v-for="request in sentRequests" :key="request.id">
-            <v-list-item-avatar>
-              <v-icon color="primary">mdi-account</v-icon>
-            </v-list-item-avatar>
-            <v-list-item-content>
-              <v-list-item-title>{{ request.receiver?.display_name || request.receiver?.username }}</v-list-item-title>
-              <v-list-item-subtitle>等待对方确认</v-list-item-subtitle>
-            </v-list-item-content>
-            <v-list-item-actions>
-              <v-chip color="warning" text-color="white" size="small">待处理</v-chip>
-            </v-list-item-actions>
-          </v-list-item>
-        </v-list>
-      </v-card>
-      
-      <v-card v-else class="text-center py-12">
-        <v-icon size="64" color="grey">mdi-send</v-icon>
-        <p class="mt-4 text-grey">暂无已发送的好友请求</p>
-      </v-card>
-    </template>
-  </v-container>
-</template>
-
 <style scoped>
-.badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 6px;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: 600;
-  min-width: 18px;
-  height: 18px;
-}
-
-.badge-danger {
-  background-color: #ef4444;
-  color: white;
+.follow-list-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 16px;
 }
 </style>

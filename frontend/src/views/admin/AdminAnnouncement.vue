@@ -1,29 +1,89 @@
+<template>
+  <v-container fluid class="pa-4 pa-md-6">
+    <!-- 公告编辑表单 -->
+    <v-card variant="flat" rounded="lg">
+      <v-card-title class="pb-2">
+        <v-icon start size="20">mdi-bullhorn</v-icon>
+        公告管理
+      </v-card-title>
+
+      <v-card-text>
+        <v-form ref="announcementForm" v-model="formValid">
+          <v-textarea
+            v-model="announcementContent"
+            label="公告内容"
+            placeholder="请输入公告内容..."
+            variant="outlined"
+            density="compact"
+            :rules="[rules.required]"
+            prepend-inner-icon="mdi-text"
+            rows="5"
+            counter
+            :maxlength="500"
+            class="mb-4"
+          />
+
+          <v-alert
+            v-if="announcementContent"
+            type="info"
+            variant="tonal"
+            density="compact"
+            class="mb-4"
+            icon="mdi-information"
+          >
+            公告将显示在网站首页顶部，内容过长可能会影响显示效果。
+          </v-alert>
+        </v-form>
+      </v-card-text>
+
+      <v-card-actions class="pa-4">
+        <v-btn
+          color="primary"
+          variant="flat"
+          @click="saveAnnouncement"
+          :loading="saving"
+          :disabled="!formValid"
+        >
+          <v-icon start>mdi-content-save</v-icon>
+          保存公告
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-container>
+</template>
+
 <script setup>
 import { ref, onMounted } from 'vue'
-import { adminApi, siteApi } from '../../api'
+import { adminAnnouncementApi } from '../../api/admin'
+import { success, error } from '../../utils/modal'
 
-const loading = ref(false)
+const announcementContent = ref('')
+const announcementForm = ref(null)
+const formValid = ref(false)
 const saving = ref(false)
-const content = ref('')
+
+const rules = {
+  required: v => !!v || '此字段为必填项'
+}
 
 const loadAnnouncement = async () => {
-  loading.value = true
   try {
     const response = await adminAnnouncementApi.getAnnouncement()
-    content.value = response.data.content || ''
-  } catch (error) {
-    console.error('加载公告失败:', error)
-  } finally {
-    loading.value = false
+    announcementContent.value = response.data.content || ''
+  } catch (err) {
+    console.error('加载公告失败', err)
+    error('加载公告失败')
   }
 }
 
 const saveAnnouncement = async () => {
   saving.value = true
   try {
-    await adminApi.updateAnnouncement(content.value)
-  } catch (error) {
-    console.error('保存公告失败:', error)
+    await adminAnnouncementApi.updateAnnouncement({ content: announcementContent.value })
+    success('公告保存成功')
+  } catch (err) {
+    console.error('保存公告失败', err)
+    error(err.response?.data?.error || '保存失败')
   } finally {
     saving.value = false
   }
@@ -33,34 +93,3 @@ onMounted(() => {
   loadAnnouncement()
 })
 </script>
-
-<template>
-  <v-container fluid class="pa-0">
-    <!-- 页面标题 -->
-    <div class="mb-6">
-      <h1 class="text-h5 font-weight-bold">公告管理</h1>
-      <p class="text-body-2 text-grey">编辑网站公告内容</p>
-    </div>
-
-    <!-- 公告编辑 -->
-    <v-card>
-      <v-card-title>公告内容</v-card-title>
-      <v-card-text>
-        <v-textarea
-          v-model="content"
-          label="公告内容"
-          rows="10"
-          :loading="loading"
-          placeholder="请输入公告内容..."
-        />
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn color="primary" @click="saveAnnouncement" :loading="saving">
-          <v-icon start>mdi-check</v-icon>
-          保存公告
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-container>
-</template>

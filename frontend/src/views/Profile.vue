@@ -1,295 +1,603 @@
-<script setup>
-import { ref, inject, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { profileApi, articleApi, friendApi, favoriteApi } from '../api'
-import UserAvatar from '../components/UserAvatar.vue'
-
-const router = useRouter()
-const user = inject('user')
-
-const profile = ref(null)
-const articles = ref([])
-const favorites = ref([])
-const following = ref([])
-const followers = ref([])
-const activeTab = ref('articles')
-const isLoading = ref(false)
-
-const loadProfile = async () => {
-  isLoading.value = true
-  try {
-    const response = await profileApi.getProfile()
-    profile.value = response.data
-  } catch (error) {
-    console.error('加载个人信息失败:', error)
-  }
-}
-
-const loadArticles = async () => {
-  try {
-    const response = await articleApi.getMyArticles({ page: 1, page_size: 10 })
-    articles.value = response.data.articles || []
-  } catch (error) {
-    console.error('加载文章失败:', error)
-    articles.value = []
-  }
-}
-
-const loadFavorites = async () => {
-  try {
-    const response = await favoriteApi.getFavorites({ page: 1, page_size: 10 })
-    favorites.value = response.data.articles || []
-  } catch (error) {
-    console.error('加载收藏失败:', error)
-    favorites.value = []
-  }
-}
-
-const loadFollowing = async () => {
-  try {
-    const response = await friendApi.getFriends()
-    following.value = response.data?.friends || []
-  } catch (error) {
-    console.error('加载关注列表失败:', error)
-    following.value = []
-  }
-}
-
-const loadFollowers = async () => {
-  try {
-    const response = await friendApi.getRequests()
-    followers.value = response.data?.requests || []
-  } catch (error) {
-    console.error('加载粉丝列表失败:', error)
-    followers.value = []
-  }
-}
-
-const handleFollow = async (userId) => {
-  try {
-    await friendApi.sendRequest(userId)
-    loadFollowers()
-  } catch (error) {
-    console.error('关注失败:', error)
-  }
-}
-
-const handleUnfollow = async (userId) => {
-  try {
-    await friendApi.deleteFriend(userId)
-    loadFollowing()
-  } catch (error) {
-    console.error('取消关注失败:', error)
-  }
-}
-
-const handleTabChange = async (tab) => {
-  activeTab.value = tab
-  if (tab === 'favorites' && favorites.value.length === 0) {
-    await loadFavorites()
-  } else if (tab === 'following' && following.value.length === 0) {
-    await loadFollowing()
-  } else if (tab === 'followers' && followers.value.length === 0) {
-    await loadFollowers()
-  }
-}
-
-const formatTime = (timeStr) => {
-  const date = new Date(timeStr)
-  return date.toLocaleDateString('zh-CN')
-}
-
-onMounted(() => {
-  if (!user.value) {
-    router.push('/login')
-    return
-  }
-  loadProfile()
-  loadArticles()
-  loadFavorites()
-  loadFollowing()
-  loadFollowers()
-})
-</script>
-
 <template>
-  <v-container class="py-6" fluid>
+  <v-row v-if="user">
     <!-- 用户信息卡片 -->
-    <v-card class="profile-card mb-6">
-      <v-card-text class="text-center pa-6">
-        <UserAvatar :user="profile" :size="100" class="mb-4" />
-        <h2 class="text-h5 font-weight-bold text-grey-darken-3 mb-1">
-          {{ profile?.username || user?.username || '用户' }}
-        </h2>
-        <p class="text-body-2 text-grey mb-4">{{ profile?.email || user?.email || '' }}</p>
+    <v-col cols="12" md="4">
+      <v-card class="pa-6 text-center" elevation="2">
+        <v-avatar size="150" class="mb-4">
+          <UserAvatar :user="user" :size="150" />
+        </v-avatar>
+        
+        <div class="mb-4">
+          <div class="text-h5 font-weight-bold mb-1">{{ user.display_name }}</div>
+          <div class="text-body-2 text-medium-emphasis">@{{ user.username }}</div>
+          <v-chip v-if="user.role === 'admin'" color="error" size="small" class="mt-2">
+            <v-icon start size="small">mdi-shield-crown</v-icon>
+            管理员
+          </v-chip>
+        </div>
 
-        <v-row justify="center" class="stats-row">
-          <v-col cols="4" class="text-center">
-            <div class="text-h6 font-weight-bold text-primary">{{ articles.length }}</div>
-            <div class="text-caption text-grey">文章</div>
+        <v-btn v-if="isOwnProfile" variant="outlined" color="primary" @click="changeAvatar" block>
+          <v-icon start>mdi-camera</v-icon>
+          更换头像
+        </v-btn>
+        <v-btn v-else variant="tonal" :color="followStatus.is_following ? 'default' : 'primary'" @click="handleFollow" block>
+          <v-icon start>{{ followStatus.is_following ? 'mdi-check' : 'mdi-plus' }}</v-icon>
+          {{ followStatus.is_following ? '已关注' : followStatus.is_followed ? '回关' : '关注' }}
+        </v-btn>
+
+        <v-divider class="my-4"></v-divider>
+
+        <!-- 统计数据 -->
+        <v-row dense>
+          <v-col cols="4" class="text-center cursor-pointer" @click="goToFollowing">
+            <div class="text-h6 font-weight-bold">{{ followingCount }}</div>
+            <div class="text-caption text-medium-emphasis">关注</div>
+          </v-col>
+          <v-col cols="4" class="text-center cursor-pointer" @click="goToFollowers">
+            <div class="text-h6 font-weight-bold">{{ followersCount }}</div>
+            <div class="text-caption text-medium-emphasis">粉丝</div>
           </v-col>
           <v-col cols="4" class="text-center">
-            <div class="text-h6 font-weight-bold text-primary">{{ following.length }}</div>
-            <div class="text-caption text-grey">关注</div>
-          </v-col>
-          <v-col cols="4" class="text-center">
-            <div class="text-h6 font-weight-bold text-primary">{{ followers.length }}</div>
-            <div class="text-caption text-grey">粉丝</div>
+            <div class="text-h6 font-weight-bold">{{ articleCount }}</div>
+            <div class="text-caption text-medium-emphasis">文章</div>
           </v-col>
         </v-row>
-      </v-card-text>
-    </v-card>
 
-    <!-- Tab切换 -->
-    <v-tabs v-model="activeTab" background-color="transparent" color="primary" centered class="mb-4">
-      <v-tab value="articles" @click="handleTabChange('articles')">我的文章</v-tab>
-      <v-tab value="favorites" @click="handleTabChange('favorites')">我的收藏</v-tab>
-      <v-tab value="following" @click="handleTabChange('following')">我关注的</v-tab>
-      <v-tab value="followers" @click="handleTabChange('followers')">我的粉丝</v-tab>
-    </v-tabs>
+        <v-divider class="my-4"></v-divider>
 
-    <!-- 我的文章 -->
-    <v-card v-if="activeTab === 'articles'" class="article-list-card">
-      <div v-if="articles.length > 0">
-        <v-list lines="two">
+        <!-- 用户信息列表 -->
+        <v-list density="compact" class="text-left">
+          <v-list-item prepend-icon="mdi-qqchat">
+            <v-list-item-title>QQ号：{{ user.qq_number || '未设置' }}</v-list-item-title>
+          </v-list-item>
+          <v-list-item prepend-icon="mdi-pencil">
+            <v-list-item-title class="whitespace-pre-line">签名：{{ user.signature || '暂无签名' }}</v-list-item-title>
+          </v-list-item>
+          <v-list-item prepend-icon="mdi-calendar">
+            <v-list-item-title>注册时间：{{ formatDate(user.created_at) }}</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-card>
+    </v-col>
+
+    <!-- 文章和编辑资料 -->
+    <v-col cols="12" md="8">
+      <!-- 编辑资料卡片 -->
+      <v-card v-if="isOwnProfile" class="pa-6 mb-4" elevation="2">
+        <v-card-title class="d-flex align-center mb-4">
+          <v-icon class="mr-2">mdi-account-edit</v-icon>
+          编辑资料
+        </v-card-title>
+        
+        <v-form @submit.prevent="updateProfile">
+          <v-text-field
+            v-model="editForm.display_name"
+            label="显示名称"
+            variant="outlined"
+            prepend-inner-icon="mdi-card-account-details"
+            class="mb-4"
+          ></v-text-field>
+          
+          <v-textarea
+            v-model="editForm.signature"
+            label="个性化签名"
+            variant="outlined"
+            rows="3"
+            class="mb-4"
+            hint="最多200个字符"
+            persistent-hint
+            counter="200"
+          ></v-textarea>
+          
+          <v-btn type="submit" color="primary" prepend-icon="mdi-content-save">
+            保存修改
+          </v-btn>
+        </v-form>
+      </v-card>
+
+      <!-- 文章列表 -->
+      <v-card class="pa-6" elevation="2">
+        <v-card-title class="d-flex align-center mb-4">
+          <v-icon class="mr-2">mdi-file-document</v-icon>
+          {{ isOwnProfile ? '我的文章' : '他的文章' }}
+          <v-spacer></v-spacer>
+        </v-card-title>
+
+        <v-tabs v-if="isOwnProfile" v-model="activeTab" color="primary" class="mb-4">
+          <v-tab value="published">已发布 ({{ myArticles.length }})</v-tab>
+          <v-tab value="drafts">草稿 ({{ drafts.length }})</v-tab>
+        </v-tabs>
+
+        <v-window v-if="isOwnProfile" v-model="activeTab">
+          <v-window-item value="published">
+            <div v-if="myArticles.length === 0" class="text-center pa-8">
+              <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-file-document-outline</v-icon>
+              <div class="text-body-1 text-medium-emphasis">暂无文章</div>
+              <v-btn color="primary" class="mt-4" to="/create">
+                <v-icon start>mdi-pencil</v-icon>
+                写文章
+              </v-btn>
+            </div>
+
+            <v-list v-else lines="two" class="pa-0">
+              <v-list-item
+                v-for="article in myArticles"
+                :key="article.id"
+                class="px-0"
+              >
+                <template v-slot:prepend>
+                  <UserAvatar :user="article.user" :size="50" />
+                </template>
+
+                <v-list-item-title class="font-weight-bold mb-1">
+                  <router-link :to="'/article/' + article.id" class="text-decoration-none text-primary">
+                    {{ article.title }}
+                  </router-link>
+                </v-list-item-title>
+                
+                <v-list-item-subtitle class="d-flex align-center flex-wrap gap-2">
+                  <span>
+                    <v-icon size="x-small">mdi-clock</v-icon>
+                    {{ formatDate(article.created_at) }}
+                  </span>
+                  <span>
+                    <v-icon size="x-small" class="text-error">mdi-heart</v-icon>
+                    {{ article.like_count }}
+                  </span>
+                  <span>
+                    <v-icon size="x-small">mdi-eye</v-icon>
+                    {{ article.view_count }}
+                  </span>
+                  <v-chip v-if="article.category" size="x-small" color="primary" variant="flat">
+                    {{ article.category.name }}
+                  </v-chip>
+                </v-list-item-subtitle>
+
+                <template v-slot:append>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    :to="'/create?id=' + article.id"
+                    color="primary"
+                    icon="mdi-pencil"
+                  ></v-btn>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    color="error"
+                    @click="deleteArticle(article.id)"
+                    icon="mdi-delete"
+                  ></v-btn>
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-window-item>
+
+          <v-window-item value="drafts">
+            <div v-if="drafts.length === 0" class="text-center pa-8">
+              <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-file-edit-outline</v-icon>
+              <div class="text-body-1 text-medium-emphasis">暂无草稿</div>
+              <v-btn color="primary" class="mt-4" to="/create">
+                <v-icon start>mdi-pencil</v-icon>
+                写文章
+              </v-btn>
+            </div>
+
+            <v-list v-else lines="two" class="pa-0">
+              <v-list-item
+                v-for="article in drafts"
+                :key="article.id"
+                class="px-0"
+              >
+                <template v-slot:prepend>
+                  <v-icon color="grey">mdi-file-document-outline</v-icon>
+                </template>
+
+                <v-list-item-title class="font-weight-bold mb-1">
+                  {{ article.title }}
+                </v-list-item-title>
+                
+                <v-list-item-subtitle class="d-flex align-center flex-wrap gap-2">
+                  <span>
+                    <v-icon size="x-small">mdi-clock</v-icon>
+                    最后修改：{{ formatDate(article.updated_at) }}
+                  </span>
+                  <v-chip v-if="article.category" size="x-small" color="default" variant="flat">
+                    {{ article.category.name }}
+                  </v-chip>
+                </v-list-item-subtitle>
+
+                <template v-slot:append>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    :to="'/create?id=' + article.id"
+                    color="primary"
+                    icon="mdi-pencil"
+                  ></v-btn>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    color="success"
+                    @click="publishDraft(article.id)"
+                    icon="mdi-send"
+                  ></v-btn>
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    color="error"
+                    @click="deleteDraft(article.id)"
+                    icon="mdi-delete"
+                  ></v-btn>
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-window-item>
+        </v-window>
+
+        <div v-if="myArticles.length === 0" class="text-center pa-8">
+          <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-file-document-outline</v-icon>
+          <div class="text-body-1 text-medium-emphasis">暂无文章</div>
+        </div>
+
+        <v-list v-else lines="two" class="pa-0">
           <v-list-item
-            v-for="article in articles"
+            v-for="article in myArticles"
             :key="article.id"
-            @click="router.push(`/article/${article.id}`)"
-            class="article-item"
+            class="px-0"
           >
-            <template #prepend>
-              <v-avatar size="48" color="primary-lighten-2" class="mr-3">
-                <v-img v-if="article.cover" :src="article.cover"></v-img>
-                <v-icon v-else color="white">mdi-file-document-outline</v-icon>
-              </v-avatar>
+            <template v-slot:prepend>
+              <UserAvatar :user="article.user" :size="50" />
             </template>
-            <v-list-item-title class="font-weight-medium mb-1">{{ article.title }}</v-list-item-title>
-            <v-list-item-subtitle class="text-grey">
-              {{ formatTime(article.created_at) }} · {{ article.view_count || 0 }} 阅读
+
+            <v-list-item-title class="font-weight-bold mb-1">
+              <router-link :to="'/article/' + article.id" class="text-decoration-none text-primary">
+                {{ article.title }}
+              </router-link>
+            </v-list-item-title>
+            
+            <v-list-item-subtitle class="d-flex align-center flex-wrap gap-2">
+              <span>
+                <v-icon size="x-small">mdi-clock</v-icon>
+                {{ formatDate(article.created_at) }}
+              </span>
+              <span>
+                <v-icon size="x-small" class="text-error">mdi-heart</v-icon>
+                {{ article.like_count }}
+              </span>
+              <span>
+                <v-icon size="x-small">mdi-eye</v-icon>
+                {{ article.view_count }}
+              </span>
+              <v-chip v-if="article.category" size="x-small" color="primary" variant="flat">
+                {{ article.category.name }}
+              </v-chip>
             </v-list-item-subtitle>
-            <template #append>
-              <v-icon color="grey-lighten-1">mdi-chevron-right</v-icon>
-            </template>
           </v-list-item>
         </v-list>
-      </div>
-      <v-card-text v-else class="text-center py-12 empty-state">
-        <v-icon size="64" color="primary-lighten-2" class="mb-4">mdi-file-document-outline</v-icon>
-        <p class="text-body-1 text-grey mb-4">暂无文章</p>
-        <v-btn color="primary" to="/create">发布文章</v-btn>
-      </v-card-text>
-    </v-card>
+      </v-card>
+    </v-col>
+  </v-row>
 
-    <!-- 我的收藏 -->
-    <v-card v-if="activeTab === 'favorites'" class="article-list-card">
-      <div v-if="favorites.length > 0">
-        <v-list lines="two">
-          <v-list-item
-            v-for="article in favorites"
-            :key="article.id"
-            @click="router.push(`/article/${article.id}`)"
-            class="article-item"
-          >
-            <template #prepend>
-              <v-avatar size="48" color="error-lighten-2" class="mr-3">
-                <v-icon color="white">mdi-heart</v-icon>
-              </v-avatar>
-            </template>
-            <v-list-item-title class="font-weight-medium mb-1">{{ article.title }}</v-list-item-title>
-            <v-list-item-subtitle class="text-grey">
-              {{ article.user?.display_name || article.user?.username || '未知作者' }} · {{ formatTime(article.created_at) }}
-            </v-list-item-subtitle>
-            <template #append>
-              <v-icon color="grey-lighten-1">mdi-chevron-right</v-icon>
-            </template>
-          </v-list-item>
-        </v-list>
-      </div>
-      <v-card-text v-else class="text-center py-12 empty-state">
-        <v-icon size="64" color="primary-lighten-2" class="mb-4">mdi-heart-outline</v-icon>
-        <p class="text-body-1 text-grey">暂无收藏</p>
-      </v-card-text>
-    </v-card>
-
-    <!-- 我关注的 -->
-    <v-card v-if="activeTab === 'following'" class="article-list-card">
-      <div v-if="following.length > 0">
-        <v-list lines="two">
-          <v-list-item
-            v-for="u in following"
-            :key="u.id"
-            class="article-item"
-          >
-            <template #prepend>
-              <UserAvatar :user="u" :size="48" class="mr-3" />
-            </template>
-            <v-list-item-title class="font-weight-medium">{{ u.username }}</v-list-item-title>
-            <v-list-item-subtitle class="text-grey">{{ u.bio || '暂无简介' }}</v-list-item-subtitle>
-            <template #append>
-              <v-btn text color="error" size="small" @click.stop="handleUnfollow(u.id)">取消关注</v-btn>
-            </template>
-          </v-list-item>
-        </v-list>
-      </div>
-      <v-card-text v-else class="text-center py-12 empty-state">
-        <v-icon size="64" color="primary-lighten-2" class="mb-4">mdi-account-multiple-outline</v-icon>
-        <p class="text-body-1 text-grey">暂无关注</p>
-      </v-card-text>
-    </v-card>
-
-    <!-- 我的粉丝 -->
-    <v-card v-if="activeTab === 'followers'" class="article-list-card">
-      <div v-if="followers.length > 0">
-        <v-list lines="two">
-          <v-list-item
-            v-for="u in followers"
-            :key="u.id"
-            class="article-item"
-          >
-            <template #prepend>
-              <UserAvatar :user="u" :size="48" class="mr-3" />
-            </template>
-            <v-list-item-title class="font-weight-medium">{{ u.username }}</v-list-item-title>
-            <v-list-item-subtitle class="text-grey">{{ u.bio || '暂无简介' }}</v-list-item-subtitle>
-            <template #append>
-              <v-btn text color="primary" size="small" @click.stop="handleFollow(u.id)">关注</v-btn>
-            </template>
-          </v-list-item>
-        </v-list>
-      </div>
-      <v-card-text v-else class="text-center py-12 empty-state">
-        <v-icon size="64" color="primary-lighten-2" class="mb-4">mdi-account-group-outline</v-icon>
-        <p class="text-body-1 text-grey">暂无粉丝</p>
-      </v-card-text>
-    </v-card>
+  <!-- 未登录提示 -->
+  <v-container v-else-if="!isLoggedIn" fluid class="pa-4 fill-height">
+    <v-row justify="center" align="center" class="fill-height">
+      <v-col cols="12" sm="8" md="6" lg="4">
+        <v-card class="text-center pa-8" elevation="2">
+          <v-icon size="80" color="grey-lighten-1" class="mb-4">mdi-account-lock</v-icon>
+          <div class="text-h6 mb-4">登录后可查看个人中心</div>
+          <div class="text-body-2 text-medium-emphasis mb-6">
+            登录后您可以编辑个人资料、查看发布的文章、与其他人互动
+          </div>
+          <div class="d-flex gap-2 justify-center">
+            <v-btn color="primary" to="/login" prepend-icon="mdi-login">
+              登录
+            </v-btn>
+            <v-btn variant="outlined" to="/register" prepend-icon="mdi-account-plus">
+              注册
+            </v-btn>
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
   </v-container>
+
+  <!-- 加载状态 -->
+  <div v-else class="d-flex justify-center align-center" style="min-height: 60vh;">
+    <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+  </div>
 </template>
 
-<style scoped>
-.profile-card {
-  border-radius: 16px !important;
-  border: 1px solid rgba(149, 117, 205, 0.12) !important;
-}
+<script>
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import api, { articleApi } from '../api'
+import UserAvatar from '../components/UserAvatar.vue'
 
-.article-list-card {
-  border-radius: 16px !important;
-  border: 1px solid rgba(149, 117, 205, 0.08) !important;
-}
+export default {
+  name: 'Profile',
+  components: {
+    UserAvatar
+  },
+  setup() {
+    const route = useRoute()
+    const router = useRouter()
+    const token = ref(localStorage.getItem('token'))
+    const user = ref(null)
+    const myArticles = ref([])
+    const drafts = ref([])
+    const activeTab = ref('published')
+    const editForm = ref({
+      display_name: '',
+      signature: ''
+    })
+    const followStatus = ref({
+      is_following: false,
+      is_followed: false,
+      mutual: false
+    })
+    const targetUserId = computed(() => route.query.id || route.query.userId)
+    const currentUser = ref(null)
+    const followingCount = ref(0)
+    const followersCount = ref(0)
+    const articleCount = ref(0)
+    const isOwnProfile = computed(() => {
+      return !targetUserId.value || (currentUser.value && currentUser.value.id === user.value?.id)
+    })
+    const isLoggedIn = computed(() => !!token.value)
 
-.article-item {
-  transition: background-color 0.2s ease;
-}
+    const loadProfile = async () => {
+      if (!token.value && !targetUserId.value) return
+      
+      try {
+        if (targetUserId.value) {
+          const response = await api.get(`/users/${targetUserId.value}`)
+          user.value = response.data
+        } else {
+          const response = await api.get('/profile')
+          user.value = response.data
+          editForm.value.display_name = user.value.display_name
+          editForm.value.signature = user.value.signature || ''
+        }
+      } catch (error) {
+        console.error('加载用户信息失败', error)
+        if (targetUserId.value) {
+          // 查看他人资料失败，保持加载状态
+        } else {
+          router.push('/')
+        }
+      }
+    }
 
-.article-item:hover {
-  background-color: rgba(149, 117, 205, 0.04);
-}
+    const loadFollowStatus = async () => {
+      if (!user.value || isOwnProfile.value || !currentUser.value) return
 
-.empty-state {
-  background: linear-gradient(135deg, #FAFAFA 0%, #F3E5F5 100%);
-}
+      try {
+        const response = await api.get(`/follow/status/${user.value.id}`)
+        followStatus.value = response.data
+      } catch (error) {
+        console.error('加载关注状态失败', error)
+      }
+    }
 
-.stats-row {
-  margin-top: 16px;
+    const handleFollow = async () => {
+      if (!currentUser.value) {
+        router.push('/login')
+        return
+      }
+
+      try {
+        if (followStatus.value.is_following) {
+          await api.delete(`/follow/${user.value.id}`)
+          followStatus.value.is_following = false
+          followStatus.value.mutual = false
+        } else {
+          await api.post(`/follow/${user.value.id}`)
+          followStatus.value.is_following = true
+          followStatus.value.mutual = followStatus.value.is_followed
+        }
+      } catch (error) {
+        console.error('关注失败', error)
+      }
+    }
+
+    const goToFollowing = () => {
+      if (user.value) {
+        router.push({ path: '/follow-list', query: { id: user.value.id } })
+      }
+    }
+
+    const goToFollowers = () => {
+      if (user.value) {
+        router.push({ path: '/follow-list', query: { id: user.value.id, tab: 'followers' } })
+      }
+    }
+
+    const loadFollowCounts = async () => {
+      if (!user.value) return
+      try {
+        const targetId = targetUserId.value || user.value.id
+        const [followingRes, followersRes] = await Promise.all([
+          api.get(`/users/${targetId}/following`),
+          api.get(`/users/${targetId}/followers`)
+        ])
+        followingCount.value = followingRes.data.following?.length || 0
+        followersCount.value = followersRes.data.followers?.length || 0
+      } catch (error) {
+        console.error('加载关注数据失败', error)
+      }
+    }
+
+    const loadMyArticles = async () => {
+      try {
+        if (targetUserId.value) {
+          const response = await api.get(`/users/${targetUserId.value}/articles`)
+          myArticles.value = response.data.articles || []
+          articleCount.value = myArticles.value.length
+        } else {
+          const response = await api.get('/articles', {
+            params: { page: 1, page_size: 50 }
+          })
+          if (user.value) {
+            myArticles.value = response.data.articles.filter(
+              a => a.user_id === user.value.id
+            )
+            articleCount.value = myArticles.value.length
+          }
+        }
+      } catch (error) {
+        console.error('加载文章失败', error)
+      }
+    }
+
+    const loadDrafts = async () => {
+      if (!isOwnProfile.value) return
+      try {
+        const response = await articleApi.getDrafts()
+        drafts.value = response.data.articles || []
+      } catch (error) {
+        console.error('加载草稿失败', error)
+      }
+    }
+
+    const publishDraft = async (id) => {
+      if (!confirm('确定要发布这篇草稿吗？')) return
+      try {
+        await articleApi.publishDraft(id)
+        await loadDrafts()
+        await loadMyArticles()
+        alert('发布成功')
+      } catch (error) {
+        console.error('发布失败', error)
+        alert('发布失败')
+      }
+    }
+
+    const deleteDraft = async (id) => {
+      if (!confirm('确定要删除这篇草稿吗？')) return
+      try {
+        await api.delete(`/articles/${id}`)
+        await loadDrafts()
+        alert('删除成功')
+      } catch (error) {
+        console.error('删除失败', error)
+        alert('删除失败')
+      }
+    }
+
+    const updateProfile = async () => {
+      try {
+        await api.put('/profile', {
+          display_name: editForm.value.display_name,
+          signature: editForm.value.signature
+        })
+        user.value.display_name = editForm.value.display_name
+        user.value.signature = editForm.value.signature
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+        storedUser.display_name = editForm.value.display_name
+        storedUser.signature = editForm.value.signature
+        localStorage.setItem('user', JSON.stringify(storedUser))
+        alert('更新成功')
+      } catch (error) {
+        console.error('更新失败', error)
+        alert('更新失败')
+      }
+    }
+
+    const changeAvatar = () => {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'image/*'
+      input.onchange = async (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+
+        const formData = new FormData()
+        formData.append('avatar', file)
+
+        try {
+          const response = await api.post('/upload/avatar', formData)
+          user.value.avatar = response.data.url
+          const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+          storedUser.avatar = response.data.url
+          localStorage.setItem('user', JSON.stringify(storedUser))
+          alert('头像更新成功')
+        } catch (error) {
+          console.error('上传头像失败', error)
+          alert('上传失败')
+        }
+      }
+      input.click()
+    }
+
+    const deleteArticle = async (id) => {
+      if (!confirm('确定要删除这篇文章吗？')) return
+
+      const userRole = user.value?.role
+      if (userRole !== 'admin') {
+        const reason = prompt('请输入删除原因（管理员将审核）：')
+        if (!reason) return
+
+        try {
+          await api.delete(`/articles/${id}`, { data: { reason } })
+          alert('删除申请已提交，等待管理员审核')
+          myArticles.value = myArticles.value.filter(a => a.id !== id)
+        } catch (error) {
+          console.error('提交删除申请失败', error)
+          alert('提交失败')
+        }
+      } else {
+        try {
+          await api.delete(`/articles/${id}`)
+          myArticles.value = myArticles.value.filter(a => a.id !== id)
+          alert('删除成功')
+        } catch (error) {
+          console.error('删除失败', error)
+          alert('删除失败')
+        }
+      }
+    }
+
+    const formatDate = (date) => {
+      return new Date(date).toLocaleString('zh-CN')
+    }
+
+    onMounted(() => {
+      const storedUser = localStorage.getItem('user')
+      if (storedUser) {
+        currentUser.value = JSON.parse(storedUser)
+      }
+      loadProfile().then(() => {
+        loadMyArticles()
+        loadDrafts()
+        loadFollowStatus()
+        loadFollowCounts()
+      })
+    })
+
+    return {
+      user,
+      myArticles,
+      drafts,
+      activeTab,
+      editForm,
+      updateProfile,
+      changeAvatar,
+      deleteArticle,
+      loadDrafts,
+      publishDraft,
+      deleteDraft,
+      formatDate,
+      followStatus,
+      handleFollow,
+      goToFollowing,
+      goToFollowers,
+      followingCount,
+      followersCount,
+      articleCount,
+      isOwnProfile,
+      isLoggedIn
+    }
+  }
 }
-</style>
+</script>

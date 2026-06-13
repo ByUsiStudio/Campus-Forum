@@ -1,162 +1,263 @@
-<script setup>
-import { ref, onMounted } from 'vue'
-import { adminApi, titleApi } from '../../api'
+<template>
+  <v-container fluid class="pa-4 pa-md-6">
+    <TitlesPanel
+      :titles="titles"
+      :users="users"
+      :loading="loading"
+      @add-title="addTitle"
+      @grant="grantTitle"
+      @revoke="revokeTitle"
+      @delete-title="handleDeleteTitle"
+      @refresh="loadTitles"
+    />
+  </v-container>
 
-const loading = ref(false)
+  <v-dialog v-model="grantDialog.show" :max-width="isMobile ? '100%' : '500'" :fullscreen="isMobile" transition="dialog-bottom-transition">
+    <v-card class="dialog-card">
+      <v-card-title class="dialog-title">
+        <v-avatar color="primary" size="40" class="mr-3">
+          <v-icon color="white" size="20">mdi-medal</v-icon>
+        </v-avatar>
+        <span>授予头衔</span>
+        <v-spacer />
+        <v-btn v-if="isMobile" icon variant="text" @click="grantDialog.show = false">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-card-title>
+      <v-card-text class="dialog-body">
+        <v-form ref="grantForm" v-model="formValid">
+          <v-select
+            v-model="grantDialog.selectedUserId"
+            :items="usersForSelect"
+            item-title="display_name"
+            item-value="id"
+            label="选择用户"
+            variant="outlined"
+            density="comfortable"
+            :rules="[rules.required]"
+            prepend-inner-icon="mdi-account"
+            class="mb-2"
+          >
+            <template #label>
+              <span class="text-body-2">选择用户</span>
+            </template>
+            <template #item="{ props, item }">
+              <v-list-item v-bind="props" :title="item.raw.display_name">
+                <template #prepend>
+                  <v-avatar size="32" class="mr-3">
+                    <v-img :src="item.raw.avatar || '/default-avatar.png'"></v-img>
+                  </v-avatar>
+                </template>
+                <template #subtitle>
+                  <span class="text-caption">@{{ item.raw.username }}</span>
+                </template>
+              </v-list-item>
+            </template>
+          </v-select>
+        </v-form>
+      </v-card-text>
+      <v-card-actions class="dialog-actions" :class="{ 'flex-column': isMobile }">
+        <v-btn variant="text" @click="grantDialog.show = false" :block="isMobile" class="mb-2 mb-md-0">
+          取消
+        </v-btn>
+        <v-btn
+          color="primary"
+          variant="flat"
+          @click="handleGrant"
+          :disabled="!formValid"
+          :block="isMobile"
+        >
+          <v-icon class="mr-1">mdi-check</v-icon>
+          确认授予
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import TitlesPanel from './TitlesPanel.vue'
+import { adminTitleApi, adminUserApi } from '../../api/admin'
+import { confirm, success, error } from '../../utils/modal'
+
 const titles = ref([])
-const editDialog = ref(false)
-const createDialog = ref(false)
-const selectedTitle = ref(null)
-const editForm = ref({ name: '', description: '', color: '#6200EE' })
-const createForm = ref({ name: '', description: '', color: '#6200EE' })
-const saving = ref(false)
+const users = ref([])
+const loading = ref(true)
+const grantForm = ref(null)
+const formValid = ref(false)
+const isMobile = ref(false)
+
+const grantDialog = ref({
+  show: false,
+  titleId: null,
+  selectedUserId: null
+})
+
+const usersForSelect = computed(() => {
+  return users.value.map(u => ({
+    id: u.id,
+    display_name: u.display_name,
+    username: u.username,
+    avatar: u.avatar
+  }))
+})
+
+const rules = {
+  required: v => !!v || '此字段为必填项'
+}
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 600
+}
 
 const loadTitles = async () => {
   loading.value = true
   try {
-    const response = await titleApi.getTitles()
+    const response = await adminTitleApi.getTitles()
     titles.value = response.data.titles || []
-  } catch (error) {
-    console.error('加载头衔失败:', error)
+  } catch (err) {
+    console.error('加载头衔列表失败', err)
   } finally {
     loading.value = false
   }
 }
 
-const openCreateDialog = () => {
-  createForm.value = { name: '', description: '', color: '#6200EE' }
-  createDialog.value = true
-}
-
-const createTitle = async () => {
-  saving.value = true
+const loadUsers = async () => {
   try {
-    await titleApi.createTitle(createForm.value)
-    createDialog.value = false
-    loadTitles()
-  } catch (error) {
-    console.error('创建头衔失败:', error)
-  } finally {
-    saving.value = false
+    const response = await adminUserApi.getUsers()
+    users.value = response.data.users || []
+  } catch (err) {
+    console.error('加载用户列表失败', err)
   }
 }
 
-const editTitle = (title) => {
-  selectedTitle.value = title
-  editForm.value = { name: title.name, description: title.description || '', color: title.color || '#6200EE' }
-  editDialog.value = true
-}
+const addTitle = async () => {
+  const titleName = prompt('请输入头衔名称：')
+  if (!titleName) return
 
-const saveTitle = async () => {
-  saving.value = true
   try {
-    await titleApi.updateTitle(selectedTitle.value.id, editForm.value)
-    editDialog.value = false
+    await adminTitleApi.createTitle({ name: titleName })
+    success('添加成功')
     loadTitles()
-  } catch (error) {
-    console.error('更新头衔失败:', error)
-  } finally {
-    saving.value = false
+  } catch (err) {
+    console.error('添加头衔失败', err)
+    error(err.response?.data?.error || '添加失败')
   }
 }
 
-const deleteTitle = async (title) => {
-  if (!confirm(`确定要删除头衔 ${title.name} 吗？`)) return
-  
-  loading.value = true
+const grantTitle = (titleId) => {
+  grantDialog.value = {
+    show: true,
+    titleId,
+    selectedUserId: null
+  }
+}
+
+const handleGrant = async () => {
+  if (!grantDialog.value.selectedUserId) {
+    error('请选择用户')
+    return
+  }
+
   try {
-    await titleApi.deleteTitle(title.id)
+    await adminTitleApi.grantTitle({
+      title_id: grantDialog.value.titleId,
+      user_id: grantDialog.value.selectedUserId
+    })
+    success('授予成功')
+    grantDialog.value.show = false
     loadTitles()
-  } catch (error) {
-    console.error('删除头衔失败:', error)
-  } finally {
-    loading.value = false
+  } catch (err) {
+    console.error('授予头衔失败', err)
+    error(err.response?.data?.error || '授予失败')
+  }
+}
+
+const revokeTitle = async (titleId, userId) => {
+  const confirmed = await confirm('确定要撤销此头衔吗？')
+  if (!confirmed) return
+
+  try {
+    await adminTitleApi.revokeTitle({ title_id: titleId, user_id: userId })
+    success('撤销成功')
+    loadTitles()
+  } catch (err) {
+    console.error('撤销头衔失败', err)
+    error(err.response?.data?.error || '撤销失败')
+  }
+}
+
+const handleDeleteTitle = async (title) => {
+  const confirmed = await confirm(`确定要删除头衔 "${title.name}" 吗？此操作不可恢复。`)
+  if (!confirmed) return
+
+  try {
+    await adminTitleApi.deleteTitle(title.id)
+    success('删除成功')
+    loadTitles()
+  } catch (err) {
+    console.error('删除头衔失败', err)
+    error(err.response?.data?.error || '删除失败')
   }
 }
 
 onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
   loadTitles()
+  loadUsers()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
 })
 </script>
 
-<template>
-  <v-container fluid class="pa-0">
-    <!-- 页面标题 -->
-    <div class="mb-6">
-      <h1 class="text-h5 font-weight-bold">头衔管理</h1>
-      <p class="text-body-2 text-grey">管理用户头衔，创建、编辑、删除头衔</p>
-    </div>
+<style scoped>
+.dialog-card {
+  border-radius: 20px !important;
+  overflow: hidden;
+}
 
-    <!-- 操作按钮 -->
-    <v-card class="mb-4">
-      <v-card-text>
-        <v-btn color="primary" @click="openCreateDialog">
-          <v-icon start>mdi-plus</v-icon>
-          新建头衔
-        </v-btn>
-        <v-btn class="ml-2" @click="loadTitles" :loading="loading">
-          <v-icon start>mdi-refresh</v-icon>
-          刷新
-        </v-btn>
-      </v-card-text>
-    </v-card>
+@media (max-width: 599px) {
+  .dialog-card {
+    border-radius: 0 !important;
+  }
+}
 
-    <!-- 头衔列表 -->
-    <v-card>
-      <v-card-title>头衔列表</v-card-title>
-      <v-list>
-        <v-list-item v-for="title in titles" :key="title.id">
-          <v-list-item-title>
-            <v-chip :color="title.color" size="small">{{ title.name }}</v-chip>
-          </v-list-item-title>
-          <v-list-item-subtitle>{{ title.description || '无描述' }}</v-list-item-subtitle>
-          <v-list-item-actions>
-            <v-btn icon variant="text" size="small" @click="editTitle(title)">
-              <v-icon>mdi-pencil</v-icon>
-            </v-btn>
-            <v-btn icon variant="text" size="small" color="error" @click="deleteTitle(title)">
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
-          </v-list-item-actions>
-        </v-list-item>
-      </v-list>
-      <v-card-text v-if="titles.length === 0" class="text-center text-grey py-8">
-        暂无头衔
-      </v-card-text>
-    </v-card>
+.dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 24px 16px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+}
 
-    <!-- 创建头衔对话框 -->
-    <v-dialog v-model="createDialog" max-width="400">
-      <v-card>
-        <v-card-title>新建头衔</v-card-title>
-        <v-card-text>
-          <v-text-field v-model="createForm.name" label="头衔名称" class="mb-3" />
-          <v-textarea v-model="createForm.description" label="头衔描述" rows="2" class="mb-3" />
-          <v-text-field v-model="createForm.color" label="颜色" type="color" />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn text @click="createDialog = false">取消</v-btn>
-          <v-btn color="primary" @click="createTitle" :loading="saving">创建</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+.dialog-body {
+  padding: 24px !important;
+}
 
-    <!-- 编辑头衔对话框 -->
-    <v-dialog v-model="editDialog" max-width="400">
-      <v-card>
-        <v-card-title>编辑头衔</v-card-title>
-        <v-card-text>
-          <v-text-field v-model="editForm.name" label="头衔名称" class="mb-3" />
-          <v-textarea v-model="editForm.description" label="头衔描述" rows="2" class="mb-3" />
-          <v-text-field v-model="editForm.color" label="颜色" type="color" />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn text @click="editDialog = false">取消</v-btn>
-          <v-btn color="primary" @click="saveTitle" :loading="saving">保存</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </v-container>
-</template>
+.dialog-actions {
+  padding: 16px 24px 24px;
+  gap: 12px;
+}
+
+:deep(.v-field) {
+  border-radius: 12px;
+}
+
+:deep(.v-field--outlined .v-field__outline) {
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+:deep(.v-field--focused .v-field__outline) {
+  border-color: rgb(var(--v-theme-primary));
+}
+
+:deep(.v-select .v-field) {
+  border-radius: 12px;
+}
+</style>

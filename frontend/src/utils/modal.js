@@ -16,8 +16,7 @@ const modalState = ref({
   inputLabel: '',
   inputType: 'text',
   inputPlaceholder: '',
-  inputRows: 1,
-  markdown: false
+  inputRows: 1
 })
 
 // 回调函数
@@ -35,8 +34,7 @@ export const alert = (message, options = {}) => {
       icon: options.icon || 'mdi-information',
       iconColor: options.iconColor || 'primary',
       confirmText: options.confirmText || '确定',
-      confirmColor: options.confirmColor || 'primary',
-      markdown: options.markdown || false
+      confirmColor: options.confirmColor || 'primary'
     }
     confirmCallback = resolve
     cancelCallback = null

@@ -1,89 +1,112 @@
-<script setup>
-import { ref, inject } from 'vue'
-import { useRouter } from 'vue-router'
-import { authApi } from '../api'
-
-const router = useRouter()
-const setUser = inject('setUser')
-
-const form = ref({
-  username: '',
-  password: ''
-})
-
-const isLoading = ref(false)
-const error = ref('')
-
-const handleLogin = async () => {
-  if (!form.value.username || !form.value.password) {
-    error.value = '请填写用户名和密码'
-    return
-  }
-  isLoading.value = true
-  try {
-    const response = await authApi.login(form.value)
-    localStorage.setItem('token', response.data.token)
-    setUser(response.data.user)
-    router.push('/')
-  } catch (err) {
-    error.value = err.response?.data?.error || '登录失败'
-  } finally {
-    isLoading.value = false
-  }
-}
-</script>
-
 <template>
-  <v-container fluid class="min-h-screen d-flex align-center justify-center">
-    <v-card width="400" max-width="90%" elevation="8">
-      <v-card-title class="text-center">
-        <v-icon size="48" color="primary">mdi-forum</v-icon>
-        <h2 class="text-h5 font-weight-bold mt-2">校园论坛</h2>
+  <div class="d-flex justify-center align-center" style="min-height: 80vh;">
+    <v-card width="100%" max-width="400" class="pa-6">
+      <v-card-title class="text-h5 text-center pb-4" style="color: rgb(var(--v-theme-primary));">
+        登录论坛
       </v-card-title>
       
       <v-card-text>
-        <v-alert v-if="error" type="error" dense>
-          {{ error }}
-        </v-alert>
+        <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
         
         <v-form @submit.prevent="handleLogin">
           <v-text-field
             v-model="form.username"
             label="用户名"
-            prepend-icon="mdi-account"
-            class="mb-4"
+            variant="outlined"
             required
-          />
+            prepend-inner-icon="mdi-account"
+            class="mb-4"
+          ></v-text-field>
           
           <v-text-field
             v-model="form.password"
             label="密码"
+            variant="outlined"
             type="password"
-            prepend-icon="mdi-lock"
-            append-icon="mdi-eye-off"
-            class="mb-6"
             required
-          />
+            prepend-inner-icon="mdi-lock"
+            class="mb-4"
+          ></v-text-field>
           
           <v-btn
             type="submit"
             color="primary"
             block
-            :loading="isLoading"
+            size="large"
+            :loading="loading"
           >
-            登录
+            {{ loading ? '登录中...' : '登录' }}
           </v-btn>
         </v-form>
         
-        <div class="d-flex justify-between mt-4">
-          <v-btn text color="primary" @click="router.push('/forgot-password')">
-            忘记密码
-          </v-btn>
-          <v-btn text color="primary" @click="router.push('/register')">
-            注册账号
-          </v-btn>
+        <div class="text-center mt-4 text-body-2">
+          <router-link to="/forgot-password" class="text-secondary mr-4">忘记密码？</router-link>
+          还没有账号？ <router-link to="/register" class="text-primary">立即注册</router-link>
         </div>
       </v-card-text>
     </v-card>
-  </v-container>
+  </div>
 </template>
+
+<script>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '../api'
+
+export default {
+  name: 'Login',
+  setup() {
+    const router = useRouter()
+    const form = ref({
+      username: '',
+      password: ''
+    })
+    const error = ref('')
+    const loading = ref(false)
+
+    const checkInit = async () => {
+      try {
+        const response = await api.get('/auth/check-init')
+        if (!response.data.initialized) {
+          router.push('/register')
+        }
+      } catch (err) {
+        console.error('检查初始化失败', err)
+      }
+    }
+
+    const handleLogin = async () => {
+      error.value = ''
+      loading.value = true
+      
+      try {
+        const response = await api.post('/auth/login', form.value)
+        const { token, user } = response.data
+        
+        localStorage.setItem('token', token)
+        localStorage.setItem('user', JSON.stringify(user))
+        
+        // 通知 App.vue 更新状态
+        window.dispatchEvent(new Event('user-updated'))
+        
+        router.push('/')
+      } catch (err) {
+        error.value = err.response?.data?.error || '登录失败'
+      } finally {
+        loading.value = false
+      }
+    }
+
+    onMounted(() => {
+      checkInit()
+    })
+
+    return {
+      form,
+      error,
+      loading,
+      handleLogin
+    }
+  }
+}
+</script>

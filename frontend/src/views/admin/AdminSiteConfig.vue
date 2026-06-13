@@ -1,66 +1,172 @@
-<script setup>
-import { ref, onMounted } from 'vue'
-import { adminApi, siteApi } from '../../api'
-
-const loading = ref(false)
-const saving = ref(false)
-const config = ref({
-  site_title: '校园论坛',
-  site_description: '',
-  site_keywords: ''
-})
-
-const loadConfig = async () => {
-  loading.value = true
-  try {
-    const response = await adminSiteConfigApi.getConfig()
-    config.value = response.data || config.value
-  } catch (error) {
-    console.error('加载配置失败:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-const saveConfig = async () => {
-  saving.value = true
-  try {
-    await adminApi.updateSiteConfig(config.value)
-  } catch (error) {
-    console.error('保存配置失败:', error)
-  } finally {
-    saving.value = false
-  }
-}
-
-onMounted(() => {
-  loadConfig()
-})
-</script>
-
 <template>
-  <v-container fluid class="pa-0">
-    <!-- 页面标题 -->
-    <div class="mb-6">
-      <h1 class="text-h5 font-weight-bold">网站配置</h1>
-      <p class="text-body-2 text-grey">配置网站基本信息</p>
-    </div>
+  <v-container fluid class="pa-4 pa-md-6">
+    <!-- 网站配置表单 -->
+    <v-card variant="flat" rounded="lg">
+      <v-card-title class="pb-2">
+        <v-icon start size="20">mdi-globe</v-icon>
+        网站配置
+      </v-card-title>
 
-    <!-- 配置表单 -->
-    <v-card>
-      <v-card-title>基本配置</v-card-title>
       <v-card-text>
-        <v-text-field v-model="config.site_title" label="网站标题" class="mb-3" />
-        <v-textarea v-model="config.site_description" label="网站描述" rows="3" class="mb-3" />
-        <v-text-field v-model="config.site_keywords" label="网站关键词" class="mb-3" />
+        <v-form ref="siteForm" v-model="formValid">
+          <!-- 网站基本配置 -->
+          <div class="text-subtitle-2 font-weight-bold mb-3">基本配置</div>
+          <v-text-field
+            v-model="siteConfigForm.siteTitle"
+            label="网站标题"
+            placeholder="校园论坛 - 分享与交流"
+            variant="outlined"
+            density="compact"
+            :rules="[rules.required]"
+            prepend-inner-icon="mdi-web"
+            clearable
+            counter="100"
+            maxlength="100"
+            class="mb-4"
+          />
+
+          <v-divider class="my-4" />
+
+          <!-- 备案信息配置 -->
+          <div class="text-subtitle-2 font-weight-bold mb-2">备案信息</div>
+          <div class="text-caption text-medium-emphasis mb-3">
+            以下字段可选，不填写则不在页面底部显示
+          </div>
+          <v-row dense>
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="siteConfigForm.icpNumber"
+                label="ICP备案号"
+                placeholder="京ICP备12345678号"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-shield-check"
+                clearable
+                counter="50"
+                maxlength="50"
+              />
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="siteConfigForm.publicSecurityNumber"
+                label="公安联网备案号"
+                placeholder="京公网安备 12345678901234567890号"
+                variant="outlined"
+                density="compact"
+                prepend-inner-icon="mdi-police-badge"
+                clearable
+                counter="50"
+                maxlength="50"
+              />
+            </v-col>
+          </v-row>
+
+          <v-alert
+            v-if="siteConfigForm.siteTitle"
+            type="success"
+            variant="tonal"
+            density="compact"
+            class="mt-4"
+            icon="mdi-check-circle"
+          >
+            当前网站标题：<strong>{{ siteConfigForm.siteTitle }}</strong>
+          </v-alert>
+        </v-form>
       </v-card-text>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn color="primary" @click="saveConfig" :loading="saving">
-          <v-icon start>mdi-check</v-icon>
+
+      <v-card-actions class="pa-4">
+        <v-btn
+          color="warning"
+          variant="outlined"
+          @click="resetForm"
+          :disabled="saving"
+        >
+          <v-icon start>mdi-refresh</v-icon>
+          重置
+        </v-btn>
+        <v-spacer />
+        <v-btn
+          color="primary"
+          variant="flat"
+          @click="saveSiteConfig"
+          :loading="saving"
+          :disabled="!formValid"
+        >
+          <v-icon start>mdi-content-save</v-icon>
           保存配置
         </v-btn>
       </v-card-actions>
     </v-card>
   </v-container>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { adminSiteConfigApi } from '../../api/admin'
+import { success, error } from '../../utils/modal'
+
+const siteConfigForm = ref({
+  siteTitle: '',
+  icpNumber: '',
+  publicSecurityNumber: ''
+})
+
+const siteForm = ref(null)
+const formValid = ref(false)
+const saving = ref(false)
+
+const rules = {
+  required: v => !!v || '此字段为必填项'
+}
+
+const originalConfig = ref({
+  siteTitle: '',
+  icpNumber: '',
+  publicSecurityNumber: ''
+})
+
+const loadSiteConfig = async () => {
+  try {
+    const response = await adminSiteConfigApi.getConfig()
+    siteConfigForm.value.siteTitle = response.data.site_title || ''
+    siteConfigForm.value.icpNumber = response.data.icp_number || ''
+    siteConfigForm.value.publicSecurityNumber = response.data.public_security_number || ''
+    // 保存原始配置用于重置
+    originalConfig.value = { ...siteConfigForm.value }
+  } catch (err) {
+    console.error('加载网站配置失败', err)
+    error('加载网站配置失败')
+  }
+}
+
+const resetForm = () => {
+  siteConfigForm.value = { ...originalConfig.value }
+}
+
+const saveSiteConfig = async () => {
+  saving.value = true
+  try {
+    await adminSiteConfigApi.updateConfig({
+      site_title: siteConfigForm.value.siteTitle,
+      icp_number: siteConfigForm.value.icpNumber,
+      public_security_number: siteConfigForm.value.publicSecurityNumber
+    })
+    success('网站配置保存成功')
+    if (siteConfigForm.value.siteTitle) {
+      document.title = siteConfigForm.value.siteTitle
+      window.dispatchEvent(new CustomEvent('site-title-updated', {
+        detail: siteConfigForm.value.siteTitle
+      }))
+    }
+  } catch (err) {
+    console.error('保存网站配置失败', err)
+    error(err.response?.data?.error || '保存失败')
+  } finally {
+    saving.value = false
+  }
+}
+
+onMounted(() => {
+  loadSiteConfig()
+})
+</script>

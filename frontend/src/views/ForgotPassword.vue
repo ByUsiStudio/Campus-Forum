@@ -1,146 +1,168 @@
-<script setup>
-import { ref } from 'vue'
+<template>
+  <div class="d-flex justify-center align-center" style="min-height: 80vh;">
+    <v-card width="100%" max-width="400" class="pa-6">
+      <v-card-title class="text-h5 text-center pb-4" style="color: rgb(var(--v-theme-primary));">
+        找回密码
+      </v-card-title>
+
+      <v-card-text>
+        <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
+        <v-alert v-if="success" type="success" variant="tonal" class="mb-4">{{ success }}</v-alert>
+
+        <v-form @submit.prevent="handleSubmit">
+          <v-text-field
+            v-model="form.qq_number"
+            label="QQ号码"
+            variant="outlined"
+            required
+            prepend-inner-icon="mdi-qqchat"
+            class="mb-4"
+          ></v-text-field>
+
+          <div v-if="step === 2">
+            <v-text-field
+              v-model="form.code"
+              label="验证码"
+              variant="outlined"
+              required
+              prepend-inner-icon="mdi-shield-check"
+              class="mb-4"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="form.password"
+              label="新密码"
+              variant="outlined"
+              type="password"
+              required
+              prepend-inner-icon="mdi-lock"
+              class="mb-4"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="form.confirm_password"
+              label="确认密码"
+              variant="outlined"
+              type="password"
+              required
+              prepend-inner-icon="mdi-lock-check"
+              class="mb-4"
+            ></v-text-field>
+          </div>
+
+          <v-btn
+            type="submit"
+            color="primary"
+            block
+            size="large"
+            :loading="loading"
+          >
+            {{ loading ? '处理中...' : buttonText }}
+          </v-btn>
+        </v-form>
+
+        <div class="text-center mt-4 text-body-2">
+          想起密码了？ <router-link to="/login" class="text-primary">返回登录</router-link>
+        </div>
+      </v-card-text>
+    </v-card>
+  </div>
+</template>
+
+<script>
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../api'
 
-const router = useRouter()
+export default {
+  name: 'ForgotPassword',
+  setup() {
+    const router = useRouter()
+    const step = ref(1)
+    const loading = ref(false)
+    const error = ref('')
+    const success = ref('')
+    const resetIdentifier = ref('')
 
-const form = ref({
-  email: '',
-  code: '',
-  password: ''
-})
+    const form = ref({
+      qq_number: '',
+      code: '',
+      password: '',
+      confirm_password: ''
+    })
 
-const step = ref(1)
-const isLoading = ref(false)
-const error = ref('')
+    const buttonText = computed(() => {
+      return step.value === 1 ? '发送验证码' : '重置密码'
+    })
 
-const sendCode = async () => {
-  if (!form.value.email) {
-    error.value = '请输入邮箱'
-    return
-  }
-  isLoading.value = true
-  try {
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    step.value = 2
-  } catch (err) {
-    error.value = '发送失败'
-  } finally {
-    isLoading.value = false
-  }
-}
+    const handleSubmit = async () => {
+      error.value = ''
+      success.value = ''
 
-const resetPassword = async () => {
-  if (!form.value.code || !form.value.password) {
-    error.value = '请填写完整信息'
-    return
-  }
-  isLoading.value = true
-  try {
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    step.value = 3
-  } catch (err) {
-    error.value = '重置失败'
-  } finally {
-    isLoading.value = false
+      if (step.value === 1) {
+        if (!form.value.qq_number.trim()) {
+          error.value = '请输入QQ号码'
+          return
+        }
+
+        loading.value = true
+        try {
+          const response = await api.post('/password/reset-code', {
+            qq_number: form.value.qq_number
+          })
+          success.value = response.data.message || '验证码已发送到您的QQ邮箱'
+          resetIdentifier.value = response.data.identifier || ''
+          step.value = 2
+        } catch (err) {
+          error.value = err.response?.data?.error || err.message || '发送验证码失败'
+        } finally {
+          loading.value = false
+        }
+      } else {
+        if (!form.value.code.trim()) {
+          error.value = '请输入验证码'
+          return
+        }
+
+        if (form.value.password.length < 6) {
+          error.value = '密码长度不能少于6位'
+          return
+        }
+
+        if (form.value.password !== form.value.confirm_password) {
+          error.value = '两次输入的密码不一致'
+          return
+        }
+
+        loading.value = true
+        try {
+          await api.post('/password/reset', {
+            qq_number: form.value.qq_number,
+            code: form.value.code,
+            identifier: resetIdentifier.value,
+            password: form.value.password
+          })
+          success.value = '密码重置成功！'
+          setTimeout(() => {
+            router.push('/login')
+          }, 1500)
+        } catch (err) {
+          error.value = err.response?.data?.error || err.message || '重置密码失败'
+        } finally {
+          loading.value = false
+        }
+      }
+    }
+
+    return {
+      form,
+      step,
+      loading,
+      error,
+      success,
+      buttonText,
+      handleSubmit
+    }
   }
 }
 </script>
-
-<template>
-  <v-container fluid class="min-h-screen d-flex align-center justify-center">
-    <v-card width="400" max-width="90%" elevation="8">
-      <!-- 步骤1：输入邮箱 -->
-      <template v-if="step === 1">
-        <v-card-title class="text-center">
-          <v-icon size="48" color="primary">mdi-lock-reset</v-icon>
-          <h2 class="text-h5 font-weight-bold mt-2">找回密码</h2>
-        </v-card-title>
-        
-        <v-card-text>
-          <v-alert v-if="error" type="error" dense>
-            {{ error }}
-          </v-alert>
-          
-          <v-text-field
-            v-model="form.email"
-            label="邮箱"
-            type="email"
-            prepend-icon="mdi-email"
-            class="mb-6"
-          />
-          
-          <v-btn
-            color="primary"
-            block
-            :loading="isLoading"
-            @click="sendCode"
-          >
-            发送验证码
-          </v-btn>
-          
-          <v-btn text color="primary" block class="mt-4" @click="router.push('/login')">
-            返回登录
-          </v-btn>
-        </v-card-text>
-      </template>
-      
-      <!-- 步骤2：输入验证码和新密码 -->
-      <template v-if="step === 2">
-        <v-card-title class="text-center">
-          <v-icon size="48" color="primary">mdi-lock</v-icon>
-          <h2 class="text-h5 font-weight-bold mt-2">设置新密码</h2>
-        </v-card-title>
-        
-        <v-card-text>
-          <v-alert v-if="error" type="error" dense>
-            {{ error }}
-          </v-alert>
-          
-          <v-text-field
-            v-model="form.code"
-            label="验证码"
-            prepend-icon="mdi-code"
-            class="mb-4"
-          />
-          
-          <v-text-field
-            v-model="form.password"
-            label="新密码"
-            type="password"
-            prepend-icon="mdi-lock"
-            class="mb-6"
-          />
-          
-          <v-btn
-            color="primary"
-            block
-            :loading="isLoading"
-            @click="resetPassword"
-          >
-            确认重置
-          </v-btn>
-          
-          <v-btn text color="primary" block class="mt-4" @click="step = 1">
-            返回上一步
-          </v-btn>
-        </v-card-text>
-      </template>
-      
-      <!-- 步骤3：重置成功 -->
-      <template v-if="step === 3">
-        <v-card-title class="text-center">
-          <v-icon size="48" color="success">mdi-check-circle</v-icon>
-          <h2 class="text-h5 font-weight-bold mt-2">重置成功</h2>
-        </v-card-title>
-        
-        <v-card-text class="text-center">
-          <p>您的密码已重置成功</p>
-          <v-btn color="primary" class="mt-4" @click="router.push('/login')">
-            返回登录
-          </v-btn>
-        </v-card-text>
-      </template>
-    </v-card>
-  </v-container>
-</template>
