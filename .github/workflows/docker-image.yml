@@ -25,12 +25,20 @@ jobs:
     - name: Get release version
       id: version
       run: |
-        VERSION="${GITHUB_REF#refs/tags/}"
-        if [ -z "$VERSION" ]; then
+        # 优先使用 release 事件的 tag_name
+        if [ -n "${{ github.event.release.tag_name }}" ]; then
           VERSION="${{ github.event.release.tag_name }}"
+        else
+          # 降级使用 GITHUB_REF
+          VERSION="${GITHUB_REF#refs/tags/}"
         fi
+        
+        # 移除可能的 v 前缀（如果需要）
+        VERSION="${VERSION#v}"
+        
         echo "release_version=$VERSION" >> $GITHUB_OUTPUT
-        echo "版本: $VERSION"
+        echo "version=$VERSION" >> $GITHUB_ENV
+        echo "获取到的版本号: $VERSION"
     
     - name: Build Go backend
       run: |
@@ -54,14 +62,12 @@ jobs:
         username: beiane1
         password: ${{ secrets.DOCKER_PASSWORD }}
     
-    - name: Build and push Docker image
+    - name: Build Docker image
       run: |
         VERSION="${{ steps.version.outputs.release_version }}"
-        docker build -t beiane1/campus-forum:latest \
-          -t beiane1/campus-forum:$VERSION \
-          -t beiane1/campus-forum:${{ github.sha }} \
-          -t beiane1/campus-forum:${{ github.run_number }} \
-          -f - . <<'EOF'
+        
+        # 创建 Dockerfile
+        cat > Dockerfile << 'DOCKERFILE'
         FROM alpine:latest
         
         RUN apk add --no-cache ca-certificates tzdata nginx
@@ -77,9 +83,17 @@ jobs:
         EXPOSE 80 3620
         
         CMD ["/start.sh"]
-        EOF
+        DOCKERFILE
         
+        # 构建镜像
+        docker build -t beiane1/campus-forum:latest \
+          -t beiane1/campus-forum:$VERSION \
+          -t beiane1/campus-forum:${{ github.sha }} \
+          -t beiane1/campus-forum:build-${{ github.run_number }} .
+        
+        # 推送镜像
         docker push beiane1/campus-forum --all-tags
+        
         echo "DOCKER_VERSION=$VERSION" >> $GITHUB_OUTPUT
         echo "DOCKER_IMAGE=beiane1/campus-forum:$VERSION" >> $GITHUB_OUTPUT
     
@@ -87,203 +101,86 @@ jobs:
       run: |
         VERSION="${{ steps.version.outputs.release_version }}"
         
-        cat > 部署文档.md << 'EOF'
+        cat > 部署文档.md << EOF
         # Campus Forum 部署文档
         
         ## 版本信息
         
         | 组件 | 版本 |
         |------|------|
-        | 后端 | ${{ steps.version.outputs.release_version }} |
-        | 前端 | ${{ steps.version.outputs.release_version }} |
-        | Docker 镜像 | beiane1/campus-forum:${{ steps.version.outputs.release_version }} |
+        | 后端 | ${VERSION} |
+        | 前端 | ${VERSION} |
+        | Docker 镜像 | beiane1/campus-forum:${VERSION} |
         
         ## 1. 拉取镜像
         
-        ```bash
-        docker pull beiane1/campus-forum:$VERSION
+        \`\`\`bash
+        docker pull beiane1/campus-forum:${VERSION}
         docker pull beiane1/campus-forum:latest
-        ```
+        \`\`\`
         
         ## 2. 创建 Docker 网络
         
-        ```bash
+        \`\`\`bash
         docker network create forum-network
-        ```
+        \`\`\`
         
         ## 3. 启动 MySQL（独立部署）
         
-        ```bash
-        docker run -d \
-          --name forum-mysql \
-          --network forum-network \
-          -e MYSQL_ROOT_PASSWORD=your_root_password \
-          -e MYSQL_DATABASE=forum \
-          -e MYSQL_USER=forum_user \
-          -e MYSQL_PASSWORD=your_forum_password \
-          -v mysql-data:/var/lib/mysql \
-          -p 3306:3306 \
+        \`\`\`bash
+        docker run -d \\
+          --name forum-mysql \\
+          --network forum-network \\
+          -e MYSQL_ROOT_PASSWORD=your_root_password \\
+          -e MYSQL_DATABASE=forum \\
+          -e MYSQL_USER=forum_user \\
+          -e MYSQL_PASSWORD=your_forum_password \\
+          -v mysql-data:/var/lib/mysql \\
+          -p 3306:3306 \\
           mysql:8.0
-        ```
+        \`\`\`
         
         ## 4. 启动 Forum 应用
         
-        ```bash
-        docker run -d \
-          --name campus-forum \
-          --network forum-network \
-          -e DB_HOST=forum-mysql \
-          -e DB_PORT=3306 \
-          -e DB_USER=forum_user \
-          -e DB_PASSWORD=your_forum_password \
-          -e DB_NAME=forum \
-          -p 80:80 \
-          -p 3620:3620 \
-          beiane1/campus-forum:$VERSION
-        ```
-        
-        ## 5. 使用 Docker Compose（推荐）
-        
-        创建 `docker-compose.yml`：
-        
-        ```yaml
-        version: '3.8'
-        
-        services:
-          mysql:
-            image: mysql:8.0
-            container_name: forum-mysql
-            restart: always
-            environment:
-              MYSQL_ROOT_PASSWORD: \${MYSQL_ROOT_PASSWORD}
-              MYSQL_DATABASE: \${MYSQL_DATABASE:-forum}
-              MYSQL_USER: \${MYSQL_USER:-forum_user}
-              MYSQL_PASSWORD: \${MYSQL_PASSWORD}
-            volumes:
-              - mysql-data:/var/lib/mysql
-            ports:
-              - "3306:3306"
-            networks:
-              - forum-network
-        
-          forum:
-            image: beiane1/campus-forum:$VERSION
-            container_name: campus-forum
-            restart: always
-            environment:
-              DB_HOST: mysql
-              DB_PORT: 3306
-              DB_USER: \${MYSQL_USER:-forum_user}
-              DB_PASSWORD: \${MYSQL_PASSWORD}
-              DB_NAME: \${MYSQL_DATABASE:-forum}
-            ports:
-              - "80:80"
-              - "3620:3620"
-            depends_on:
-              - mysql
-            networks:
-              - forum-network
-        
-        volumes:
-          mysql-data:
-        
-        networks:
-          forum-network:
-            driver: bridge
-        ```
-        
-        创建 `.env` 文件：
-        
-        ```env
-        MYSQL_ROOT_PASSWORD=your_strong_root_password
-        MYSQL_DATABASE=forum
-        MYSQL_USER=forum_user
-        MYSQL_PASSWORD=your_strong_forum_password
-        ```
-        
-        启动所有服务：
-        
-        ```bash
-        docker-compose up -d
-        ```
-        
-        ## 6. 查看日志
-        
-        ```bash
-        # 查看 Forum 日志
-        docker logs -f campus-forum
-        
-        # 查看 MySQL 日志
-        docker logs -f forum-mysql
-        ```
-        
-        ## 7. 停止和删除容器
-        
-        ```bash
-        # 停止所有容器
-        docker-compose down
-        
-        # 同时删除数据卷（清除所有数据）
-        docker-compose down -v
-        ```
-        
-        ## 8. 更新版本
-        
-        拉取新版本镜像：
-        
-        ```bash
-        docker pull beiane1/campus-forum:新版本号
-        ```
-        
-        停止并删除旧容器：
-        
-        ```bash
-        docker stop campus-forum
-        docker rm campus-forum
-        ```
-        
-        使用新镜像启动：
-        
-        ```bash
-        docker run -d \
-          --name campus-forum \
-          --network forum-network \
-          -e DB_HOST=forum-mysql \
-          -e DB_PORT=3306 \
-          -e DB_USER=forum_user \
-          -e DB_PASSWORD=your_forum_password \
-          -e DB_NAME=forum \
-          -p 80:80 \
-          -p 3620:3620 \
-          beiane1/campus-forum:新版本号
-        ```
+        \`\`\`bash
+        docker run -d \\
+          --name campus-forum \\
+          --network forum-network \\
+          -e DB_HOST=forum-mysql \\
+          -e DB_PORT=3306 \\
+          -e DB_USER=forum_user \\
+          -e DB_PASSWORD=your_forum_password \\
+          -e DB_NAME=forum \\
+          -p 80:80 \\
+          -p 3620:3620 \\
+          beiane1/campus-forum:${VERSION}
+        \`\`\`
         
         ---
         
         *文档生成时间: $(date '+%Y-%m-%d %H:%M:%S')*
         EOF
         
-        # 替换版本变量
-        sed -i "s/\$VERSION/$VERSION/g" 部署文档.md
-        
-        echo "## 📄 部署文档下载" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "部署文档已生成，请下载下方附件：" >> $GITHUB_STEP_SUMMARY
+        echo "## 部署文档" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 镜像信息" >> $GITHUB_STEP_SUMMARY
-        echo "- **后端版本**: ${{ steps.version.outputs.release_version }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Docker 镜像**: \`beiane1/campus-forum:${{ steps.version.outputs.release_version }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **Docker 镜像**: \`beiane1/campus-forum:latest\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **版本**: ${VERSION}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Docker 镜像**: \`beiane1/campus-forum:${VERSION}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **拉取命令**: \`docker pull beiane1/campus-forum:${VERSION}\`" >> $GITHUB_STEP_SUMMARY
     
     - name: Update release description
       uses: actions/github-script@v7
       with:
         script: |
-          const version = process.env.VERSION;
+          const version = '${{ steps.version.outputs.release_version }}';
           const currentBody = context.payload.release.body || '';
           const dockerSection = `\n\n---\n\n## Docker 镜像\n\n\`\`\`bash\n# 拉取镜像\ndocker pull beiane1/campus-forum:${version}\ndocker pull beiane1/campus-forum:latest\n\n# 启动容器\ndocker run -d \\\n  --name campus-forum \\\n  -p 80:80 \\\n  -p 3620:3620 \\\n  beiane1/campus-forum:${version}\n\`\`\`\n\n**Docker Hub**: https://hub.docker.com/r/beiane1/campus-forum`;
           
-          const updatedBody = currentBody + dockerSection;
+          // 避免重复添加
+          let updatedBody = currentBody;
+          if (!currentBody.includes('## Docker 镜像')) {
+            updatedBody = currentBody + dockerSection;
+          }
           
           github.rest.repos.updateRelease({
             owner: context.repo.owner,
@@ -291,12 +188,10 @@ jobs:
             release_id: context.payload.release.id,
             body: updatedBody
           });
-      env:
-        VERSION: ${{ steps.version.outputs.release_version }}
     
     - name: Upload deployment document
       uses: actions/upload-artifact@v4
       with:
-        name: 部署文档
+        name: 部署文档-${{ steps.version.outputs.release_version }}
         path: 部署文档.md
         retention-days: 30
