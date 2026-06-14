@@ -247,10 +247,6 @@ docker run -d \
         "username": "root",
         "password": "123456",
         "dbname": "forum"
-    },
-    "im_server": {
-        "enable": true,
-        "port": 8080
     }
 }
 ```
