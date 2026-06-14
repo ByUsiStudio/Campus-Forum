@@ -1,8 +1,8 @@
 name: Build and Push Complete Forum Image
 
 on:
-  push:
-    branches: [ "master" ]
+  release:
+    types: [created]
   workflow_dispatch:
 
 jobs:
@@ -22,12 +22,15 @@ jobs:
       with:
         node-version: '18'
     
-    - name: Read version from version.json
+    - name: Get release version
       id: version
       run: |
-        BACKEND_VERSION=$(jq -r '.backend.version' version.json)
-        echo "backend_version=$BACKEND_VERSION" >> $GITHUB_OUTPUT
-        echo "当前后端版本: $BACKEND_VERSION"
+        VERSION="${GITHUB_REF#refs/tags/}"
+        if [ -z "$VERSION" ]; then
+          VERSION="${{ github.event.release.tag_name }}"
+        fi
+        echo "release_version=$VERSION" >> $GITHUB_OUTPUT
+        echo "版本: $VERSION"
     
     - name: Build Go backend
       run: |
@@ -53,7 +56,7 @@ jobs:
     
     - name: Build and push Docker image
       run: |
-        VERSION="${{ steps.version.outputs.backend_version }}"
+        VERSION="${{ steps.version.outputs.release_version }}"
         docker build -t beiane1/campus-forum:latest \
           -t beiane1/campus-forum:$VERSION \
           -t beiane1/campus-forum:${{ github.sha }} \
@@ -77,10 +80,12 @@ jobs:
         EOF
         
         docker push beiane1/campus-forum --all-tags
+        echo "DOCKER_VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "DOCKER_IMAGE=beiane1/campus-forum:$VERSION" >> $GITHUB_OUTPUT
     
     - name: Generate deployment documents
       run: |
-        VERSION="${{ steps.version.outputs.backend_version }}"
+        VERSION="${{ steps.version.outputs.release_version }}"
         
         cat > 部署文档.md << 'EOF'
         # Campus Forum 部署文档
@@ -89,9 +94,9 @@ jobs:
         
         | 组件 | 版本 |
         |------|------|
-        | 后端 | ${{ steps.version.outputs.backend_version }} |
-        | 前端 | ${{ steps.version.outputs.backend_version }} |
-        | Docker 镜像 | beiane1/campus-forum:${{ steps.version.outputs.backend_version }} |
+        | 后端 | ${{ steps.version.outputs.release_version }} |
+        | 前端 | ${{ steps.version.outputs.release_version }} |
+        | Docker 镜像 | beiane1/campus-forum:${{ steps.version.outputs.release_version }} |
         
         ## 1. 拉取镜像
         
@@ -266,9 +271,28 @@ jobs:
         echo "部署文档已生成，请下载下方附件：" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 镜像信息" >> $GITHUB_STEP_SUMMARY
-        echo "- **后端版本**: ${{ steps.version.outputs.backend_version }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Docker 镜像**: \`beiane1/campus-forum:${{ steps.version.outputs.backend_version }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **后端版本**: ${{ steps.version.outputs.release_version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Docker 镜像**: \`beiane1/campus-forum:${{ steps.version.outputs.release_version }}\`" >> $GITHUB_STEP_SUMMARY
         echo "- **Docker 镜像**: \`beiane1/campus-forum:latest\`" >> $GITHUB_STEP_SUMMARY
+    
+    - name: Update release description
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const version = process.env.VERSION;
+          const currentBody = context.payload.release.body || '';
+          const dockerSection = `\n\n---\n\n## Docker 镜像\n\n\`\`\`bash\n# 拉取镜像\ndocker pull beiane1/campus-forum:${version}\ndocker pull beiane1/campus-forum:latest\n\n# 启动容器\ndocker run -d \\\n  --name campus-forum \\\n  -p 80:80 \\\n  -p 3620:3620 \\\n  beiane1/campus-forum:${version}\n\`\`\`\n\n**Docker Hub**: https://hub.docker.com/r/beiane1/campus-forum`;
+          
+          const updatedBody = currentBody + dockerSection;
+          
+          github.rest.repos.updateRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            release_id: context.payload.release.id,
+            body: updatedBody
+          });
+      env:
+        VERSION: ${{ steps.version.outputs.release_version }}
     
     - name: Upload deployment document
       uses: actions/upload-artifact@v4
