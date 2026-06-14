@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"forum/controllers"
 	"forum/database"
-	"forum/im"
 	initpkg "forum/init"
 	"forum/middleware"
 	"forum/service"
@@ -22,7 +21,6 @@ type Config struct {
 	JWTSecret string         `json:"jwt_secret"`
 	WebDAV    WebDAVConfig   `json:"webdav"`
 	Database  DatabaseConfig `json:"database"`
-	IM        IMConfig       `json:"im"`
 }
 
 type WebDAVConfig struct {
@@ -37,18 +35,6 @@ type DatabaseConfig struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	DBName   string `json:"dbname"`
-}
-
-type IMConfig struct {
-	Enabled        bool   `json:"enabled"`
-	APIURL         string `json:"api_url"`    // 野火IM API地址
-	AppID          string `json:"app_id"`     // 应用ID
-	AppSecret      string `json:"app_secret"` // 应用密钥
-	IMHost         string `json:"im_host"`    // IM服务器地址
-	IMPort         int    `json:"im_port"`    // IM服务器端口
-	ApiGatewayPort int    `json:"api_gateway_port"`
-	WsPort         int    `json:"ws_port"`
-	AdminPort      int    `json:"admin_port"`
 }
 
 var config Config
@@ -104,10 +90,6 @@ func main() {
 
 	// WebDAV代理路由
 	r.Any("/proxy/webdav/*path", utils.ProxyWebDAVHandler)
-
-	// WebSocket路由（IM服务）
-	imCtrl := im.NewController()
-	r.GET("/ws", imCtrl.WebSocketHandle)
 
 	// API路由
 	api := r.Group("/api")
@@ -202,11 +184,6 @@ func main() {
 			protected.DELETE("/user-notifications/:id", controllers.DeletePersonalNotification)
 			protected.DELETE("/user-notifications/clear", controllers.ClearAllNotifications)
 			protected.GET("/admin/user-notifications/:user_id", middleware.AdminOnly(), controllers.AdminGetUserNotifications)
-
-			// IM（goim）相关
-			protected.GET("/im/online-status", imCtrl.GetOnlineStatus)
-			protected.GET("/im/online-users", imCtrl.GetOnlineUsers)
-			protected.POST("/im/send-message", imCtrl.SendMessage)
 
 			// 权限组管理
 			protected.GET("/permission-groups", controllers.GetPermissionGroups)

@@ -22,6 +22,8 @@ set ROOT_DIR=%cd%
 :: Build backend with version injection
 echo [1/4] Building backend...
 cd /d %ROOT_DIR%\backend
+set GO111MODULE=on
+set GOFLAGS=-mod=mod
 
 :: Set ldflags for version injection
 set LDFLAGS=-X forum/controllers.FrontendVersion=%VERSION% -X forum/controllers.BackendVersion=%VERSION% -X forum/controllers.SwaggerVersion=%VERSION%
@@ -56,32 +58,9 @@ if errorlevel 1 (
 )
 echo    [OK] Linux-ARM64
 
-:: Build IM server
-echo.
-echo [2/4] Building IM server...
-cd /d %ROOT_DIR%\backend\sdk\im-server\launcher
-
-echo    - Building IM Linux-AMD64...
-set GOOS=linux
-go build -o "%ROOT_DIR%\build\im-server-linux-amd64" .
-if errorlevel 1 (
-    echo    [FAIL] IM Linux-AMD64
-    exit /b 1
-)
-echo    [OK] IM Linux-AMD64
-
-echo    - Building IM Linux-ARM64...
-set GOARCH=arm64
-go build -o "%ROOT_DIR%\build\im-server-linux-arm64" .
-if errorlevel 1 (
-    echo    [FAIL] IM Linux-ARM64
-    exit /b 1
-)
-echo    [OK] IM Linux-ARM64
-
 :: Build frontend
 echo.
-echo [3/4] Building frontend...
+echo [2/3] Building frontend...
 cd /d %ROOT_DIR%\frontend
 call npm install
 if errorlevel 1 (
@@ -101,7 +80,7 @@ move /y dist "%ROOT_DIR%\build\web" >nul 2>&1
 
 :: Create zip archive
 echo.
-echo [4/4] Creating archive...
+echo [3/3] Creating archive...
 cd /d %ROOT_DIR%
 powershell -Command "Compress-Archive -Path 'build\*' -DestinationPath 'forum_v%VERSION%.zip' -Force"
 if errorlevel 1 (
@@ -119,6 +98,5 @@ echo Output: %cd%\forum_v%VERSION%.zip
 echo.
 echo Compile artifacts:
 echo   - server-*.exe/.sh    (Forum backend)
-echo   - im-server-*.exe/.sh (IM server)
 echo   - web/                (Frontend)
 echo.
