@@ -1,5 +1,19 @@
 <template>
-  <v-row v-if="article">
+  <v-container v-if="articleError" class="min-h-screen">
+    <ErrorPage
+      :code="articleError.code"
+      :title="articleError.title"
+      :message="articleError.message"
+      :detail="articleError.detail"
+      :icon="articleError.code === 404 ? 'mdi-file-question' : 'mdi-alert-circle'"
+      :actions="[
+        { text: '返回首页', icon: 'mdi-home', color: 'primary', callback: () => router.push('/') },
+        { text: '刷新重试', icon: 'mdi-refresh', variant: 'outlined', callback: () => { articleError.value = null; loadArticle() } }
+      ]"
+    />
+  </v-container>
+  
+  <v-row v-else-if="article">
     <!-- 主内容区域 -->
     <v-col cols="12" md="9">
       <v-card class="article-card mb-4" variant="flat">
@@ -477,6 +491,7 @@ import api from '../api'
 import ImageViewer from '../components/ImageViewer.vue'
 import UserAvatar from '../components/UserAvatar.vue'
 import MarkdownViewer from '../components/MarkdownViewer.vue'
+import ErrorPage from '../components/ErrorPage.vue'
 import { confirm as showConfirm, prompt as showPrompt, success as showSuccess } from '../utils/modal'
 
 
@@ -491,6 +506,7 @@ export default {
     const route = useRoute()
     const router = useRouter()
     const article = ref(null)
+    const articleError = ref(null)
     const comments = ref([])
     const liked = ref(false)
     const favorited = ref(false)
@@ -640,7 +656,23 @@ export default {
       } catch (error) {
         console.error('加载文章失败', error)
         console.error('错误详情:', error.response?.data || error.message)
-        router.push('/')
+        
+        const status = error.response?.status
+        if (status === 404) {
+          articleError.value = {
+            code: 404,
+            title: '资源未找到',
+            message: '请求的文章不存在',
+            detail: error.response?.data?.error || '该文章可能已被删除或ID错误'
+          }
+        } else {
+          articleError.value = {
+            code: status || 500,
+            title: '加载失败',
+            message: '加载文章时发生错误',
+            detail: error.response?.data?.error || error.message
+          }
+        }
       }
     }
     
