@@ -62,6 +62,8 @@ import ForgotPassword from './views/ForgotPassword.vue'
 import FollowList from './views/FollowList.vue'
 import Search from './views/Search.vue'
 import SignIn from './views/SignIn.vue'
+import NotFound from './views/NotFound.vue'
+import Forbidden from './views/Forbidden.vue'
 
 // 导入后台管理子组件
 import AdminIndex from './views/admin/AdminIndex.vue'
@@ -116,7 +118,9 @@ const routes = [
     { path: '/notifications', component: Notifications, name: 'Notifications' },
     { path: '/follow-list', component: FollowList, name: 'FollowList' },
     { path: '/search', component: Search, name: 'Search' },
-    { path: '/signin', component: SignIn, name: 'SignIn' }
+    { path: '/signin', component: SignIn, name: 'SignIn' },
+    { path: '/403', component: Forbidden, name: 'Forbidden' },
+    { path: '/:pathMatch(.*)*', component: NotFound, name: 'NotFound' }
 ]
 
 const router = createRouter({

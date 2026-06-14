@@ -26,25 +26,13 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   response => {
-    // 检查响应数据是否正常
-    if (!response.data || typeof response.data !== 'object') {
-      showError('服务器返回的数据格式不正确', { title: '数据解析错误' })
-      return Promise.reject(new Error('Invalid response data'))
-    }
-
-    // 检查是否有错误字段
-    if (response.data.error) {
-      showError(response.data.error, { title: '操作失败' })
-      return Promise.reject(new Error(response.data.error))
-    }
-
     return response
   },
   error => {
-    const errorMsg = getErrorMessage(error)
+    const errorInfo = parseErrorResponse(error)
 
     // 401 未授权 - 跳转到登录页
-    if (error.response && error.response.status === 401) {
+    if (errorInfo.code === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       window.location.href = '/login'
@@ -52,70 +40,97 @@ api.interceptors.response.use(
     }
 
     // 403 禁止访问
-    if (error.response && error.response.status === 403) {
-      showError('您没有权限执行此操作', { title: '权限不足' })
+    if (errorInfo.code === 403) {
+      showError(errorInfo.message, { title: '权限不足', detail: errorInfo.detail })
       return Promise.reject(error)
     }
 
     // 404 资源不存在
-    if (error.response && error.response.status === 404) {
-      showWarning('请求的资源不存在', { title: '资源未找到' })
+    if (errorInfo.code === 404) {
+      showWarning(errorInfo.message, { title: '资源未找到', detail: errorInfo.detail })
+      return Promise.reject(error)
+    }
+
+    // 429 限流
+    if (errorInfo.code === 429) {
+      showWarning(errorInfo.message || '请求过于频繁，请稍后再试', { title: '请求限流', detail: errorInfo.detail })
+      return Promise.reject(error)
+    }
+
+    // 409 冲突
+    if (errorInfo.code === 409) {
+      showError(errorInfo.message, { title: '资源冲突', detail: errorInfo.detail })
       return Promise.reject(error)
     }
 
     // 其他错误
-    showError(errorMsg, { title: '操作失败' })
+    showError(errorInfo.message, { title: '操作失败', detail: errorInfo.detail })
     return Promise.reject(error)
   }
 )
 
-// 获取错误信息
-function getErrorMessage(error) {
+// 解析错误响应
+function parseErrorResponse(error) {
+  const result = {
+    code: 500,
+    error: 'INTERNAL_ERROR',
+    message: '服务器内部错误',
+    detail: ''
+  }
+
   // 网络错误
   if (!error.response) {
     if (error.code === 'ECONNREFUSED') {
-      return '无法连接到服务器，请稍后重试'
+      result.message = '无法连接到服务器，请稍后重试'
+      result.detail = '服务器可能未启动或网络不可达'
+    } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      result.message = '请求超时，请稍后重试'
+      result.detail = '服务器响应时间过长'
+    } else if (error.message.includes('Network Error')) {
+      result.message = '网络连接失败，请检查网络设置'
+      result.detail = '请确保您的设备已连接到网络'
+    } else {
+      result.message = '网络错误，请稍后重试'
     }
-    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-      return '请求超时，请稍后重试'
-    }
-    if (error.message.includes('Network Error')) {
-      return '网络连接失败，请检查网络设置'
-    }
-    return '网络错误，请稍后重试'
+    return result
   }
 
   // 服务器返回的错误
   const response = error.response
+  result.code = response.status
 
-  // 尝试解析响应数据中的错误信息
-  if (response.data) {
-    if (typeof response.data === 'string') {
-      return response.data
-    }
+  // 尝试解析统一错误响应格式
+  if (response.data && typeof response.data === 'object') {
     if (response.data.error) {
-      return response.data.error
+      result.error = response.data.error
     }
     if (response.data.message) {
-      return response.data.message
+      result.message = response.data.message
+    }
+    if (response.data.detail) {
+      result.detail = response.data.detail
     }
   }
 
-  // 根据状态码返回通用错误信息
-  const statusText = {
-    400: '请求参数错误',
-    401: '登录已过期，请重新登录',
-    403: '您没有权限执行此操作',
-    404: '请求的资源不存在',
-    408: '请求超时',
-    409: '资源冲突，请稍后重试',
-    500: '服务器内部错误',
-    502: '网关错误',
-    503: '服务暂时不可用',
-    504: '网关超时'
+  // 如果没有获取到消息，使用状态码对应的默认消息
+  if (!result.message || result.message === '服务器内部错误') {
+    const statusMessages = {
+      400: '请求参数错误',
+      401: '登录已过期，请重新登录',
+      403: '您没有权限执行此操作',
+      404: '请求的资源不存在',
+      408: '请求超时',
+      409: '资源冲突',
+      429: '请求过于频繁',
+      500: '服务器内部错误',
+      502: '网关错误',
+      503: '服务暂时不可用',
+      504: '网关超时'
+    }
+    result.message = statusMessages[response.status] || `请求失败，状态码: ${response.status}`
   }
 
-  return statusText[response.status] || `请求失败，状态码: ${response.status}`
+  return result
 }
 
 export default api

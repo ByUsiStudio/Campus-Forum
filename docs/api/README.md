@@ -6,8 +6,6 @@
 
 **Base URL**: `http://0.0.0.0:3620`
 
-**WebSocket URL**: `ws://0.0.0.0:3620/ws`
-
 **认证方式**: JWT Bearer Token
 
 ---
@@ -20,16 +18,13 @@
 
 ### 内容相关
 - [文章接口](articles.md) - 文章的增删改查、点赞、收藏
-- [评论接口](comments.md) - 评论的增删改查、点赞
+- [评论接口](comments.md) - 评论的增删改查、点赞（支持嵌套回复）
 
 ### 用户相关
 - [用户接口](users.md) - 用户信息、资料、上传
 - [好友接口](friend.md) - 好友关系管理
 - [收藏接口](favorite.md) - 收藏文章
 - [签到接口](signin.md) - 用户签到
-
-### 聊天相关
-- [聊天接口](chat.md) - 即时通讯、消息收发
 
 ### 通知相关
 - [通知接口](notification.md) - 各种通知的管理
@@ -66,7 +61,10 @@ Authorization: Bearer <token>
 错误响应：
 ```json
 {
-  "error": "错误信息"
+  "code": 404,
+  "error": "NOT_FOUND",
+  "message": "资源不存在",
+  "detail": "详细说明（可选）"
 }
 ```
 
@@ -78,6 +76,8 @@ Authorization: Bearer <token>
 | 401 | 未认证或Token无效 |
 | 403 | 无权限访问 |
 | 404 | 资源不存在 |
+| 409 | 资源冲突 |
+| 429 | 请求过于频繁 |
 | 500 | 服务器内部错误 |
 
 ---
@@ -87,6 +87,3 @@ Authorization: Bearer <token>
 | 服务 | 端口 | 说明 |
 |------|------|------|
 | 论坛 API | 3620 | 主后端服务 |
-| IM API | 9001 | 即时通讯 API |
-| IM WebSocket | 9003 | 即时通讯 WebSocket |
-| IM 管理 | 8090 | IM 管理端口 |
