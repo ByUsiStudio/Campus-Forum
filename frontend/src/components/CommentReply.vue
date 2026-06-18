@@ -108,7 +108,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import UserAvatar from './UserAvatar.vue'
 
 export default {
@@ -158,8 +158,19 @@ export default {
       return currentUserId === commentUserId || props.currentUser.role === 'admin'
     }
 
+    const localReplyContent = ref(props.localReplyContent)
+    const localReplyIsAnonymous = ref(props.localReplyIsAnonymous)
+
+    watch(() => props.localReplyContent, (newVal) => {
+      localReplyContent.value = newVal
+    })
+
+    watch(() => props.localReplyIsAnonymous, (newVal) => {
+      localReplyIsAnonymous.value = newVal
+    })
+
     const submitReply = (parentId) => {
-      emit('submitReply', { parentId, content: props.localReplyContent, isAnonymous: props.localReplyIsAnonymous })
+      emit('submitReply', { parentId, content: localReplyContent.value, isAnonymous: localReplyIsAnonymous.value })
     }
 
     const cancelReply = () => {
@@ -170,7 +181,9 @@ export default {
       formatDate,
       canDeleteComment,
       submitReply,
-      cancelReply
+      cancelReply,
+      localReplyContent,
+      localReplyIsAnonymous
     }
   }
 }
