@@ -1,5 +1,15 @@
 # 认证接口
 
+## Token 说明
+
+系统使用双令牌机制：
+- **访问令牌 (access token)**：有效期 1 小时，用于 API 认证
+- **刷新令牌 (refresh token)**：有效期 7 天，用于刷新访问令牌
+
+前端会在访问令牌即将过期时（5 分钟内）自动刷新令牌。
+
+---
+
 ## 用户注册
 
 **POST** `/api/auth/register`
@@ -42,16 +52,56 @@
 **响应**:
 ```json
 {
-  "token": "jwt_token_string",
+  "token": "access_token_string",
+  "refresh_token": "refresh_token_string",
+  "expires_in": 3600,
   "user": {
     "id": 1,
     "username": "string",
     "display_name": "string",
     "avatar": "string",
-    "role": "user"
+    "role": "user",
+    "status": "active"
   }
 }
 ```
+
+**字段说明**:
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| token | string | 访问令牌，有效期 1 小时 |
+| refresh_token | string | 刷新令牌，有效期 7 天 |
+| expires_in | int | 访问令牌过期时间（秒） |
+| user | object | 用户信息 |
+
+---
+
+## 刷新令牌
+
+**POST** `/api/auth/refresh-token`
+
+使用刷新令牌获取新的访问令牌。
+
+**请求体**:
+```json
+{
+  "refresh_token": "refresh_token_string"
+}
+```
+
+**响应**:
+```json
+{
+  "token": "new_access_token_string",
+  "refresh_token": "new_refresh_token_string",
+  "expires_in": 3600
+}
+```
+
+**说明**：
+- 刷新令牌时会同时生成新的访问令牌和刷新令牌
+- 原刷新令牌失效，需使用新的刷新令牌
+- 如果刷新令牌无效或已过期，返回 401 错误
 
 ---
 

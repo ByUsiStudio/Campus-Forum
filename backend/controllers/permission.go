@@ -389,6 +389,22 @@ func InitializeDefaultPermissionGroups(c *gin.Context) {
 			IsActive:    true,
 			Permissions: `["article:read", "article:edit:any", "article:delete:any", "article:pin", "article:featured", "comment:read", "comment:delete:any", "report:view", "report:handle", "user:profile:view", "user:ban"]`,
 		},
+		{
+			Name:        "admin",
+			Description: "管理员权限组，只能管理普通用户内容",
+			Level:       80,
+			IsDefault:   false,
+			IsActive:    true,
+			Permissions: `["article:read", "article:create", "article:edit:own", "article:delete:own", "article:delete:user", "comment:create", "comment:edit:own", "comment:delete:own", "comment:delete:user", "user:profile:view", "user:profile:edit", "user:mark_delete", "announcement:update", "notification:manage", "report:view", "report:handle"]`,
+		},
+		{
+			Name:        "system",
+			Description: "系统管理员权限组，拥有所有权限",
+			Level:       100,
+			IsDefault:   false,
+			IsActive:    true,
+			Permissions: `["*"]`,
+		},
 	}
 
 	for _, group := range defaultGroups {

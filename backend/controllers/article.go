@@ -625,6 +625,75 @@ func PublishDraft(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "发布成功", "article": article})
 }
 
+// CoinArticle 投币文章
+func CoinArticle(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	articleID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的文章ID"})
+		return
+	}
+
+	var article models.Article
+	if result := database.DB.First(&article, articleID); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "文章不存在"})
+		return
+	}
+
+	// 获取用户信息
+	var user models.User
+	if result := database.DB.First(&user, userID); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取用户信息失败"})
+		return
+	}
+
+	// 默认投1个币
+	coinCount := 1
+
+	// 检查用户是否有足够的币
+	if user.TotalCoins < coinCount {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "币不足，无法投币"})
+		return
+	}
+
+	// 检查是否已投币
+	var existingCoin models.CoinRecord
+	if result := database.DB.Where("user_id = ? AND article_id = ?", userID, articleID).First(&existingCoin); result.Error == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "已经投过币了"})
+		return
+	}
+
+	// 创建投币记录
+	coinRecord := models.CoinRecord{
+		UserID:    uint(userID),
+		ArticleID: uint(articleID),
+		CoinCount: coinCount,
+	}
+	if result := database.DB.Create(&coinRecord); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "投币失败"})
+		return
+	}
+
+	// 更新用户币数
+	database.DB.Model(&user).UpdateColumn("total_coins", gorm.Expr("total_coins - ?", coinCount))
+
+	// 更新文章投币数
+	database.DB.Model(&article).UpdateColumn("coin_count", gorm.Expr("coin_count + ?", coinCount))
+
+	// 给文章作者增加币
+	if article.UserID != userID {
+		var author models.User
+		if result := database.DB.First(&author, article.UserID); result.Error == nil {
+			database.DB.Model(&author).UpdateColumn("total_coins", gorm.Expr("total_coins + ?", coinCount))
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "投币成功",
+		"coin_count": coinCount,
+	})
+}
+
 // getNestedReplies 递归获取嵌套回复
 // maxDepth 限制最大嵌套深度，防止无限递归
 func getNestedReplies(parentID uint, currentUserID uint, depth int) []models.Comment {

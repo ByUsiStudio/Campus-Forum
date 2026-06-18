@@ -107,17 +107,14 @@ const loadFollowData = async () => {
   loading.value = true
 
   try {
-    const [followingRes, followersRes] = await Promise.all([
-      api.get('/following'),
-      api.get('/followers')
-    ])
+    const friendsRes = await api.get('/friends')
 
-    following.value = followingRes.data.following || []
-    followers.value = followersRes.data.followers || []
+    following.value = friendsRes.data.friends || []
+    followers.value = friendsRes.data.friends || []
     followingCount.value = following.value.length
     followersCount.value = followers.value.length
   } catch (error) {
-    console.error('获取关注列表失败', error)
+    console.error('获取好友列表失败', error)
   } finally {
     loading.value = false
   }
@@ -129,18 +126,14 @@ const loadOtherUserFollowData = async () => {
   loading.value = true
 
   try {
-    const [followingRes, followersRes, statusRes] = await Promise.all([
-      api.get(`/users/${userId.value}/following`),
-      api.get(`/users/${userId.value}/followers`),
-      api.get(`/follow/status/${userId.value}`)
-    ])
+    const friendsRes = await api.get(`/friends/mutual/${userId.value}`)
 
-    following.value = followingRes.data.following || []
-    followers.value = followersRes.data.followers || []
+    following.value = friendsRes.data.friends || []
+    followers.value = friendsRes.data.friends || []
     followingCount.value = following.value.length
     followersCount.value = followers.value.length
   } catch (error) {
-    console.error('获取用户关注列表失败', error)
+    console.error('获取好友列表失败', error)
   } finally {
     loading.value = false
   }
@@ -149,13 +142,12 @@ const loadOtherUserFollowData = async () => {
 const handleFollowToggle = async (user) => {
   try {
     if (isFollowing(user.id)) {
-      await api.delete(`/follow/${user.id}`)
+      await api.delete(`/friends/${user.id}`)
       following.value = following.value.filter(u => u.id !== user.id)
       followingCount.value--
     } else {
-      await api.post(`/follow/${user.id}`)
-      following.value.push(user)
-      followingCount.value++
+      await api.post('/friends/request', { user_id: user.id })
+      await showSuccess('已发送好友请求')
     }
   } catch (error) {
     console.error('操作失败', error)

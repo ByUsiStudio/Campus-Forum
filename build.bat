@@ -12,12 +12,21 @@ echo   Campus Forum Build Script (Windows)
 echo ========================================
 echo.
 
+:: Get the root directory
+set ROOT_DIR=%cd%
+
 :: Create build directory
 if not exist "build" mkdir build
 if exist "build\web" rmdir /s /q "build\web"
 
-:: Get the root directory
-set ROOT_DIR=%cd%
+:: Copy config.json to build directory
+echo    - Copying config.json...
+copy /y "%ROOT_DIR%\backend\config.json" "%ROOT_DIR%\build\config.json" >nul 2>&1
+if errorlevel 1 (
+    echo    [FAIL] Copy config.json
+    exit /b 1
+)
+echo    [OK] config.json
 
 :: Build backend with version injection
 echo [1/4] Building backend...

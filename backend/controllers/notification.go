@@ -13,6 +13,8 @@ import (
 
 // CreateNotification 创建通知（管理员）
 func CreateNotification(c *gin.Context) {
+	role := c.GetString("role")
+
 	var input struct {
 		Type    string `json:"type" binding:"required"`
 		Title   string `json:"title" binding:"required"`
@@ -39,15 +41,28 @@ func CreateNotification(c *gin.Context) {
 		return
 	}
 
+	// admin 不能创建 system 类型的通知
+	if role == "admin" && input.Type == "system" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "管理员不能创建系统通知"})
+		return
+	}
+
 	// XSS过滤：清理通知标题和内容
 	safeTitle := utils.SanitizeHTML(input.Title)
 	safeContent := utils.SanitizeHTML(input.Content)
 
+	// 设置创建者角色
+	creatorRole := role
+	if creatorRole == "" {
+		creatorRole = "admin"
+	}
+
 	notification := models.Notification{
-		Type:    input.Type,
-		Title:   safeTitle,
-		Content: safeContent,
-		Target:  input.Target,
+		Type:        input.Type,
+		Title:       safeTitle,
+		Content:     safeContent,
+		Target:      input.Target,
+		CreatorRole: creatorRole,
 	}
 
 	if err := database.DB.Create(&notification).Error; err != nil {
@@ -191,7 +206,20 @@ func MarkAllNotificationsRead(c *gin.Context) {
 
 // DeleteNotification 删除通知（管理员）
 func DeleteNotification(c *gin.Context) {
+	role := c.GetString("role")
 	notificationID := c.Param("id")
+
+	var notification models.Notification
+	if result := database.DB.First(&notification, notificationID); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "通知不存在"})
+		return
+	}
+
+	// admin 不能删除 system 组的通知
+	if role == "admin" && notification.CreatorRole == "system" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "不能删除系统管理员创建的通知"})
+		return
+	}
 
 	result := database.DB.Delete(&models.Notification{}, notificationID)
 	if result.RowsAffected == 0 {

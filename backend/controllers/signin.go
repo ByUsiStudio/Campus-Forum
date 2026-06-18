@@ -97,17 +97,17 @@ func SignIn(c *gin.Context) {
 		"sign_in_days":        newSignInDays,
 		"total_sign_ins":      user.TotalSignIns + 1,
 		"max_continuous_days": maxContinuousDays,
-		"total_points":        user.TotalPoints + totalReward,
+		"total_coins":         user.TotalCoins + totalReward,
 	})
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":             "签到成功",
 		"sign_in_days":        newSignInDays,
 		"total_sign_ins":      user.TotalSignIns + 1,
-		"reward_points":       totalReward,
-		"bonus_points":        bonusPoints,
+		"reward_coins":        totalReward,
+		"bonus_coins":         bonusPoints,
 		"max_continuous_days": maxContinuousDays,
-		"total_points":        user.TotalPoints + totalReward,
+		"total_coins":         user.TotalCoins + totalReward,
 	})
 }
 
@@ -153,11 +153,11 @@ func GetSignInStatus(c *gin.Context) {
 		"sign_in_days":        user.SignInDays,
 		"total_sign_ins":      user.TotalSignIns,
 		"max_continuous_days": user.MaxContinuousDays,
-		"total_points":        user.TotalPoints,
+		"total_coins":         user.TotalCoins,
 		"month_sign_in_count": monthSignInCount,
 		"week_sign_in_count":  weekSignInCount,
 		"config": gin.H{
-			"daily_points":  config.DailyPoints,
+			"daily_coins":   config.DailyPoints,
 			"weekly_bonus":  config.WeeklyBonus,
 			"monthly_bonus": config.MonthlyBonus,
 			"yearly_bonus":  config.YearlyBonus,
@@ -268,9 +268,9 @@ func GetSignInRankings(c *gin.Context) {
 	var continuousRankings []models.User
 	database.DB.Order("sign_in_days DESC, total_sign_ins DESC").Limit(limit).Find(&continuousRankings)
 
-	// 获取累计积分排行榜
+	// 获取累计币排行榜
 	var pointsRankings []models.User
-	database.DB.Order("total_points DESC, total_sign_ins DESC").Limit(limit).Find(&pointsRankings)
+	database.DB.Order("total_coins DESC, total_sign_ins DESC").Limit(limit).Find(&pointsRankings)
 
 	c.JSON(http.StatusOK, gin.H{
 		"continuous_rankings": continuousRankings,

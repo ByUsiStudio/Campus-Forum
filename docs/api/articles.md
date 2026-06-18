@@ -27,6 +27,7 @@
       "view_count": 100,
       "like_count": 10,
       "comment_count": 5,
+      "coin_count": 2,
       "voice_url": "string",
       "is_anonymous": false,
       "created_at": "2024-01-01T00:00:00Z"
@@ -70,6 +71,7 @@
     "view_count": 100,
     "like_count": 10,
     "comment_count": 5,
+    "coin_count": 2,
     "voice_url": "string",
     "is_anonymous": false,
     "created_at": "2024-01-01T00:00:00Z"
@@ -281,6 +283,44 @@ Authorization: Bearer <token>
   "message": "取消点赞成功"
 }
 ```
+
+---
+
+## 投币文章
+
+**POST** `/api/articles/{id}/coin`
+
+给文章投币（需认证）。投币会消耗用户的币，并将币转给文章作者。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**路径参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| id | int | 文章 ID |
+
+**响应**:
+```json
+{
+  "message": "投币成功",
+  "coin_count": 1
+}
+```
+
+**错误响应**:
+| 错误 | 描述 |
+|------|------|
+| 币不足，无法投币 | 用户币数不足 |
+| 已经投过币了 | 每个用户对每篇文章只能投币一次 |
+
+**说明**:
+- 每次投币消耗1个币
+- 投币后币会转给文章作者
+- 每个用户对每篇文章只能投币一次
+- 文章的 `coin_count` 字段会增加
 
 ---
 

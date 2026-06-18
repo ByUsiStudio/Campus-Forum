@@ -36,9 +36,21 @@
 
             <v-card variant="outlined" class="mb-4">
               <v-card-text>
-                <div class="text-caption text-medium-emphasis mb-2">
-                  <v-icon size="small" class="mr-1">mdi-pencil</v-icon>
-                  文章内容 (支持 Markdown)
+                <div class="d-flex align-center justify-between mb-2">
+                  <div class="text-caption text-medium-emphasis">
+                    <v-icon size="small" class="mr-1">mdi-pencil</v-icon>
+                    文章内容 (支持 Markdown)
+                  </div>
+                  <div class="d-flex gap-2">
+                    <v-btn
+                      variant="text"
+                      color="primary"
+                      @click="showVoiceDialog = true"
+                      prepend-icon="mdi-microphone"
+                    >
+                      添加语音
+                    </v-btn>
+                  </div>
                 </div>
                 <MdEditor
                   v-model="form.content"
@@ -82,15 +94,6 @@
 
             <v-card variant="flat" class="bg-grey-lighten-4 pa-4 mb-4">
               <div class="d-flex align-center flex-wrap gap-4">
-                <v-btn
-                  variant="outlined"
-                  color="primary"
-                  @click="showVoiceDialog = true"
-                  prepend-icon="mdi-microphone"
-                >
-                  添加语音
-                </v-btn>
-
                 <v-checkbox
                   v-model="form.is_anonymous"
                   label="匿名发布"

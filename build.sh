@@ -13,6 +13,11 @@ VERSION="$1"
 mkdir -p build
 rm -rf build/web || true
 
+# Copy config.json to build directory
+echo "复制 config.json..."
+cp "$SCRIPT_DIR/backend/config.json" "$SCRIPT_DIR/build/config.json" || { echo "❌ 复制 config.json 失败"; exit 1; }
+echo "✅ config.json"
+
 LDFLAGS="-X forum/controllers.FrontendVersion=${VERSION} -X forum/controllers.BackendVersion=${VERSION} -X forum/controllers.SwaggerVersion=${VERSION}"
 
 compile() {

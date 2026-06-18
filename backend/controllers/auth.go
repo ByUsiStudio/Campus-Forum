@@ -92,21 +92,38 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// 生成JWT
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	// 生成访问令牌（有效期1小时）
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": user.ID,
 		"role":    user.Role,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+		"exp":     time.Now().Add(time.Hour * 1).Unix(),
+		"type":    "access",
 	})
 
-	tokenString, err := token.SignedString(jwtSecret)
+	accessTokenString, err := accessToken.SignedString(jwtSecret)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "生成令牌失败"})
 		return
 	}
 
+	// 生成刷新令牌（有效期7天）
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": user.ID,
+		"role":    user.Role,
+		"exp":     time.Now().Add(time.Hour * 24 * 7).Unix(),
+		"type":    "refresh",
+	})
+
+	refreshTokenString, err := refreshToken.SignedString(jwtSecret)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "生成刷新令牌失败"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"token": tokenString,
+		"token":         accessTokenString,
+		"refresh_token": refreshTokenString,
+		"expires_in":    3600,
 		"user": gin.H{
 			"id":           user.ID,
 			"username":     user.Username,
@@ -115,6 +132,93 @@ func Login(c *gin.Context) {
 			"role":         user.Role,
 			"status":       user.Status,
 		},
+	})
+}
+
+// RefreshToken 刷新访问令牌
+func RefreshToken(c *gin.Context) {
+	var input struct {
+		RefreshToken string `json:"refresh_token" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 解析刷新令牌
+	token, err := jwt.Parse(input.RefreshToken, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		return jwtSecret, nil
+	})
+
+	if err != nil || !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "刷新令牌无效"})
+		return
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "令牌解析失败"})
+		return
+	}
+
+	// 检查令牌类型
+	tokenType, ok := claims["type"].(string)
+	if !ok || tokenType != "refresh" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "令牌类型错误"})
+		return
+	}
+
+	userID := uint(claims["user_id"].(float64))
+	role := claims["role"].(string)
+
+	// 检查用户是否存在且状态正常
+	var user models.User
+	if result := database.DB.First(&user, userID); result.Error != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "用户不存在"})
+		return
+	}
+
+	if user.Status == "banned" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "该账号已被封禁"})
+		return
+	}
+
+	// 生成新的访问令牌
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": userID,
+		"role":    role,
+		"exp":     time.Now().Add(time.Hour * 1).Unix(),
+		"type":    "access",
+	})
+
+	accessTokenString, err := accessToken.SignedString(jwtSecret)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "生成令牌失败"})
+		return
+	}
+
+	// 生成新的刷新令牌
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": userID,
+		"role":    role,
+		"exp":     time.Now().Add(time.Hour * 24 * 7).Unix(),
+		"type":    "refresh",
+	})
+
+	refreshTokenString, err := refreshToken.SignedString(jwtSecret)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "生成刷新令牌失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"token":         accessTokenString,
+		"refresh_token": refreshTokenString,
+		"expires_in":    3600,
 	})
 }
 

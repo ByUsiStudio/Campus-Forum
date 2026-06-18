@@ -110,6 +110,15 @@
               {{ article.like_count }} 点赞
             </v-btn>
             <v-btn
+              @click="coinArticle"
+              :color="coined ? 'amber' : 'default'"
+              :variant="coined ? 'flat' : 'outlined'"
+              prepend-icon="mdi-coins"
+              :disabled="!token"
+            >
+              {{ article.coin_count || 0 }} 投币
+            </v-btn>
+            <v-btn
               @click="toggleFavorite"
               :color="favorited ? 'primary' : 'default'"
               :variant="favorited ? 'flat' : 'outlined'"
@@ -292,59 +301,22 @@
             </v-list-item>
 
             <!-- 回复列表 -->
-            <v-list v-if="comment.replies && comment.replies.length > 0" class="ml-12 bg-grey-lighten-5 rounded">
-              <v-list-item
-                v-for="reply in comment.replies"
-                :key="reply.id"
-                class="py-2"
-              >
-                <template v-slot:prepend>
-                  <UserAvatar
-                    :user="reply.user"
-                    :size="32"
-                    :showUsername="false"
-                    class="cursor-pointer"
-                    @click="goToUserProfile(reply.user.id)"
-                  />
-                </template>
-
-                <v-list-item-title class="d-flex align-center gap-2 mb-1">
-                  <span class="font-weight-medium text-body-2">
-                    {{ reply.user.display_name || reply.user.username || '匿名用户' }}
-                  </span>
-                  <span class="text-caption text-medium-emphasis">
-                    {{ formatDate(reply.created_at) }}
-                  </span>
-                </v-list-item-title>
-
-                <v-list-item-subtitle class="text-body-2">
-                  {{ reply.content }}
-                </v-list-item-subtitle>
-
-                <template v-slot:append>
-                  <div class="d-flex gap-1">
-                    <v-btn
-                      variant="text"
-                      size="x-small"
-                      @click="toggleCommentLike(reply)"
-                      :color="commentLiked[reply.id] ? 'primary' : 'default'"
-                    >
-                      <v-icon size="12">mdi-thumb-up</v-icon>
-                      {{ reply.like_count }}
-                    </v-btn>
-                    <v-btn
-                      variant="text"
-                      size="x-small"
-                      color="error"
-                      @click="deleteComment(reply.id, reply)"
-                      v-if="canDeleteComment(reply)"
-                    >
-                      <v-icon size="12">mdi-delete</v-icon>
-                    </v-btn>
-                  </div>
-                </template>
-              </v-list-item>
-            </v-list>
+            <CommentReply
+              v-if="comment.replies && comment.replies.length > 0"
+              :replies="comment.replies"
+              :commentLiked="commentLiked"
+              :token="token"
+              :currentUser="currentUser"
+              :replyingTo="replyingTo"
+              :localReplyContent="replyContent"
+              :localReplyIsAnonymous="replyIsAnonymous"
+              @toggleLike="toggleCommentLike"
+              @showReplyForm="showReplyForm"
+              @deleteComment="deleteComment"
+              @goToUserProfile="goToUserProfile"
+              @submitReply="handleNestedReply"
+              @cancelReply="cancelReply"
+            />
           </div>
         </v-list>
       </v-card>
@@ -492,6 +464,7 @@ import ImageViewer from '../components/ImageViewer.vue'
 import UserAvatar from '../components/UserAvatar.vue'
 import MarkdownViewer from '../components/MarkdownViewer.vue'
 import ErrorPage from '../components/ErrorPage.vue'
+import CommentReply from '../components/CommentReply.vue'
 import { confirm as showConfirm, prompt as showPrompt, success as showSuccess } from '../utils/modal'
 
 
@@ -500,7 +473,8 @@ export default {
   components: {
     ImageViewer,
     UserAvatar,
-    MarkdownViewer
+    MarkdownViewer,
+    CommentReply
   },
   setup() {
     const route = useRoute()
@@ -544,6 +518,7 @@ export default {
       mutual: false
     })
     const siteTitle = ref('校园论坛')
+    const coined = ref(false)
     const audioRef = ref(null)
     const isPlaying = ref(false)
     const voiceProgress = ref(0)
@@ -745,38 +720,59 @@ export default {
 
     const loadFollowStatus = async () => {
       if (!article.value || !token.value) return
-      
+
       try {
-        const response = await api.get(`/follow/status/${article.value.user_id}`)
-        followStatus.value = response.data
+        const response = await api.get(`/friends/status/${article.value.user_id}`)
+        followStatus.value = {
+          is_following: response.data.is_friend,
+          is_followed: response.data.is_friend,
+          mutual: response.data.is_friend
+        }
       } catch (error) {
-        console.error('加载关注状态失败', error)
+        console.error('加载好友状态失败', error)
       }
     }
-    
+
     const handleFollow = async () => {
       if (!token.value) {
         router.push('/login')
         return
       }
-      
+
       try {
         if (followStatus.value.is_following) {
-          await api.delete(`/follow/${article.value.user_id}`)
+          // 删除好友
+          await api.delete(`/friends/${article.value.user_id}`)
           followStatus.value.is_following = false
           followStatus.value.mutual = false
         } else {
-          await api.post(`/follow/${article.value.user_id}`)
-          followStatus.value.is_following = true
-          followStatus.value.mutual = followStatus.value.is_followed
+          // 发送好友请求
+          await api.post('/friends/request', { user_id: article.value.user_id })
+          await showSuccess('已发送好友请求')
         }
       } catch (error) {
-        console.error('关注失败', error)
+        console.error('好友操作失败', error)
       }
     }
     
     const goToUserProfile = (userId) => {
       router.push(`/profile?id=${userId}`)
+    }
+
+    const coinArticle = async () => {
+      if (!token.value) {
+        router.push('/login')
+        return
+      }
+
+      try {
+        await api.post(`/articles/${article.value.id}/coin`)
+        article.value.coin_count = (article.value.coin_count || 0) + 1
+        coined.value = true
+        await showSuccess('投币成功')
+      } catch (error) {
+        console.error('投币失败', error)
+      }
     }
     
     const toggleCommentLike = async (comment) => {
@@ -843,7 +839,24 @@ export default {
           is_anonymous: replyIsAnonymous.value
         })
 
-        // 重新加载文章和评论，确保数据一致性
+        await loadArticle()
+        
+        cancelReply()
+      } catch (error) {
+        console.error('回复失败', error)
+      }
+    }
+
+    const handleNestedReply = async ({ parentId, content, isAnonymous }) => {
+      if (!content.trim()) return
+      
+      try {
+        await api.post(`/articles/${article.value.id}/comments`, {
+          content: content,
+          parent_id: parentId,
+          is_anonymous: isAnonymous
+        })
+
         await loadArticle()
         
         cancelReply()

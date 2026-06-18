@@ -18,6 +18,7 @@ type Article struct {
 	FavoriteCount int       `gorm:"default:0" json:"favorite_count"`
 	ViewCount     int       `gorm:"default:0" json:"view_count"`
 	ShareCount    int       `gorm:"default:0" json:"share_count"`
+	CoinCount     int       `gorm:"default:0" json:"coin_count"`       // 投币数
 	Status        string    `gorm:"default:published" json:"status"`   // published, draft, deleted, pending
 	IsPinned      bool      `gorm:"default:false" json:"is_pinned"`    // 是否置顶
 	PinnedAt      *time.Time `json:"pinned_at"`                         // 置顶时间

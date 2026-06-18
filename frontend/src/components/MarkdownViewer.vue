@@ -61,6 +61,52 @@ const md = new MarkdownIt({
   }
 })
 
+// 自定义链接渲染规则：外链自动在新标签打开
+const defaultLinkRenderer = md.renderer.rules.link_open || function(tokens, idx, options, env, self) {
+  return self.renderToken(tokens, idx, options)
+}
+
+md.renderer.rules.link_open = function(tokens, idx, options, env, self) {
+  const token = tokens[idx]
+  const hrefIndex = token.attrIndex('href')
+  
+  if (hrefIndex >= 0) {
+    const href = token.attrs[hrefIndex][1]
+    
+    // 判断是否为外链
+    const isExternal = href && (
+      href.startsWith('http://') ||
+      href.startsWith('https://') ||
+      href.startsWith('ftp://')
+    )
+    
+    // 判断是否为本站链接
+    const isInternal = href && (
+      href.startsWith('/') ||
+      href.startsWith('#') ||
+      href.startsWith('?') ||
+      href.startsWith('./') ||
+      href.startsWith('../')
+    )
+    
+    // 如果是外链且没有 target 属性，添加 target="_blank"
+    if (isExternal && !isInternal) {
+      const targetIndex = token.attrIndex('target')
+      if (targetIndex < 0) {
+        token.attrPush(['target', '_blank'])
+      }
+      
+      // 添加 rel 属性以提高安全性
+      const relIndex = token.attrIndex('rel')
+      if (relIndex < 0) {
+        token.attrPush(['rel', 'noopener noreferrer'])
+      }
+    }
+  }
+  
+  return defaultLinkRenderer(tokens, idx, options, env, self)
+}
+
 md.use(anchor, {
   permalink: anchor.permalink.ariaHidden({
     placement: 'after',

@@ -119,6 +119,7 @@ Authorization: Bearer <token>
   "status": "normal",
   "sign_in_days": 5,
   "total_sign_ins": 12,
+  "total_coins": 100,
   "created_at": "2024-01-01T00:00:00Z"
 }
 ```

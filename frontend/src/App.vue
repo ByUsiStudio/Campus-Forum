@@ -1,5 +1,36 @@
 <template>
   <v-app>
+    <!-- 公告弹窗 -->
+    <v-dialog v-model="announcementDialog" max-width="600" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center justify-space-between pa-4">
+          <div class="d-flex align-center">
+            <v-icon color="primary" class="mr-2">mdi-bullhorn</v-icon>
+            <span class="text-h6">公告</span>
+          </div>
+          <v-btn icon @click="closeAnnouncementDialog" variant="text">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text class="pa-4">
+          <div class="markdown-body" v-html="announcementContent"></div>
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-checkbox
+            v-model="dontShowAgain"
+            label="不再显示"
+            density="compact"
+            hide-details
+          ></v-checkbox>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" variant="flat" @click="closeAnnouncementDialog">
+            关闭
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- 主要内容区域 -->
     <v-main :class="{ 'pb-navigation': !hideAppBar && isMobile }" class="bg-grey-lighten-4">
       <!-- 移动端顶部搜索栏 -->
@@ -252,6 +283,7 @@ import api from './api'
 import AppModal from './components/AppModal.vue'
 import NotificationBell from './components/NotificationBell.vue'
 import { modalState, handleConfirm, handleCancel } from './utils/modal'
+import { marked } from 'marked'
 
 export default {
   name: 'App',
@@ -274,7 +306,32 @@ export default {
     const icpNumber = ref(null)
     const publicSecurityNumber = ref(null)
     const searchQuery = ref('')
-    
+    const announcementDialog = ref(false)
+    const announcementContent = ref('')
+    const dontShowAgain = ref(false)
+
+    const loadAnnouncement = async () => {
+      try {
+        const response = await api.get('/announcement')
+        if (response.data.content) {
+          announcementContent.value = marked(response.data.content)
+          const hideAnnouncement = localStorage.getItem('hideAnnouncement')
+          if (!hideAnnouncement) {
+            announcementDialog.value = true
+          }
+        }
+      } catch (error) {
+        console.error('加载公告失败', error)
+      }
+    }
+
+    const closeAnnouncementDialog = () => {
+      if (dontShowAgain.value) {
+        localStorage.setItem('hideAnnouncement', 'true')
+      }
+      announcementDialog.value = false
+    }
+
     const handleSearch = () => {
       if (searchQuery.value.trim()) {
         router.push({ path: '/search', query: { q: searchQuery.value.trim() } })
@@ -388,6 +445,7 @@ export default {
       loadUser()
       loadVersion()
       loadSiteTitle()
+      loadAnnouncement()
 
       // 监听登录/登出事件
       window.addEventListener('user-updated', () => {
@@ -410,7 +468,7 @@ export default {
         token.value = null
       })
     })
-    
+
     return {
       token,
       user,
@@ -431,7 +489,11 @@ export default {
       icpNumber,
       publicSecurityNumber,
       searchQuery,
-      handleSearch
+      handleSearch,
+      announcementDialog,
+      announcementContent,
+      dontShowAgain,
+      closeAnnouncementDialog
     }
   }
 }
@@ -598,6 +660,129 @@ export default {
   gap: 8px;
   color: #ef4444;
   font-weight: 500;
+}
+
+/* Markdown 样式 */
+.markdown-body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  color: #24292e;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.markdown-body h1 {
+  font-size: 2em;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: .3em;
+}
+
+.markdown-body h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: .3em;
+}
+
+.markdown-body h3 {
+  font-size: 1.25em;
+}
+
+.markdown-body h4 {
+  font-size: 1em;
+}
+
+.markdown-body p {
+  margin-bottom: 16px;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 2em;
+  margin-bottom: 16px;
+}
+
+.markdown-body li {
+  margin-bottom: .25em;
+}
+
+.markdown-body code {
+  padding: .2em .4em;
+  margin: 0;
+  font-size: 85%;
+  background-color: rgba(27, 31, 35, .05);
+  border-radius: 3px;
+}
+
+.markdown-body pre {
+  padding: 16px;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: #f6f8fa;
+  border-radius: 3px;
+}
+
+.markdown-body pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.markdown-body a {
+  color: #0366d6;
+  text-decoration: none;
+}
+
+.markdown-body a:hover {
+  text-decoration: underline;
+}
+
+.markdown-body img {
+  max-width: 100%;
+  box-sizing: content-box;
+  background-color: #fff;
+}
+
+.markdown-body blockquote {
+  padding: 0 1em;
+  color: #6a737d;
+  border-left: .25em solid #dfe2e5;
+  margin-bottom: 16px;
+}
+
+.markdown-body table {
+  border-spacing: 0;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+  padding: 6px 13px;
+  border: 1px solid #dfe2e5;
+}
+
+.markdown-body table th {
+  font-weight: 600;
+  background-color: #f6f8fa;
+}
+
+.markdown-body table tr {
+  background-color: #fff;
+  border-top: 1px solid #c6cbd1;
+}
+
+.markdown-body table tr:nth-child(2n) {
+  background-color: #f6f8fa;
 }
 
 @keyframes fadeIn {

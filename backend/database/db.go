@@ -53,6 +53,7 @@ func AutoMigrate() {
 		&models.SystemLog{},
 		&models.SignInRecord{},
 		&models.SignInConfig{},
+		&models.CoinRecord{},
 	)
 	DB.Exec("SET FOREIGN_KEY_CHECKS = 1")
 	if err != nil {

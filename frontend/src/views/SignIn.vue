@@ -28,13 +28,13 @@
 
           <!-- 未签到状态 -->
           <div v-else class="unsigned-section">
-            <v-avatar size="80" color="primary" class="mb-4">
-              <v-icon size="48" color="white">mdi-calendar-check</v-icon>
-            </v-avatar>
-            <h3 class="text-h5 mb-2">今日可签到</h3>
-            <p class="text-body-2 text-grey mb-4">
-              连续签到 <span class="text-primary font-weight-bold">{{ status.sign_in_days }}</span> 天
-            </p>
+          <v-avatar size="80" color="primary" class="mb-4">
+            <v-icon size="48" color="white">mdi-calendar-check</v-icon>
+          </v-avatar>
+          <h3 class="text-h5 mb-2">今日可签到</h3>
+          <p class="text-body-2 text-grey mb-4">
+            连续签到 <span class="text-primary font-weight-bold">{{ status.sign_in_days }}</span> 天，获得 <span class="text-primary font-weight-bold">{{ status.total_coins || status.total_points || 0 }}</span> 币
+          </p>
             <v-btn
               color="primary"
               size="large"
@@ -51,9 +51,9 @@
             <v-col cols="4">
               <div class="stat-item">
                 <div class="stat-value text-h6 font-weight-bold text-primary">
-                  {{ status.total_points || 0 }}
+                  {{ status.total_coins || status.total_points || 0 }}
                 </div>
-                <div class="stat-label text-caption text-grey">累计积分</div>
+                <div class="stat-label text-caption text-grey">累计币</div>
               </div>
             </v-col>
             <v-col cols="4">
@@ -114,7 +114,7 @@
                 连续 <span class="text-primary font-weight-bold">7</span> 天
               </v-list-item-title>
               <template v-slot:append>
-                <span class="text-success text-body-2">+5 积分</span>
+                <span class="text-success text-body-2">+5 币</span>
               </template>
             </v-list-item>
             <v-list-item class="px-0">
@@ -125,7 +125,7 @@
                 连续 <span class="text-primary font-weight-bold">30</span> 天
               </v-list-item-title>
               <template v-slot:append>
-                <span class="text-success text-body-2">+15 积分</span>
+                <span class="text-success text-body-2">+15 币</span>
               </template>
             </v-list-item>
             <v-list-item class="px-0">
@@ -136,7 +136,7 @@
                 连续 <span class="text-primary font-weight-bold">365</span> 天
               </v-list-item-title>
               <template v-slot:append>
-                <span class="text-success text-body-2">+50 积分</span>
+                <span class="text-success text-body-2">+50 币</span>
               </template>
             </v-list-item>
           </v-list>
@@ -151,9 +151,9 @@
             签到排行榜
           </span>
           <v-btn-toggle v-model="rankType" mandatory density="compact" variant="outlined" divided>
-            <v-btn value="continuous" size="small">连续</v-btn>
-            <v-btn value="points" size="small">积分</v-btn>
-          </v-btn-toggle>
+          <v-btn value="continuous" size="small">连续</v-btn>
+          <v-btn value="points" size="small">币</v-btn>
+        </v-btn-toggle>
         </v-card-title>
         <v-card-text class="pa-0">
           <v-list density="compact" v-if="rankType === 'continuous'">
@@ -203,7 +203,7 @@
               </v-list-item-title>
               <template v-slot:append>
                 <span class="text-primary text-body-2 font-weight-bold">
-                  {{ user.total_points }} 分
+                  {{ user.total_coins || user.total_points }} 币
                 </span>
               </template>
             </v-list-item>
@@ -240,7 +240,7 @@
               </v-list-item-subtitle>
               <template v-slot:append>
                 <span class="text-success text-body-2">
-                  +{{ record.reward_points }}
+                  +{{ record.reward_points }} 币
                 </span>
               </template>
             </v-list-item>

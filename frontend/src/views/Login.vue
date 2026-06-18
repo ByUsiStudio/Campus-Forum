@@ -78,17 +78,19 @@ export default {
     const handleLogin = async () => {
       error.value = ''
       loading.value = true
-      
+
       try {
         const response = await api.post('/auth/login', form.value)
-        const { token, user } = response.data
-        
+        const { token, refresh_token, expires_in, user } = response.data
+
         localStorage.setItem('token', token)
+        localStorage.setItem('refresh_token', refresh_token)
+        localStorage.setItem('token_expires_at', Date.now() + expires_in * 1000)
         localStorage.setItem('user', JSON.stringify(user))
-        
+
         // 通知 App.vue 更新状态
         window.dispatchEvent(new Event('user-updated'))
-        
+
         router.push('/')
       } catch (err) {
         error.value = err.response?.data?.error || '登录失败'

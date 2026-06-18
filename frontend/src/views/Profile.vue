@@ -373,10 +373,14 @@ export default {
       if (!user.value || isOwnProfile.value || !currentUser.value) return
 
       try {
-        const response = await api.get(`/follow/status/${user.value.id}`)
-        followStatus.value = response.data
+        const response = await api.get(`/friends/status/${user.value.id}`)
+        followStatus.value = {
+          is_following: response.data.is_friend,
+          is_followed: response.data.is_friend,
+          mutual: response.data.is_friend
+        }
       } catch (error) {
-        console.error('加载关注状态失败', error)
+        console.error('加载好友状态失败', error)
       }
     }
 
@@ -388,16 +392,15 @@ export default {
 
       try {
         if (followStatus.value.is_following) {
-          await api.delete(`/follow/${user.value.id}`)
+          await api.delete(`/friends/${user.value.id}`)
           followStatus.value.is_following = false
           followStatus.value.mutual = false
         } else {
-          await api.post(`/follow/${user.value.id}`)
-          followStatus.value.is_following = true
-          followStatus.value.mutual = followStatus.value.is_followed
+          await api.post('/friends/request', { user_id: user.value.id })
+          await showSuccess('已发送好友请求')
         }
       } catch (error) {
-        console.error('关注失败', error)
+        console.error('好友操作失败', error)
       }
     }
 
@@ -417,14 +420,11 @@ export default {
       if (!user.value) return
       try {
         const targetId = targetUserId.value || user.value.id
-        const [followingRes, followersRes] = await Promise.all([
-          api.get(`/users/${targetId}/following`),
-          api.get(`/users/${targetId}/followers`)
-        ])
-        followingCount.value = followingRes.data.following?.length || 0
-        followersCount.value = followersRes.data.followers?.length || 0
+        const friendsRes = await api.get(`/friends/mutual/${targetId}`)
+        followingCount.value = friendsRes.data.friends?.length || 0
+        followersCount.value = friendsRes.data.friends?.length || 0
       } catch (error) {
-        console.error('加载关注数据失败', error)
+        console.error('加载好友数据失败', error)
       }
     }
 

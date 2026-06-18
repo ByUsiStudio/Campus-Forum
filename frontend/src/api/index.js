@@ -6,12 +6,81 @@ const api = axios.create({
   timeout: 600000
 })
 
+// 是否正在刷新 token
+let isRefreshing = false
+// 等待刷新 token 的请求队列
+let refreshQueue = []
+
+// 刷新 token
+async function refreshToken() {
+  const refreshToken = localStorage.getItem('refresh_token')
+  if (!refreshToken) {
+    return false
+  }
+
+  try {
+    const response = await axios.post('/api/auth/refresh-token', {
+      refresh_token: refreshToken
+    })
+
+    const { token, refresh_token } = response.data
+    localStorage.setItem('token', token)
+    localStorage.setItem('refresh_token', refresh_token)
+    localStorage.setItem('token_expires_at', Date.now() + 3600 * 1000)
+
+    return true
+  } catch (error) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('token_expires_at')
+    return false
+  }
+}
+
+// 检查 token 是否即将过期（5分钟内）
+function isTokenExpiringSoon() {
+  const expiresAt = localStorage.getItem('token_expires_at')
+  if (!expiresAt) return false
+
+  const now = Date.now()
+  const expires = parseInt(expiresAt)
+  return expires - now < 5 * 60 * 1000 // 5分钟内过期
+}
+
 // 请求拦截器
 api.interceptors.request.use(
-  config => {
+  async config => {
     const token = localStorage.getItem('token')
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+      // 检查 token 是否即将过期
+      if (isTokenExpiringSoon() && !isRefreshing && config.url !== '/auth/refresh-token') {
+        isRefreshing = true
+        const success = await refreshToken()
+        isRefreshing = false
+
+        if (!success) {
+          // 刷新失败，跳转到登录页
+          window.location.href = '/login'
+          return Promise.reject(new Error('Token refresh failed'))
+        }
+
+        // 处理等待队列
+        refreshQueue.forEach(callback => callback())
+        refreshQueue = []
+      }
+
+      // 如果正在刷新，等待刷新完成
+      if (isRefreshing && config.url !== '/auth/refresh-token') {
+        return new Promise((resolve) => {
+          refreshQueue.push(() => {
+            config.headers.Authorization = `Bearer ${localStorage.getItem('token')}`
+            resolve(config)
+          })
+        })
+      }
+
+      config.headers.Authorization = `Bearer ${localStorage.getItem('token')}`
     }
     return config
   },
@@ -28,13 +97,27 @@ api.interceptors.response.use(
   response => {
     return response
   },
-  error => {
+  async error => {
     const errorInfo = parseErrorResponse(error)
 
-    // 401 未授权 - 跳转到登录页
+    // 401 未授权 - 尝试刷新 token
     if (errorInfo.code === 401) {
+      // 如果不是刷新 token 的请求失败
+      if (error.config.url !== '/auth/refresh-token') {
+        // 尝试刷新 token
+        const success = await refreshToken()
+        if (success) {
+          // 重新发送原请求
+          error.config.headers.Authorization = `Bearer ${localStorage.getItem('token')}`
+          return axios.request(error.config)
+        }
+      }
+
+      // 刷新失败，跳转到登录页
       localStorage.removeItem('token')
+      localStorage.removeItem('refresh_token')
       localStorage.removeItem('user')
+      localStorage.removeItem('token_expires_at')
       window.location.href = '/login'
       return Promise.reject(error)
     }
