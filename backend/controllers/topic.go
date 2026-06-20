@@ -223,7 +223,7 @@ func GetFollowedTopics(c *gin.Context) {
 // AddTopicToArticle 为文章添加话题
 func AddTopicToArticle(c *gin.Context) {
 	userID := c.MustGet("user_id").(uint)
-	articleID := c.Param("article_id")
+	articleID := c.Param("id")
 
 	var req struct {
 		TopicID uint `json:"topic_id"`
@@ -275,7 +275,7 @@ func AddTopicToArticle(c *gin.Context) {
 // RemoveTopicFromArticle 从文章移除话题
 func RemoveTopicFromArticle(c *gin.Context) {
 	userID := c.MustGet("user_id").(uint)
-	articleID := c.Param("article_id")
+	articleID := c.Param("id")
 	topicID := c.Param("topic_id")
 
 	// 验证文章所有权

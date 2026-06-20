@@ -306,8 +306,8 @@ func main() {
 			protected.POST("/topics/:id/follow", controllers.FollowTopic)
 			protected.DELETE("/topics/:id/follow", controllers.UnfollowTopic)
 			protected.GET("/topics/followed", controllers.GetFollowedTopics)
-			protected.POST("/articles/:article_id/topics", controllers.AddTopicToArticle)
-			protected.DELETE("/articles/:article_id/topics/:topic_id", controllers.RemoveTopicFromArticle)
+			protected.POST("/articles/:id/topics", controllers.AddTopicToArticle)
+			protected.DELETE("/articles/:id/topics/:topic_id", controllers.RemoveTopicFromArticle)
 			protected.GET("/topics/hot", controllers.GetHotTopics)
 
 			// 排行榜与徽章
