@@ -4,7 +4,12 @@
 
 **GET** `/api/collections`
 
-获取当前登录用户的所有收藏夹。
+获取当前登录用户的所有收藏夹（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **响应**:
 ```json
@@ -31,7 +36,12 @@
 
 **GET** `/api/collections/{id}`
 
-获取指定收藏夹的详细信息和其中的文章列表。
+获取指定收藏夹的详细信息和其中的文章列表（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -78,7 +88,12 @@
 
 **POST** `/api/collections`
 
-创建新的收藏夹。
+创建新的收藏夹（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **请求体**:
 ```json
@@ -113,7 +128,12 @@
 
 **PUT** `/api/collections/{id}`
 
-更新收藏夹信息。
+更新收藏夹信息（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -143,7 +163,12 @@
 
 **DELETE** `/api/collections/{id}`
 
-删除收藏夹及其中的所有文章关联。
+删除收藏夹及其中的所有文章关联（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -164,7 +189,12 @@
 
 **POST** `/api/collections/{id}/articles`
 
-将文章添加到指定收藏夹。
+将文章添加到指定收藏夹（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -197,7 +227,12 @@
 
 **DELETE** `/api/collections/{id}/articles/{article_id}`
 
-从收藏夹中移除指定文章。
+从收藏夹中移除指定文章（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -219,7 +254,12 @@
 
 **GET** `/api/articles/{id}/versions`
 
-获取指定文章的所有版本历史。
+获取指定文章的所有版本历史（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -249,7 +289,12 @@
 
 **GET** `/api/articles/{id}/versions/{version}`
 
-获取文章指定版本的完整内容。
+获取文章指定版本的完整内容（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -280,7 +325,12 @@
 
 **POST** `/api/articles/{id}/versions/{version}/restore`
 
-将文章恢复到指定版本。
+将文章恢复到指定版本（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |

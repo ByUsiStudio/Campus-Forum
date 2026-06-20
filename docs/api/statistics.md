@@ -4,7 +4,12 @@
 
 **GET** `/api/statistics`
 
-获取当前登录用户的个人统计数据。
+获取当前登录用户的个人统计数据（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **响应**:
 ```json
@@ -34,7 +39,12 @@
 
 **GET** `/api/statistics/daily`
 
-获取系统每日统计数据，默认返回最近30天。
+获取系统每日统计数据，默认返回最近30天（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **Query 参数**:
 | 参数 | 类型 | 描述 |
@@ -70,7 +80,12 @@
 
 **GET** `/api/statistics/overview`
 
-获取系统整体概览数据（需要登录）。
+获取系统整体概览数据（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **响应**:
 ```json
@@ -95,7 +110,12 @@
 
 **GET** `/api/statistics/activity`
 
-获取当前用户的活跃度历史数据。
+获取当前用户的活跃度历史数据（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **Query 参数**:
 | 参数 | 类型 | 描述 |
@@ -129,7 +149,12 @@
 
 **GET** `/api/articles/{id}/statistics`
 
-获取指定文章的统计数据。
+获取指定文章的统计数据（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -160,9 +185,12 @@
 
 **GET** `/api/statistics/dashboard`
 
-获取管理员统计仪表板数据，包含系统概览、最近7天统计、热门文章和活跃用户。
+获取管理员统计仪表板数据，包含系统概览、最近7天统计、热门文章和活跃用户（需认证，管理员）。
 
-**权限**: 管理员（等级 >= 80）
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **响应**:
 ```json

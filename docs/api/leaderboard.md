@@ -49,7 +49,12 @@
 
 **GET** `/api/leaderboard/rank`
 
-获取当前用户在排行榜中的排名。
+获取当前用户在排行榜中的排名（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **Query 参数**:
 | 参数 | 类型 | 描述 |
@@ -90,7 +95,12 @@
 
 **GET** `/api/badges`
 
-获取当前用户获得的所有徽章。
+获取当前用户获得的所有徽章（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **响应**:
 ```json
@@ -117,7 +127,12 @@
 
 **PUT** `/api/badges/{id}/display`
 
-设置徽章是否在个人资料中展示。
+设置徽章是否在个人资料中展示（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -148,9 +163,12 @@
 
 **POST** `/api/badges/grant`
 
-手动授予用户徽章。
+手动授予用户徽章（需认证，管理员）。
 
-**权限**: 管理员（等级 >= 80）
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **请求体**:
 ```json
@@ -186,9 +204,12 @@
 
 **DELETE** `/api/badges/{id}`
 
-撤销用户的徽章。
+撤销用户的徽章（需认证，管理员）。
 
-**权限**: 管理员（等级 >= 80）
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |

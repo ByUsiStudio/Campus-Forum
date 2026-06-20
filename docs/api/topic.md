@@ -46,7 +46,7 @@
 
 **GET** `/api/topics/{id}`
 
-获取指定话题的详细信息和关联文章列表。
+获取指定话题的详细信息和关联文章列表（公开接口）。
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -128,9 +128,12 @@
 
 **POST** `/api/topics`
 
-创建新的话题标签。
+创建新的话题标签（需认证，管理员）。
 
-**权限**: 管理员（等级 >= 80）
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **请求体**:
 ```json
@@ -169,9 +172,12 @@
 
 **PUT** `/api/topics/{id}`
 
-更新话题信息。
+更新话题信息（需认证，管理员）。
 
-**权限**: 管理员（等级 >= 80）
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -194,9 +200,12 @@
 
 **DELETE** `/api/topics/{id}`
 
-删除话题及其所有关联。
+删除话题及其所有关联（需认证，管理员）。
 
-**权限**: 管理员（等级 >= 80）
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -217,7 +226,12 @@
 
 **POST** `/api/topics/{id}/follow`
 
-关注指定话题。
+关注指定话题（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -241,7 +255,12 @@
 
 **DELETE** `/api/topics/{id}/follow`
 
-取消关注指定话题。
+取消关注指定话题（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -262,7 +281,12 @@
 
 **GET** `/api/topics/followed`
 
-获取当前用户关注的所有话题。
+获取当前用户关注的所有话题（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **响应**:
 ```json
@@ -291,7 +315,12 @@
 
 **POST** `/api/articles/{id}/topics`
 
-为当前用户的文章添加话题标签。
+为当前用户的文章添加话题标签（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -323,7 +352,12 @@
 
 **DELETE** `/api/articles/{id}/topics/{topic_id}`
 
-从文章中移除话题标签。
+从文章中移除话题标签（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |

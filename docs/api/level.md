@@ -4,7 +4,12 @@
 
 **GET** `/api/level`
 
-获取当前登录用户的等级信息。如果没有等级记录，会自动创建初始等级。
+获取当前登录用户的等级信息。如果没有等级记录，会自动创建初始等级（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **响应**:
 ```json
@@ -30,7 +35,12 @@
 
 **GET** `/api/level/experience-records`
 
-获取当前用户的经验获取记录。
+获取当前用户的经验获取记录（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **Query 参数**:
 | 参数 | 类型 | 描述 |
@@ -67,7 +77,12 @@
 
 **GET** `/api/achievements`
 
-获取当前用户已获得的所有成就。
+获取当前用户已获得的所有成就（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **响应**:
 ```json
@@ -157,9 +172,12 @@
 
 **POST** `/api/level/config`
 
-创建新的等级配置规则。
+创建新的等级配置规则（需认证，管理员）。
 
-**权限**: 管理员（等级 >= 80）
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **请求体**:
 ```json
@@ -193,9 +211,12 @@
 
 **PUT** `/api/level/config/{id}`
 
-更新指定等级配置。
+更新指定等级配置（需认证，管理员）。
 
-**权限**: 管理员（等级 >= 80）
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -218,9 +239,12 @@
 
 **POST** `/api/achievements`
 
-创建新的成就定义。
+创建新的成就定义（需认证，管理员）。
 
-**权限**: 管理员（等级 >= 80）
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **请求体**:
 ```json
@@ -250,9 +274,12 @@
 
 **PUT** `/api/achievements/{id}`
 
-更新成就定义。
+更新成就定义（需认证，管理员）。
 
-**权限**: 管理员（等级 >= 80）
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
@@ -275,9 +302,12 @@
 
 **DELETE** `/api/achievements/{id}`
 
-删除成就定义。
+删除成就定义（需认证，管理员）。
 
-**权限**: 管理员（等级 >= 80）
+**Headers**:
+```
+Authorization: Bearer <token>
+```
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
