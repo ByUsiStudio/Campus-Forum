@@ -269,8 +269,6 @@ func main() {
 			protected.GET("/level", controllers.GetUserLevel)
 			protected.GET("/level/experience-records", controllers.GetUserExperienceRecords)
 			protected.GET("/achievements", controllers.GetUserAchievements)
-			protected.GET("/achievements/all", controllers.GetAllAchievements)
-			protected.GET("/level/config", controllers.GetLevelConfig)
 			protected.POST("/level/config", middleware.RequireMinLevel(80), controllers.CreateLevelConfig)
 			protected.PUT("/level/config/:id", middleware.RequireMinLevel(80), controllers.UpdateLevelConfig)
 			protected.POST("/achievements", middleware.RequireMinLevel(80), controllers.CreateAchievement)
@@ -308,7 +306,6 @@ func main() {
 			protected.DELETE("/articles/:id/topics/:topic_id", controllers.RemoveTopicFromArticle)
 
 			// 排行榜与徽章
-			protected.GET("/leaderboard", controllers.GetLeaderboard)
 			protected.GET("/leaderboard/rank", controllers.GetUserRank)
 			protected.GET("/badges", controllers.GetUserBadges)
 			protected.PUT("/badges/:id/display", controllers.UpdateBadgeDisplay)
