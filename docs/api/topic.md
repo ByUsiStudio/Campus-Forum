@@ -289,14 +289,14 @@
 
 ## 为文章添加话题
 
-**POST** `/api/articles/{article_id}/topics`
+**POST** `/api/articles/{id}/topics`
 
 为当前用户的文章添加话题标签。
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
 |------|------|------|
-| article_id | int | 文章 ID |
+| id | int | 文章 ID |
 
 **请求体**:
 ```json
@@ -321,14 +321,14 @@
 
 ## 从文章移除话题
 
-**DELETE** `/api/articles/{article_id}/topics/{topic_id}`
+**DELETE** `/api/articles/{id}/topics/{topic_id}`
 
 从文章中移除话题标签。
 
 **路径参数**:
 | 参数 | 类型 | 描述 |
 |------|------|------|
-| article_id | int | 文章 ID |
+| id | int | 文章 ID |
 | topic_id | int | 话题 ID |
 
 **响应**:
