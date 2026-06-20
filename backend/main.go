@@ -298,8 +298,6 @@ func main() {
 			protected.POST("/articles/:id/versions/:version/restore", controllers.RestoreArticleVersion)
 
 			// 话题管理
-			protected.GET("/topics", controllers.GetTopics)
-			protected.GET("/topics/:id", controllers.GetTopic)
 			protected.POST("/topics", middleware.RequireMinLevel(80), controllers.CreateTopic)
 			protected.PUT("/topics/:id", middleware.RequireMinLevel(80), controllers.UpdateTopic)
 			protected.DELETE("/topics/:id", middleware.RequireMinLevel(80), controllers.DeleteTopic)
@@ -308,7 +306,6 @@ func main() {
 			protected.GET("/topics/followed", controllers.GetFollowedTopics)
 			protected.POST("/articles/:id/topics", controllers.AddTopicToArticle)
 			protected.DELETE("/articles/:id/topics/:topic_id", controllers.RemoveTopicFromArticle)
-			protected.GET("/topics/hot", controllers.GetHotTopics)
 
 			// 排行榜与徽章
 			protected.GET("/leaderboard", controllers.GetLeaderboard)

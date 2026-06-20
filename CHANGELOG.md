@@ -6,6 +6,20 @@
 
 ---
 
+## [2.0.3] - 2026-06-20
+
+### 修复
+
+- 修复路由参数名冲突（`/articles/:article_id` 与 `/articles/:id` 冲突）
+- 修复重复路由注册（`/api/topics` 在认证和公开路由组中重复定义）
+- 修复控制器函数名不匹配（`GetLevelConfig`、`GetUserExperienceRecords`）
+- 修复模型字段名不匹配（`NextLevelExp` → `NextLevel`）
+- 修复模型类型名不匹配（`TopicArticle` → `ArticleTopic`）
+- 修复文件编码错误（重建 `collection.go`、`level.go`、`leaderboard.go`、`topic.go`）
+- 修复 API 文档中的路由参数与代码不一致
+
+---
+
 ## [2.0.2] - 2026-06-20
 
 ### 新增
