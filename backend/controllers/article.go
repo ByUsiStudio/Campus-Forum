@@ -151,7 +151,46 @@ func GetArticle(c *gin.Context) {
 		return
 	}
 
-	database.DB.Model(&article).UpdateColumn("view_count", gorm.Expr("view_count + 1"))
+	// 浏览量增加逻辑：注册用户只能增加一次
+	var currentUserID uint
+
+	if userID, exists := c.Get("user_id"); exists {
+		currentUserID = userID.(uint)
+
+		// 检查注册用户是否已经浏览过该文章
+		var viewHistory models.ViewHistory
+		err := database.DB.Where("user_id = ? AND article_id = ?", currentUserID, article.ID).First(&viewHistory).Error
+
+		if err != nil {
+			// 用户第一次浏览，增加浏览量并记录浏览历史
+			database.DB.Model(&article).UpdateColumn("view_count", gorm.Expr("view_count + 1"))
+
+			viewHistory = models.ViewHistory{
+				ArticleID: article.ID,
+				UserID:    &currentUserID,
+			}
+			database.DB.Create(&viewHistory)
+		}
+	} else {
+		// 未注册用户（游客），使用IP地址判断
+		ip := c.ClientIP()
+
+		// 检查该IP是否在最近24小时内浏览过该文章
+		var viewHistory models.ViewHistory
+		err := database.DB.Where("ip = ? AND article_id = ? AND created_at > ?",
+			ip, article.ID, time.Now().AddDate(0, 0, -1)).First(&viewHistory).Error
+
+		if err != nil {
+			// 该IP在24小时内第一次浏览，增加浏览量并记录浏览历史
+			database.DB.Model(&article).UpdateColumn("view_count", gorm.Expr("view_count + 1"))
+
+			viewHistory = models.ViewHistory{
+				ArticleID: article.ID,
+				IP:        ip,
+			}
+			database.DB.Create(&viewHistory)
+		}
+	}
 
 	var likeCount int64
 	database.DB.Model(&models.Like{}).Where("article_id = ?", article.ID).Count(&likeCount)
@@ -166,7 +205,6 @@ func GetArticle(c *gin.Context) {
 	database.DB.Model(&models.Comment{}).Where("article_id = ?", article.ID).Count(&total)
 	database.DB.Where("article_id = ? AND parent_id IS NULL", article.ID).Preload("User").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&comments)
 
-	var currentUserID uint
 	isOwner := false
 	if userID, exists := c.Get("user_id"); exists {
 		currentUserID = userID.(uint)

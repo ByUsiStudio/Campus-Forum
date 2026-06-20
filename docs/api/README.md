@@ -25,6 +25,15 @@
 - [好友接口](friend.md) - 好友关系管理
 - [收藏接口](favorite.md) - 收藏文章
 - [签到接口](signin.md) - 用户签到
+- [等级成就](level.md) - 用户等级与成就系统
+- [排行榜徽章](leaderboard.md) - 排行榜与用户徽章
+
+### 内容相关
+- [收藏夹](collection.md) - 收藏夹管理与文章版本
+- [话题标签](topic.md) - 话题管理与文章标签
+
+### 数据统计
+- [统计接口](statistics.md) - 数据统计与分析
 
 ### 通知相关
 - [通知接口](notification.md) - 各种通知的管理

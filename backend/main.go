@@ -264,6 +264,59 @@ func main() {
 			protected.GET("/system-logs/modules", middleware.RequireSystemAdmin(), controllers.GetLogModules)
 			protected.DELETE("/system-logs/old", middleware.RequireSystemAdmin(), controllers.DeleteOldLogs)
 			protected.GET("/my-logs", controllers.GetMyLogs)
+
+			// 用户等级与成就系统
+			protected.GET("/level", controllers.GetUserLevel)
+			protected.GET("/level/experience-records", controllers.GetUserExperienceRecords)
+			protected.GET("/achievements", controllers.GetUserAchievements)
+			protected.GET("/achievements/all", controllers.GetAllAchievements)
+			protected.GET("/level/config", controllers.GetLevelConfig)
+			protected.POST("/level/config", middleware.RequireMinLevel(80), controllers.CreateLevelConfig)
+			protected.PUT("/level/config/:id", middleware.RequireMinLevel(80), controllers.UpdateLevelConfig)
+			protected.POST("/achievements", middleware.RequireMinLevel(80), controllers.CreateAchievement)
+			protected.PUT("/achievements/:id", middleware.RequireMinLevel(80), controllers.UpdateAchievement)
+			protected.DELETE("/achievements/:id", middleware.RequireMinLevel(80), controllers.DeleteAchievement)
+
+			// 数据统计与分析
+			protected.GET("/statistics", controllers.GetUserStatistics)
+			protected.GET("/statistics/daily", controllers.GetDailyStatistics)
+			protected.GET("/statistics/overview", controllers.GetSystemOverview)
+			protected.GET("/statistics/activity", controllers.GetUserActivity)
+			protected.GET("/statistics/dashboard", middleware.RequireMinLevel(80), controllers.GetStatisticsDashboard)
+			protected.GET("/articles/:id/statistics", controllers.GetArticleStatistics)
+
+			// 收藏夹管理
+			protected.GET("/collections", controllers.GetCollections)
+			protected.GET("/collections/:id", controllers.GetCollection)
+			protected.POST("/collections", controllers.CreateCollection)
+			protected.PUT("/collections/:id", controllers.UpdateCollection)
+			protected.DELETE("/collections/:id", controllers.DeleteCollection)
+			protected.POST("/collections/:id/articles", controllers.AddArticleToCollection)
+			protected.DELETE("/collections/:id/articles/:article_id", controllers.RemoveArticleFromCollection)
+			protected.GET("/articles/:id/versions", controllers.GetArticleVersions)
+			protected.GET("/articles/:id/versions/:version", controllers.GetArticleVersion)
+			protected.POST("/articles/:id/versions/:version/restore", controllers.RestoreArticleVersion)
+
+			// 话题管理
+			protected.GET("/topics", controllers.GetTopics)
+			protected.GET("/topics/:id", controllers.GetTopic)
+			protected.POST("/topics", middleware.RequireMinLevel(80), controllers.CreateTopic)
+			protected.PUT("/topics/:id", middleware.RequireMinLevel(80), controllers.UpdateTopic)
+			protected.DELETE("/topics/:id", middleware.RequireMinLevel(80), controllers.DeleteTopic)
+			protected.POST("/topics/:id/follow", controllers.FollowTopic)
+			protected.DELETE("/topics/:id/follow", controllers.UnfollowTopic)
+			protected.GET("/topics/followed", controllers.GetFollowedTopics)
+			protected.POST("/articles/:article_id/topics", controllers.AddTopicToArticle)
+			protected.DELETE("/articles/:article_id/topics/:topic_id", controllers.RemoveTopicFromArticle)
+			protected.GET("/topics/hot", controllers.GetHotTopics)
+
+			// 排行榜与徽章
+			protected.GET("/leaderboard", controllers.GetLeaderboard)
+			protected.GET("/leaderboard/rank", controllers.GetUserRank)
+			protected.GET("/badges", controllers.GetUserBadges)
+			protected.PUT("/badges/:id/display", controllers.UpdateBadgeDisplay)
+			protected.POST("/badges/grant", middleware.RequireMinLevel(80), controllers.GrantBadge)
+			protected.DELETE("/badges/:id", middleware.RequireMinLevel(80), controllers.RevokeBadge)
 		}
 
 		// 公开路由
@@ -279,6 +332,14 @@ func main() {
 		// 用户公开信息
 		api.GET("/users/:id", controllers.GetUserByID)
 		api.GET("/users/:id/articles", controllers.GetUserArticles)
+
+		// 新增公开路由 - 话题和排行榜
+		api.GET("/topics", controllers.GetTopics)
+		api.GET("/topics/:id", controllers.GetTopic)
+		api.GET("/topics/hot", controllers.GetHotTopics)
+		api.GET("/leaderboard", controllers.GetLeaderboard)
+		api.GET("/achievements/all", controllers.GetAllAchievements)
+		api.GET("/level/config", controllers.GetLevelConfig)
 	}
 
 	// 密码重置（公开接口，但有限制）

@@ -132,9 +132,11 @@ export default {
 
     const loadStats = async () => {
       try {
-        const response = await api.get('/articles', { params: { page: 1, page_size: 1 } })
-        stats.value.totalArticles = response.data.total || 0
-        stats.value.totalUsers = response.data.total || 1
+        const response = await api.get('/statistics/overview')
+        if (response.data.success) {
+          stats.value.totalArticles = response.data.data.total_articles || 0
+          stats.value.totalUsers = response.data.data.total_users || 0
+        }
       } catch (error) {
         console.error('加载统计失败', error)
       }

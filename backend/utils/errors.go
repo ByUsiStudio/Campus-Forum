@@ -16,14 +16,14 @@ type ErrorResponse struct {
 
 // 常见错误类型
 const (
-	ErrTypeNotFound          = "NOT_FOUND"
-	ErrTypeForbidden         = "FORBIDDEN"
-	ErrTypeUnauthorized      = "UNAUTHORIZED"
-	ErrTypeBadRequest        = "BAD_REQUEST"
-	ErrTypeInternal          = "INTERNAL_ERROR"
-	ErrTypeRateLimit         = "RATE_LIMITED"
-	ErrTypeValidation        = "VALIDATION_ERROR"
-	ErrTypeConflict          = "CONFLICT"
+	ErrTypeNotFound     = "NOT_FOUND"
+	ErrTypeForbidden    = "FORBIDDEN"
+	ErrTypeUnauthorized = "UNAUTHORIZED"
+	ErrTypeBadRequest   = "BAD_REQUEST"
+	ErrTypeInternal     = "INTERNAL_ERROR"
+	ErrTypeRateLimit    = "RATE_LIMITED"
+	ErrTypeValidation   = "VALIDATION_ERROR"
+	ErrTypeConflict     = "CONFLICT"
 )
 
 // NotFound 404错误
@@ -115,4 +115,38 @@ func Conflict(c *gin.Context, message string, detail ...string) {
 		errResponse.Detail = detail[0]
 	}
 	c.JSON(http.StatusConflict, errResponse)
+}
+
+// SendErrorResponse 通用错误响应函数
+func SendErrorResponse(c *gin.Context, code int, message string, detail ...string) {
+	var errType string
+
+	switch code {
+	case http.StatusNotFound:
+		errType = ErrTypeNotFound
+	case http.StatusForbidden:
+		errType = ErrTypeForbidden
+	case http.StatusUnauthorized:
+		errType = ErrTypeUnauthorized
+	case http.StatusBadRequest:
+		errType = ErrTypeBadRequest
+	case http.StatusInternalServerError:
+		errType = ErrTypeInternal
+	case 429:
+		errType = ErrTypeRateLimit
+	case http.StatusConflict:
+		errType = ErrTypeConflict
+	default:
+		errType = ErrTypeInternal
+	}
+
+	errResponse := ErrorResponse{
+		Code:    code,
+		Error:   errType,
+		Message: message,
+	}
+	if len(detail) > 0 {
+		errResponse.Detail = detail[0]
+	}
+	c.JSON(code, errResponse)
 }

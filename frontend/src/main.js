@@ -81,6 +81,12 @@ import AdminSystemLogs from './views/admin/AdminSystemLogs.vue'
 import AdminSiteConfig from './views/admin/AdminSiteConfig.vue'
 import AdminSMTPConfig from './views/admin/AdminSMTPConfig.vue'
 import AdminNotifications from './views/admin/AdminNotifications.vue'
+import AdminStatistics from './views/admin/AdminStatistics.vue'
+
+// 导入新功能组件
+import Leaderboard from './views/Leaderboard.vue'
+import TopicList from './views/TopicList.vue'
+import CollectionList from './views/CollectionList.vue'
 
 const routes = [
     { path: '/', component: Home, name: 'Home' },
@@ -110,7 +116,8 @@ const routes = [
         { path: 'system-logs', name: 'AdminSystemLogs', component: AdminSystemLogs },
         { path: 'siteconfig', name: 'AdminSiteConfig', component: AdminSiteConfig },
         { path: 'smtpconfig', name: 'AdminSMTPConfig', component: AdminSMTPConfig },
-        { path: 'admin-notifications', name: 'AdminNotifications', component: AdminNotifications }
+        { path: 'admin-notifications', name: 'AdminNotifications', component: AdminNotifications },
+        { path: 'statistics', name: 'AdminStatistics', component: AdminStatistics }
       ]
     },
     { path: '/category/:id', component: Category, name: 'Category' },
@@ -119,6 +126,9 @@ const routes = [
     { path: '/follow-list', component: FollowList, name: 'FollowList' },
     { path: '/search', component: Search, name: 'Search' },
     { path: '/signin', component: SignIn, name: 'SignIn' },
+    { path: '/leaderboard', component: Leaderboard, name: 'Leaderboard' },
+    { path: '/topics', component: TopicList, name: 'TopicList' },
+    { path: '/collections', component: CollectionList, name: 'CollectionList' },
     { path: '/403', component: Forbidden, name: 'Forbidden' },
     { path: '/:pathMatch(.*)*', component: NotFound, name: 'NotFound' }
 ]

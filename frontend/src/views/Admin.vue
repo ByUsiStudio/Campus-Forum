@@ -214,6 +214,7 @@ const frontendVersion = ref(typeof __FRONTEND_VERSION__ !== 'undefined' ? __FRON
 
 const adminItems = [
   { route: 'AdminIndex', title: '数据概览', icon: 'mdi-view-dashboard' },
+  { route: 'AdminStatistics', title: '数据统计', icon: 'mdi-chart-box' },
   { route: 'AdminUsers', title: '用户管理', icon: 'mdi-account-group', badge: null },
   { route: 'AdminArticles', title: '文章管理', icon: 'mdi-file-document' },
   { route: 'AdminComments', title: '评论管理', icon: 'mdi-comment-text' },
@@ -247,6 +248,7 @@ const breadcrumbs = computed(() => {
 
 const pageTitles = {
   AdminIndex: '数据概览',
+  AdminStatistics: '数据统计',
   AdminUsers: '用户管理',
   AdminArticles: '文章管理',
   AdminComments: '评论管理',
