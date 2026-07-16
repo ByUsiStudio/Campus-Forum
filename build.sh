@@ -35,24 +35,24 @@ compile() {
 }
 
 echo "========================================"
-echo "  编译论坛后端"
-echo "  版本: ${VERSION}"
-echo "========================================"
-cd "$SCRIPT_DIR/backend"
-
-compile "Linux-AMD64" linux amd64 ../build/server-linux-amd64
-compile "Linux-ARM64" linux arm64 ../build/server-linux-arm64
-compile "Android-ARM64" android arm64 ../build/server-android-arm64
-
-echo ""
-echo "========================================"
 echo "  编译前端"
+echo "  版本: ${VERSION}"
 echo "========================================"
 cd "$SCRIPT_DIR/frontend"
 npm ci
 npm run build
 
 mv dist "$SCRIPT_DIR/build/web"
+
+echo ""
+echo "========================================"
+echo "  编译论坛后端"
+echo "========================================"
+cd "$SCRIPT_DIR/backend"
+
+compile "Linux-AMD64" linux amd64 ../build/server-linux-amd64
+compile "Linux-ARM64" linux arm64 ../build/server-linux-arm64
+compile "Android-ARM64" android arm64 ../build/server-android-arm64
 
 echo ""
 echo "========================================"

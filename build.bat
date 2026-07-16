@@ -26,7 +26,26 @@ if errorlevel 1 (
 )
 echo    [OK] config.json
 
-echo [1/3] Building backend...
+echo [1/3] Building frontend...
+cd /d %ROOT_DIR%\frontend
+call npm install
+if errorlevel 1 (
+    echo    [FAIL] npm install
+    exit /b 1
+)
+echo    [OK] npm install
+
+call npm run build
+if errorlevel 1 (
+    echo    [FAIL] npm run build
+    exit /b 1
+)
+echo    [OK] npm run build
+
+move /y dist "%ROOT_DIR%\build\web" >nul 2>&1
+
+echo.
+echo [2/3] Building backend...
 cd /d %ROOT_DIR%\backend
 set GO111MODULE=on
 set GOFLAGS=-mod=mod
@@ -62,25 +81,6 @@ if errorlevel 1 (
     exit /b 1
 )
 echo    [OK] Linux-ARM64
-
-echo.
-echo [2/3] Building frontend...
-cd /d %ROOT_DIR%\frontend
-call npm install
-if errorlevel 1 (
-    echo    [FAIL] npm install
-    exit /b 1
-)
-echo    [OK] npm install
-
-call npm run build
-if errorlevel 1 (
-    echo    [FAIL] npm run build
-    exit /b 1
-)
-echo    [OK] npm run build
-
-move /y dist "%ROOT_DIR%\build\web" >nul 2>&1
 
 echo.
 echo [3/3] Creating archive...
