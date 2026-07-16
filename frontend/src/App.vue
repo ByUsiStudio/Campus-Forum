@@ -1,805 +1,997 @@
 <template>
-  <v-app>
-    <!-- 公告弹窗 -->
-    <v-dialog v-model="announcementDialog" max-width="600" persistent>
-      <v-card>
-        <v-card-title class="d-flex align-center justify-space-between pa-4">
-          <div class="d-flex align-center">
-            <v-icon color="primary" class="mr-2">mdi-bullhorn</v-icon>
-            <span class="text-h6">公告</span>
-          </div>
-          <v-btn icon @click="closeAnnouncementDialog" variant="text">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-        <v-divider></v-divider>
-        <v-card-text class="pa-4">
+  <div class="app-container">
+    <div v-if="announcementDialog" class="announcement-overlay" @click="closeAnnouncementDialog">
+      <div class="announcement-modal animate-scale-in" @click.stop>
+        <div class="announcement-header">
+          <span class="announcement-title">
+            <i class="layui-icon layui-icon-notice"></i>
+            公告
+          </span>
+          <button class="close-btn" @click="closeAnnouncementDialog">
+            <i class="layui-icon layui-icon-close"></i>
+          </button>
+        </div>
+        <div class="announcement-content">
           <div class="markdown-body" v-html="announcementContent"></div>
-        </v-card-text>
-        <v-card-actions class="pa-4">
-          <v-checkbox
-            v-model="dontShowAgain"
-            label="不再显示"
-            density="compact"
-            hide-details
-          ></v-checkbox>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" variant="flat" @click="closeAnnouncementDialog">
-            关闭
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- 主要内容区域 -->
-    <v-main :class="{ 'pb-navigation': !hideAppBar && isMobile }" class="bg-grey-lighten-4">
-      <!-- 移动端顶部搜索栏 -->
-      <div v-if="!hideAppBar && isMobile && !isAdminPage" class="mobile-search-bar px-4 pt-3 pb-2">
-        <v-text-field
-          v-model="searchQuery"
-          prepend-inner-icon="mdi-magnify"
-          variant="solo"
-          density="compact"
-          placeholder="搜索..."
-          hide-details
-          rounded="pill"
-          bg-color="white"
-          @keyup.enter="handleSearch"
-          class="mobile-search-field"
-        ></v-text-field>
+        </div>
+        <div class="announcement-footer">
+          <label class="checkbox-label">
+            <input type="checkbox" v-model="dontShowAgain">
+            <span>不再显示</span>
+          </label>
+          <button class="layui-btn layui-btn-primary" @click="closeAnnouncementDialog">关闭</button>
+        </div>
       </div>
-      
-      <v-container v-if="!hideAppBar" fluid class="pa-4">
-        <router-view />
-      </v-container>
-      <v-container v-else>
-        <router-view />
-      </v-container>
-    </v-main>
+    </div>
 
-    <!-- 移动端底部导航栏 -->
-    <v-bottom-navigation v-if="!hideAppBar && isMobile && !isAdminPage" grow color="primary" app>
-      <v-btn to="/" value="home">
-        <v-icon>mdi-home</v-icon>
-        <span>首页</span>
-      </v-btn>
-      
-      <v-btn to="/create" value="create" v-if="token">
-        <v-icon>mdi-plus-circle</v-icon>
-        <span>发布</span>
-      </v-btn>
-      
-      <v-btn @click="appDrawer = true" value="drawer">
-        <v-icon>mdi-grid</v-icon>
-        <span>菜单</span>
-      </v-btn>
-      
-      <v-btn :to="token ? '/profile' : '/login'" :value="token ? 'profile' : 'login'">
-        <v-icon>mdi-account</v-icon>
-        <span>{{ token ? '我的' : '登录' }}</span>
-      </v-btn>
-    </v-bottom-navigation>
+    <header v-if="!hideAppBar" class="navbar" :class="{ 'scrolled': isScrolled }">
+      <div class="navbar-container">
+        <div class="navbar-brand">
+          <img src="/xylt.svg" alt="Logo" class="logo-img">
+          <router-link :to="isAdminPage ? '/admin' : '/'" class="logo-text">
+            {{ isAdminPage ? '管理后台' : siteTitle }}
+          </router-link>
+        </div>
 
-    <!-- 移动端管理后台底部导航栏 -->
-    <v-bottom-navigation v-if="!hideAppBar && isMobile && isAdminPage" grow color="primary" app>
-      <v-btn :to="{ name: 'AdminDashboard' }" value="dashboard">
-        <v-icon>mdi-view-dashboard</v-icon>
-        <span>控制台</span>
-      </v-btn>
-      
-      <v-btn :to="{ name: 'AdminUsers' }" value="users">
-        <v-icon>mdi-account-multiple</v-icon>
-        <span>用户管理</span>
-      </v-btn>
-      
-      <v-btn :to="{ name: 'AdminArticles' }" value="articles">
-        <v-icon>mdi-file-document</v-icon>
-        <span>文章管理</span>
-      </v-btn>
-      
-      <v-btn :to="{ name: 'AdminSettings' }" value="settings">
-        <v-icon>mdi-settings</v-icon>
-        <span>系统设置</span>
-      </v-btn>
-    </v-bottom-navigation>
-
-    <!-- 移动端应用抽屉（从底部弹出） -->
-    <Teleport to="body">
-      <div v-if="appDrawer" class="app-drawer-overlay" @click="appDrawer = false">
-        <div class="app-drawer-content" @click.stop>
-          <div class="app-drawer-header">
-            <div class="app-drawer-title">应用菜单</div>
-            <v-btn icon @click="appDrawer = false" class="close-btn">
-              <v-icon>mdi-close</v-icon>
-            </v-btn>
-          </div>
-          
-          <v-divider class="mb-4"></v-divider>
-          
-          <div class="app-drawer-grid">
-            <v-btn 
-              v-for="item in appDrawerItems" 
-              :key="item.path"
-              :to="item.path"
-              class="drawer-item"
-              @click="appDrawer = false"
+        <div class="nav-search" v-if="!isAdminPage">
+          <div class="layui-input-group">
+            <input 
+              type="text" 
+              v-model="searchQuery" 
+              placeholder="搜索..." 
+              class="layui-input search-input"
+              @keyup.enter="handleSearch"
             >
-              <v-icon size="32" class="drawer-icon">{{ item.icon }}</v-icon>
-              <span class="drawer-label">{{ item.label }}</span>
-            </v-btn>
+            <button class="layui-btn search-btn" @click="handleSearch">
+              <i class="layui-icon layui-icon-search"></i>
+            </button>
           </div>
-          
-          <v-divider class="mt-4 mb-3"></v-divider>
-          
-          <div class="app-drawer-footer">
-            <v-btn @click="logout" class="footer-btn">
-              <v-icon>mdi-logout</v-icon>
-              <span>退出登录</span>
-            </v-btn>
+        </div>
+
+        <nav class="nav-links" v-if="!isMobile">
+          <template v-if="!isAdminPage">
+            <router-link to="/" class="nav-link">
+              <i class="layui-icon layui-icon-home"></i>
+              首页
+            </router-link>
+            <router-link to="/login" v-if="!token" class="nav-link">
+              <i class="layui-icon layui-icon-username"></i>
+              登录
+            </router-link>
+            <router-link to="/register" v-if="!token" class="nav-link">
+              <i class="layui-icon layui-icon-user"></i>
+              注册
+            </router-link>
+            <router-link to="/create" v-if="token" class="nav-link nav-link-primary">
+              <i class="layui-icon layui-icon-edit"></i>
+              写文章
+            </router-link>
+            <router-link to="/notifications" v-if="token" class="nav-link notification-link">
+              <i class="layui-icon layui-icon-notice"></i>
+              通知
+              <span v-if="unreadCount > 0" class="badge">{{ unreadCount }}</span>
+            </router-link>
+            <router-link to="/profile" v-if="token" class="nav-link">
+              <i class="layui-icon layui-icon-user"></i>
+              我的
+            </router-link>
+            <router-link to="/admin" v-if="isAdmin" class="nav-link nav-link-admin">
+              <i class="layui-icon layui-icon-set"></i>
+              管理后台
+            </router-link>
+            <button class="nav-link logout-btn" v-if="token" @click="logout">
+              <i class="layui-icon layui-icon-logout"></i>
+              退出
+            </button>
+          </template>
+          <template v-else>
+            <router-link :to="{ name: 'AdminIndex' }" class="nav-link">
+              <i class="layui-icon layui-icon-home"></i>
+              控制台
+            </router-link>
+            <router-link :to="{ name: 'AdminUsers' }" class="nav-link">
+              <i class="layui-icon layui-icon-user"></i>
+              用户管理
+            </router-link>
+            <router-link :to="{ name: 'AdminArticles' }" class="nav-link">
+              <i class="layui-icon layui-icon-file"></i>
+              文章管理
+            </router-link>
+            <router-link :to="{ name: 'AdminSiteConfig' }" class="nav-link">
+              <i class="layui-icon layui-icon-set"></i>
+              系统设置
+            </router-link>
+            <router-link to="/" class="nav-link">
+              <i class="layui-icon layui-icon-home"></i>
+              返回首页
+            </router-link>
+          </template>
+        </nav>
+
+        <button class="mobile-menu-btn" @click="toggleMobileMenu">
+          <i class="layui-icon" :class="mobileMenuOpen ? 'layui-icon-close' : 'layui-icon-menu'"></i>
+        </button>
+      </div>
+
+      <div v-if="mobileMenuOpen" class="mobile-menu animate-slide-down">
+        <div class="mobile-menu-header">
+          <span>菜单</span>
+          <button @click="mobileMenuOpen = false">
+            <i class="layui-icon layui-icon-close"></i>
+          </button>
+        </div>
+        <div class="mobile-menu-content">
+          <router-link to="/" @click="mobileMenuOpen = false" class="mobile-menu-item">
+            <i class="layui-icon layui-icon-home"></i>
+            首页
+          </router-link>
+          <router-link to="/login" v-if="!token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+            <i class="layui-icon layui-icon-username"></i>
+            登录
+          </router-link>
+          <router-link to="/register" v-if="!token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+            <i class="layui-icon layui-icon-user"></i>
+            注册
+          </router-link>
+          <router-link to="/create" v-if="token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+            <i class="layui-icon layui-icon-edit"></i>
+            写文章
+          </router-link>
+          <router-link to="/notifications" v-if="token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+            <i class="layui-icon layui-icon-notice"></i>
+            通知
+          </router-link>
+          <router-link to="/signin" v-if="token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+            <i class="layui-icon layui-icon-calendar"></i>
+            签到
+          </router-link>
+          <router-link to="/leaderboard" v-if="token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+            <i class="layui-icon layui-icon-trophy"></i>
+            排行榜
+          </router-link>
+          <router-link to="/topics" v-if="token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+            <i class="layui-icon layui-icon-tags"></i>
+            话题
+          </router-link>
+          <router-link to="/collections" v-if="token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+            <i class="layui-icon layui-icon-collection"></i>
+            收藏夹
+          </router-link>
+          <router-link to="/admin" v-if="isAdmin" @click="mobileMenuOpen = false" class="mobile-menu-item admin-item">
+            <i class="layui-icon layui-icon-set"></i>
+            管理后台
+          </router-link>
+          <button v-if="token" @click="logout; mobileMenuOpen = false" class="mobile-menu-item logout-item">
+            <i class="layui-icon layui-icon-logout"></i>
+            退出登录
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content" :class="{ 'has-navbar': !hideAppBar }">
+      <router-view />
+    </main>
+
+    <footer v-if="!hideAppBar" class="footer">
+      <div class="footer-content">
+        <div class="footer-links">
+          <div class="footer-column">
+            <h4>关于我们</h4>
+            <ul>
+              <li><a href="https://github.com/ByUsiStudio/Campus-Forum" target="_blank">GitHub</a></li>
+              <li><a href="https://gitee.com/byusistudio/campus-forum" target="_blank">Gitee</a></li>
+            </ul>
+          </div>
+          <div class="footer-column">
+            <h4>联系方式</h4>
+            <ul>
+              <li>Email: contact@byusi.com</li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <div class="version-info">
+            <span>前端版本: {{ frontendVersion }}</span>
+            <span> | </span>
+            <span>后端版本: {{ backendVersion || 'unknown' }}</span>
+          </div>
+          <div v-if="icpNumber || publicSecurityNumber" class="cert-info">
+            <span v-if="icpNumber">
+              <a href="https://beian.miit.gov.cn" target="_blank">{{ icpNumber }}</a>
+            </span>
+            <span v-if="publicSecurityNumber" class="security-num">{{ publicSecurityNumber }}</span>
           </div>
         </div>
       </div>
-    </Teleport>
+    </footer>
 
-    <!-- 桌面端顶部导航栏 -->
-    <v-app-bar v-if="!hideAppBar && !isMobile" elevation="2" color="primary" scroll-behavior="collapse">
-      <v-app-bar-title class="d-flex align-center">
-        <v-icon class="mr-2">{{ isAdminPage ? 'mdi-shield-crown' : 'mdi-forum' }}</v-icon>
-        <router-link :to="isAdminPage ? '/admin' : '/'" class="logo-link">{{ isAdminPage ? '管理后台' : siteTitle }}</router-link>
-      </v-app-bar-title>
-
-      <v-spacer></v-spacer>
-
-      <template v-slot:append>
-        <div class="nav-links" v-if="!isAdminPage">
-          <v-text-field
-            v-model="searchQuery"
-            prepend-inner-icon="mdi-magnify"
-            variant="outlined"
-            density="compact"
-            color="white"
-            placeholder="搜索..."
-            @keyup.enter="handleSearch"
-            @click:prepend-inner="handleSearch"
-            class="search-field"
-          ></v-text-field>
-          <v-btn variant="text" to="/" color="white" prepend-icon="mdi-home">首页</v-btn>
-          <v-btn variant="text" to="/login" v-if="!token" color="white" prepend-icon="mdi-login">登录</v-btn>
-          <v-btn variant="text" to="/register" v-if="!token" color="white" prepend-icon="mdi-account-plus">注册</v-btn>
-          <v-btn variant="text" to="/create" v-if="token" color="white" prepend-icon="mdi-pencil">写文章</v-btn>
-          <NotificationBell v-if="token" />
-          <v-btn variant="text" to="/profile" v-if="token" color="white" prepend-icon="mdi-account">我的</v-btn>
-          <v-btn variant="text" to="/admin" v-if="isAdmin" color="error" prepend-icon="mdi-shield-crown">管理后台</v-btn>
-          <v-btn variant="text" v-if="token" @click="logout" color="white" prepend-icon="mdi-logout">退出</v-btn>
+    <div v-if="modalState.show" class="modal-overlay" @click="modalState.show = false">
+      <div class="modal-content animate-scale-in" @click.stop>
+        <div class="modal-header">
+          <span class="modal-title">{{ modalState.title }}</span>
+          <button @click="modalState.show = false">
+            <i class="layui-icon layui-icon-close"></i>
+          </button>
         </div>
-        <div class="nav-links" v-else>
-          <v-btn variant="text" :to="{ name: 'AdminDashboard' }" color="white" prepend-icon="mdi-view-dashboard">控制台</v-btn>
-          <v-btn variant="text" :to="{ name: 'AdminUsers' }" color="white" prepend-icon="mdi-account-multiple">用户管理</v-btn>
-          <v-btn variant="text" :to="{ name: 'AdminArticles' }" color="white" prepend-icon="mdi-file-document">文章管理</v-btn>
-          <v-btn variant="text" :to="{ name: 'AdminSettings' }" color="white" prepend-icon="mdi-settings">系统设置</v-btn>
-          <v-btn variant="text" to="/" color="white" prepend-icon="mdi-home">返回首页</v-btn>
+        <div class="modal-body">
+          <div v-if="modalState.icon" class="modal-icon" :class="modalState.iconColor">
+            <i class="layui-icon" :class="modalState.icon"></i>
+          </div>
+          <p v-if="modalState.message">{{ modalState.message }}</p>
+          <textarea 
+            v-if="modalState.inputRows"
+            v-model="modalInputValue"
+            :rows="modalState.inputRows"
+            :placeholder="modalState.inputPlaceholder"
+            class="layui-textarea modal-textarea"
+          ></textarea>
+          <input 
+            v-else-if="modalState.inputLabel"
+            type="text"
+            v-model="modalInputValue"
+            :placeholder="modalState.inputPlaceholder"
+            class="layui-input modal-input"
+          >
         </div>
-      </template>
-    </v-app-bar>
+        <div class="modal-footer">
+          <button v-if="modalState.cancelText" class="layui-btn layui-btn-primary" @click="handleCancel">
+            {{ modalState.cancelText }}
+          </button>
+          <button 
+            class="layui-btn" 
+            :class="modalState.confirmColor === 'danger' ? 'layui-btn-danger' : ''"
+            @click="() => handleConfirm(modalInputValue)"
+          >
+            {{ modalState.confirmText }}
+          </button>
+        </div>
+      </div>
+    </div>
 
-    <!-- 移动端抽屉导航（桌面端不使用） -->
-    <v-navigation-drawer v-if="!hideAppBar && isMobile" v-model="drawer" temporary color="surface">
-      <v-list nav density="comfortable">
-        <template v-if="!isAdminPage">
-          <v-list-item to="/" @click="drawer = false" prepend-icon="mdi-home" title="首页"></v-list-item>
-          <template v-if="!token">
-            <v-list-item to="/login" @click="drawer = false" prepend-icon="mdi-login" title="登录"></v-list-item>
-            <v-list-item to="/register" @click="drawer = false" prepend-icon="mdi-account-plus" title="注册"></v-list-item>
-          </template>
-          <template v-if="token">
-            <v-list-item to="/create" @click="drawer = false" prepend-icon="mdi-pencil" title="写文章"></v-list-item>
-            <v-list-item to="/profile" @click="drawer = false" prepend-icon="mdi-account" title="我的"></v-list-item>
-            <v-list-item to="/notifications" @click="drawer = false" prepend-icon="mdi-bell" title="通知"></v-list-item>
-            <v-list-item to="/signin" @click="drawer = false" prepend-icon="mdi-calendar-check" title="签到"></v-list-item>
-            <v-list-item v-if="isAdmin" to="/admin" @click="drawer = false" prepend-icon="mdi-shield-crown" title="管理后台" class="text-error"></v-list-item>
-            <v-divider class="my-2"></v-divider>
-            <v-list-item @click="logout" prepend-icon="mdi-logout" title="退出" class="text-secondary"></v-list-item>
-          </template>
-        </template>
-        <template v-else>
-          <v-list-item :to="{ name: 'AdminDashboard' }" @click="drawer = false" prepend-icon="mdi-view-dashboard" title="控制台"></v-list-item>
-          <v-list-item :to="{ name: 'AdminUsers' }" @click="drawer = false" prepend-icon="mdi-account-multiple" title="用户管理"></v-list-item>
-          <v-list-item :to="{ name: 'AdminArticles' }" @click="drawer = false" prepend-icon="mdi-file-document" title="文章管理"></v-list-item>
-          <v-list-item :to="{ name: 'AdminSettings' }" @click="drawer = false" prepend-icon="mdi-settings" title="系统设置"></v-list-item>
-          <v-divider class="my-2"></v-divider>
-          <v-list-item to="/" @click="drawer = false" prepend-icon="mdi-home" title="返回首页"></v-list-item>
-          <v-list-item @click="logout" prepend-icon="mdi-logout" title="退出" class="text-secondary"></v-list-item>
-        </template>
-      </v-list>
-    </v-navigation-drawer>
-
-    <!-- 页脚 -->
-    <v-footer v-if="!hideAppBar" class="open-source-footer bg-transparent">
-      <v-container fluid>
-        <v-row justify="center" align="center">
-          <v-col cols="12" sm="auto">
-            <div class="d-flex align-center flex-wrap justify-center gap-2">
-              <span class="text-caption text-medium-emphasis">本论坛基于</span>
-              <a href="https://github.com/ByUsiStudio/Campus-Forum" target="_blank" class="open-source-link">
-                <v-icon size="small" class="mr-1">mdi-github</v-icon>GitHub
-              </a>
-              <span class="text-caption text-medium-emphasis">与</span>
-              <a href="https://gitee.com/byusistudio/campus-forum" target="_blank" class="open-source-link">
-                <v-icon size="small" class="mr-1">mdi-git</v-icon>Gitee
-              </a>
-              <span class="text-caption text-medium-emphasis">开源</span>
-            </div>
-            <div class="text-caption text-medium-emphasis text-center mt-1">
-              <a href="https://github.com/ByUsiStudio/Campus-Forum" target="_blank" class="open-source-link">
-                https://github.com/ByUsiStudio/Campus-Forum
-              </a>
-            </div>
-            <div class="text-caption text-medium-emphasis text-center mt-1">
-              <v-icon size="x-small" class="mr-1">mdi-tag</v-icon>
-              前端版本: {{ frontendVersion }} | 后端版本: {{ backendVersion || 'unknown' }}
-            </div>
-            <div v-if="icpNumber || publicSecurityNumber" class="d-flex align-center justify-center flex-wrap gap-4 mt-2">
-              <div v-if="icpNumber" class="icp-info">
-                <v-icon size="x-small" class="mr-1">mdi-shield-check</v-icon>
-                <a href="https://beian.miit.gov.cn" target="_blank" class="open-source-link">{{ icpNumber }}</a>
-              </div>
-              <div v-if="publicSecurityNumber" class="security-info">
-                <v-icon size="x-small" class="mr-1">mdi-police-badge</v-icon>
-                <span>{{ publicSecurityNumber }}</span>
-              </div>
-            </div>
-          </v-col>
-        </v-row>
-      </v-container>
-    </v-footer>
-
-    <!-- 全局弹窗 -->
-    <AppModal
-      :show="modalState.show"
-      :type="modalState.type"
-      :title="modalState.title"
-      :message="modalState.message"
-      :icon="modalState.icon"
-      :icon-color="modalState.iconColor"
-      :confirm-text="modalState.confirmText"
-      :cancel-text="modalState.cancelText"
-      :confirm-color="modalState.confirmColor"
-      :input-value="modalState.inputValue"
-      :input-label="modalState.inputLabel"
-      :input-type="modalState.inputType"
-      :input-placeholder="modalState.inputPlaceholder"
-      :input-rows="modalState.inputRows"
-      @update:show="modalState.show = $event"
-      @confirm="(value) => handleConfirm(value)"
-      @cancel="handleCancel"
-    />
-  </v-app>
+    <button v-if="showBackToTop" class="back-to-top animate-bounce-in" @click="scrollToTop">
+      <i class="layui-icon layui-icon-up"></i>
+    </button>
+  </div>
 </template>
 
-<script>
-import { ref, computed, onMounted, watch } from 'vue'
+<script setup>
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from './api'
-import AppModal from './components/AppModal.vue'
-import NotificationBell from './components/NotificationBell.vue'
-import { modalState, handleConfirm, handleCancel } from './utils/modal'
 import { marked } from 'marked'
 
-export default {
-  name: 'App',
-  components: {
-    AppModal,
-    NotificationBell
-  },
-  setup() {
-    const router = useRouter()
-    const route = useRoute()
-    const token = ref(localStorage.getItem('token'))
-    const user = ref(null)
-    const drawer = ref(false)
-    const appDrawer = ref(false)
-    const isMobile = ref(false)
-    const hideAppBar = ref(false)
-    const backendVersion = ref(null)
-    const siteTitle = ref('校园论坛')
-    const frontendVersion = ref(typeof __FRONTEND_VERSION__ !== 'undefined' ? __FRONTEND_VERSION__ : 'unknown')
-    const icpNumber = ref(null)
-    const publicSecurityNumber = ref(null)
-    const searchQuery = ref('')
-    const announcementDialog = ref(false)
-    const announcementContent = ref('')
-    const dontShowAgain = ref(false)
+const router = useRouter()
+const route = useRoute()
 
-    const loadAnnouncement = async () => {
-      try {
-        const response = await api.get('/announcement')
-        if (response.data.content) {
-          announcementContent.value = marked(response.data.content)
-          const hideAnnouncement = localStorage.getItem('hideAnnouncement')
-          if (!hideAnnouncement) {
-            announcementDialog.value = true
-          }
-        }
-      } catch (error) {
-        console.error('加载公告失败', error)
+const token = ref(localStorage.getItem('token'))
+const user = ref(null)
+const isMobile = ref(false)
+const hideAppBar = ref(false)
+const backendVersion = ref(null)
+const siteTitle = ref('校园论坛')
+const frontendVersion = ref(typeof __FRONTEND_VERSION__ !== 'undefined' ? __FRONTEND_VERSION__ : 'unknown')
+const icpNumber = ref(null)
+const publicSecurityNumber = ref(null)
+const searchQuery = ref('')
+const announcementDialog = ref(false)
+const announcementContent = ref('')
+const dontShowAgain = ref(false)
+const mobileMenuOpen = ref(false)
+const isScrolled = ref(false)
+const showBackToTop = ref(false)
+const unreadCount = ref(0)
+const modalInputValue = ref('')
+
+const modalState = ref({
+  show: false,
+  type: 'info',
+  title: '',
+  message: '',
+  icon: '',
+  iconColor: '',
+  confirmText: '确定',
+  cancelText: '取消',
+  confirmColor: '',
+  inputValue: '',
+  inputLabel: '',
+  inputType: '',
+  inputPlaceholder: '',
+  inputRows: 0
+})
+
+let modalCallback = null
+
+const handleConfirm = (value) => {
+  if (modalCallback) {
+    modalCallback(value)
+  }
+  modalState.value.show = false
+  modalInputValue.value = ''
+}
+
+const handleCancel = () => {
+  modalState.value.show = false
+  modalInputValue.value = ''
+}
+
+const showModal = (options) => {
+  return new Promise((resolve) => {
+    modalCallback = resolve
+    modalState.value = {
+      show: true,
+      type: options.type || 'info',
+      title: options.title || '',
+      message: options.message || '',
+      icon: options.icon || '',
+      iconColor: options.iconColor || '',
+      confirmText: options.confirmText || '确定',
+      cancelText: options.cancelText || '取消',
+      confirmColor: options.confirmColor || '',
+      inputValue: options.inputValue || '',
+      inputLabel: options.inputLabel || '',
+      inputType: options.inputType || '',
+      inputPlaceholder: options.inputPlaceholder || '',
+      inputRows: options.inputRows || 0
+    }
+  })
+}
+
+window.showModal = showModal
+
+const loadAnnouncement = async () => {
+  try {
+    const response = await api.get('/announcement')
+    if (response.data.content) {
+      announcementContent.value = marked(response.data.content)
+      const hideAnnouncement = localStorage.getItem('hideAnnouncement')
+      if (!hideAnnouncement) {
+        announcementDialog.value = true
       }
     }
+  } catch (error) {
+    console.error('加载公告失败', error)
+  }
+}
 
-    const closeAnnouncementDialog = () => {
-      if (dontShowAgain.value) {
-        localStorage.setItem('hideAnnouncement', 'true')
-      }
-      announcementDialog.value = false
-    }
+const closeAnnouncementDialog = () => {
+  if (dontShowAgain.value) {
+    localStorage.setItem('hideAnnouncement', 'true')
+  }
+  announcementDialog.value = false
+}
 
-    const handleSearch = () => {
-      if (searchQuery.value.trim()) {
-        router.push({ path: '/search', query: { q: searchQuery.value.trim() } })
-      }
-    }
-    
-    // 检测屏幕宽度
-    const checkMobile = () => {
-      isMobile.value = window.innerWidth < 768
-    }
-    
-    // 监听路由变化更新hideAppBar
-    watch(() => route.meta, (meta) => {
-      hideAppBar.value = meta?.hideAppBar || false
-    }, { immediate: true })
-    
-    const isAdmin = computed(() => {
-      return user.value && (user.value.role === 'admin' || user.value.role === 'system' || user.value.role === 'Admin' || user.value.role === 'System')
-    })
-    
-    const isAdminPage = computed(() => {
-      return route.path.startsWith('/admin')
-    })
-    
-    const logout = () => {
+const handleSearch = () => {
+  if (searchQuery.value.trim()) {
+    router.push({ path: '/search', query: { q: searchQuery.value.trim() } })
+  }
+}
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768
+}
+
+const toggleMobileMenu = () => {
+  mobileMenuOpen.value = !mobileMenuOpen.value
+}
+
+const handleScroll = () => {
+  isScrolled.value = window.scrollY > 50
+  showBackToTop.value = window.scrollY > 300
+}
+
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+const isAdmin = computed(() => {
+  return user.value && (user.value.role === 'admin' || user.value.role === 'system' || user.value.role === 'Admin' || user.value.role === 'System')
+})
+
+const isAdminPage = computed(() => {
+  return route.path.startsWith('/admin')
+})
+
+const logout = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  window.dispatchEvent(new Event('user-logout'))
+  mobileMenuOpen.value = false
+  router.push('/login')
+}
+
+const loadUser = async () => {
+  if (token.value) {
+    try {
+      const response = await api.get('/profile')
+      user.value = response.data
+      localStorage.setItem('user', JSON.stringify(response.data))
+    } catch (error) {
+      console.error('加载用户信息失败', error)
       localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.dispatchEvent(new Event('user-logout'))
-      drawer.value = false
-      appDrawer.value = false
-      router.push('/login')
-    }
-    
-    const appDrawerItems = computed(() => {
-      const items = [
-        { path: '/', icon: 'mdi-home', label: '首页' },
-        { path: '/create', icon: 'mdi-pencil', label: '写文章' },
-        { path: '/notifications', icon: 'mdi-bell', label: '通知' },
-        { path: '/signin', icon: 'mdi-calendar-check', label: '签到' },
-        { path: '/chat', icon: 'mdi-chat', label: '聊天' },
-        { path: '/profile', icon: 'mdi-account', label: '我的' }
-      ]
-      if (isAdmin.value) {
-        items.push({ path: '/admin', icon: 'mdi-shield-crown', label: '管理后台' })
-      }
-      return items.filter(item => {
-        if (item.path === '/create' || item.path === '/notifications' || item.path === '/profile' || item.path === '/signin' || item.path === '/chat') {
-          return token.value
-        }
-        return true
-      })
-    })
-    
-    const loadUser = async () => {
-      if (token.value) {
-        try {
-          const response = await api.get('/profile')
-          user.value = response.data
-          localStorage.setItem('user', JSON.stringify(response.data))
-        } catch (error) {
-          console.error('加载用户信息失败', error)
-          localStorage.removeItem('token')
-          token.value = null
-        }
-      }
-    }
-
-    const loadVersion = async () => {
-      try {
-        const response = await api.get('/version')
-        backendVersion.value = response.data.backend?.version || response.data.backend_version || response.data.version
-        frontendVersion.value = response.data.frontend?.version || frontendVersion.value
-      } catch (error) {
-        console.error('加载版本信息失败', error)
-      }
-    }
-
-    const loadSiteTitle = async () => {
-      try {
-        const response = await api.get('/site-config')
-        siteTitle.value = response.data.site_title || '校园论坛'
-        icpNumber.value = response.data.icp_number || null
-        publicSecurityNumber.value = response.data.public_security_number || null
-        document.title = siteTitle.value
-      } catch (error) {
-        console.error('加载网站标题失败', error)
-      }
-    }
-
-    const updateSiteTitle = (newTitle) => {
-      if (newTitle) {
-        siteTitle.value = newTitle
-        document.title = newTitle
-      }
-    }
-
-    watch(siteTitle, (newTitle) => {
-      if (newTitle) {
-        document.title = newTitle
-      }
-    })
-    
-    onMounted(() => {
-      checkMobile()
-      window.addEventListener('resize', checkMobile)
-
-      const storedUser = localStorage.getItem('user')
-      if (storedUser) {
-        user.value = JSON.parse(storedUser)
-      }
-      loadUser()
-      loadVersion()
-      loadSiteTitle()
-      loadAnnouncement()
-
-      // 监听登录/登出事件
-      window.addEventListener('user-updated', () => {
-        const storedUser = localStorage.getItem('user')
-        if (storedUser) {
-          user.value = JSON.parse(storedUser)
-        }
-        token.value = localStorage.getItem('token')
-      })
-
-      window.addEventListener('site-title-updated', (event) => {
-        if (event.detail) {
-          siteTitle.value = event.detail
-          document.title = event.detail
-        }
-      })
-
-      window.addEventListener('user-logout', () => {
-        user.value = null
-        token.value = null
-      })
-    })
-
-    return {
-      token,
-      user,
-      isAdmin,
-      isAdminPage,
-      logout,
-      modalState,
-      handleConfirm,
-      handleCancel,
-      isMobile,
-      drawer,
-      appDrawer,
-      appDrawerItems,
-      backendVersion,
-      siteTitle,
-      updateSiteTitle,
-      frontendVersion,
-      icpNumber,
-      publicSecurityNumber,
-      searchQuery,
-      handleSearch,
-      announcementDialog,
-      announcementContent,
-      dontShowAgain,
-      closeAnnouncementDialog
+      token.value = null
     }
   }
 }
+
+const loadUnreadCount = async () => {
+  if (token.value) {
+    try {
+      const response = await api.get('/notifications/unread-count')
+      unreadCount.value = response.data.count || 0
+    } catch (error) {
+      console.error('加载未读通知数失败', error)
+    }
+  }
+}
+
+const loadVersion = async () => {
+  try {
+    const response = await api.get('/version')
+    backendVersion.value = response.data.backend?.version || response.data.backend_version || response.data.version
+    frontendVersion.value = response.data.frontend?.version || frontendVersion.value
+  } catch (error) {
+    console.error('加载版本信息失败', error)
+  }
+}
+
+const loadSiteTitle = async () => {
+  try {
+    const response = await api.get('/site-config')
+    siteTitle.value = response.data.site_title || '校园论坛'
+    icpNumber.value = response.data.icp_number || null
+    publicSecurityNumber.value = response.data.public_security_number || null
+    document.title = siteTitle.value
+  } catch (error) {
+    console.error('加载网站标题失败', error)
+  }
+}
+
+watch(() => route.meta, (meta) => {
+  hideAppBar.value = meta?.hideAppBar || false
+}, { immediate: true })
+
+watch(siteTitle, (newTitle) => {
+  if (newTitle) {
+    document.title = newTitle
+  }
+})
+
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+  window.addEventListener('scroll', handleScroll)
+
+  const storedUser = localStorage.getItem('user')
+  if (storedUser) {
+    user.value = JSON.parse(storedUser)
+  }
+
+  loadUser()
+  loadVersion()
+  loadSiteTitle()
+  loadAnnouncement()
+  loadUnreadCount()
+
+  window.addEventListener('user-updated', () => {
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) {
+      user.value = JSON.parse(storedUser)
+    }
+    token.value = localStorage.getItem('token')
+    loadUnreadCount()
+  })
+
+  window.addEventListener('site-title-updated', (event) => {
+    if (event.detail) {
+      siteTitle.value = event.detail
+      document.title = event.detail
+    }
+  })
+
+  window.addEventListener('user-logout', () => {
+    user.value = null
+    token.value = null
+    unreadCount.value = 0
+  })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+  window.removeEventListener('scroll', handleScroll)
+})
 </script>
 
-<style>
-.logo-link {
-  color: white !important;
-  text-decoration: none;
-  font-weight: bold;
-  font-size: 1.25rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.nav-links {
+<style lang="less" scoped>
+.app-container {
+  min-height: 100vh;
   display: flex;
-  gap: 4px;
-  align-items: center;
+  flex-direction: column;
 }
 
-.nav-links .v-btn {
-  font-weight: 500;
-}
-
-.search-field {
-  width: 240px;
-}
-
-.search-field :deep(.v-field__outline) {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.search-field :deep(.v-label),
-.search-field :deep(.v-field__input) {
-  color: white !important;
-}
-
-.search-field :deep(.v-icon) {
-  color: white !important;
-}
-
-.chat-badge {
-  position: absolute;
-  top: -4px;
-  right: -8px;
-}
-
-.open-source-footer {
-  margin-top: auto;
-  padding: 16px 0;
-}
-
-.open-source-link {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.open-source-link:hover {
-  text-decoration: underline;
-}
-
-/* 移动端底部导航栏 padding */
-.pb-navigation {
-  padding-bottom: 56px !important;
-}
-
-/* 移动端搜索栏样式 */
-.mobile-search-bar {
-  background: rgb(var(--v-theme-background));
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-.mobile-search-field {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.mobile-search-field :deep(.v-field) {
-  border-radius: 24px;
-}
-
-/* 移动端应用抽屉样式 */
-.app-drawer-overlay {
+.announcement-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: flex-end;
-  animation: fadeIn 0.2s ease-out;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
 }
 
-.app-drawer-content {
-  width: 100%;
-  max-height: 80vh;
-  background-color: #fff;
-  border-radius: 24px 24px 0 0;
-  padding: 16px;
-  animation: slideUp 0.3s ease-out;
+.announcement-modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  overflow: hidden;
 }
 
-.app-drawer-header {
+.announcement-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e6e6e6;
+
+  .announcement-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    i {
+      color: #1E9FFF;
+    }
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #999;
+    padding: 4px 8px;
+
+    &:hover {
+      color: #666;
+    }
+  }
 }
 
-.app-drawer-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1a1a2e;
+.announcement-content {
+  padding: 20px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
-.close-btn {
-  color: #6b7280;
-}
-
-.app-drawer-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  padding: 0 8px;
-}
-
-.drawer-item {
+.announcement-footer {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  padding: 16px 8px;
-  border-radius: 12px;
-  transition: background-color 0.2s;
+  padding: 16px 20px;
+  border-top: 1px solid #e6e6e6;
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #666;
+  }
 }
 
-.drawer-item:hover {
-  background-color: #f3f4f6;
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.4s @ease-out-cubic;
+
+  &.scrolled {
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .navbar-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+  }
+
+  .navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .logo-img {
+      height: 36px;
+    }
+
+    .logo-text {
+      font-size: 20px;
+      font-weight: 700;
+      color: #333;
+      text-decoration: none;
+    }
+  }
+
+  .nav-search {
+    flex: 1;
+    max-width: 300px;
+    margin: 0 20px;
+
+    .search-input {
+      border-radius: 20px;
+    }
+
+    .search-btn {
+      border-radius: 0 20px 20px 0;
+    }
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      color: #333;
+      text-decoration: none;
+      font-size: 14px;
+      border-radius: 6px;
+      transition: all 0.3s @ease-out-back;
+
+      &:hover {
+        background: rgba(30, 159, 255, 0.1);
+        color: #1E9FFF;
+        transform: translateY(-2px);
+      }
+
+      &.nav-link-primary {
+        background: #1E9FFF;
+        color: #fff;
+
+        &:hover {
+          background: #0086E6;
+        }
+      }
+
+      &.nav-link-admin {
+        color: #FF5722;
+
+        &:hover {
+          background: rgba(255, 87, 34, 0.1);
+        }
+      }
+
+      &.notification-link {
+        position: relative;
+
+        .badge {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          background: #FF5722;
+          color: #fff;
+          font-size: 10px;
+          padding: 1px 5px;
+          border-radius: 10px;
+          min-width: 16px;
+          text-align: center;
+        }
+      }
+
+      &.logout-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+
+        &:hover {
+          background: rgba(255, 87, 34, 0.1);
+          color: #FF5722;
+        }
+      }
+    }
+  }
+
+  .mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #333;
+    padding: 8px;
+
+    @media (max-width: 768px) {
+      display: block;
+    }
+  }
 }
 
-.drawer-icon {
-  color: #4b5563;
-  margin-bottom: 8px;
+.mobile-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 999;
+
+  .mobile-menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e6e6e6;
+    font-size: 16px;
+    font-weight: 600;
+
+    button {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #999;
+    }
+  }
+
+  .mobile-menu-content {
+    padding: 8px 0;
+
+    .mobile-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      color: #333;
+      text-decoration: none;
+      font-size: 15px;
+      transition: background 0.2s;
+
+      &:hover {
+        background: #f5f5f5;
+      }
+
+      &.admin-item {
+        color: #FF5722;
+      }
+
+      &.logout-item {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #FF5722;
+        width: 100%;
+      }
+    }
+  }
 }
 
-.drawer-label {
-  font-size: 0.75rem;
-  color: #374151;
-  font-weight: 500;
+.main-content {
+  flex: 1;
+  padding-top: 60px;
+
+  &.has-navbar {
+    padding-top: 60px;
+  }
 }
 
-.app-drawer-footer {
-  padding: 8px 16px;
+.footer {
+  background: #23262E;
+  color: #fff;
+  padding: 40px 0 20px;
+
+  .footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+  }
+
+  .footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    margin-bottom: 30px;
+
+    .footer-column {
+      h4 {
+        margin-bottom: 16px;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+
+        li {
+          margin-bottom: 8px;
+        }
+
+        a {
+          color: rgba(255, 255, 255, 0.6);
+          text-decoration: none;
+          font-size: 13px;
+
+          &:hover {
+            color: #1E9FFF;
+          }
+        }
+      }
+    }
+  }
+
+  .footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 20px;
+    text-align: center;
+
+    .version-info {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 10px;
+    }
+
+    .cert-info {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+
+      a {
+        color: rgba(255, 255, 255, 0.6);
+        text-decoration: none;
+
+        &:hover {
+          color: #1E9FFF;
+        }
+      }
+
+      .security-num {
+        margin-left: 20px;
+      }
+    }
+  }
 }
 
-.footer-btn {
-  width: 100%;
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
+  align-items: center;
   justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 450px;
+  overflow: hidden;
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e6e6e6;
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    button {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #999;
+    }
+  }
+
+  .modal-body {
+    padding: 20px;
+    text-align: center;
+
+    .modal-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+
+      &.layui-icon-face-smile {
+        color: #1E9FFF;
+      }
+
+      &.layui-icon-face-cry {
+        color: #FF5722;
+      }
+
+      &.layui-icon-help-circle {
+        color: #FFB800;
+      }
+    }
+
+    p {
+      color: #666;
+      line-height: 1.6;
+    }
+
+    .modal-input, .modal-textarea {
+      margin-top: 16px;
+      width: 100%;
+    }
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid #e6e6e6;
+  }
+}
+
+.back-to-top {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #1E9FFF;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  color: #ef4444;
-  font-weight: 500;
-}
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(30, 159, 255, 0.4);
+  z-index: 999;
+  transition: all 0.3s @ease-out-back;
 
-/* Markdown 样式 */
-.markdown-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-  line-height: 1.6;
-  color: #24292e;
-}
-
-.markdown-body h1,
-.markdown-body h2,
-.markdown-body h3,
-.markdown-body h4,
-.markdown-body h5,
-.markdown-body h6 {
-  margin-top: 24px;
-  margin-bottom: 16px;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.markdown-body h1 {
-  font-size: 2em;
-  border-bottom: 1px solid #eaecef;
-  padding-bottom: .3em;
-}
-
-.markdown-body h2 {
-  font-size: 1.5em;
-  border-bottom: 1px solid #eaecef;
-  padding-bottom: .3em;
-}
-
-.markdown-body h3 {
-  font-size: 1.25em;
-}
-
-.markdown-body h4 {
-  font-size: 1em;
-}
-
-.markdown-body p {
-  margin-bottom: 16px;
-}
-
-.markdown-body ul,
-.markdown-body ol {
-  padding-left: 2em;
-  margin-bottom: 16px;
-}
-
-.markdown-body li {
-  margin-bottom: .25em;
-}
-
-.markdown-body code {
-  padding: .2em .4em;
-  margin: 0;
-  font-size: 85%;
-  background-color: rgba(27, 31, 35, .05);
-  border-radius: 3px;
-}
-
-.markdown-body pre {
-  padding: 16px;
-  overflow: auto;
-  font-size: 85%;
-  line-height: 1.45;
-  background-color: #f6f8fa;
-  border-radius: 3px;
-}
-
-.markdown-body pre code {
-  background-color: transparent;
-  padding: 0;
-}
-
-.markdown-body a {
-  color: #0366d6;
-  text-decoration: none;
-}
-
-.markdown-body a:hover {
-  text-decoration: underline;
-}
-
-.markdown-body img {
-  max-width: 100%;
-  box-sizing: content-box;
-  background-color: #fff;
-}
-
-.markdown-body blockquote {
-  padding: 0 1em;
-  color: #6a737d;
-  border-left: .25em solid #dfe2e5;
-  margin-bottom: 16px;
-}
-
-.markdown-body table {
-  border-spacing: 0;
-  border-collapse: collapse;
-  margin-bottom: 16px;
-}
-
-.markdown-body table th,
-.markdown-body table td {
-  padding: 6px 13px;
-  border: 1px solid #dfe2e5;
-}
-
-.markdown-body table th {
-  font-weight: 600;
-  background-color: #f6f8fa;
-}
-
-.markdown-body table tr {
-  background-color: #fff;
-  border-top: 1px solid #c6cbd1;
-}
-
-.markdown-body table tr:nth-child(2n) {
-  background-color: #f6f8fa;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
+  &:hover {
+    transform: translateY(-6px) scale(1.1);
+    box-shadow: 0 8px 20px rgba(30, 159, 255, 0.5);
   }
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
+@media (max-width: 768px) {
+  .nav-search {
+    display: none;
   }
-  to {
-    transform: translateY(0);
+
+  .nav-links {
+    display: none;
+  }
+
+  .footer-links {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
   }
 }
 </style>

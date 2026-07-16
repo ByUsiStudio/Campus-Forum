@@ -4,6 +4,7 @@
 /frontend/dist
 
 /backend/go.sum
+/backend/dist
 
 /*.zip
 *.log
