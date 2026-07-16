@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import './styles/style.less'
+import { useStore } from './stores'
 
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
@@ -97,19 +98,20 @@ const router = createRouter({
     routes
 })
 
+const store = useStore()
+store.init()
+
 const publicPaths = ['/login', '/register', '/forgot-password', '/', '/search']
 
 router.beforeEach((to, from, next) => {
-    const token = localStorage.getItem('token')
-
     if (publicPaths.includes(to.path)) {
-        if (token && (to.path === '/login' || to.path === '/register')) {
+        if (store.isLoggedIn.value && (to.path === '/login' || to.path === '/register')) {
             next('/')
         } else {
             next()
         }
     } else {
-        if (!token) {
+        if (!store.isLoggedIn.value) {
             next('/login')
         } else {
             next()

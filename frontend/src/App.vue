@@ -54,32 +54,32 @@
               <i class="layui-icon layui-icon-home"></i>
               首页
             </router-link>
-            <router-link to="/login" v-if="!token" class="nav-link">
+            <router-link to="/login" v-if="!store.isLoggedIn.value" class="nav-link">
               <i class="layui-icon layui-icon-username"></i>
               登录
             </router-link>
-            <router-link to="/register" v-if="!token" class="nav-link">
+            <router-link to="/register" v-if="!store.isLoggedIn.value" class="nav-link">
               <i class="layui-icon layui-icon-user"></i>
               注册
             </router-link>
-            <router-link to="/create" v-if="token" class="nav-link nav-link-primary">
+            <router-link to="/create" v-if="store.isLoggedIn.value" class="nav-link nav-link-primary">
               <i class="layui-icon layui-icon-edit"></i>
               写文章
             </router-link>
-            <router-link to="/notifications" v-if="token" class="nav-link notification-link">
+            <router-link to="/notifications" v-if="store.isLoggedIn.value" class="nav-link notification-link">
               <i class="layui-icon layui-icon-notice"></i>
               通知
-              <span v-if="unreadCount > 0" class="badge">{{ unreadCount }}</span>
+              <span v-if="store.unreadCount.value > 0" class="badge">{{ store.unreadCount.value }}</span>
             </router-link>
-            <router-link to="/profile" v-if="token" class="nav-link">
+            <router-link to="/profile" v-if="store.isLoggedIn.value" class="nav-link">
               <i class="layui-icon layui-icon-user"></i>
               我的
             </router-link>
-            <router-link to="/admin" v-if="isAdmin" class="nav-link nav-link-admin">
+            <router-link to="/admin" v-if="store.isAdmin.value" class="nav-link nav-link-admin">
               <i class="layui-icon layui-icon-set"></i>
               管理后台
             </router-link>
-            <button class="nav-link logout-btn" v-if="token" @click="logout">
+            <button class="nav-link logout-btn" v-if="store.isLoggedIn.value" @click="logout">
               <i class="layui-icon layui-icon-logout"></i>
               退出
             </button>
@@ -125,43 +125,43 @@
             <i class="layui-icon layui-icon-home"></i>
             首页
           </router-link>
-          <router-link to="/login" v-if="!token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+          <router-link to="/login" v-if="!store.isLoggedIn.value" @click="mobileMenuOpen = false" class="mobile-menu-item">
             <i class="layui-icon layui-icon-username"></i>
             登录
           </router-link>
-          <router-link to="/register" v-if="!token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+          <router-link to="/register" v-if="!store.isLoggedIn.value" @click="mobileMenuOpen = false" class="mobile-menu-item">
             <i class="layui-icon layui-icon-user"></i>
             注册
           </router-link>
-          <router-link to="/create" v-if="token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+          <router-link to="/create" v-if="store.isLoggedIn.value" @click="mobileMenuOpen = false" class="mobile-menu-item">
             <i class="layui-icon layui-icon-edit"></i>
             写文章
           </router-link>
-          <router-link to="/notifications" v-if="token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+          <router-link to="/notifications" v-if="store.isLoggedIn.value" @click="mobileMenuOpen = false" class="mobile-menu-item">
             <i class="layui-icon layui-icon-notice"></i>
             通知
           </router-link>
-          <router-link to="/signin" v-if="token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+          <router-link to="/signin" v-if="store.isLoggedIn.value" @click="mobileMenuOpen = false" class="mobile-menu-item">
             <i class="layui-icon layui-icon-calendar"></i>
             签到
           </router-link>
-          <router-link to="/leaderboard" v-if="token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+          <router-link to="/leaderboard" v-if="store.isLoggedIn.value" @click="mobileMenuOpen = false" class="mobile-menu-item">
             <i class="layui-icon layui-icon-trophy"></i>
             排行榜
           </router-link>
-          <router-link to="/topics" v-if="token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+          <router-link to="/topics" v-if="store.isLoggedIn.value" @click="mobileMenuOpen = false" class="mobile-menu-item">
             <i class="layui-icon layui-icon-tags"></i>
             话题
           </router-link>
-          <router-link to="/collections" v-if="token" @click="mobileMenuOpen = false" class="mobile-menu-item">
+          <router-link to="/collections" v-if="store.isLoggedIn.value" @click="mobileMenuOpen = false" class="mobile-menu-item">
             <i class="layui-icon layui-icon-collection"></i>
             收藏夹
           </router-link>
-          <router-link to="/admin" v-if="isAdmin" @click="mobileMenuOpen = false" class="mobile-menu-item admin-item">
+          <router-link to="/admin" v-if="store.isAdmin.value" @click="mobileMenuOpen = false" class="mobile-menu-item admin-item">
             <i class="layui-icon layui-icon-set"></i>
             管理后台
           </router-link>
-          <button v-if="token" @click="logout; mobileMenuOpen = false" class="mobile-menu-item logout-item">
+          <button v-if="store.isLoggedIn.value" @click="logout; mobileMenuOpen = false" class="mobile-menu-item logout-item">
             <i class="layui-icon layui-icon-logout"></i>
             退出登录
           </button>
@@ -258,14 +258,14 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import api from './api'
+import { useStore } from './stores'
+import { commonApi } from './api'
 import { marked } from 'marked'
 
 const router = useRouter()
 const route = useRoute()
+const store = useStore()
 
-const token = ref(localStorage.getItem('token'))
-const user = ref(null)
 const isMobile = ref(false)
 const hideAppBar = ref(false)
 const backendVersion = ref(null)
@@ -280,7 +280,6 @@ const dontShowAgain = ref(false)
 const mobileMenuOpen = ref(false)
 const isScrolled = ref(false)
 const showBackToTop = ref(false)
-const unreadCount = ref(0)
 const modalInputValue = ref('')
 
 const modalState = ref({
@@ -341,7 +340,7 @@ window.showModal = showModal
 
 const loadAnnouncement = async () => {
   try {
-    const response = await api.get('/announcement')
+    const response = await commonApi.getAnnouncement()
     if (response.data.content) {
       announcementContent.value = marked(response.data.content)
       const hideAnnouncement = localStorage.getItem('hideAnnouncement')
@@ -384,41 +383,33 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-const isAdmin = computed(() => {
-  return user.value && (user.value.role === 'admin' || user.value.role === 'system' || user.value.role === 'Admin' || user.value.role === 'System')
-})
-
 const isAdminPage = computed(() => {
   return route.path.startsWith('/admin')
 })
 
 const logout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
-  window.dispatchEvent(new Event('user-logout'))
+  store.logout()
   mobileMenuOpen.value = false
   router.push('/login')
 }
 
 const loadUser = async () => {
-  if (token.value) {
+  if (store.isLoggedIn.value) {
     try {
-      const response = await api.get('/profile')
-      user.value = response.data
-      localStorage.setItem('user', JSON.stringify(response.data))
+      const response = await commonApi.getProfile()
+      store.updateUser(response.data)
     } catch (error) {
       console.error('加载用户信息失败', error)
-      localStorage.removeItem('token')
-      token.value = null
+      store.logout()
     }
   }
 }
 
 const loadUnreadCount = async () => {
-  if (token.value) {
+  if (store.isLoggedIn.value) {
     try {
-      const response = await api.get('/notifications/unread-count')
-      unreadCount.value = response.data.count || 0
+      const response = await commonApi.getUnreadCount()
+      store.setUnreadCount(response.data.unread_count || response.data.count || 0)
     } catch (error) {
       console.error('加载未读通知数失败', error)
     }
@@ -427,7 +418,7 @@ const loadUnreadCount = async () => {
 
 const loadVersion = async () => {
   try {
-    const response = await api.get('/version')
+    const response = await commonApi.getVersion()
     backendVersion.value = response.data.backend?.version || response.data.backend_version || response.data.version
     frontendVersion.value = response.data.frontend?.version || frontendVersion.value
   } catch (error) {
@@ -437,11 +428,12 @@ const loadVersion = async () => {
 
 const loadSiteTitle = async () => {
   try {
-    const response = await api.get('/site-config')
-    siteTitle.value = response.data.site_title || '校园论坛'
-    icpNumber.value = response.data.icp_number || null
+    const response = await commonApi.getSiteConfig()
+    siteTitle.value = response.data.site_title || response.data.name || '校园论坛'
+    icpNumber.value = response.data.icp_number || response.data.icp || null
     publicSecurityNumber.value = response.data.public_security_number || null
     document.title = siteTitle.value
+    store.setSiteConfig(response.data)
   } catch (error) {
     console.error('加载网站标题失败', error)
   }
@@ -462,37 +454,17 @@ onMounted(() => {
   window.addEventListener('resize', checkMobile)
   window.addEventListener('scroll', handleScroll)
 
-  const storedUser = localStorage.getItem('user')
-  if (storedUser) {
-    user.value = JSON.parse(storedUser)
-  }
-
   loadUser()
   loadVersion()
   loadSiteTitle()
   loadAnnouncement()
   loadUnreadCount()
 
-  window.addEventListener('user-updated', () => {
-    const storedUser = localStorage.getItem('user')
-    if (storedUser) {
-      user.value = JSON.parse(storedUser)
-    }
-    token.value = localStorage.getItem('token')
-    loadUnreadCount()
-  })
-
   window.addEventListener('site-title-updated', (event) => {
     if (event.detail) {
       siteTitle.value = event.detail
       document.title = event.detail
     }
-  })
-
-  window.addEventListener('user-logout', () => {
-    user.value = null
-    token.value = null
-    unreadCount.value = 0
   })
 })
 

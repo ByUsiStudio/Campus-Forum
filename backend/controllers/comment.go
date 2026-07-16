@@ -1,23 +1,22 @@
 package controllers
 
 import (
-	"forum/database"
-	"forum/models"
+	"forum/service"
 	"forum/utils"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 func CreateComment(c *gin.Context) {
 	userID := c.GetUint("user_id")
-	articleID := c.Param("id")
 
 	var input struct {
-		Content     string `json:"content" binding:"required"`
-		ParentID    *uint  `json:"parent_id"`
-		IsAnonymous bool   `json:"is_anonymous"`
+		ArticleID uint   `json:"article_id" binding:"required"`
+		Content   string `json:"content" binding:"required"`
+		ParentID  uint   `json:"parent_id"`
+		IsReply   bool   `json:"is_reply"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -25,148 +24,105 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 
-	// XSS过滤：清理评论内容
-	safeContent := utils.SanitizeHTML(input.Content)
-
-	var article models.Article
-	if result := database.DB.First(&article, articleID); result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "文章不存在"})
-		return
-	}
-
-	comment := models.Comment{
-		Content:     safeContent,
-		UserID:      userID,
-		ArticleID:   article.ID,
-		ParentID:    input.ParentID,
-		IsAnonymous: input.IsAnonymous,
-	}
-
-	if result := database.DB.Create(&comment); result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建评论失败"})
-		return
-	}
-
-	if input.ParentID != nil {
-		database.DB.Model(&models.Comment{}).Where("id = ?", *input.ParentID).UpdateColumn("reply_count", gorm.Expr("reply_count + 1"))
-	}
-
-	// 重新查询评论并加载用户信息
-	var commentResp models.Comment
-	database.DB.Preload("User").First(&commentResp, comment.ID)
-
-	// 如果是匿名评论，隐藏用户真实信息
-	if commentResp.IsAnonymous {
-		commentResp.User = models.User{
-			ID:          0,
-			Username:    "anonymous",
-			DisplayName: "匿名用户",
-			Avatar:      "",
+	err := service.Comment.CreateComment(userID, input.ArticleID, input.Content, input.ParentID, input.IsReply)
+	if err != nil {
+		if appErr, ok := utils.IsAppError(err); ok {
+			c.JSON(appErr.Code, gin.H{"error": appErr.Message})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "评论成功",
-		"comment": commentResp,
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "评论成功"})
+}
+
+func GetComments(c *gin.Context) {
+	articleID, _ := strconv.Atoi(c.Param("article_id"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	comments, totalPages, err := service.Comment.GetComments(uint(articleID), page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"comments": comments, "total_pages": totalPages})
+}
+
+func UpdateComment(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	var input struct {
+		Content string `json:"content" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := service.Comment.UpdateComment(userID, uint(id), input.Content)
+	if err != nil {
+		if appErr, ok := utils.IsAppError(err); ok {
+			c.JSON(appErr.Code, gin.H{"error": appErr.Message})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "更新成功"})
 }
 
 func DeleteComment(c *gin.Context) {
 	userID := c.GetUint("user_id")
-	commentID := c.Param("id")
-	role := c.GetString("role")
+	id, _ := strconv.Atoi(c.Param("id"))
 
-	var comment models.Comment
-	if result := database.DB.First(&comment, commentID); result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "评论不存在"})
+	err := service.Comment.DeleteComment(userID, uint(id))
+	if err != nil {
+		if appErr, ok := utils.IsAppError(err); ok {
+			c.JSON(appErr.Code, gin.H{"error": appErr.Message})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
-	}
-
-	if comment.UserID != userID && role != "admin" && role != "system" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "无权限删除"})
-		return
-	}
-
-	// 记录父评论ID以便更新回复计数
-	var parentID *uint = comment.ParentID
-
-	// 递归删除所有子回复
-	deleteCommentWithReplies(comment.ID)
-
-	// 更新父评论的回复计数
-	if parentID != nil {
-		database.DB.Model(&models.Comment{}).Where("id = ?", *parentID).UpdateColumn("reply_count", gorm.Expr("reply_count - 1"))
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "删除成功"})
 }
 
-// deleteCommentWithReplies 递归删除评论及其所有子回复
-func deleteCommentWithReplies(commentID uint) {
-	// 先获取所有子回复
-	var replies []models.Comment
-	database.DB.Where("parent_id = ?", commentID).Find(&replies)
-
-	// 递归删除子回复
-	for _, reply := range replies {
-		deleteCommentWithReplies(reply.ID)
-	}
-
-	// 删除当前评论
-	database.DB.Delete(&models.Comment{}, commentID)
-}
-
 func LikeComment(c *gin.Context) {
 	userID := c.GetUint("user_id")
-	commentID := c.Param("id")
+	id, _ := strconv.Atoi(c.Param("id"))
 
-	var comment models.Comment
-	if result := database.DB.First(&comment, commentID); result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "评论不存在"})
+	err := service.Comment.LikeComment(userID, uint(id))
+	if err != nil {
+		if appErr, ok := utils.IsAppError(err); ok {
+			c.JSON(appErr.Code, gin.H{"error": appErr.Message})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
-
-	var existingLike models.CommentLike
-	if result := database.DB.Where("user_id = ? AND comment_id = ?", userID, commentID).First(&existingLike); result.Error == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "已点赞"})
-		return
-	}
-
-	like := models.CommentLike{
-		UserID:    userID,
-		CommentID: comment.ID,
-	}
-
-	if result := database.DB.Create(&like); result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "点赞失败"})
-		return
-	}
-
-	database.DB.Model(&comment).UpdateColumn("like_count", gorm.Expr("like_count + 1"))
 
 	c.JSON(http.StatusOK, gin.H{"message": "点赞成功"})
 }
 
 func UnlikeComment(c *gin.Context) {
 	userID := c.GetUint("user_id")
-	commentID := c.Param("id")
+	id, _ := strconv.Atoi(c.Param("id"))
 
-	var comment models.Comment
-	if result := database.DB.First(&comment, commentID); result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "评论不存在"})
+	err := service.Comment.UnlikeComment(userID, uint(id))
+	if err != nil {
+		if appErr, ok := utils.IsAppError(err); ok {
+			c.JSON(appErr.Code, gin.H{"error": appErr.Message})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
-	}
-
-	var existingLike models.CommentLike
-	if result := database.DB.Where("user_id = ? AND comment_id = ?", userID, commentID).First(&existingLike); result.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "未点赞"})
-		return
-	}
-
-	database.DB.Delete(&existingLike)
-
-	if comment.LikeCount > 0 {
-		database.DB.Model(&comment).UpdateColumn("like_count", gorm.Expr("like_count - 1"))
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "取消点赞成功"})

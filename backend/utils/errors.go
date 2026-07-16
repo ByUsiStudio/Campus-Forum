@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -149,4 +151,29 @@ func SendErrorResponse(c *gin.Context, code int, message string, detail ...strin
 		errResponse.Detail = detail[0]
 	}
 	c.JSON(code, errResponse)
+}
+
+// AppError 自定义应用错误类型
+type AppError struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+func (e *AppError) Error() string {
+	return fmt.Sprintf("%d: %s", e.Code, e.Message)
+}
+
+func NewError(message string, code int) error {
+	return &AppError{
+		Code:    code,
+		Message: message,
+	}
+}
+
+func IsAppError(err error) (*AppError, bool) {
+	var appErr *AppError
+	if errors.As(err, &appErr) {
+		return appErr, true
+	}
+	return nil, false
 }

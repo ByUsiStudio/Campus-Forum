@@ -73,9 +73,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '../api'
+import { useStore } from '../stores'
+import { commonApi } from '../api'
 
 const router = useRouter()
+const store = useStore()
+
 const form = ref({
   username: '',
   password: ''
@@ -85,7 +88,7 @@ const loading = ref(false)
 
 const checkInit = async () => {
   try {
-    const response = await api.get('/auth/check-init')
+    const response = await commonApi.checkInit()
     if (!response.data.initialized) {
       router.push('/register')
     }
@@ -99,15 +102,10 @@ const handleLogin = async () => {
   loading.value = true
 
   try {
-    const response = await api.post('/auth/login', form.value)
+    const response = await commonApi.login(form.value)
     const { token, refresh_token, expires_in, user } = response.data
 
-    localStorage.setItem('token', token)
-    localStorage.setItem('refresh_token', refresh_token)
-    localStorage.setItem('token_expires_at', Date.now() + expires_in * 1000)
-    localStorage.setItem('user', JSON.stringify(user))
-
-    window.dispatchEvent(new Event('user-updated'))
+    store.login(user, token, refresh_token, expires_in)
     router.push('/')
   } catch (err) {
     error.value = err.response?.data?.error || '登录失败'

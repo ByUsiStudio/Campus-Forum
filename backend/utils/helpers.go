@@ -3,6 +3,8 @@ package utils
 import (
 	"strconv"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // Atoi 字符串转整数
@@ -103,4 +105,14 @@ func IsThisMonth(t time.Time) bool {
 // IsThisYear 检查日期是否在今年
 func IsThisYear(t time.Time) bool {
 	return t.Year() == time.Now().Year()
+}
+
+// Increment GORM自增表达式
+func Increment(field string) interface{} {
+	return gorm.Expr(field + " + 1")
+}
+
+// Decrement GORM自减表达式
+func Decrement(field string) interface{} {
+	return gorm.Expr(field + " - 1")
 }

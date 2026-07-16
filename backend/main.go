@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"encoding/json"
 	"forum/controllers"
@@ -360,22 +361,37 @@ func main() {
 		passwordReset.POST("/reset", middleware.RateLimit(5, time.Minute), controllers.ResetPassword)
 	}
 
+	srv := &http.Server{
+		Addr:    ":" + config.Port,
+		Handler: r,
+	}
+
 	utils.Section("服务启动")
 	utils.Info("论坛服务器地址: http://0.0.0.0:%s", config.Port)
 	utils.Info("WebSocket地址: ws://0.0.0.0:%s/ws", config.Port)
 	utils.Section("")
-	r.Run(":" + config.Port)
 
-	closeChan := make(chan struct{})
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	go func() {
-		<-sigChan
-		signal.Stop(sigChan)
-		close(closeChan)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			utils.Error("服务器启动失败: %v", err)
+			os.Exit(1)
+		}
 	}()
 
-	<-closeChan
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	<-sigChan
+
+	utils.Info("正在关闭服务器...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		utils.Error("服务器强制关闭: %v", err)
+	}
+
+	utils.Success("服务器已优雅关闭")
 }
 
 func loadConfig() {

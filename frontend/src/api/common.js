@@ -22,4 +22,19 @@ export const commonApi = {
 
   // 检查管理员权限
   checkAdmin: () => api.get('/admin/check'),
+
+  // 用户登录
+  login: (data) => api.post('/auth/login', data),
+
+  // 检查系统是否已初始化
+  checkInit: () => api.get('/auth/check-init'),
+
+  // 用户注册
+  register: (data) => api.post('/auth/register', data),
+
+  // 获取用户信息
+  getProfile: () => api.get('/profile'),
+
+  // 更新用户信息
+  updateProfile: (data) => api.put('/profile', data),
 }
