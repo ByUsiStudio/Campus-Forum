@@ -39,7 +39,6 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       less: {
-        additionalData: `@import "${path.resolve(__dirname, '../t.less')}";`,
         javascriptEnabled: true
       }
     }

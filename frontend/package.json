@@ -8,8 +8,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@layui/layui-vue": "^1.13.0",
-    "@layui/icons-vue": "^1.1.0",
     "axios": "^1.6.0",
     "highlight.js": "^11.9.0",
     "katex": "^0.16.9",
