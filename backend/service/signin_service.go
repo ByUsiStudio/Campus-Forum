@@ -23,44 +23,50 @@ func (s *SignInService) SignIn(userID uint) error {
 		return utils.NewError("今日已签到", 400)
 	}
 
-	record = models.SignInRecord{
-		UserID: userID,
-	}
-	database.DB.Create(&record)
-
 	var user models.User
 	database.DB.First(&user, userID)
-	user.TotalSignIns++
 
 	var lastRecord models.SignInRecord
 	database.DB.Where("user_id = ? AND created_at < ?", userID, startOfDay).Order("created_at DESC").First(&lastRecord)
+
+	continuousDay := 1
 	if lastRecord.ID > 0 {
-		lastSignInDate := lastRecord.CreatedAt.Date()
-		yesterday := startOfDay.Add(-24 * time.Hour).Date()
-		if lastSignInDate == yesterday {
-			user.SignInDays++
-		} else {
-			user.SignInDays = 1
+		lastYear, lastMonth, lastDay := lastRecord.CreatedAt.Date()
+		yesterday := startOfDay.Add(-24 * time.Hour)
+		yYear, yMonth, yDay := yesterday.Date()
+		if lastYear == yYear && lastMonth == yMonth && lastDay == yDay {
+			continuousDay = lastRecord.ContinuousDay + 1
 		}
-	} else {
-		user.SignInDays = 1
+	}
+
+	if continuousDay > user.SignInDays {
+		user.SignInDays = continuousDay
 	}
 
 	if user.SignInDays > user.MaxContinuousDays {
 		user.MaxContinuousDays = user.SignInDays
 	}
 
-	coins := 1
+	rewardPoints := 1
 	if user.SignInDays >= 7 {
-		coins = 3
+		rewardPoints = 3
 	} else if user.SignInDays >= 3 {
-		coins = 2
+		rewardPoints = 2
 	}
-	user.TotalCoins += coins
+	user.TotalCoins += rewardPoints
+	user.TotalSignIns++
 
 	database.DB.Save(&user)
 
-	s.updateUserExperience(userID, "signin", coins*10)
+	record = models.SignInRecord{
+		UserID:        userID,
+		SignInDate:    startOfDay.Format("2006-01-02"),
+		ContinuousDay: continuousDay,
+		RewardPoints:  rewardPoints,
+	}
+	database.DB.Create(&record)
+
+	Article.updateUserExperience(userID, "signin", rewardPoints*10)
 
 	return nil
 }
@@ -82,9 +88,10 @@ func (s *SignInService) GetSignInStatus(userID uint) (*models.SignInRecord, int,
 	var lastRecord models.SignInRecord
 	database.DB.Where("user_id = ? AND created_at < ?", userID, startOfDay).Order("created_at DESC").First(&lastRecord)
 	if lastRecord.ID > 0 {
-		lastSignInDate := lastRecord.CreatedAt.Date()
-		yesterday := startOfDay.Add(-24 * time.Hour).Date()
-		if lastSignInDate == yesterday {
+		lastYear, lastMonth, lastDay := lastRecord.CreatedAt.Date()
+		yesterday := startOfDay.Add(-24 * time.Hour)
+		yYear, yMonth, yDay := yesterday.Date()
+		if lastYear == yYear && lastMonth == yMonth && lastDay == yDay {
 			return nil, user.SignInDays + 1, nil
 		}
 	}
@@ -131,10 +138,11 @@ func (s *SignInService) GetSignInConfig() (*models.SignInConfig, error) {
 	err := database.DB.Order("created_at DESC").First(&config).Error
 	if err != nil {
 		config = models.SignInConfig{
-			Enabled:              true,
-			DailyCoins:           1,
-			Continuous3DaysBonus: 2,
-			Continuous7DaysBonus: 3,
+			Enabled:      true,
+			DailyPoints:  1,
+			WeeklyBonus:  7,
+			MonthlyBonus: 30,
+			YearlyBonus:  100,
 		}
 		database.DB.Create(&config)
 		return &config, nil

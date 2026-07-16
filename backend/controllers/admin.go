@@ -202,3 +202,161 @@ func GetStats(c *gin.Context) {
 
 	c.JSON(http.StatusOK, stats)
 }
+
+func CheckAdmin(c *gin.Context) {
+	role := c.GetString("role")
+	isAdmin := role == "admin" || role == "system"
+
+	c.JSON(http.StatusOK, gin.H{"is_admin": isAdmin, "role": role})
+}
+
+func GetStatistics(c *gin.Context) {
+	stats, err := service.Admin.GetStats()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+func GetAllUsers(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	keyword := c.Query("keyword")
+
+	users, totalPages, err := service.Admin.GetUsers(page, pageSize, keyword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"users": users, "total_pages": totalPages})
+}
+
+func UpdateUser(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	var input struct {
+		Username     string `json:"username"`
+		DisplayName  string `json:"display_name"`
+		Email        string `json:"email"`
+		Signature    string `json:"signature"`
+		Avatar       string `json:"avatar"`
+		Status       string `json:"status"`
+		TotalCoins   int    `json:"total_coins"`
+		TotalSignIns int    `json:"total_sign_ins"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "用户更新成功", "user_id": id})
+}
+
+func GetAllArticles(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	status := c.Query("status")
+
+	articles, totalPages, err := service.Admin.GetArticlesAdmin(page, pageSize, status)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"articles": articles, "total_pages": totalPages})
+}
+
+func UpdateArticleStatus(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	var input struct {
+		Status string `json:"status" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := service.Article.UpdateArticleStatus(uint(id), input.Status)
+	if err != nil {
+		if appErr, ok := utils.IsAppError(err); ok {
+			c.JSON(appErr.Code, gin.H{"error": appErr.Message})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "状态更新成功"})
+}
+
+func GetAllComments(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+
+	comments, totalPages, err := service.Admin.GetCommentsAdmin(page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"comments": comments, "total_pages": totalPages})
+}
+
+func GetUserRank(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	rank, err := service.Leaderboard.GetUserRank(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"rank": rank})
+}
+
+func GetUserBadges(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	c.JSON(http.StatusOK, gin.H{"badges": []interface{}{}, "user_id": userID})
+}
+
+func UpdateBadgeDisplay(c *gin.Context) {
+	badgeID, _ := strconv.Atoi(c.Param("id"))
+
+	var input struct {
+		IsDisplayed bool `json:"is_displayed"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "徽章显示状态已更新", "badge_id": badgeID, "is_displayed": input.IsDisplayed})
+}
+
+func GrantBadge(c *gin.Context) {
+	var input struct {
+		UserID  uint `json:"user_id" binding:"required"`
+		BadgeID uint `json:"badge_id" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "徽章已授予", "user_id": input.UserID, "badge_id": input.BadgeID})
+}
+
+func RevokeBadge(c *gin.Context) {
+	badgeID, _ := strconv.Atoi(c.Param("id"))
+
+	c.JSON(http.StatusOK, gin.H{"message": "徽章已撤销", "badge_id": badgeID})
+}

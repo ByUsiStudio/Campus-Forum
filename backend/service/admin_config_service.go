@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"forum/database"
 	"forum/models"
 	"forum/utils"
@@ -114,8 +115,9 @@ func (s *AdminConfigService) GetSidebarConfig() (*models.SidebarConfig, error) {
 }
 
 func (s *AdminConfigService) UpdateSidebarConfig(items []models.SidebarItem) error {
+	itemsJSON, _ := json.Marshal(items)
 	config := models.SidebarConfig{
-		Items: items,
+		Items: string(itemsJSON),
 	}
 	database.DB.Create(&config)
 	return nil

@@ -8,7 +8,7 @@ import (
 )
 
 func GetLeaderboard(c *gin.Context) {
-	leaderboard, err := service.Leaderboard.GetLeaderboard()
+	leaderboard, _, err := service.Leaderboard.GetLeaderboard(1, 10)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

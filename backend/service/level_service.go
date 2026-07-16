@@ -61,14 +61,14 @@ func (s *LevelService) GetLevelConfig() ([]models.LevelConfig, error) {
 	err := database.DB.Order("level ASC").Find(&configs).Error
 	if err != nil || len(configs) == 0 {
 		configs = []models.LevelConfig{
-			{Level: 1, RequiredExp: 0, Name: "新手"},
-			{Level: 2, RequiredExp: 100, Name: "初级会员"},
-			{Level: 3, RequiredExp: 300, Name: "中级会员"},
-			{Level: 4, RequiredExp: 500, Name: "高级会员"},
-			{Level: 5, RequiredExp: 1000, Name: "资深会员"},
-			{Level: 6, RequiredExp: 2000, Name: "精英会员"},
-			{Level: 7, RequiredExp: 5000, Name: "专家"},
-			{Level: 8, RequiredExp: 10000, Name: "大师"},
+			{Level: 1, MinExp: 0, Title: "新手"},
+			{Level: 2, MinExp: 100, Title: "初级会员"},
+			{Level: 3, MinExp: 300, Title: "中级会员"},
+			{Level: 4, MinExp: 500, Title: "高级会员"},
+			{Level: 5, MinExp: 1000, Title: "资深会员"},
+			{Level: 6, MinExp: 2000, Title: "精英会员"},
+			{Level: 7, MinExp: 5000, Title: "专家"},
+			{Level: 8, MinExp: 10000, Title: "大师"},
 		}
 		database.DB.Create(&configs)
 	}
@@ -82,15 +82,15 @@ func (s *LevelService) CreateLevelConfig(config models.LevelConfig) error {
 	return nil
 }
 
-func (s *LevelService) UpdateLevelConfig(configID uint, level, requiredExp int, name string) error {
+func (s *LevelService) UpdateLevelConfig(configID uint, level, minExp int, title string) error {
 	var config models.LevelConfig
 	if result := database.DB.First(&config, configID); result.Error != nil {
 		return utils.NewError("等级配置不存在", 404)
 	}
 
 	config.Level = level
-	config.RequiredExp = requiredExp
-	config.Name = name
+	config.MinExp = minExp
+	config.Title = title
 	database.DB.Save(&config)
 	return nil
 }
@@ -102,7 +102,7 @@ func (s *LevelService) CreateAchievement(achievement models.Achievement) error {
 	return nil
 }
 
-func (s *LevelService) UpdateAchievement(achievementID uint, name, description string, icon string, requirement int) error {
+func (s *LevelService) UpdateAchievement(achievementID uint, name, description string, icon string) error {
 	var achievement models.Achievement
 	if result := database.DB.First(&achievement, achievementID); result.Error != nil {
 		return utils.NewError("成就不存在", 404)
@@ -111,7 +111,6 @@ func (s *LevelService) UpdateAchievement(achievementID uint, name, description s
 	achievement.Name = name
 	achievement.Description = description
 	achievement.Icon = icon
-	achievement.Requirement = requirement
 	database.DB.Save(&achievement)
 	return nil
 }

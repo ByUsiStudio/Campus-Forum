@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"forum/database"
 	"forum/models"
 	"forum/utils"
@@ -313,8 +314,7 @@ func (s *ArticleService) CoinArticle(userID, articleID uint) error {
 	coinRecord := models.CoinRecord{
 		UserID:    userID,
 		ArticleID: articleID,
-		Amount:    1,
-		Type:      "coin",
+		CoinCount: 1,
 	}
 	database.DB.Create(&coinRecord)
 
@@ -339,7 +339,7 @@ func (s *ArticleService) updateUserExperience(userID uint, action string, amount
 	for {
 		var levelConfig models.LevelConfig
 		result := database.DB.Where("level = ?", userLevel.Level+1).First(&levelConfig)
-		if result.Error != nil || userLevel.Experience < levelConfig.RequiredExp {
+		if result.Error != nil || userLevel.Experience < levelConfig.MinExp {
 			break
 		}
 		userLevel.Level++
@@ -348,10 +348,10 @@ func (s *ArticleService) updateUserExperience(userID uint, action string, amount
 	database.DB.Save(&userLevel)
 
 	expRecord := models.ExperienceRecord{
-		UserID: userID,
-		Action: action,
-		Amount: amount,
-		Level:  userLevel.Level,
+		UserID:      userID,
+		Type:        action,
+		Amount:      amount,
+		Description: fmt.Sprintf("获得%d经验值", amount),
 	}
 	database.DB.Create(&expRecord)
 }
@@ -366,14 +366,96 @@ func (s *ArticleService) updateUserStatistics(userID uint, field string, increme
 
 	switch field {
 	case "article_count":
-		stats.ArticleCount += increment
+		stats.TotalArticles += increment
 	case "comment_count":
-		stats.CommentCount += increment
+		stats.TotalComments += increment
 	case "like_count":
-		stats.LikeCount += increment
+		stats.TotalLikes += increment
 	case "favorite_count":
-		stats.FavoriteCount += increment
+		stats.TotalFavorites += increment
 	}
 
 	database.DB.Save(&stats)
+}
+
+func (s *ArticleService) AddFavorite(userID, articleID uint) error {
+	var article models.Article
+	if result := database.DB.First(&article, articleID); result.Error != nil {
+		return utils.NewError("文章不存在", 404)
+	}
+
+	var favorite models.Favorite
+	result := database.DB.Where("user_id = ? AND article_id = ?", userID, articleID).First(&favorite)
+	if result.Error == nil {
+		return utils.NewError("已收藏该文章", 400)
+	}
+
+	favorite = models.Favorite{
+		UserID:    userID,
+		ArticleID: articleID,
+	}
+	database.DB.Create(&favorite)
+
+	database.DB.Model(&article).UpdateColumn("favorite_count", gorm.Expr("favorite_count + 1"))
+
+	return nil
+}
+
+func (s *ArticleService) RemoveFavorite(userID, articleID uint) error {
+	result := database.DB.Where("user_id = ? AND article_id = ?", userID, articleID).Delete(&models.Favorite{})
+	if result.RowsAffected == 0 {
+		return utils.NewError("未收藏该文章", 400)
+	}
+
+	database.DB.Model(&models.Article{}).Where("id = ?", articleID).UpdateColumn("favorite_count", gorm.Expr("favorite_count - 1"))
+
+	return nil
+}
+
+func (s *ArticleService) GetFavorites(userID uint, page, pageSize int) ([]models.Article, int, error) {
+	var articles []models.Article
+	var total int64
+
+	query := database.DB.Model(&models.Article{}).
+		Joins("JOIN favorites ON favorites.article_id = articles.id").
+		Where("favorites.user_id = ?", userID)
+	query.Count(&total)
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+
+	offset := (page - 1) * pageSize
+	err := query.Preload("User").Preload("Category").
+		Order("favorites.created_at DESC").
+		Offset(offset).Limit(pageSize).
+		Find(&articles).Error
+
+	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
+
+	return articles, totalPages, err
+}
+
+func (s *ArticleService) CheckFavorite(userID, articleID uint) (bool, error) {
+	var favorite models.Favorite
+	result := database.DB.Where("user_id = ? AND article_id = ?", userID, articleID).First(&favorite)
+	if result.Error == nil {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (s *ArticleService) UpdateArticleStatus(articleID uint, status string) error {
+	var article models.Article
+	if result := database.DB.First(&article, articleID); result.Error != nil {
+		return utils.NewError("文章不存在", 404)
+	}
+
+	article.Status = status
+	database.DB.Save(&article)
+
+	return nil
 }

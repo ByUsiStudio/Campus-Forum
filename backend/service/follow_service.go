@@ -4,6 +4,7 @@ import (
 	"forum/database"
 	"forum/models"
 	"forum/utils"
+	"math"
 )
 
 type FollowService struct{}
@@ -16,15 +17,15 @@ func (s *FollowService) SendFriendRequest(fromUserID, toUserID uint) error {
 	}
 
 	var request models.FriendRequest
-	result := database.DB.Where("from_user_id = ? AND to_user_id = ?", fromUserID, toUserID).First(&request)
+	result := database.DB.Where("sender_id = ? AND receiver_id = ?", fromUserID, toUserID).First(&request)
 	if result.Error == nil {
 		return utils.NewError("好友请求已发送", 400)
 	}
 
 	request = models.FriendRequest{
-		FromUserID: fromUserID,
-		ToUserID:   toUserID,
-		Status:     "pending",
+		SenderID:   fromUserID,
+		ReceiverID: toUserID,
+		Status:     0,
 	}
 	database.DB.Create(&request)
 
@@ -37,20 +38,20 @@ func (s *FollowService) AcceptFriendRequest(userID, requestID uint) error {
 		return utils.NewError("请求不存在", 404)
 	}
 
-	if request.ToUserID != userID {
+	if request.ReceiverID != userID {
 		return utils.NewError("无权处理该请求", 403)
 	}
 
-	request.Status = "accepted"
+	request.Status = 1
 	database.DB.Save(&request)
 
 	friend1 := models.Friend{
-		UserID:   request.FromUserID,
-		FriendID: request.ToUserID,
+		UserID:   request.SenderID,
+		FriendID: request.ReceiverID,
 	}
 	friend2 := models.Friend{
-		UserID:   request.ToUserID,
-		FriendID: request.FromUserID,
+		UserID:   request.ReceiverID,
+		FriendID: request.SenderID,
 	}
 
 	database.DB.Create(&friend1)
@@ -65,11 +66,11 @@ func (s *FollowService) RejectFriendRequest(userID, requestID uint) error {
 		return utils.NewError("请求不存在", 404)
 	}
 
-	if request.ToUserID != userID {
+	if request.ReceiverID != userID {
 		return utils.NewError("无权处理该请求", 403)
 	}
 
-	request.Status = "rejected"
+	request.Status = 2
 	database.DB.Save(&request)
 
 	return nil
@@ -89,19 +90,19 @@ func (s *FollowService) DeleteFriend(userID, friendID uint) error {
 
 func (s *FollowService) GetFriendList(userID uint) ([]models.Friend, error) {
 	var friends []models.Friend
-	err := database.DB.Where("user_id = ?", userID).Preload("FriendUser").Find(&friends).Error
+	err := database.DB.Where("user_id = ?", userID).Preload("Friend").Find(&friends).Error
 	return friends, err
 }
 
 func (s *FollowService) GetFriendRequests(userID uint) ([]models.FriendRequest, error) {
 	var requests []models.FriendRequest
-	err := database.DB.Where("to_user_id = ? AND status = ?", userID, "pending").Preload("FromUser").Find(&requests).Error
+	err := database.DB.Where("receiver_id = ? AND status = ?", userID, 0).Preload("Sender").Find(&requests).Error
 	return requests, err
 }
 
 func (s *FollowService) GetSentFriendRequests(userID uint) ([]models.FriendRequest, error) {
 	var requests []models.FriendRequest
-	err := database.DB.Where("from_user_id = ? AND status = ?", userID, "pending").Preload("ToUser").Find(&requests).Error
+	err := database.DB.Where("sender_id = ? AND status = ?", userID, 0).Preload("Receiver").Find(&requests).Error
 	return requests, err
 }
 
@@ -126,12 +127,12 @@ func (s *FollowService) CheckFriendStatus(userID1, userID2 uint) (string, error)
 	}
 
 	var request models.FriendRequest
-	result = database.DB.Where("from_user_id = ? AND to_user_id = ?", userID1, userID2).First(&request)
+	result = database.DB.Where("sender_id = ? AND receiver_id = ?", userID1, userID2).First(&request)
 	if result.Error == nil {
 		return "pending_sent", nil
 	}
 
-	result = database.DB.Where("from_user_id = ? AND to_user_id = ?", userID2, userID1).First(&request)
+	result = database.DB.Where("sender_id = ? AND receiver_id = ?", userID2, userID1).First(&request)
 	if result.Error == nil {
 		return "pending_received", nil
 	}
@@ -149,4 +150,94 @@ func (s *FollowService) GetMutualFriends(userID1, userID2 uint) ([]models.User, 
 		Scan(&mutualFriends).Error
 
 	return mutualFriends, err
+}
+
+func (s *FollowService) FollowUser(followerID, followedID uint) error {
+	if followerID == followedID {
+		return utils.NewError("不能关注自己", 400)
+	}
+
+	var follow models.UserFollow
+	result := database.DB.Where("follower_id = ? AND followed_id = ?", followerID, followedID).First(&follow)
+	if result.Error == nil {
+		return utils.NewError("已关注该用户", 400)
+	}
+
+	follow = models.UserFollow{
+		FollowerID: followerID,
+		FollowedID: followedID,
+	}
+	database.DB.Create(&follow)
+
+	return nil
+}
+
+func (s *FollowService) UnfollowUser(followerID, followedID uint) error {
+	result := database.DB.Where("follower_id = ? AND followed_id = ?", followerID, followedID).Delete(&models.UserFollow{})
+	if result.RowsAffected == 0 {
+		return utils.NewError("未关注该用户", 400)
+	}
+
+	return nil
+}
+
+func (s *FollowService) GetFollowers(userID uint, page, pageSize int) ([]models.User, int, error) {
+	var users []models.User
+	var total int64
+
+	query := database.DB.Model(&models.User{}).
+		Joins("JOIN user_follows ON user_follows.follower_id = users.id").
+		Where("user_follows.followed_id = ?", userID)
+	query.Count(&total)
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+
+	offset := (page - 1) * pageSize
+	err := query.Order("user_follows.created_at DESC").
+		Offset(offset).Limit(pageSize).
+		Find(&users).Error
+
+	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
+
+	return users, totalPages, err
+}
+
+func (s *FollowService) GetFollowing(userID uint, page, pageSize int) ([]models.User, int, error) {
+	var users []models.User
+	var total int64
+
+	query := database.DB.Model(&models.User{}).
+		Joins("JOIN user_follows ON user_follows.followed_id = users.id").
+		Where("user_follows.follower_id = ?", userID)
+	query.Count(&total)
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+
+	offset := (page - 1) * pageSize
+	err := query.Order("user_follows.created_at DESC").
+		Offset(offset).Limit(pageSize).
+		Find(&users).Error
+
+	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
+
+	return users, totalPages, err
+}
+
+func (s *FollowService) CheckFollowing(followerID, followedID uint) (bool, error) {
+	var follow models.UserFollow
+	result := database.DB.Where("follower_id = ? AND followed_id = ?", followerID, followedID).First(&follow)
+	if result.Error == nil {
+		return true, nil
+	}
+	return false, nil
 }

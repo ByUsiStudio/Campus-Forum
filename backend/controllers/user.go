@@ -23,17 +23,18 @@ func GetUserProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":           user.ID,
-		"username":     user.Username,
-		"display_name": user.DisplayName,
-		"avatar":       user.Avatar,
-		"signature":    user.Signature,
-		"role":         user.Role,
-		"status":       user.Status,
-		"created_at":   user.CreatedAt,
-		"level":        user.Level,
-		"exp":          user.Exp,
-		"coins":        user.Coins,
+		"id":                  user.ID,
+		"username":            user.Username,
+		"display_name":        user.DisplayName,
+		"avatar":              user.Avatar,
+		"signature":           user.Signature,
+		"role":                user.Role,
+		"status":              user.Status,
+		"created_at":          user.CreatedAt,
+		"total_coins":         user.TotalCoins,
+		"total_sign_ins":      user.TotalSignIns,
+		"sign_in_days":        user.SignInDays,
+		"max_continuous_days": user.MaxContinuousDays,
 	})
 }
 
@@ -42,7 +43,7 @@ func GetUserArticles(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 
-	articles, totalPages, err := service.Article.GetArticlesByUser(uint(id), page, pageSize)
+	articles, totalPages, err := service.Article.GetMyArticles(uint(id), page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -52,15 +53,43 @@ func GetUserArticles(c *gin.Context) {
 }
 
 func GetUserComments(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 
-	comments, totalPages, err := service.Comment.GetCommentsByUser(uint(id), page, pageSize)
+	comments, totalPages, err := service.Comment.GetCommentsByArticle(0, page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"comments": comments, "total_pages": totalPages})
+}
+
+func GetUserByID(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	user, err := service.Auth.GetProfile(uint(id))
+	if err != nil {
+		if appErr, ok := utils.IsAppError(err); ok {
+			c.JSON(appErr.Code, gin.H{"error": appErr.Message})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":                  user.ID,
+		"username":            user.Username,
+		"display_name":        user.DisplayName,
+		"avatar":              user.Avatar,
+		"signature":           user.Signature,
+		"role":                user.Role,
+		"status":              user.Status,
+		"created_at":          user.CreatedAt,
+		"total_coins":         user.TotalCoins,
+		"total_sign_ins":      user.TotalSignIns,
+		"sign_in_days":        user.SignInDays,
+		"max_continuous_days": user.MaxContinuousDays,
+	})
 }

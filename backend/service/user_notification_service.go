@@ -127,3 +127,11 @@ func (s *UserNotificationService) AdminGetUserNotifications(userID uint, page, p
 
 	return notifications, totalPages, err
 }
+
+func (s *UserNotificationService) GetUnreadCount(userID uint) (int64, error) {
+	var count int64
+	err := database.DB.Model(&models.PersonalNotification{}).
+		Where("user_id = ? AND is_read = ?", userID, false).
+		Count(&count).Error
+	return count, err
+}

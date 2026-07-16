@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/russross/blackfriday/v2"
 	"gorm.io/gorm"
 )
 
@@ -115,4 +116,10 @@ func Increment(field string) interface{} {
 // Decrement GORM自减表达式
 func Decrement(field string) interface{} {
 	return gorm.Expr(field + " - 1")
+}
+
+// RenderMarkdown 将Markdown转换为HTML
+func RenderMarkdown(content string) string {
+	html := blackfriday.Run([]byte(content))
+	return string(html)
 }

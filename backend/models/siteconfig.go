@@ -3,6 +3,8 @@ package models
 type SiteConfig struct {
 	ID                   uint   `gorm:"primarykey" json:"id"`
 	SiteTitle            string `gorm:"type:varchar(255);default:'校园论坛 - 分享与交流'" json:"site_title"`
+	SiteDescription      string `gorm:"type:varchar(500)" json:"site_description"`
+	SiteLogo             string `gorm:"type:varchar(255)" json:"site_logo"`
 	ICPNumber            string `gorm:"type:varchar(255)" json:"icp_number"`
 	PublicSecurityNumber string `gorm:"type:varchar(255)" json:"public_security_number"`
 	SMTPHost             string `gorm:"type:varchar(255)" json:"smtp_host"`

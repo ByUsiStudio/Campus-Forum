@@ -36,6 +36,26 @@ func (s *LeaderboardService) GetLeaderboard(page, pageSize int) ([]models.Leader
 	return rankings, totalPages, err
 }
 
+func (s *LeaderboardService) GetWeeklyLeaderboard() ([]models.Leaderboard, error) {
+	var rankings []models.Leaderboard
+	err := database.DB.Preload("User").
+		Where("period = ?", "weekly").
+		Order("rank ASC").
+		Limit(10).
+		Find(&rankings).Error
+	return rankings, err
+}
+
+func (s *LeaderboardService) GetMonthlyLeaderboard() ([]models.Leaderboard, error) {
+	var rankings []models.Leaderboard
+	err := database.DB.Preload("User").
+		Where("period = ?", "monthly").
+		Order("rank ASC").
+		Limit(10).
+		Find(&rankings).Error
+	return rankings, err
+}
+
 func (s *LeaderboardService) GetUserRank(userID uint) (*models.Leaderboard, error) {
 	var ranking models.Leaderboard
 	err := database.DB.Where("user_id = ?", userID).Preload("User").First(&ranking).Error
@@ -63,16 +83,18 @@ func (s *LeaderboardService) UpdateBadgeDisplay(userID, badgeID uint, display bo
 	return nil
 }
 
-func (s *LeaderboardService) GrantBadge(userID, badgeID uint) error {
+func (s *LeaderboardService) GrantBadge(userID uint, badgeType, badgeName, badgeIcon string) error {
 	var userBadge models.UserBadge
-	result := database.DB.Where("user_id = ? AND badge_id = ?", userID, badgeID).First(&userBadge)
+	result := database.DB.Where("user_id = ? AND badge_type = ?", userID, badgeType).First(&userBadge)
 	if result.Error == nil {
 		return utils.NewError("用户已拥有该徽章", 400)
 	}
 
 	userBadge = models.UserBadge{
 		UserID:      userID,
-		BadgeID:     badgeID,
+		BadgeType:   badgeType,
+		BadgeName:   badgeName,
+		BadgeIcon:   badgeIcon,
 		IsDisplayed: true,
 	}
 	database.DB.Create(&userBadge)
@@ -80,8 +102,8 @@ func (s *LeaderboardService) GrantBadge(userID, badgeID uint) error {
 	return nil
 }
 
-func (s *LeaderboardService) RevokeBadge(userID, badgeID uint) error {
-	result := database.DB.Where("user_id = ? AND badge_id = ?", userID, badgeID).Delete(&models.UserBadge{})
+func (s *LeaderboardService) RevokeBadge(userID uint, badgeType string) error {
+	result := database.DB.Where("user_id = ? AND badge_type = ?", userID, badgeType).Delete(&models.UserBadge{})
 	if result.RowsAffected == 0 {
 		return utils.NewError("用户未拥有该徽章", 400)
 	}

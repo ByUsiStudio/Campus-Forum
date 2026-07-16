@@ -11,11 +11,11 @@ type NotificationService struct{}
 
 var Notification = &NotificationService{}
 
-func (s *NotificationService) GetNotifications(userID uint, page, pageSize int) ([]models.Notification, int, error) {
-	var notifications []models.Notification
+func (s *NotificationService) GetNotifications(userID uint, page, pageSize int) ([]models.PersonalNotification, int, error) {
+	var notifications []models.PersonalNotification
 	var total int64
 
-	query := database.DB.Model(&models.Notification{}).Where("user_id = ?", userID)
+	query := database.DB.Model(&models.PersonalNotification{}).Where("user_id = ?", userID)
 	query.Count(&total)
 
 	if page < 1 {
@@ -26,7 +26,8 @@ func (s *NotificationService) GetNotifications(userID uint, page, pageSize int) 
 	}
 
 	offset := (page - 1) * pageSize
-	err := query.Order("created_at DESC").
+	err := query.Preload("Sender").
+		Order("priority DESC, created_at DESC").
 		Offset(offset).Limit(pageSize).
 		Find(&notifications).Error
 
@@ -37,12 +38,12 @@ func (s *NotificationService) GetNotifications(userID uint, page, pageSize int) 
 
 func (s *NotificationService) GetUnreadCount(userID uint) (int64, error) {
 	var count int64
-	err := database.DB.Model(&models.Notification{}).Where("user_id = ? AND is_read = ?", userID, false).Count(&count).Error
+	err := database.DB.Model(&models.PersonalNotification{}).Where("user_id = ? AND is_read = ?", userID, false).Count(&count).Error
 	return count, err
 }
 
 func (s *NotificationService) MarkNotificationRead(userID, notificationID uint) error {
-	var notification models.Notification
+	var notification models.PersonalNotification
 	if result := database.DB.First(&notification, notificationID); result.Error != nil {
 		return utils.NewError("通知不存在", 404)
 	}
@@ -57,18 +58,20 @@ func (s *NotificationService) MarkNotificationRead(userID, notificationID uint) 
 }
 
 func (s *NotificationService) MarkAllNotificationsRead(userID uint) error {
-	database.DB.Model(&models.Notification{}).Where("user_id = ?", userID).Update("is_read", true)
+	database.DB.Model(&models.PersonalNotification{}).Where("user_id = ?", userID).Update("is_read", true)
 	return nil
 }
 
-func (s *NotificationService) CreateNotification(userID, articleID, commentID uint, notificationType, content string) error {
-	notification := models.Notification{
-		UserID:    userID,
-		ArticleID: articleID,
-		CommentID: commentID,
-		Type:      notificationType,
-		Content:   content,
-		IsRead:    false,
+func (s *NotificationService) CreateNotification(senderID, userID uint, notificationType, title, content, relatedType string, relatedID uint) error {
+	notification := models.PersonalNotification{
+		SenderID:    senderID,
+		UserID:      userID,
+		Type:        notificationType,
+		Title:       title,
+		Content:     content,
+		RelatedType: relatedType,
+		RelatedID:   relatedID,
+		IsRead:      false,
 	}
 
 	database.DB.Create(&notification)
@@ -76,9 +79,13 @@ func (s *NotificationService) CreateNotification(userID, articleID, commentID ui
 }
 
 func (s *NotificationService) DeleteNotification(userID, notificationID uint) error {
-	var notification models.Notification
+	var notification models.PersonalNotification
 	if result := database.DB.First(&notification, notificationID); result.Error != nil {
 		return utils.NewError("通知不存在", 404)
+	}
+
+	if notification.UserID != userID {
+		return utils.NewError("无权删除该通知", 403)
 	}
 
 	database.DB.Delete(&notification)
@@ -89,7 +96,7 @@ func (s *NotificationService) GetAdminNotifications(page, pageSize int) ([]model
 	var notifications []models.Notification
 	var total int64
 
-	query := database.DB.Model(&models.Notification{})
+	query := database.DB.Model(&models.Notification{}).Where("target = ?", "admin")
 	query.Count(&total)
 
 	if page < 1 {

@@ -24,7 +24,7 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 
-	err := service.Comment.CreateComment(userID, input.ArticleID, input.Content, input.ParentID, input.IsReply)
+	_, err := service.Comment.CreateComment(userID, input.ArticleID, input.Content, input.ParentID, input.IsReply)
 	if err != nil {
 		if appErr, ok := utils.IsAppError(err); ok {
 			c.JSON(appErr.Code, gin.H{"error": appErr.Message})
