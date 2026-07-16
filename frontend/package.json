@@ -19,6 +19,7 @@
     "markdown-it-mark": "^4.0.0",
     "markdown-it-task-lists": "^2.1.1",
     "marked": "^18.0.5",
+    "plyr": "^3.8.4",
     "vue": "^3.4.0",
     "vue-router": "^4.2.5"
   },
