@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title id="siteTitle">{{SITE_TITLE}}</title>
-    <!-- 图标 -->
     <link rel="icon" type="image/svg+xml" href="/xylt.svg">
+
+    <link rel="stylesheet" href="/layui/css/layui.css">
+    <link rel="stylesheet" href="/Font/css/all.min.css">
 
     <style>
         * {
@@ -15,7 +17,6 @@
         }
     </style>
 
-    <!-- 动态加载网站标题 -->
     <script>
         fetch('/api/site-config')
             .then(response => response.json())
@@ -29,13 +30,9 @@
             });
     </script>
 </head>
-<!--
-开源仓库：
-https://github.com/ByUsiStudio/Campus-Forum
-https://gitee.com/byusistudio/campus-forum
--->
 <body>
     <div id="app"></div>
+    <script src="/layui/layui.js"></script>
     <script type="module" src="/src/main.js"></script>
 </body>
 </html>

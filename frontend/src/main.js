@@ -7,11 +7,7 @@ import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
 window.hljs = hljs
 
-import Layui from '@layui/layui-vue'
-import '@layui/layui-vue/lib/index.css'
-
 const app = createApp(App)
-app.use(Layui)
 
 import Home from './views/Home.vue'
 import Login from './views/Login.vue'
