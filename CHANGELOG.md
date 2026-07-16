@@ -6,6 +6,90 @@
 
 ---
 
+## [3.0.0] - 2026-07-16
+
+### 重构
+
+#### 后端架构重构
+
+- **引入三层架构模式（Repository-Service-Controller）**：
+  - 新增 `repository/` 目录，创建通用 BaseRepository 接口和各模型专用 Repository
+  - 新增 `service/` 目录，创建服务层处理业务逻辑，替代直接在 Controller 中操作数据库
+  - 重构 `controllers/` 目录，所有 Controller 仅负责 HTTP 请求处理，调用 Service 层处理业务
+
+- **Repository 层**：
+  - 创建 `repository/repository.go` - 通用 CRUD 操作接口和实现
+  - 创建 `repository/user.go`, `article.go`, `comment.go`, `category.go`, `follow.go`, `notification.go`, `personal_notification.go` 等模型专用 Repository
+
+- **Service 层**：
+  - 创建 `service/auth_service.go` - 认证业务逻辑
+  - 创建 `service/article_service.go` - 文章管理逻辑
+  - 创建 `service/comment_service.go` - 评论管理逻辑
+  - 创建 `service/follow_service.go` - 关注和好友系统逻辑
+  - 创建 `service/leaderboard_service.go` - 排行榜逻辑
+  - 创建 `service/user_notification_service.go` - 用户通知逻辑
+  - 创建 `service/admin_service.go` - 管理员操作逻辑
+  - 创建 `service/siteconfig_service.go` - 站点配置逻辑
+
+- **Controller 层重构**：
+  - 所有 Controller 调用 Service 层处理业务，不再直接操作数据库
+  - 新增 `controllers/friends.go` - 好友系统控制器
+  - 更新 `controllers/user_notification.go` - 个人通知控制器
+  - 更新 `controllers/admin.go` - 管理员控制器，新增多个管理接口
+
+- **统一错误处理**：
+  - 创建 `utils/errors.go` - 自定义 AppError 类型和错误处理工具
+  - 所有错误返回统一格式
+
+- **基础设施改进**：
+  - 修复 `main.go` 的 graceful shutdown 问题，使用 `http.Server` 和信号处理
+  - 添加 Markdown 渲染工具函数 `utils.RenderMarkdown`
+
+#### 前端架构重构
+
+- **状态管理**：
+  - 创建 `src/stores/index.js` - 集中式状态管理（Pinia-like Store）
+  - 替代直接 localStorage 操作，支持响应式状态
+  - 管理用户认证状态、站点配置、通知状态
+
+- **API 层重构**：
+  - 更新 `src/api/index.js` - 使用 Axios 拦截器处理 Token
+  - 统一错误处理
+  - Token 自动刷新机制
+
+- **自定义 Hooks**：
+  - 创建 `src/hooks/index.js` - 分页、防抖、节流、滚动监听、尺寸监听等 hooks
+
+- **工具函数**：
+  - 创建 `src/utils/index.js` - 日期格式化、文件大小、UUID 生成等工具函数
+
+- **UI 组件**：
+  - 更新 `Login.vue` - 使用 Store 进行认证
+  - 更新 `App.vue` - 使用 Store 值进行用户状态管理和导航
+
+### 新增
+
+- 新增好友系统完整实现（请求发送、接受、拒绝、删除、共同好友查看）
+- 新增个人通知系统（发送、批量发送、标记已读、删除、清空）
+- 新增管理员徽章管理功能（授予、撤销、显示状态更新）
+- 新增用户排行榜查询功能
+- 新增 SMTP 配置测试接口
+
+### 修复
+
+- 修复重复路由注册问题
+- 修复控制器函数名不匹配问题
+- 修复模型字段名不匹配问题
+- 修复构建脚本中的路径问题
+
+### 改进
+
+- 更新项目结构文档，反映新的三层架构
+- 更新技术栈描述，添加 Repository-Service-Controller 架构模式
+- 更新构建脚本，增加版本号参数说明
+
+---
+
 ## [2.0.4] - 2026-06-20
 
 ### 修复

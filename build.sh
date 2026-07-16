@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
 if [ -z "${1:-}" ]; then
-    echo "错误：请提供版本号，例如: ./build.sh 1.0.0"
+    echo "错误：请提供版本号，例如: ./build.sh 3.0.0"
     exit 1
 fi
 VERSION="$1"
@@ -13,10 +13,9 @@ VERSION="$1"
 mkdir -p build
 rm -rf build/web || true
 
-# Copy config.json to build directory
 echo "复制 config.json..."
-cp "$SCRIPT_DIR/backend/config.json" "$SCRIPT_DIR/build/config.json" || { echo "❌ 复制 config.json 失败"; exit 1; }
-echo "✅ config.json"
+cp "$SCRIPT_DIR/backend/config.json" "$SCRIPT_DIR/build/config.json" || { echo "复制 config.json 失败"; exit 1; }
+echo "OK config.json"
 
 LDFLAGS="-X forum/controllers.FrontendVersion=${VERSION} -X forum/controllers.BackendVersion=${VERSION} -X forum/controllers.SwaggerVersion=${VERSION}"
 
@@ -31,13 +30,13 @@ compile() {
         export GOOS="$os"
         export GOARCH="$arch"
         go build -ldflags "$LDFLAGS" -o "$output" .
-    ) || { echo "❌ $target 编译失败"; exit 1; }
-    echo "✅ 编译成功"
+    ) || { echo "$target 编译失败"; exit 1; }
+    echo "编译成功"
 }
 
-# 编译论坛后端
 echo "========================================"
 echo "  编译论坛后端"
+echo "  版本: ${VERSION}"
 echo "========================================"
 cd "$SCRIPT_DIR/backend"
 
@@ -45,7 +44,6 @@ compile "Linux-AMD64" linux amd64 ../build/server-linux-amd64
 compile "Linux-ARM64" linux arm64 ../build/server-linux-arm64
 compile "Android-ARM64" android arm64 ../build/server-android-arm64
 
-# 编译前端
 echo ""
 echo "========================================"
 echo "  编译前端"
@@ -56,7 +54,6 @@ npm run build
 
 mv dist "$SCRIPT_DIR/build/web"
 
-# 创建压缩包
 echo ""
 echo "========================================"
 echo "  创建压缩包"
@@ -66,10 +63,14 @@ zip -qr "../forum_v${VERSION}.zip" .
 
 echo ""
 echo "========================================"
-echo "  ✅ 构建完成: forum_v${VERSION}.zip"
+echo "  构建完成: forum_v${VERSION}.zip"
 echo "========================================"
 echo ""
 echo "编译产物:"
-echo "  - server-*.exe/.sh    (论坛后端)"
-echo "  - web/                (前端)"
+echo "  - server-linux-amd64      (Linux x64 后端)"
+echo "  - server-linux-arm64      (Linux ARM64 后端)"
+echo "  - server-android-arm64    (Android ARM64 后端)"
+echo "  - web/                    (前端)"
+echo ""
+echo "架构: Repository-Service-Controller"
 echo ""

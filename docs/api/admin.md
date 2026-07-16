@@ -305,3 +305,139 @@ Authorization: Bearer <token>
   "message": "删除成功"
 }
 ```
+
+---
+
+## 获取用户排名
+
+**GET** `/api/leaderboard/rank`
+
+获取当前用户在排行榜中的排名（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**响应**:
+```json
+{
+  "rank": {
+    "id": 1,
+    "user_id": 1,
+    "rank": 5,
+    "score": 1250.5
+  }
+}
+```
+
+---
+
+## 获取用户徽章
+
+**GET** `/api/badges`
+
+获取当前用户获得的所有徽章（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**响应**:
+```json
+{
+  "badges": [],
+  "user_id": 1
+}
+```
+
+---
+
+## 更新徽章显示状态
+
+**PUT** `/api/badges/{id}/display`
+
+设置徽章是否在个人资料中展示（需认证）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**路径参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| id | int | 徽章记录 ID |
+
+**请求体**:
+```json
+{
+  "is_displayed": false
+}
+```
+
+**响应**:
+```json
+{
+  "message": "徽章显示状态已更新",
+  "badge_id": 1,
+  "is_displayed": false
+}
+```
+
+---
+
+## 授予用户徽章（管理员）
+
+**POST** `/api/badges/grant`
+
+手动授予用户徽章（需认证，管理员）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**请求体**:
+```json
+{
+  "user_id": 2,
+  "badge_id": 1
+}
+```
+
+**响应**:
+```json
+{
+  "message": "徽章已授予",
+  "user_id": 2,
+  "badge_id": 1
+}
+```
+
+---
+
+## 撤销用户徽章（管理员）
+
+**DELETE** `/api/badges/{id}`
+
+撤销用户的徽章（需认证，管理员）。
+
+**Headers**:
+```
+Authorization: Bearer <token>
+```
+
+**路径参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| id | int | 徽章记录 ID |
+
+**响应**:
+```json
+{
+  "message": "徽章已撤销",
+  "badge_id": 1
+}
+```
