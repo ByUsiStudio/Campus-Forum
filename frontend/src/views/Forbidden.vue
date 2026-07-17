@@ -1,31 +1,27 @@
 <template>
-  <v-container class="min-h-screen">
-    <div class="error-page">
-      <div class="error-icon">
-        <v-icon color="warning" size="150">mdi-alert-lock</v-icon>
-      </div>
-      
-      <v-card-title class="text-center text-h3 font-weight-bold mb-4">
-        403 - 禁止访问
-      </v-card-title>
-      
-      <v-card-text class="text-center">
-        <p class="text-body-1 mb-2">您没有权限访问此页面</p>
-        <p class="text-body-2 text-secondary">请检查您的权限或联系管理员获取帮助</p>
-      </v-card-text>
-      
-      <v-card-actions class="justify-center gap-3 mt-6">
-        <v-btn color="primary" @click="goHome">
-          <v-icon start>mdi-home</v-icon>
-          返回首页
-        </v-btn>
-        <v-btn variant="outlined" @click="goBack">
-          <v-icon start>mdi-arrow-left</v-icon>
-          返回上页
-        </v-btn>
-      </v-card-actions>
+  <div class="container error-page">
+    <div class="error-icon">
+      <i class="fa-solid fa-shield-halved" style="font-size: 150px; color: #FAAD14;"></i>
     </div>
-  </v-container>
+    
+    <h1 class="error-title">403 - 禁止访问</h1>
+    
+    <div class="error-text">
+      <p class="text-lg mb-2">您没有权限访问此页面</p>
+      <p class="text-secondary">请检查您的权限或联系管理员获取帮助</p>
+    </div>
+    
+    <div class="error-actions mt-6 d-flex justify-center gap-3">
+      <button class="layui-btn" @click="goHome">
+        <i class="fa-solid fa-house mr-1"></i>
+        返回首页
+      </button>
+      <button class="layui-btn layui-btn-primary" @click="goBack">
+        <i class="fa-solid fa-arrow-left mr-1"></i>
+        返回上页
+      </button>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -62,11 +58,59 @@ export default {
   padding: 40px;
   max-width: 500px;
   margin: 0 auto;
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .error-icon {
   margin-bottom: 32px;
   animation: pulse 2s ease-in-out infinite;
+}
+
+.error-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.error-text {
+  margin-bottom: 30px;
+}
+
+.text-lg {
+  font-size: 18px;
+}
+
+.text-secondary {
+  color: #999;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.gap-3 {
+  gap: 15px;
+}
+
+.mr-1 {
+  margin-right: 5px;
+}
+
+.mb-2 {
+  margin-bottom: 10px;
+}
+
+.mt-6 {
+  margin-top: 30px;
 }
 
 @keyframes pulse {

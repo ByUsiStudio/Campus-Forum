@@ -1,289 +1,235 @@
 <template>
   <div class="admin-notifications">
-    <!-- 页面标题 -->
     <div class="page-header mb-6">
-      <div class="d-flex align-center justify-space-between flex-wrap ga-4">
+      <div class="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 class="text-h5 font-weight-bold mb-1">用户通知管理</h1>
-          <p class="text-body-2 text-medium-emphasis">向指定用户发送单独通知，管理权限组</p>
+          <h1 style="font-size: 18px; font-weight: 600; margin-bottom: 5px;">用户通知管理</h1>
+          <p style="color: #999; font-size: 14px;">向指定用户发送单独通知，管理权限组</p>
         </div>
-        <div class="d-flex ga-3">
-          <v-btn color="primary" @click="refreshData" :loading="loading" variant="tonal">
-            <v-icon start>mdi-refresh</v-icon>
+        <div class="flex gap-3">
+          <button class="layui-btn" @click="refreshData" :disabled="loading">
+            <i class="fa-solid fa-refresh mr-2"></i>
             刷新
-          </v-btn>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- 统计卡片 -->
-    <v-row class="mb-6">
-      <v-col cols="12" sm="4">
-        <v-card elevation="0" class="stat-card stat-card-primary">
-          <v-card-text>
-            <div class="d-flex align-center justify-space-between">
-              <div>
-                <div class="text-h4 font-weight-bold">{{ stats.totalPermissions }}</div>
-                <div class="text-body-2 text-medium-emphasis">权限组数量</div>
-              </div>
-              <v-avatar color="primary" size="48" rounded="lg">
-                <v-icon>mdi-shield-account</v-icon>
-              </v-avatar>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="4">
-        <v-card elevation="0" class="stat-card stat-card-success">
-          <v-card-text>
-            <div class="d-flex align-center justify-space-between">
-              <div>
-                <div class="text-h4 font-weight-bold">{{ stats.activeGroups }}</div>
-                <div class="text-body-2 text-medium-emphasis">活跃权限组</div>
-              </div>
-              <v-avatar color="success" size="48" rounded="lg">
-                <v-icon>mdi-check-circle</v-icon>
-              </v-avatar>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="4">
-        <v-card elevation="0" class="stat-card stat-card-info">
-          <v-card-text>
-            <div class="d-flex align-center justify-space-between">
-              <div>
-                <div class="text-h4 font-weight-bold">{{ stats.defaultGroup }}</div>
-                <div class="text-body-2 text-medium-emphasis">默认权限组</div>
-              </div>
-              <v-avatar color="info" size="48" rounded="lg">
-                <v-icon>mdi-star</v-icon>
-              </v-avatar>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <!-- 标签页 -->
-    <v-tabs v-model="activeTab" color="primary" class="mb-4">
-      <v-tab value="send-notification">
-        <v-icon start>mdi-bell-ring</v-icon>
-        发送通知
-      </v-tab>
-      <v-tab value="permission-groups">
-        <v-icon start>mdi-shield-account</v-icon>
-        权限组管理
-      </v-tab>
-    </v-tabs>
-
-    <v-window v-model="activeTab" class="mb-4">
-      <!-- 发送通知标签页 -->
-      <v-window-item value="send-notification">
-      <v-card elevation="0">
-        <v-card-title>发送单独通知</v-card-title>
-        <v-card-text>
-          <v-form ref="notificationForm">
-            <v-row>
-              <v-col cols="12" md="6">
-                <v-autocomplete
-                  v-model="notificationForm.user_id"
-                  :items="userOptions"
-                  item-title="display_name"
-                  item-value="id"
-                  label="选择用户"
-                  variant="outlined"
-                  :loading="loadingUsers"
-                  :search-input.sync="userSearch"
-                  cache-items
-                  hide-no-data
-                  class="mb-3"
-                >
-                  <template v-slot:item="{ props, item }">
-                    <v-list-item v-bind="props" :title="item.raw.display_name || item.raw.username">
-                      <template v-slot:prepend>
-                        <v-avatar size="32">
-                          <v-img v-if="item.raw.avatar" :src="item.raw.avatar" />
-                          <span v-else class="text-primary">{{ (item.raw.display_name || item.raw.username)[0] }}</span>
-                        </v-avatar>
-                      </template>
-                      <template v-slot:subtitle>
-                        @{{ item.raw.username }}
-                      </template>
-                    </v-list-item>
-                  </template>
-                </v-autocomplete>
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-select
-                  v-model="notificationForm.type"
-                  :items="notificationTypes"
-                  label="通知类型"
-                  variant="outlined"
-                  class="mb-3"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="notificationForm.title"
-                  label="通知标题"
-                  variant="outlined"
-                  class="mb-3"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-textarea
-                  v-model="notificationForm.content"
-                  label="通知内容"
-                  variant="outlined"
-                  rows="4"
-                  class="mb-3"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-select
-                  v-model="notificationForm.priority"
-                  :items="priorityOptions"
-                  label="优先级"
-                  variant="outlined"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="notificationForm.link"
-                  label="跳转链接（可选）"
-                  variant="outlined"
-                  placeholder="/article/123"
-                />
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
-        <v-card-actions class="pa-4">
-          <v-spacer />
-          <v-btn variant="outlined" @click="resetNotificationForm">重置</v-btn>
-          <v-btn color="primary" @click="sendNotification" :loading="sending" prepend-icon="mdi-send">
-            发送通知
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-window-item>
-
-    <!-- 权限组管理标签页 -->
-    <v-window-item value="permission-groups">
-      <v-card elevation="0">
-        <v-card-title class="d-flex align-center justify-space-between">
-          <span>权限组列表</span>
-          <div class="d-flex ga-2">
-            <v-btn size="small" variant="tonal" color="primary" @click="initDefaultGroups" :loading="initializing">
-              初始化默认组
-            </v-btn>
-            <v-btn size="small" color="primary" @click="showCreateGroupDialog = true" prepend-icon="mdi-plus">
-              创建权限组
-            </v-btn>
+    <div class="layui-row mb-6">
+      <div class="layui-col-xs12 layui-col-sm4">
+        <div class="stat-card stat-card-primary">
+          <div class="stat-content">
+            <div style="font-size: 28px; font-weight: 700;">{{ stats.totalPermissions }}</div>
+            <div style="color: #666; font-size: 14px;">权限组数量</div>
           </div>
-        </v-card-title>
+          <div class="stat-icon">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+        </div>
+      </div>
+      <div class="layui-col-xs12 layui-col-sm4">
+        <div class="stat-card stat-card-success">
+          <div class="stat-content">
+            <div style="font-size: 28px; font-weight: 700;">{{ stats.activeGroups }}</div>
+            <div style="color: #666; font-size: 14px;">活跃权限组</div>
+          </div>
+          <div class="stat-icon" style="background: rgba(82, 196, 26, 0.1); color: #52C41A;">
+            <i class="fa-solid fa-check-circle"></i>
+          </div>
+        </div>
+      </div>
+      <div class="layui-col-xs12 layui-col-sm4">
+        <div class="stat-card stat-card-info">
+          <div class="stat-content">
+            <div style="font-size: 28px; font-weight: 700;">{{ stats.defaultGroup }}</div>
+            <div style="color: #666; font-size: 14px;">默认权限组</div>
+          </div>
+          <div class="stat-icon" style="background: rgba(30, 159, 255, 0.1); color: #1E9FFF;">
+            <i class="fa-solid fa-star"></i>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        <v-data-table
-          :headers="groupHeaders"
-          :items="permissionGroups"
-          :loading="loading"
-          class="elevation-0"
-        >
-          <template v-slot:item.level="{ item }">
-            <v-chip size="small" color="primary" variant="tonal">
-              Level {{ item.level }}
-            </v-chip>
-          </template>
+    <div class="layui-tab layui-tab-brief mb-4">
+      <ul class="layui-tab-title">
+        <li :class="{ 'layui-this': activeTab === 'send-notification' }" @click="activeTab = 'send-notification'">
+          <i class="fa-solid fa-bell mr-2"></i>发送通知
+        </li>
+        <li :class="{ 'layui-this': activeTab === 'permission-groups' }" @click="activeTab = 'permission-groups'">
+          <i class="fa-solid fa-shield-halved mr-2"></i>权限组管理
+        </li>
+      </ul>
+    </div>
 
-          <template v-slot:item.is_default="{ item }">
-            <v-chip v-if="item.is_default" size="small" color="success" variant="tonal">
-              默认
-            </v-chip>
-            <span v-else class="text-medium-emphasis">-</span>
-          </template>
+    <div v-show="activeTab === 'send-notification'" class="layui-card mb-4">
+      <div class="layui-card-header">发送单独通知</div>
+      <div class="layui-card-body">
+        <div class="layui-row">
+          <div class="layui-col-xs12 layui-col-md6">
+            <div class="layui-form-item">
+              <label class="layui-form-label">选择用户</label>
+              <div class="layui-input-block">
+                <select v-model="notificationForm.user_id" class="layui-select">
+                  <option value="">请选择用户</option>
+                  <option v-for="user in userOptions" :key="user.id" :value="user.id">{{ user.display_name || user.username }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="layui-col-xs12 layui-col-md6">
+            <div class="layui-form-item">
+              <label class="layui-form-label">通知类型</label>
+              <div class="layui-input-block">
+                <select v-model="notificationForm.type" class="layui-select">
+                  <option v-for="type in notificationTypes" :key="type.value" :value="type.value">{{ type.title }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="layui-col-xs12">
+            <div class="layui-form-item">
+              <label class="layui-form-label">通知标题</label>
+              <div class="layui-input-block">
+                <input type="text" v-model="notificationForm.title" class="layui-input" />
+              </div>
+            </div>
+          </div>
+          <div class="layui-col-xs12">
+            <div class="layui-form-item">
+              <label class="layui-form-label">通知内容</label>
+              <div class="layui-input-block">
+                <textarea v-model="notificationForm.content" rows="4" class="layui-textarea"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="layui-col-xs12 layui-col-md6">
+            <div class="layui-form-item">
+              <label class="layui-form-label">优先级</label>
+              <div class="layui-input-block">
+                <select v-model="notificationForm.priority" class="layui-select">
+                  <option v-for="priority in priorityOptions" :key="priority.value" :value="priority.value">{{ priority.title }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="layui-col-xs12 layui-col-md6">
+            <div class="layui-form-item">
+              <label class="layui-form-label">跳转链接（可选）</label>
+              <div class="layui-input-block">
+                <input type="text" v-model="notificationForm.link" placeholder="/article/123" class="layui-input" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="layui-card-body border-t flex justify-end gap-2">
+        <button class="layui-btn layui-btn-primary" @click="resetNotificationForm">重置</button>
+        <button class="layui-btn" @click="sendNotification" :disabled="sending">
+          <i class="fa-solid fa-paper-plane mr-2"></i>
+          发送通知
+        </button>
+      </div>
+    </div>
 
-          <template v-slot:item.permissions="{ item }">
-            <v-chip size="small" variant="tonal" class="mr-1 mb-1" v-for="perm in parsePermissions(item.permissions).slice(0, 3)" :key="perm">
-              {{ perm }}
-            </v-chip>
-            <span v-if="parsePermissions(item.permissions).length > 3" class="text-caption text-medium-emphasis">
-              +{{ parsePermissions(item.permissions).length - 3 }} more
-            </span>
-          </template>
+    <div v-show="activeTab === 'permission-groups'" class="layui-card">
+      <div class="layui-card-header flex items-center justify-between">
+        <span>权限组列表</span>
+        <div class="flex gap-2">
+          <button class="layui-btn layui-btn-primary layui-btn-sm" @click="initDefaultGroups" :disabled="initializing">
+            初始化默认组
+          </button>
+          <button class="layui-btn layui-btn-sm" @click="showCreateGroupDialog = true">
+            <i class="fa-solid fa-plus mr-1"></i>
+            创建权限组
+          </button>
+        </div>
+      </div>
+      <div class="layui-card-body">
+        <table class="layui-table" v-if="permissionGroups.length > 0">
+          <thead>
+            <tr>
+              <th>名称</th>
+              <th>描述</th>
+              <th>级别</th>
+              <th>默认</th>
+              <th>权限</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="group in permissionGroups" :key="group.id">
+              <td>{{ group.name }}</td>
+              <td>{{ group.description }}</td>
+              <td><span class="layui-badge">Level {{ group.level }}</span></td>
+              <td><span v-if="group.is_default" class="layui-badge layui-bg-green">默认</span><span v-else>-</span></td>
+              <td>
+                <span v-for="perm in parsePermissions(group.permissions).slice(0, 3)" :key="perm" class="layui-badge layui-bg-gray mr-1 mb-1">{{ perm }}</span>
+                <span v-if="parsePermissions(group.permissions).length > 3" class="text-muted text-sm">+{{ parsePermissions(group.permissions).length - 3 }} more</span>
+              </td>
+              <td>
+                <button class="layui-btn layui-btn-sm layui-btn-primary" @click="editGroup(group)">
+                  <i class="fa-solid fa-pencil"></i>
+                </button>
+                <button class="layui-btn layui-btn-sm layui-btn-danger" @click="deleteGroup(group)">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-else class="text-center py-8 text-muted">暂无权限组数据</div>
+      </div>
+    </div>
 
-          <template v-slot:item.actions="{ item }">
-            <v-btn icon variant="text" size="small" @click="editGroup(item)">
-              <v-icon>mdi-pencil</v-icon>
-            </v-btn>
-            <v-btn icon variant="text" size="small" color="error" @click="deleteGroup(item)">
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
-          </template>
-        </v-data-table>
-      </v-card>
-    </v-window-item>
-    </v-window>
-
-    <!-- 创建/编辑权限组对话框 -->
-    <v-dialog v-model="showCreateGroupDialog" max-width="700">
-      <v-card>
-        <v-card-title class="bg-primary text-white pa-4">
-          <v-icon class="mr-2">{{ editingGroup ? 'mdi-pencil' : 'mdi-plus' }}</v-icon>
+    <div v-if="showCreateGroupDialog" class="modal-overlay" @click="closeGroupDialog">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header" style="background: #1E9FFF; color: white; padding: 15px; border-radius: 4px 4px 0 0;">
+          <i class="fa-solid" :class="editingGroup ? 'fa-pencil' : 'fa-plus'" style="margin-right: 8px;"></i>
           {{ editingGroup ? '编辑权限组' : '创建权限组' }}
-        </v-card-title>
-        <v-card-text class="pa-4">
-          <v-form ref="groupForm">
-            <v-text-field
-              v-model="groupForm.name"
-              label="权限组名称"
-              variant="outlined"
-              class="mb-3"
-            />
-            <v-textarea
-              v-model="groupForm.description"
-              label="描述"
-              variant="outlined"
-              rows="2"
-              class="mb-3"
-            />
-            <v-text-field
-              v-model.number="groupForm.level"
-              label="权限级别"
-              type="number"
-              variant="outlined"
-              hint="数字越大权限越高"
-              persistent-hint
-              class="mb-3"
-            />
-            <v-switch
-              v-model="groupForm.is_default"
-              label="设为默认权限组"
-              color="success"
-              class="mb-3"
-            />
-            <v-select
-              v-model="groupForm.permissions"
-              :items="availablePermissions"
-              label="权限列表"
-              variant="outlined"
-              multiple
-              chips
-              closable-chips
-              hint="选择该权限组包含的权限"
-              persistent-hint
-            />
-          </v-form>
-        </v-card-text>
-        <v-card-actions class="pa-4">
-          <v-spacer />
-          <v-btn variant="text" @click="closeGroupDialog">取消</v-btn>
-          <v-btn color="primary" @click="saveGroup" :loading="saving">
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+          <div class="layui-form-item">
+            <label class="layui-form-label">权限组名称</label>
+            <div class="layui-input-block">
+              <input type="text" v-model="groupForm.name" class="layui-input" />
+            </div>
+          </div>
+          <div class="layui-form-item">
+            <label class="layui-form-label">描述</label>
+            <div class="layui-input-block">
+              <textarea v-model="groupForm.description" rows="2" class="layui-textarea"></textarea>
+            </div>
+          </div>
+          <div class="layui-form-item">
+            <label class="layui-form-label">权限级别</label>
+            <div class="layui-input-block">
+              <input type="number" v-model.number="groupForm.level" placeholder="数字越大权限越高" class="layui-input" />
+            </div>
+          </div>
+          <div class="layui-form-item">
+            <label class="layui-form-label">设为默认权限组</label>
+            <div class="layui-input-block">
+              <input type="checkbox" v-model="groupForm.is_default" lay-skin="switch" />
+            </div>
+          </div>
+          <div class="layui-form-item">
+            <label class="layui-form-label">权限列表</label>
+            <div class="layui-input-block">
+              <select v-model="groupForm.permissions" multiple class="layui-select" style="height: 150px;">
+                <option v-for="perm in availablePermissions" :key="perm" :value="perm">{{ perm }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="padding: 15px; border-top: 1px solid #E8E8E8; display: flex; justify-content: flex-end; gap: 10px;">
+          <button class="layui-btn layui-btn-primary" @click="closeGroupDialog">取消</button>
+          <button class="layui-btn" @click="saveGroup" :disabled="saving">
             {{ editingGroup ? '保存' : '创建' }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -342,15 +288,6 @@ export default {
       { title: '高优先级', value: 'high' },
       { title: '普通', value: 'normal' },
       { title: '低优先级', value: 'low' }
-    ]
-
-    const groupHeaders = [
-      { title: '名称', key: 'name' },
-      { title: '描述', key: 'description' },
-      { title: '级别', key: 'level', width: '100px' },
-      { title: '默认', key: 'is_default', width: '100px' },
-      { title: '权限', key: 'permissions' },
-      { title: '操作', key: 'actions', width: '120px', sortable: false }
     ]
 
     const availablePermissions = [
@@ -534,7 +471,6 @@ export default {
       showCreateGroupDialog,
       notificationTypes,
       priorityOptions,
-      groupHeaders,
       availablePermissions,
       loadPermissionGroups,
       loadUsers,
@@ -560,6 +496,13 @@ export default {
 
 .stat-card {
   border-left: 4px solid;
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   transition: transform 0.2s;
 }
 
@@ -568,21 +511,47 @@ export default {
 }
 
 .stat-card-primary {
-  border-left-color: rgb(var(--v-theme-primary));
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.08), rgba(var(--v-theme-primary), 0.02));
+  border-left-color: #1E9FFF;
 }
 
-.stat-card-success {
-  border-left-color: rgb(var(--v-theme-success));
-  background: linear-gradient(135deg, rgba(var(--v-theme-success), 0.08), rgba(var(--v-theme-success), 0.02));
+.stat-card-primary .stat-icon {
+  background: rgba(30, 159, 255, 0.1);
+  color: #1E9FFF;
 }
 
-.stat-card-info {
-  border-left-color: rgb(var(--v-theme-info));
-  background: linear-gradient(135deg, rgba(var(--v-theme-info), 0.08), rgba(var(--v-theme-info), 0.02));
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
 }
 
-.page-header h1 {
-  color: rgb(var(--v-theme-on-surface));
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 4px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.border-t {
+  border-top: 1px solid #E8E8E8;
 }
 </style>

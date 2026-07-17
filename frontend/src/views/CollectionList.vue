@@ -1,154 +1,160 @@
 <template>
-  <v-container>
-    <v-card>
-      <v-card-title class="d-flex align-center">
-        <v-icon left>mdi-folder-star</v-icon>
-        我的收藏夹
-        <v-btn color="primary" class="ml-auto" @click="createDialog = true">
-          <v-icon left>mdi-plus</v-icon>
+  <div class="container collection-list">
+    <div class="layui-card">
+      <div class="layui-card-header d-flex align-center justify-between">
+        <div class="d-flex align-center">
+          <i class="fa-solid fa-folder-star mr-2"></i>
+          <span class="font-weight-bold text-lg">我的收藏夹</span>
+        </div>
+        <button class="layui-btn layui-btn-primary" @click="createDialog = true">
+          <i class="fa-solid fa-plus mr-1"></i>
           新建收藏夹
-        </v-btn>
-      </v-card-title>
+        </button>
+      </div>
 
-      <v-card-text>
-        <v-row>
-          <v-col cols="12" sm="6" md="4" v-for="collection in collections" :key="collection.id">
-            <v-card outlined hover>
-              <v-card-text>
+      <div class="layui-card-body">
+        <div class="collection-grid">
+          <div class="collection-item" v-for="collection in collections" :key="collection.id">
+            <div class="layui-card">
+              <div class="layui-card-body">
                 <div class="d-flex align-center">
-                  <v-avatar size="40" color="primary">
-                    <v-icon dark>mdi-folder</v-icon>
-                  </v-avatar>
-                  <div class="ml-3">
-                    <div class="title">{{ collection.name }}</div>
-                    <div class="caption">{{ collection.description }}</div>
+                  <div class="avatar primary">
+                    <i class="fa-solid fa-folder"></i>
+                  </div>
+                  <div class="ml-3 flex-1">
+                    <div class="title font-weight-bold">{{ collection.name }}</div>
+                    <div class="caption text-muted">{{ collection.description }}</div>
                   </div>
                 </div>
                 
-                <v-row class="mt-2">
-                  <v-col cols="6">
-                    <v-chip small>
-                      <v-icon small left>mdi-file-document</v-icon>
-                      {{ collection.article_count }} 文章
-                    </v-chip>
-                  </v-col>
-                  <v-col cols="6">
-                    <v-chip small :color="collection.is_public ? 'success' : 'grey'">
-                      {{ collection.is_public ? '公开' : '私密' }}
-                    </v-chip>
-                  </v-col>
-                </v-row>
-              </v-card-text>
+                <div class="mt-2 d-flex gap-2">
+                  <span class="layui-badge">
+                    <i class="fa-solid fa-file-lines mr-1"></i>
+                    {{ collection.article_count }} 文章
+                  </span>
+                  <span class="layui-badge" :class="collection.is_public ? 'layui-bg-green' : 'layui-bg-gray'">
+                    {{ collection.is_public ? '公开' : '私密' }}
+                  </span>
+                </div>
+              </div>
 
-              <v-card-actions>
-                <v-btn text small color="primary" @click="viewCollection(collection.id)">
+              <div class="layui-card-footer d-flex justify-end gap-2">
+                <button class="layui-btn layui-btn-xs" @click="viewCollection(collection.id)">
                   查看
-                </v-btn>
-                <v-btn text small color="warning" @click="editCollection(collection)">
+                </button>
+                <button class="layui-btn layui-btn-xs layui-btn-warm" @click="editCollection(collection)">
                   编辑
-                </v-btn>
-                <v-btn text small color="error" @click="deleteCollection(collection.id)">
+                </button>
+                <button class="layui-btn layui-btn-xs layui-btn-danger" @click="deleteCollection(collection.id)">
                   删除
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 创建收藏夹对话框 -->
-    <v-dialog v-model="createDialog" max-width="500">
-      <v-card>
-        <v-card-title>新建收藏夹</v-card-title>
-        <v-card-text>
-          <v-form ref="createForm">
-            <v-text-field
-              v-model="newCollection.name"
-              label="收藏夹名称"
-              outlined
-              :rules="[v => !!v || '请输入名称']"
-            ></v-text-field>
-            <v-textarea
-              v-model="newCollection.description"
-              label="描述"
-              outlined
-              rows="3"
-            ></v-textarea>
-            <v-switch
-              v-model="newCollection.is_public"
-              label="公开收藏夹"
-            ></v-switch>
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn text @click="createDialog = false">取消</v-btn>
-          <v-btn color="primary" @click="createCollection">创建</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <div class="modal-overlay" v-if="createDialog" @click.self="createDialog = false">
+      <div class="modal-content animate-scale-in">
+        <div class="layui-card">
+          <div class="layui-card-header">新建收藏夹</div>
+          <div class="layui-card-body">
+            <form ref="createForm" class="layui-form">
+              <div class="layui-form-item">
+                <label class="layui-form-label">收藏夹名称</label>
+                <div class="layui-input-block">
+                  <input type="text" v-model="newCollection.name" class="layui-input" placeholder="请输入名称" />
+                </div>
+              </div>
+              <div class="layui-form-item">
+                <label class="layui-form-label">描述</label>
+                <div class="layui-input-block">
+                  <textarea v-model="newCollection.description" class="layui-textarea" rows="3" placeholder="请输入描述"></textarea>
+                </div>
+              </div>
+              <div class="layui-form-item">
+                <div class="layui-input-block">
+                  <input type="checkbox" v-model="newCollection.is_public" lay-skin="switch" title="公开收藏夹" />
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="layui-card-footer d-flex justify-end gap-2">
+            <button class="layui-btn layui-btn-primary" @click="createDialog = false">取消</button>
+            <button class="layui-btn" @click="createCollection">创建</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 编辑收藏夹对话框 -->
-    <v-dialog v-model="editDialog" max-width="500">
-      <v-card>
-        <v-card-title>编辑收藏夹</v-card-title>
-        <v-card-text>
-          <v-form ref="editForm">
-            <v-text-field
-              v-model="editCollectionData.name"
-              label="收藏夹名称"
-              outlined
-              :rules="[v => !!v || '请输入名称']"
-            ></v-text-field>
-            <v-textarea
-              v-model="editCollectionData.description"
-              label="描述"
-              outlined
-              rows="3"
-            ></v-textarea>
-            <v-switch
-              v-model="editCollectionData.is_public"
-              label="公开收藏夹"
-            ></v-switch>
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn text @click="editDialog = false">取消</v-btn>
-          <v-btn color="primary" @click="updateCollection">保存</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <div class="modal-overlay" v-if="editDialog" @click.self="editDialog = false">
+      <div class="modal-content animate-scale-in">
+        <div class="layui-card">
+          <div class="layui-card-header">编辑收藏夹</div>
+          <div class="layui-card-body">
+            <form ref="editForm" class="layui-form">
+              <div class="layui-form-item">
+                <label class="layui-form-label">收藏夹名称</label>
+                <div class="layui-input-block">
+                  <input type="text" v-model="editCollectionData.name" class="layui-input" placeholder="请输入名称" />
+                </div>
+              </div>
+              <div class="layui-form-item">
+                <label class="layui-form-label">描述</label>
+                <div class="layui-input-block">
+                  <textarea v-model="editCollectionData.description" class="layui-textarea" rows="3" placeholder="请输入描述"></textarea>
+                </div>
+              </div>
+              <div class="layui-form-item">
+                <div class="layui-input-block">
+                  <input type="checkbox" v-model="editCollectionData.is_public" lay-skin="switch" title="公开收藏夹" />
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="layui-card-footer d-flex justify-end gap-2">
+            <button class="layui-btn layui-btn-primary" @click="editDialog = false">取消</button>
+            <button class="layui-btn" @click="updateCollection">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 收藏夹详情对话框 -->
-    <v-dialog v-model="viewDialog" max-width="800">
-      <v-card>
-        <v-card-title>{{ currentCollection.name }}</v-card-title>
-        <v-card-text>
-          <v-list three-line>
-            <v-list-item v-for="item in collectionArticles" :key="item.id">
-              <v-list-item-content>
-                <v-list-item-title>{{ item.article.title }}</v-list-item-title>
-                <v-list-item-subtitle>
-                  {{ item.note || '无备注' }}
-                </v-list-item-subtitle>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-btn text small color="primary" :to="`/article/${item.article.id}`">
-                  查看
-                </v-btn>
-                <v-btn text small color="error" @click="removeArticle(item.article.id)">
-                  移除
-                </v-btn>
-              </v-list-item-action>
-            </v-list-item>
-          </v-list>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn text @click="viewDialog = false">关闭</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </v-container>
+    <div class="modal-overlay" v-if="viewDialog" @click.self="viewDialog = false">
+      <div class="modal-content modal-large animate-scale-in">
+        <div class="layui-card">
+          <div class="layui-card-header">{{ currentCollection.name }}</div>
+          <div class="layui-card-body">
+            <ul class="collection-detail-list">
+              <li class="detail-item" v-for="item in collectionArticles" :key="item.id">
+                <div class="detail-content">
+                  <div class="detail-title">{{ item.article.title }}</div>
+                  <div class="detail-subtitle">
+                    {{ item.note || '无备注' }}
+                  </div>
+                </div>
+                <div class="detail-actions">
+                  <button class="layui-btn layui-btn-xs" :to="`/article/${item.article.id}`">
+                    查看
+                  </button>
+                  <button class="layui-btn layui-btn-xs layui-btn-danger" @click="removeArticle(item.article.id)">
+                    移除
+                  </button>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="layui-card-footer d-flex justify-end">
+            <button class="layui-btn layui-btn-primary" @click="viewDialog = false">关闭</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -270,3 +276,156 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.collection-list {
+  padding: 20px;
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+}
+
+.collection-item {
+  transition: transform 0.3s ease;
+}
+
+.collection-item:hover {
+  transform: translateY(-4px);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  
+  &.primary {
+    background: var(--primary);
+  }
+  
+  i {
+    font-size: 18px;
+  }
+}
+
+.collection-detail-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.detail-content {
+  flex: 1;
+}
+
+.detail-title {
+  font-weight: 600;
+  color: #333;
+}
+
+.detail-subtitle {
+  color: #999;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  overflow: hidden;
+  
+  &.modal-large {
+    max-width: 800px;
+  }
+}
+
+.d-flex {
+  display: flex;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.mr-1 {
+  margin-right: 5px;
+}
+
+.mr-2 {
+  margin-right: 10px;
+}
+
+.ml-3 {
+  margin-left: 15px;
+}
+
+.mt-2 {
+  margin-top: 10px;
+}
+
+.gap-2 {
+  gap: 10px;
+}
+
+.font-weight-bold {
+  font-weight: 600;
+}
+
+.text-lg {
+  font-size: 18px;
+}
+
+.text-muted {
+  color: #999;
+}
+</style>

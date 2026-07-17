@@ -2,7 +2,7 @@
   <div v-if="articleError" class="error-page">
     <div class="error-card animate-fade-in">
       <div class="error-icon" :class="articleError.code === 404 ? 'error-icon-404' : 'error-icon-500'">
-        <i class="layui-icon" :class="articleError.code === 404 ? 'layui-icon-file-question' : 'layui-icon-alert-circle'"></i>
+        <i class="fa-solid" :class="articleError.code === 404 ? 'fa-file-question' : 'fa-circle-exclamation'"></i>
       </div>
       <h2 class="error-code">{{ articleError.code }}</h2>
       <h3 class="error-title">{{ articleError.title }}</h3>
@@ -10,10 +10,10 @@
       <p class="error-detail">{{ articleError.detail }}</p>
       <div class="error-actions">
         <button class="layui-btn layui-btn-primary" @click="router.push('/')">
-          <i class="layui-icon layui-icon-home"></i>返回首页
+          <i class="fa-solid fa-house"></i>返回首页
         </button>
         <button class="layui-btn" @click="articleError = null; loadArticle()">
-          <i class="layui-icon layui-icon-refresh"></i>刷新重试
+          <i class="fa-solid fa-rotate-right"></i>刷新重试
         </button>
       </div>
     </div>
@@ -25,7 +25,7 @@
         <div class="article-card animate-fade-in">
           <div class="article-header">
             <button class="back-btn" @click="router.back()">
-              <i class="layui-icon layui-icon-left"></i>返回
+              <i class="fa-solid fa-arrow-left"></i>返回
             </button>
             <h1 class="article-title">{{ article.title }}</h1>
             <div class="article-meta">
@@ -42,15 +42,15 @@
               </div>
               <span class="meta-divider">|</span>
               <span class="meta-item">
-                <i class="layui-icon layui-icon-time"></i>{{ formatDate(article.created_at) }}
+                <i class="fa-solid fa-clock"></i>{{ formatDate(article.created_at) }}
               </span>
               <span class="meta-divider">|</span>
               <span class="meta-item category-tag">
-                <i class="layui-icon layui-icon-folder"></i>{{ article.category.name }}
+                <i class="fa-solid fa-folder"></i>{{ article.category.name }}
               </span>
               <span class="meta-divider">|</span>
               <span class="meta-item">
-                <i class="layui-icon layui-icon-eye"></i>{{ article.view_count }} 阅读
+                <i class="fa-solid fa-eye"></i>{{ article.view_count }} 阅读
               </span>
             </div>
           </div>
@@ -61,7 +61,7 @@
 
           <div v-if="article.voice_url" class="voice-player">
             <div class="voice-player-header">
-              <i class="layui-icon layui-icon-volume-high"></i>
+              <i class="fa-solid fa-volume-high"></i>
               <span>语音朗读</span>
             </div>
             <div class="voice-player-body">
@@ -70,7 +70,7 @@
                 @click="toggleVoicePlay"
                 :class="{ playing: isPlaying }"
               >
-                <i class="layui-icon" :class="isPlaying ? 'layui-icon-pause' : 'layui-icon-play'"></i>
+                <i class="fa-solid" :class="isPlaying ? 'fa-pause' : 'fa-play'"></i>
               </button>
               <div class="progress-container">
                 <div class="progress-bar">
@@ -97,7 +97,7 @@
                 :class="{ active: liked }"
                 @click="toggleLike"
               >
-                <i class="layui-icon layui-icon-praise"></i>
+                <i class="fa-solid fa-thumbs-up"></i>
                 <span>{{ article.like_count }} 点赞</span>
               </button>
               <button 
@@ -106,7 +106,7 @@
                 @click="coinArticle"
                 :disabled="!token"
               >
-                <i class="layui-icon layui-icon-money"></i>
+                <i class="fa-solid fa-coins"></i>
                 <span>{{ article.coin_count || 0 }} 投币</span>
               </button>
               <button 
@@ -114,11 +114,11 @@
                 :class="{ active: favorited }"
                 @click="toggleFavorite"
               >
-                <i class="layui-icon layui-icon-collection"></i>
+                <i class="fa-solid fa-heart"></i>
                 <span>{{ article.favorite_count || 0 }} 收藏</span>
               </button>
               <button class="action-btn" @click="showShareDialog = true">
-                <i class="layui-icon layui-icon-share"></i>
+                <i class="fa-solid fa-share-nodes"></i>
                 <span>分享</span>
               </button>
               <button 
@@ -126,16 +126,16 @@
                 class="action-btn action-btn-report"
                 @click="showReportDialog = true"
               >
-                <i class="layui-icon layui-icon-flag"></i>
+                <i class="fa-solid fa-flag"></i>
                 <span>举报</span>
               </button>
             </div>
             <div v-if="canEdit" class="edit-group">
               <button class="edit-btn" :to="'/create?id=' + article.id">
-                <i class="layui-icon layui-icon-edit"></i>编辑
+                <i class="fa-solid fa-pen-to-square"></i>编辑
               </button>
               <button class="delete-btn" @click="deleteArticle">
-                <i class="layui-icon layui-icon-delete"></i>删除
+                <i class="fa-solid fa-trash"></i>删除
               </button>
             </div>
           </div>
@@ -143,7 +143,7 @@
 
         <div class="comment-section">
           <div class="comment-header">
-            <i class="layui-icon layui-icon-comment"></i>
+            <i class="fa-solid fa-comments"></i>
             <span>评论 ({{ comments.length }})</span>
           </div>
 
@@ -204,17 +204,17 @@
                     :class="{ liked: commentLiked[comment.id] }"
                     @click="toggleCommentLike(comment)"
                   >
-                    <i class="layui-icon layui-icon-praise"></i>{{ comment.like_count }}
+                    <i class="fa-solid fa-thumbs-up"></i>{{ comment.like_count }}
                   </button>
                   <button v-if="token" class="comment-action" @click="showReplyForm(comment.id)">
-                    <i class="layui-icon layui-icon-reply"></i>回复
+                    <i class="fa-solid fa-reply"></i>回复
                   </button>
                   <button 
                     v-if="canDeleteComment(comment)" 
                     class="comment-action comment-action-delete"
                     @click="deleteComment(comment.id, comment)"
                   >
-                    <i class="layui-icon layui-icon-delete"></i>
+                    <i class="fa-solid fa-trash"></i>
                   </button>
                 </div>
 
@@ -276,7 +276,7 @@
             :class="{ followed: followStatus.is_following }"
             @click="handleFollow"
           >
-            <i class="layui-icon" :class="followStatus.is_following ? 'layui-icon-check' : 'layui-icon-add-circle'"></i>
+            <i class="fa-solid" :class="followStatus.is_following ? 'fa-check' : 'fa-plus'"></i>
             {{ followStatus.is_following ? '已关注' : followStatus.is_followed ? '回关' : '关注' }}
           </button>
         </div>
@@ -285,17 +285,17 @@
   </div>
 
   <div v-else class="loading-page">
-    <div class="loading-spinner">
-      <i class="layui-icon layui-icon-loading layui-anim layui-anim-spin"></i>
-    </div>
+  <div class="loading-spinner">
+    <i class="fa-solid fa-spinner fa-spin"></i>
   </div>
+</div>
 
   <div v-if="showShareDialog" class="dialog-overlay" @click.self="showShareDialog = false">
     <div class="dialog-content animate-scale-in">
       <div class="dialog-header">
         <span>分享文章</span>
         <button class="dialog-close" @click="showShareDialog = false">
-          <i class="layui-icon layui-icon-close"></i>
+          <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
       <div class="dialog-body">
@@ -303,7 +303,7 @@
         <div class="share-url-container">
           <input type="text" v-model="shareUrl" readonly class="share-url-input">
           <button class="copy-btn" @click="copyShareUrl">
-            <i class="layui-icon layui-icon-copy"></i>复制
+            <i class="fa-solid fa-copy"></i>复制
           </button>
         </div>
         <span v-if="copySuccess" class="copy-success">已复制</span>
@@ -317,15 +317,15 @@
   <div v-if="showReportDialog" class="dialog-overlay" @click.self="closeReportDialog">
     <div class="dialog-content animate-scale-in">
       <div class="dialog-header report-header">
-        <i class="layui-icon layui-icon-flag"></i>
+        <i class="fa-solid fa-flag"></i>
         <span>举报文章</span>
         <button class="dialog-close" @click="closeReportDialog">
-          <i class="layui-icon layui-icon-close"></i>
+          <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
       <div class="dialog-body">
         <div class="report-tip">
-          <i class="layui-icon layui-icon-info"></i>
+          <i class="fa-solid fa-info-circle"></i>
           <span>感谢您对平台环境的维护。我们会认真审核每一条举报，并在3个工作日内处理。</span>
         </div>
         <div class="report-reasons">
@@ -338,7 +338,7 @@
               :class="{ selected: reportReason === reason.value }"
               @click="reportReason = reason.value"
             >
-              <i class="layui-icon">{{ reason.icon }}</i>
+              <i :class="reason.icon"></i>
               {{ reason.title }}
             </button>
           </div>
@@ -398,14 +398,14 @@ const reportReason = ref('')
 const reportDescription = ref('')
 const submittingReport = ref(false)
 const reportReasons = [
-  { title: '垃圾广告', value: '垃圾广告', icon: 'layui-icon-delete' },
-  { title: '色情低俗', value: '色情低俗', icon: 'layui-icon-alert' },
-  { title: '暴力血腥', value: '暴力血腥', icon: 'layui-icon-knife' },
-  { title: '政治敏感', value: '政治敏感', icon: 'layui-icon-user' },
-  { title: '违法犯罪', value: '违法犯罪', icon: 'layui-icon-gavel' },
-  { title: '谣言虚假', value: '谣言虚假', icon: 'layui-icon-chat' },
-  { title: '侵犯隐私', value: '侵犯隐私', icon: 'layui-icon-eye-off' },
-  { title: '其他违规', value: '其他违规', icon: 'layui-icon-help' }
+  { title: '垃圾广告', value: '垃圾广告', icon: 'fa-solid fa-trash' },
+  { title: '色情低俗', value: '色情低俗', icon: 'fa-solid fa-triangle-exclamation' },
+  { title: '暴力血腥', value: '暴力血腥', icon: 'fa-solid fa-swords' },
+  { title: '政治敏感', value: '政治敏感', icon: 'fa-solid fa-user' },
+  { title: '违法犯罪', value: '违法犯罪', icon: 'fa-solid fa-scale-unbalanced' },
+  { title: '谣言虚假', value: '谣言虚假', icon: 'fa-solid fa-message' },
+  { title: '侵犯隐私', value: '侵犯隐私', icon: 'fa-solid fa-eye-slash' },
+  { title: '其他违规', value: '其他违规', icon: 'fa-solid fa-circle-question' }
 ]
 const token = ref(localStorage.getItem('token'))
 const currentUser = ref(null)
@@ -734,7 +734,7 @@ const deleteArticle = async () => {
   try {
     const confirmed = await showConfirm('确定要删除这篇文章吗？', {
       title: '确认删除',
-      icon: 'mdi-alert-circle',
+      icon: 'fa-solid fa-circle-exclamation',
       iconColor: 'error'
     })
     
@@ -776,7 +776,7 @@ const deleteComment = async (commentId, comment) => {
   try {
     const confirmed = await showConfirm('确定要删除这条评论吗？', {
       title: '确认删除',
-      icon: 'mdi-alert-circle',
+      icon: 'fa-solid fa-circle-exclamation',
       iconColor: 'error'
     })
     

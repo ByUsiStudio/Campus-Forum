@@ -1,284 +1,199 @@
 <template>
-  <v-container class="pa-4">
-    <!-- 页面标题 -->
-    <div class="d-flex align-center mb-4">
-      <v-btn icon variant="text" @click="$router.back()" class="mr-2">
-        <v-icon>mdi-arrow-left</v-icon>
-      </v-btn>
-      <h2 class="text-h5 font-weight-bold">每日签到</h2>
-    </div>
+  <div class="sign-in-page">
+    <div class="sign-in-card">
+      <div class="card-header">
+        <button class="back-btn" @click="$router.back()">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <h2 class="page-title">每日签到</h2>
+      </div>
 
-    <!-- 加载状态 -->
-    <div v-if="loading" class="d-flex justify-center align-center py-10">
-      <v-progress-circular indeterminate color="primary"></v-progress-circular>
-    </div>
+      <div v-if="loading" class="loading-state">
+        <div class="loading-spinner"></div>
+      </div>
 
-    <template v-else>
-      <!-- 签到卡片 -->
-      <v-card class="mb-4" elevation="2">
-        <v-card-text class="text-center pa-6">
-          <!-- 签到状态显示 -->
+      <template v-else>
+        <div class="sign-in-content">
           <div v-if="status.has_signed_in" class="signed-in-section">
-            <v-avatar size="80" color="success" class="mb-4">
-              <v-icon size="48" color="white">mdi-check-circle</v-icon>
-            </v-avatar>
+            <div class="avatar success">
+              <i class="fa-solid fa-check-circle"></i>
+            </div>
             <h3 class="text-h5 mb-2">今日已签到</h3>
             <p class="text-body-2 text-grey">明天再来领取更多积分吧~</p>
           </div>
 
-          <!-- 未签到状态 -->
           <div v-else class="unsigned-section">
-          <v-avatar size="80" color="primary" class="mb-4">
-            <v-icon size="48" color="white">mdi-calendar-check</v-icon>
-          </v-avatar>
-          <h3 class="text-h5 mb-2">今日可签到</h3>
-          <p class="text-body-2 text-grey mb-4">
-            连续签到 <span class="text-primary font-weight-bold">{{ status.sign_in_days }}</span> 天，获得 <span class="text-primary font-weight-bold">{{ status.total_coins || status.total_points || 0 }}</span> 币
-          </p>
-            <v-btn
-              color="primary"
-              size="large"
-              :loading="signing"
+            <div class="avatar primary">
+              <i class="fa-solid fa-calendar-check"></i>
+            </div>
+            <h3 class="text-h5 mb-2">今日可签到</h3>
+            <p class="text-body-2 text-grey mb-4">
+              连续签到 <span class="text-primary font-weight-bold">{{ status.sign_in_days }}</span> 天，获得 <span class="text-primary font-weight-bold">{{ status.total_coins || status.total_points || 0 }}</span> 币
+            </p>
+            <button
+              class="layui-btn layui-btn-normal layui-btn-lg"
+              :disabled="signing"
               @click="handleSignIn"
             >
-              <v-icon left>mdi-pencil</v-icon>
-              立即签到
-            </v-btn>
+              <i class="fa-solid fa-pencil mr-2"></i>
+              {{ signing ? '签到中...' : '立即签到' }}
+            </button>
           </div>
 
-          <!-- 签到统计 -->
-          <v-row class="mt-6" dense>
-            <v-col cols="4">
-              <div class="stat-item">
-                <div class="stat-value text-h6 font-weight-bold text-primary">
-                  {{ status.total_coins || status.total_points || 0 }}
-                </div>
-                <div class="stat-label text-caption text-grey">累计币</div>
-              </div>
-            </v-col>
-            <v-col cols="4">
-              <div class="stat-item">
-                <div class="stat-value text-h6 font-weight-bold text-primary">
-                  {{ status.sign_in_days || 0 }}
-                </div>
-                <div class="stat-label text-caption text-grey">连续天数</div>
-              </div>
-            </v-col>
-            <v-col cols="4">
-              <div class="stat-item">
-                <div class="stat-value text-h6 font-weight-bold text-primary">
-                  {{ status.total_sign_ins || 0 }}
-                </div>
-                <div class="stat-label text-caption text-grey">累计次数</div>
-              </div>
-            </v-col>
-          </v-row>
-        </v-card-text>
-      </v-card>
+          <div class="stats-row">
+            <div class="stat-item">
+              <div class="stat-value text-primary">{{ status.total_coins || status.total_points || 0 }}</div>
+              <div class="stat-label">累计币</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value text-primary">{{ status.sign_in_days || 0 }}</div>
+              <div class="stat-label">连续天数</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value text-primary">{{ status.total_sign_ins || 0 }}</div>
+              <div class="stat-label">累计次数</div>
+            </div>
+          </div>
+        </div>
 
-      <!-- 本周本月统计 -->
-      <v-row dense class="mb-4">
-        <v-col cols="6">
-          <v-card elevation="1">
-            <v-card-text class="text-center pa-3">
-              <v-icon color="orange" class="mb-1">mdi-calendar-week</v-icon>
-              <div class="text-h6 font-weight-bold">{{ status.week_sign_in_count || 0 }}</div>
-              <div class="text-caption text-grey">本周签到</div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="6">
-          <v-card elevation="1">
-            <v-card-text class="text-center pa-3">
-              <v-icon color="blue" class="mb-1">mdi-calendar-month</v-icon>
-              <div class="text-h6 font-weight-bold">{{ status.month_sign_in_count || 0 }}</div>
-              <div class="text-caption text-grey">本月签到</div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+        <div class="stats-cards">
+          <div class="stat-card">
+            <i class="fa-solid fa-calendar-week text-orange"></i>
+            <div class="stat-num">{{ status.week_sign_in_count || 0 }}</div>
+            <div class="stat-desc">本周签到</div>
+          </div>
+          <div class="stat-card">
+            <i class="fa-solid fa-calendar-days text-blue"></i>
+            <div class="stat-num">{{ status.month_sign_in_count || 0 }}</div>
+            <div class="stat-desc">本月签到</div>
+          </div>
+        </div>
 
-      <!-- 连续签到奖励说明 -->
-      <v-card class="mb-4" elevation="1">
-        <v-card-title class="text-subtitle-1 pb-0">
-          <v-icon left size="20">mdi-gift</v-icon>
-          连续签到奖励
-        </v-card-title>
-        <v-card-text>
-          <v-list density="compact" class="py-0">
-            <v-list-item class="px-0">
-              <template v-slot:prepend>
-                <v-icon color="amber" size="20">mdi-circle</v-icon>
-              </template>
-              <v-list-item-title class="text-body-2">
-                连续 <span class="text-primary font-weight-bold">7</span> 天
-              </v-list-item-title>
-              <template v-slot:append>
-                <span class="text-success text-body-2">+5 币</span>
-              </template>
-            </v-list-item>
-            <v-list-item class="px-0">
-              <template v-slot:prepend>
-                <v-icon color="amber" size="20">mdi-circle</v-icon>
-              </template>
-              <v-list-item-title class="text-body-2">
-                连续 <span class="text-primary font-weight-bold">30</span> 天
-              </v-list-item-title>
-              <template v-slot:append>
-                <span class="text-success text-body-2">+15 币</span>
-              </template>
-            </v-list-item>
-            <v-list-item class="px-0">
-              <template v-slot:prepend>
-                <v-icon color="amber" size="20">mdi-circle</v-icon>
-              </template>
-              <v-list-item-title class="text-body-2">
-                连续 <span class="text-primary font-weight-bold">365</span> 天
-              </v-list-item-title>
-              <template v-slot:append>
-                <span class="text-success text-body-2">+50 币</span>
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-card-text>
-      </v-card>
+        <div class="reward-card">
+          <div class="card-title">
+            <i class="fa-solid fa-gift mr-2"></i>
+            连续签到奖励
+          </div>
+          <div class="reward-list">
+            <div class="reward-item">
+              <i class="fa-solid fa-circle text-amber"></i>
+              <span>连续 <strong class="text-primary">7</strong> 天</span>
+              <span class="text-success">+5 币</span>
+            </div>
+            <div class="reward-item">
+              <i class="fa-solid fa-circle text-amber"></i>
+              <span>连续 <strong class="text-primary">30</strong> 天</span>
+              <span class="text-success">+15 币</span>
+            </div>
+            <div class="reward-item">
+              <i class="fa-solid fa-circle text-amber"></i>
+              <span>连续 <strong class="text-primary">365</strong> 天</span>
+              <span class="text-success">+50 币</span>
+            </div>
+          </div>
+        </div>
 
-      <!-- 排行榜 -->
-      <v-card class="mb-4" elevation="1">
-        <v-card-title class="d-flex justify-space-between align-center">
-          <span class="text-subtitle-1">
-            <v-icon left size="20">mdi-trophy</v-icon>
+        <div class="rank-card">
+          <div class="card-title">
+            <i class="fa-solid fa-trophy mr-2"></i>
             签到排行榜
-          </span>
-          <v-btn-toggle v-model="rankType" mandatory density="compact" variant="outlined" divided>
-          <v-btn value="continuous" size="small">连续</v-btn>
-          <v-btn value="points" size="small">币</v-btn>
-        </v-btn-toggle>
-        </v-card-title>
-        <v-card-text class="pa-0">
-          <v-list density="compact" v-if="rankType === 'continuous'">
-            <v-list-item
-              v-for="(user, index) in rankings.continuous_rankings"
+            <div class="rank-tabs">
+              <button 
+                class="rank-tab" 
+                :class="{ active: rankType === 'continuous' }"
+                @click="rankType = 'continuous'"
+              >
+                连续
+              </button>
+              <button 
+                class="rank-tab" 
+                :class="{ active: rankType === 'points' }"
+                @click="rankType = 'points'"
+              >
+                币
+              </button>
+            </div>
+          </div>
+          <div class="rank-list">
+            <div 
+              v-for="(user, index) in (rankType === 'continuous' ? rankings.continuous_rankings : rankings.points_rankings)" 
               :key="user.id"
-              class="ranking-item"
+              class="rank-item"
             >
-              <template v-slot:prepend>
-                <v-avatar
-                  size="32"
-                  :color="index < 3 ? ['amber', 'grey', 'brown'][index] : 'grey-lighten-2'"
-                >
-                  <span class="text-body-2 font-weight-bold">{{ index + 1 }}</span>
-                </v-avatar>
-              </template>
-              <v-list-item-title class="text-body-2">
-                {{ user.display_name || user.username }}
-              </v-list-item-title>
-              <template v-slot:append>
-                <span class="text-primary text-body-2 font-weight-bold">
-                  {{ user.sign_in_days }} 天
-                </span>
-              </template>
-            </v-list-item>
-            <v-list-item v-if="!rankings.continuous_rankings?.length">
-              <v-list-item-title class="text-center text-grey">暂无数据</v-list-item-title>
-            </v-list-item>
-          </v-list>
+              <div class="rank-avatar" :class="getRankClass(index)">
+                {{ index + 1 }}
+              </div>
+              <div class="rank-info">
+                <div class="rank-name">{{ user.display_name || user.username }}</div>
+              </div>
+              <div class="rank-score text-primary">
+                {{ rankType === 'continuous' ? user.sign_in_days + ' 天' : (user.total_coins || user.total_points) + ' 币' }}
+              </div>
+            </div>
+            <div v-if="(!rankings.continuous_rankings?.length && rankType === 'continuous') || (!rankings.points_rankings?.length && rankType === 'points')" class="empty-rank">
+              暂无数据
+            </div>
+          </div>
+        </div>
 
-          <v-list density="compact" v-else>
-            <v-list-item
-              v-for="(user, index) in rankings.points_rankings"
-              :key="user.id"
-              class="ranking-item"
-            >
-              <template v-slot:prepend>
-                <v-avatar
-                  size="32"
-                  :color="index < 3 ? ['amber', 'grey', 'brown'][index] : 'grey-lighten-2'"
-                >
-                  <span class="text-body-2 font-weight-bold">{{ index + 1 }}</span>
-                </v-avatar>
-              </template>
-              <v-list-item-title class="text-body-2">
-                {{ user.display_name || user.username }}
-              </v-list-item-title>
-              <template v-slot:append>
-                <span class="text-primary text-body-2 font-weight-bold">
-                  {{ user.total_coins || user.total_points }} 币
-                </span>
-              </template>
-            </v-list-item>
-            <v-list-item v-if="!rankings.points_rankings?.length">
-              <v-list-item-title class="text-center text-grey">暂无数据</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-card-text>
-      </v-card>
-
-      <!-- 签到历史 -->
-      <v-card elevation="1">
-        <v-card-title class="text-subtitle-1">
-          <v-icon left size="20">mdi-history</v-icon>
-          签到记录
-        </v-card-title>
-        <v-card-text class="pa-0">
-          <v-list density="compact">
-            <v-list-item
-              v-for="record in history.records"
+        <div class="history-card">
+          <div class="card-title">
+            <i class="fa-solid fa-history mr-2"></i>
+            签到记录
+          </div>
+          <div class="history-list">
+            <div 
+              v-for="record in history.records" 
               :key="record.id"
               class="history-item"
             >
-              <template v-slot:prepend>
-                <v-avatar size="36" color="success" class="mr-2">
-                  <v-icon size="20" color="white">mdi-check</v-icon>
-                </v-avatar>
-              </template>
-              <v-list-item-title class="text-body-2">
-                {{ record.sign_in_date }}
-              </v-list-item-title>
-              <v-list-item-subtitle class="text-caption">
-                连续 {{ record.continuous_day }} 天
-              </v-list-item-subtitle>
-              <template v-slot:append>
-                <span class="text-success text-body-2">
-                  +{{ record.reward_points }} 币
-                </span>
-              </template>
-            </v-list-item>
-            <v-list-item v-if="!history.records?.length">
-              <v-list-item-title class="text-center text-grey">暂无签到记录</v-list-item-title>
-            </v-list-item>
-          </v-list>
+              <div class="history-icon">
+                <i class="fa-solid fa-check text-white"></i>
+              </div>
+              <div class="history-info">
+                <div class="history-date">{{ record.sign_in_date }}</div>
+                <div class="history-desc">连续 {{ record.continuous_day }} 天</div>
+              </div>
+              <div class="history-reward text-success">+{{ record.reward_points }} 币</div>
+            </div>
+            <div v-if="!history.records?.length" class="empty-history">
+              暂无签到记录
+            </div>
+          </div>
 
-          <!-- 分页 -->
-          <v-pagination
-            v-if="history.total_pages > 1"
-            v-model="page"
-            :length="history.total_pages"
-            :total-visible="5"
-            density="compact"
-            class="my-2"
-            @update:model-value="fetchHistory"
-          ></v-pagination>
-        </v-card-text>
-      </v-card>
-    </template>
-
-    <!-- 签到成功提示 -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="top">
-      {{ snackbar.text }}
-      <template v-slot:actions>
-        <v-btn variant="text" @click="snackbar.show = false">关闭</v-btn>
+          <div v-if="history.total_pages > 1" class="history-pagination">
+            <button 
+              class="page-btn" 
+              :disabled="page <= 1"
+              @click="page--; fetchHistory()"
+            >
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span class="page-info">{{ page }} / {{ history.total_pages }}</span>
+            <button 
+              class="page-btn" 
+              :disabled="page >= history.total_pages"
+              @click="page++; fetchHistory()"
+            >
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
       </template>
-    </v-snackbar>
-  </v-container>
+
+      <div v-if="snackbar.show" class="snackbar" :class="snackbar.color">
+        {{ snackbar.text }}
+        <button class="snackbar-close" @click="snackbar.show = false">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { signinApi } from '@/api'
-import { useUserStore } from '@/stores/user'
-
-const userStore = useUserStore()
 
 const loading = ref(true)
 const signing = ref(false)
@@ -315,7 +230,13 @@ const snackbar = reactive({
   color: 'success'
 })
 
-// 获取签到状态
+const getRankClass = (index) => {
+  if (index === 0) return 'gold'
+  if (index === 1) return 'silver'
+  if (index === 2) return 'bronze'
+  return 'grey'
+}
+
 const fetchStatus = async () => {
   try {
     const res = await signinApi.getSignInStatus()
@@ -327,7 +248,6 @@ const fetchStatus = async () => {
   }
 }
 
-// 获取排行榜
 const fetchRankings = async () => {
   try {
     const res = await signinApi.getSignInRankings({ limit: 10 })
@@ -339,7 +259,6 @@ const fetchRankings = async () => {
   }
 }
 
-// 获取签到历史
 const fetchHistory = async () => {
   try {
     const res = await signinApi.getSignInHistory({
@@ -354,7 +273,6 @@ const fetchHistory = async () => {
   }
 }
 
-// 签到
 const handleSignIn = async () => {
   signing.value = true
   try {
@@ -363,7 +281,6 @@ const handleSignIn = async () => {
     snackbar.color = 'success'
     snackbar.show = true
 
-    // 更新状态
     await fetchStatus()
     await fetchRankings()
   } catch (error) {
@@ -386,17 +303,430 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.sign-in-page {
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.sign-in-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #333;
+  cursor: pointer;
+  margin-right: 16px;
+  padding: 8px;
+  border-radius: 6px;
+  
+  &:hover {
+    background: #f5f5f5;
+  }
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f0f0f0;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.sign-in-content {
+  padding: 32px;
+  text-align: center;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  
+  &.success {
+    background: #52C41A;
+    i {
+      font-size: 48px;
+      color: white;
+    }
+  }
+  
+  &.primary {
+    background: var(--primary);
+    i {
+      font-size: 48px;
+      color: white;
+    }
+  }
+}
+
+.text-h5 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.text-body-2 {
+  font-size: 14px;
+}
+
+.text-grey {
+  color: #999;
+}
+
+.text-primary {
+  color: var(--primary);
+}
+
+.text-success {
+  color: #52C41A;
+}
+
+.font-weight-bold {
+  font-weight: 600;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #f0f0f0;
+}
+
 .stat-item {
   text-align: center;
 }
 
-.ranking-item,
-.history-item {
-  border-bottom: 1px solid #f0f0f0;
+.stat-value {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 4px;
 }
 
-.ranking-item:last-child,
-.history-item:last-child {
-  border-bottom: none;
+.stat-label {
+  font-size: 12px;
+  color: #999;
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 0 24px 24px;
+}
+
+.stat-card {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.stat-card i {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.text-orange {
+  color: #FAAD14;
+}
+
+.text-blue {
+  color: var(--primary);
+}
+
+.stat-num {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.stat-desc {
+  font-size: 12px;
+  color: #999;
+}
+
+.reward-card,
+.rank-card,
+.history-card {
+  margin: 0 24px 24px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.reward-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reward-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e8e8e8;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.text-amber {
+  color: #FAAD14;
+}
+
+.rank-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.rank-tab {
+  padding: 4px 12px;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  background: white;
+  font-size: 12px;
+  cursor: pointer;
+  color: #666;
+  
+  &.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+  }
+}
+
+.rank-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e8e8e8;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.rank-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  
+  &.gold { background: #FFD700; }
+  &.silver { background: #C0C0C0; }
+  &.bronze { background: #CD7F32; }
+  &.grey { background: #e8e8e8; color: #666; }
+}
+
+.rank-info {
+  flex: 1;
+}
+
+.rank-name {
+  font-size: 14px;
+  color: #333;
+}
+
+.rank-score {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.empty-rank,
+.empty-history {
+  text-align: center;
+  padding: 24px;
+  color: #999;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e8e8e8;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.history-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #52C41A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  i {
+    font-size: 16px;
+  }
+}
+
+.history-info {
+  flex: 1;
+}
+
+.history-date {
+  font-size: 14px;
+  color: #333;
+}
+
+.history-desc {
+  font-size: 12px;
+  color: #999;
+}
+
+.history-reward {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.page-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e8e8e8;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover:not(:disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.page-info {
+  font-size: 14px;
+  color: #666;
+}
+
+.snackbar {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  
+  &.success {
+    background: #52C41A;
+  }
+  
+  &.error {
+    background: #FF4D4F;
+  }
+}
+
+.snackbar-close {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.mr-2 {
+  margin-right: 8px;
 }
 </style>

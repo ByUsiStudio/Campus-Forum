@@ -1,269 +1,228 @@
 <template>
-  <v-container fluid class="pa-4">
-    <v-row justify="center">
-      <v-col cols="12" lg="10" xl="8">
-        <v-card class="pa-6" elevation="2">
-          <div class="d-flex align-center mb-4">
-            <v-btn icon="mdi-arrow-left" variant="text" @click="router.back()"></v-btn>
-            <v-card-title class="text-h5 font-weight-bold" style="color: rgb(var(--v-theme-primary));">
-              {{ isEdit ? '编辑文章' : '发布新文章' }}
-            </v-card-title>
+  <div class="create-article-page">
+    <div class="article-container">
+      <div class="article-card">
+        <div class="article-header">
+          <button class="back-btn" @click="router.back()">
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+          <h1 class="article-title">{{ isEdit ? '编辑文章' : '发布新文章' }}</h1>
+        </div>
+
+        <div class="divider"></div>
+
+        <form @submit.prevent="submitArticle" class="article-form">
+          <div class="form-item">
+            <label class="form-label">文章标题</label>
+            <div class="input-group">
+              <i class="fa-solid fa-font"></i>
+              <input 
+                type="text"
+                v-model="form.title"
+                placeholder="请输入标题"
+                class="layui-input"
+                required
+              />
+            </div>
           </div>
 
-          <v-divider class="mb-6"></v-divider>
+          <div class="form-item">
+            <label class="form-label">选择分区</label>
+            <div class="input-group">
+              <i class="fa-solid fa-folder"></i>
+              <select v-model="form.category_id" class="layui-input">
+                <option :value="null">请选择分区</option>
+                <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+              </select>
+            </div>
+          </div>
 
-          <v-form @submit.prevent="submitArticle">
-            <v-text-field
-              v-model="form.title"
-              label="文章标题"
-              variant="outlined"
-              required
-              prepend-inner-icon="mdi-format-title"
-              class="mb-4"
-              :rules="[v => !!v || '请输入标题']"
-            ></v-text-field>
+          <div class="content-card">
+            <div class="content-header">
+              <div class="content-label">
+                <i class="fa-solid fa-pencil mr-2"></i>
+                文章内容 (支持 Markdown)
+              </div>
+              <button type="button" class="layui-btn layui-btn-normal layui-btn-sm" @click="showVoiceDialog = true">
+                <i class="fa-solid fa-microphone mr-2"></i>
+                添加语音
+              </button>
+            </div>
+            <MdEditor
+              v-model="form.content"
+              :height="400"
+              @voice-input="handleVoiceInput"
+            />
+          </div>
 
-            <v-select
-              v-model="form.category_id"
-              :items="categories"
-              item-title="name"
-              item-value="id"
-              label="选择分区"
-              variant="outlined"
-              prepend-inner-icon="mdi-folder"
-              class="mb-4"
-            ></v-select>
+          <div v-if="voiceUrl || isRecording" class="voice-alert" :class="{ recording: isRecording }">
+            <div class="alert-content">
+              <i :class="isRecording ? 'fa-solid fa-microphone text-error' : 'fa-solid fa-volume-high'"></i>
+              <div class="alert-info">
+                <div class="alert-title">{{ isRecording ? '录音中...' : '语音已添加' }}</div>
+                <div v-if="voiceUrl && !isRecording" class="alert-subtitle">{{ voiceUrl.split('/').pop() }}</div>
+              </div>
+              <button type="button" class="close-btn" @click="removeVoice">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div v-if="isRecording" class="progress-bar">
+              <div class="progress-fill" :style="{ width: (recordingDuration / 60) * 100 + '%' }"></div>
+            </div>
+          </div>
 
-            <v-card variant="outlined" class="mb-4">
-              <v-card-text>
-                <div class="d-flex align-center justify-between mb-2">
-                  <div class="text-caption text-medium-emphasis">
-                    <v-icon size="small" class="mr-1">mdi-pencil</v-icon>
-                    文章内容 (支持 Markdown)
-                  </div>
-                  <div class="d-flex gap-2">
-                    <v-btn
-                      variant="text"
-                      color="primary"
-                      @click="showVoiceDialog = true"
-                      prepend-icon="mdi-microphone"
-                    >
-                      添加语音
-                    </v-btn>
-                  </div>
-                </div>
-                <MdEditor
-                  v-model="form.content"
-                  :height="400"
-                  @voice-input="handleVoiceInput"
-                />
-              </v-card-text>
-            </v-card>
+          <div class="form-actions">
+            <label class="checkbox-item">
+              <input type="checkbox" v-model="form.is_anonymous" />
+              <span>匿名发布</span>
+            </label>
 
-            <v-expand-transition>
-              <v-alert
-                v-if="voiceUrl || isRecording"
-                type="info"
-                variant="tonal"
-                class="mb-4"
-                closable
-                @click:close="removeVoice"
+            <div class="action-buttons">
+              <button type="button" class="layui-btn layui-btn-primary" @click="router.back()">
+                取消
+              </button>
+              <button 
+                type="button" 
+                class="layui-btn layui-btn-normal"
+                :disabled="savingDraft"
+                @click="saveDraft"
               >
-                <div class="d-flex align-center gap-3">
-                  <v-icon :color="isRecording ? 'error' : 'primary'">
-                    {{ isRecording ? 'mdi-microphone' : 'mdi-volume-high' }}
-                  </v-icon>
-                  <div class="flex-grow-1">
-                    <div class="text-subtitle-2">
-                      {{ isRecording ? '录音中...' : '语音已添加' }}
-                    </div>
-                    <div v-if="voiceUrl && !isRecording" class="text-caption text-medium-emphasis">
-                      {{ voiceUrl.split('/').pop() }}
-                    </div>
-                  </div>
-                </div>
-                <v-progress-linear
+                <i class="fa-solid fa-save mr-2"></i>
+                {{ savingDraft ? '保存中...' : '保存草稿' }}
+              </button>
+              <button 
+                type="submit" 
+                class="layui-btn layui-btn-primary"
+                :disabled="submitting"
+              >
+                <i class="fa-solid fa-paper-plane mr-2"></i>
+                {{ submitting ? '提交中...' : (isEdit ? '更新文章' : '发布文章') }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div v-if="showVoiceDialog" class="voice-dialog-overlay" @click.self="showVoiceDialog = false">
+      <div class="voice-dialog">
+        <div class="dialog-header">
+          <i class="fa-solid fa-microphone mr-2"></i>
+          添加语音
+        </div>
+        
+        <div class="dialog-body">
+          <div class="voice-tabs">
+            <button 
+              class="tab-btn" 
+              :class="{ active: voiceTab === 'record' }"
+              @click="voiceTab = 'record'"
+            >
+              <i class="fa-solid fa-microphone mr-2"></i>
+              录音
+            </button>
+            <button 
+              class="tab-btn" 
+              :class="{ active: voiceTab === 'upload' }"
+              @click="voiceTab = 'upload'"
+            >
+              <i class="fa-solid fa-upload mr-2"></i>
+              上传
+            </button>
+          </div>
+
+          <div v-if="voiceTab === 'record'" class="record-section">
+            <div class="record-time">
+              <i :class="isRecording ? 'fa-solid fa-microphone text-error' : 'fa-solid fa-microphone text-muted'" style="font-size: 64px;"></i>
+              <div class="time-display">{{ formatDuration(recordingDuration) }}</div>
+              <div class="record-status">{{ isPaused ? '已暂停' : (isRecording ? '录音中...' : '点击开始录音') }}</div>
+            </div>
+
+            <div class="record-controls">
+              <button 
+                v-if="!isRecording && !recordedBlob"
+                class="layui-btn layui-btn-danger"
+                @click="startRecording"
+              >
+                <i class="fa-solid fa-microphone mr-2"></i>
+                开始录音
+              </button>
+
+              <template v-else>
+                <button 
                   v-if="isRecording"
-                  :model-value="recordingDuration"
-                  color="error"
-                  height="4"
-                  class="mt-2"
-                />
-              </v-alert>
-            </v-expand-transition>
-
-            <v-card variant="flat" class="bg-grey-lighten-4 pa-4 mb-4">
-              <div class="d-flex align-center flex-wrap gap-4">
-                <v-checkbox
-                  v-model="form.is_anonymous"
-                  label="匿名发布"
-                  color="primary"
-                  hide-details
-                  density="compact"
-                />
-
-                <v-spacer></v-spacer>
-
-                <v-btn
-                  variant="text"
-                  @click="router.back()"
+                  class="layui-btn layui-btn-warm"
+                  @click="pauseRecording"
                 >
-                  取消
-                </v-btn>
-                <v-btn
-                  variant="outlined"
-                  color="primary"
-                  :loading="savingDraft"
-                  @click="saveDraft"
-                  prepend-icon="mdi-content-save"
+                  <i class="fa-solid fa-pause mr-2"></i>
+                  暂停
+                </button>
+                <button 
+                  v-if="isPaused"
+                  class="layui-btn layui-btn-normal"
+                  @click="resumeRecording"
                 >
-                  {{ savingDraft ? '保存中...' : '保存草稿' }}
-                </v-btn>
-                <v-btn
-                  type="submit"
-                  color="primary"
-                  :loading="submitting"
-                  prepend-icon="mdi-send"
+                  <i class="fa-solid fa-play mr-2"></i>
+                  继续
+                </button>
+                <button 
+                  class="layui-btn layui-btn-danger"
+                  @click="stopRecording"
                 >
-                  {{ submitting ? '提交中...' : (isEdit ? '更新文章' : '发布文章') }}
-                </v-btn>
-              </div>
-            </v-card>
-          </v-form>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
-
-  <v-dialog v-model="showVoiceDialog" max-width="500">
-    <v-card class="voice-dialog-card">
-      <v-card-title class="voice-dialog-title">
-        <v-icon class="mr-2">mdi-microphone</v-icon>
-        添加语音
-      </v-card-title>
-      <v-card-text class="voice-dialog-body">
-        <v-tabs v-model="voiceTab" color="primary" grow>
-          <v-tab value="record">
-            <v-icon start>mdi-microphone</v-icon>
-            录音
-          </v-tab>
-          <v-tab value="upload">
-            <v-icon start>mdi-upload</v-icon>
-            上传
-          </v-tab>
-        </v-tabs>
-
-        <v-window v-model="voiceTab" class="mt-4">
-          <v-window-item value="record">
-            <div class="record-section">
-              <div class="record-time">
-                <v-icon :color="isRecording ? 'error' : 'grey'" size="64" class="mb-3">
-                  mdi-microphone
-                </v-icon>
-                <div class="time-display">
-                  {{ formatDuration(recordingDuration) }}
-                </div>
-                <div class="record-status">
-                  {{ isPaused ? '已暂停' : (isRecording ? '录音中...' : '点击开始录音') }}
-                </div>
-              </div>
-
-              <div class="record-controls">
-                <v-btn
-                  v-if="!isRecording && !recordedBlob"
-                  color="error"
-                  size="large"
-                  @click="startRecording"
-                >
-                  <v-icon start>mdi-microphone</v-icon>
-                  开始录音
-                </v-btn>
-
-                <template v-else>
-                  <v-btn
-                    v-if="isRecording"
-                    color="warning"
-                    size="large"
-                    @click="pauseRecording"
-                  >
-                    <v-icon start>mdi-pause</v-icon>
-                    暂停
-                  </v-btn>
-                  <v-btn
-                    v-if="isPaused"
-                    color="success"
-                    size="large"
-                    @click="resumeRecording"
-                  >
-                    <v-icon start>mdi-play</v-icon>
-                    继续
-                  </v-btn>
-                  <v-btn
-                    color="error"
-                    size="large"
-                    @click="stopRecording"
-                  >
-                    <v-icon start>mdi-stop</v-icon>
-                    结束
-                  </v-btn>
-                </template>
-              </div>
-
-              <v-expand-transition>
-                <div v-if="recordedBlob" class="recorded-preview">
-                  <audio ref="recordedAudioRef" :src="recordedAudioUrl" controls class="audio-preview" />
-                  <div class="d-flex gap-2 mt-3 justify-center">
-                    <v-btn color="primary" @click="confirmVoice" :loading="isUploadingVoice">
-                      使用此录音
-                    </v-btn>
-                    <v-btn variant="outlined" @click="discardRecording">
-                      丢弃
-                    </v-btn>
-                  </div>
-                </div>
-              </v-expand-transition>
+                  <i class="fa-solid fa-square mr-2"></i>
+                  结束
+                </button>
+              </template>
             </div>
-          </v-window-item>
 
-          <v-window-item value="upload">
-            <div class="upload-section">
-              <v-file-input
-                ref="voiceFileInput"
-                v-model="voiceFile"
-                label="选择音频文件"
+            <div v-if="recordedBlob" class="recorded-preview">
+              <audio :src="recordedAudioUrl" controls class="audio-preview" />
+              <div class="preview-actions">
+                <button class="layui-btn layui-btn-normal" @click="confirmVoice" :disabled="isUploadingVoice">
+                  使用此录音
+                </button>
+                <button class="layui-btn layui-btn-primary" @click="discardRecording">
+                  丢弃
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="voiceTab === 'upload'" class="upload-section">
+            <div class="upload-input-wrapper">
+              <i class="fa-solid fa-file-audio"></i>
+              <input 
+                type="file" 
                 accept="audio/*"
-                variant="outlined"
-                prepend-icon="mdi-file-music"
-                show-size
-                class="mb-4"
+                class="upload-input"
+                @change="handleFileChange"
               />
-              <v-btn
-                color="primary"
-                block
-                :disabled="!voiceFile"
-                :loading="isUploadingVoice"
-                @click="uploadSelectedFile"
-              >
-                <v-icon start>mdi-upload</v-icon>
-                上传音频
-              </v-btn>
-              <div class="text-caption text-medium-emphasis mt-3 text-center">
-                支持 MP3、WAV、AAC、OGG 等常见音频格式
-              </div>
+              <span v-if="voiceFile">已选择: {{ voiceFile.name }}</span>
+              <span v-else>点击选择音频文件</span>
             </div>
-          </v-window-item>
-        </v-window>
-      </v-card-text>
-      <v-card-actions class="voice-dialog-actions">
-        <v-spacer></v-spacer>
-        <v-btn variant="text" @click="showVoiceDialog = false">关闭</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+            <button 
+              class="layui-btn layui-btn-normal w-full"
+              :disabled="!voiceFile"
+              :class="{ loading: isUploadingVoice }"
+              @click="uploadSelectedFile"
+            >
+              <i class="fa-solid fa-upload mr-2"></i>
+              {{ isUploadingVoice ? '上传中...' : '上传音频' }}
+            </button>
+            <div class="upload-hint">支持 MP3、WAV、AAC、OGG 等常见音频格式</div>
+          </div>
+        </div>
+
+        <div class="dialog-footer">
+          <button class="layui-btn layui-btn-primary" @click="showVoiceDialog = false">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '../api'
 import MdEditor from '../components/MdEditor.vue'
@@ -299,7 +258,6 @@ export default {
     const voiceFile = ref(null)
     const recordedBlob = ref(null)
     const recordedAudioUrl = ref('')
-    const recordedAudioRef = ref(null)
 
     let mediaRecorder = null
     let audioChunks = []
@@ -337,9 +295,6 @@ export default {
       }
     }
 
-    // 音频URL直接保存到voice_url字段，不在content中插入HTML标签
-    // 这样可以避免破坏Markdown渲染
-
     const saveDraft = async () => {
       if (!form.value.title.trim()) {
         await showAlert('请输入标题')
@@ -354,11 +309,10 @@ export default {
           status: 'draft'
         }
 
-        let response
         if (isEdit.value) {
-          response = await api.put(`/articles/${articleId.value}`, submitData)
+          await api.put(`/articles/${articleId.value}`, submitData)
         } else {
-          response = await api.post('/articles', submitData)
+          await api.post('/articles', submitData)
         }
 
         await showAlert('草稿保存成功')
@@ -384,12 +338,12 @@ export default {
       submitting.value = true
 
       try {
-        let response
         const submitData = {
           ...form.value,
           voice_url: voiceUrl.value
         }
 
+        let response
         if (isEdit.value) {
           response = await api.put(`/articles/${articleId.value}`, submitData)
         } else {
@@ -401,9 +355,7 @@ export default {
           throw new Error('文章ID不存在')
         }
 
-        console.log('准备跳转到文章页面:', `/article/${newArticleId}`)
         await router.push(`/article/${newArticleId}`)
-        console.log('跳转成功')
       } catch (error) {
         console.error('提交或跳转失败', error)
         await showError('提交失败: ' + (error.message || '未知错误'))
@@ -423,7 +375,6 @@ export default {
         const extension = audioBlob.type === 'audio/webm' ? 'webm' : 'mp3'
         formData.append('voice', audioBlob, `voice.${extension}`)
 
-        const oldUrl = voiceUrl.value
         const response = await api.post('/upload/voice', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
@@ -518,12 +469,18 @@ export default {
       recordingDuration.value = 0
     }
 
+    const handleFileChange = (event) => {
+      const file = event.target.files[0]
+      if (file) {
+        voiceFile.value = file
+      }
+    }
+
     const uploadSelectedFile = async () => {
       if (!voiceFile.value) return
 
       isUploadingVoice.value = true
       try {
-        const oldUrl = voiceUrl.value
         const formData = new FormData()
         formData.append('voice', voiceFile.value)
 
@@ -545,12 +502,6 @@ export default {
 
     const removeVoice = () => {
       voiceUrl.value = ''
-    }
-
-    const resetVoiceDialog = () => {
-      voiceTab.value = 'record'
-      voiceFile.value = null
-      discardRecording()
     }
 
     onUnmounted(() => {
@@ -594,7 +545,6 @@ export default {
       voiceFile,
       recordedBlob,
       recordedAudioUrl,
-      recordedAudioRef,
       formatDuration,
       startRecording,
       pauseRecording,
@@ -604,30 +554,279 @@ export default {
       discardRecording,
       uploadSelectedFile,
       removeVoice,
-      resetVoiceDialog
+      handleFileChange
     }
   }
 }
 </script>
 
 <style scoped>
-.voice-dialog-card {
-  border-radius: 16px;
+.create-article-page {
+  padding: 24px 0;
+  min-height: 100vh;
+  background: #f5f5f5;
 }
 
-.voice-dialog-title {
-  background: linear-gradient(135deg, rgb(var(--v-theme-primary)), rgb(var(--v-theme-secondary)));
+.article-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+.article-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.article-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #666;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  
+  &:hover {
+    background: #f5f5f5;
+    color: var(--primary);
+  }
+}
+
+.article-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary);
+  margin: 0;
+}
+
+.divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin-bottom: 24px;
+}
+
+.article-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.input-group {
+  position: relative;
+  
+  i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: #999;
+  }
+  
+  .layui-input {
+    padding-left: 40px;
+  }
+}
+
+.content-card {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.content-label {
+  font-size: 14px;
+  color: #666;
+}
+
+.voice-alert {
+  background: rgba(30, 159, 255, 0.08);
+  border-left: 4px solid var(--primary);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  
+  &.recording {
+    background: rgba(255, 77, 79, 0.08);
+    border-left-color: #FF4D4F;
+  }
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.alert-content i {
+  font-size: 20px;
+}
+
+.text-error {
+  color: #FF4D4F;
+}
+
+.alert-info {
+  flex: 1;
+}
+
+.alert-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.alert-subtitle {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  
+  &:hover {
+    color: #666;
+  }
+}
+
+.progress-bar {
+  height: 4px;
+  background: #e8e8e8;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #FF4D4F;
+  border-radius: 2px;
+  transition: width 1s linear;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  
+  input {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.voice-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.voice-dialog {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  overflow: hidden;
+}
+
+.dialog-header {
+  background: var(--primary);
   color: white;
   padding: 16px 24px;
-  font-size: 1.1rem;
+  font-size: 16px;
+  font-weight: 600;
 }
 
-.voice-dialog-body {
-  padding: 16px 24px;
+.dialog-body {
+  padding: 24px;
 }
 
-.voice-dialog-actions {
-  padding: 8px 24px 16px;
+.voice-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 12px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  
+  &:hover {
+    color: var(--primary);
+  }
+  
+  &.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
 }
 
 .record-section {
@@ -642,11 +841,16 @@ export default {
   margin-bottom: 24px;
 }
 
+.text-muted {
+  color: #999;
+}
+
 .time-display {
   font-size: 2.5rem;
   font-weight: 600;
   font-family: 'Roboto Mono', monospace;
   color: #333;
+  margin-top: 16px;
 }
 
 .record-status {
@@ -674,7 +878,65 @@ export default {
   height: 40px;
 }
 
+.preview-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
 .upload-section {
   padding: 16px 0;
+}
+
+.upload-input-wrapper {
+  border: 2px dashed #e8e8e8;
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    border-color: var(--primary);
+    background: rgba(30, 159, 255, 0.05);
+  }
+  
+  i {
+    font-size: 32px;
+    color: #999;
+    margin-bottom: 12px;
+    display: block;
+  }
+  
+  span {
+    font-size: 14px;
+    color: #666;
+  }
+}
+
+.upload-input {
+  display: none;
+}
+
+.upload-hint {
+  font-size: 12px;
+  color: #999;
+  text-align: center;
+  margin-top: 12px;
+}
+
+.dialog-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+  text-align: right;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.mr-2 {
+  margin-right: 8px;
 }
 </style>

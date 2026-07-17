@@ -1,97 +1,84 @@
 <template>
   <div>
-    <!-- 搜索栏 -->
-    <v-card class="mb-4 pa-3" variant="flat" rounded="lg">
-      <v-row dense align="center">
-        <v-col cols="12" sm="8">
-          <v-text-field
-            v-model="searchQuery"
-            placeholder="搜索评论内容..."
-            prepend-inner-icon="mdi-magnify"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-          />
-        </v-col>
-        <v-col cols="12" sm="4" class="text-end">
-          <v-btn variant="tonal" color="primary" @click="$emit('refresh')" :loading="loading" prepend-icon="mdi-refresh">
-            刷新
-          </v-btn>
-        </v-col>
-      </v-row>
-    </v-card>
-
-    <!-- 评论列表 -->
-    <v-card variant="flat" rounded="lg">
-      <v-list lines="three" v-if="filteredComments.length > 0">
-        <v-list-item v-for="comment in filteredComments" :key="comment.id" class="py-3">
-          <template v-slot:prepend>
-            <UserAvatar :user="getUserInfo(comment)" :size="48" />
-          </template>
-
-          <v-list-item-title class="font-weight-medium mb-1">
-            {{ getUserName(comment) }}
-            <v-chip size="x-small" color="grey" variant="tonal" class="ml-2" v-if="comment.is_anonymous">
-              匿名
-            </v-chip>
-          </v-list-item-title>
-
-          <v-list-item-subtitle>
-            <div class="mb-2">{{ comment.content }}</div>
-            <div class="d-flex flex-wrap align-center ga-2">
-              <span class="d-flex align-center text-caption" v-if="getArticleInfo(comment)">
-                <v-icon size="14" color="primary" class="mr-1">mdi-file-document</v-icon>
-                {{ getArticleInfo(comment).title }}
-              </span>
-              <span class="d-flex align-center text-caption">
-                <v-icon size="14" color="pink" class="mr-1">mdi-heart</v-icon>
-                {{ comment.like_count || 0 }}
-              </span>
-              <span class="d-flex align-center text-caption">
-                <v-icon size="14" color="blue" class="mr-1">mdi-reply</v-icon>
-                {{ comment.reply_count || 0 }}
-              </span>
-              <span class="d-flex align-center text-caption">
-                <v-icon size="14" color="grey" class="mr-1">mdi-clock-outline</v-icon>
-                {{ formatDate(comment.created_at) }}
-              </span>
+    <div class="layui-card mb-4">
+      <div class="layui-card-body">
+        <div class="layui-row align-items-center">
+          <div class="layui-col-xs12 layui-col-sm8">
+            <div class="layui-input-wrap">
+              <i class="fa-solid fa-magnifying-glass layui-input-prefix" style="color: #999;"></i>
+              <input type="text" v-model="searchQuery" placeholder="搜索评论内容..." class="layui-input" />
             </div>
-          </v-list-item-subtitle>
-
-          <template v-slot:append>
-            <v-btn-group variant="text" density="compact" divided>
-              <v-btn size="small" color="info" :to="`/article/${comment.article_id}`" target="_blank" v-if="comment.article_id">
-                <v-icon>mdi-eye</v-icon>
-                <v-tooltip activator="parent">查看文章</v-tooltip>
-              </v-btn>
-              <v-btn size="small" color="error" @click="$emit('delete', comment.id)">
-                <v-icon>mdi-delete</v-icon>
-                <v-tooltip activator="parent">删除</v-tooltip>
-              </v-btn>
-            </v-btn-group>
-          </template>
-        </v-list-item>
-      </v-list>
-
-      <v-card-text v-else class="text-center py-8">
-        <v-icon size="48" color="grey-lighten-1">mdi-comment-text-outline</v-icon>
-        <div class="text-body-1 text-medium-emphasis mt-2">
-          {{ searchQuery ? '未找到匹配的评论' : '暂无评论数据' }}
+          </div>
+          <div class="layui-col-xs12 layui-col-sm4 text-right">
+            <button class="layui-btn" @click="$emit('refresh')" :disabled="loading">
+              <i class="fa-solid fa-refresh mr-2"></i>
+              刷新
+            </button>
+          </div>
         </div>
-      </v-card-text>
-    </v-card>
+      </div>
+    </div>
 
-    <!-- 分页 -->
-    <div class="d-flex align-center justify-center ga-4 mt-4" v-if="pagination.totalPages > 1">
-      <v-pagination
-        v-model="currentPage"
-        :length="pagination.totalPages"
-        :total-visible="5"
-        rounded="lg"
-        @update:model-value="handlePageChange"
-      />
-      <div class="text-caption text-medium-emphasis">
+    <div class="layui-card">
+      <div v-if="filteredComments.length > 0">
+        <div v-for="comment in filteredComments" :key="comment.id" class="layui-card-body border-b last:border-b-0" style="padding: 15px;">
+          <div class="flex items-center gap-3">
+            <UserAvatar :user="getUserInfo(comment)" :size="48" />
+            <div class="flex-1">
+              <div class="font-medium">
+                {{ getUserName(comment) }}
+                <span v-if="comment.is_anonymous" class="layui-badge layui-bg-gray ml-2">匿名</span>
+              </div>
+              <div class="text-muted mt-2">{{ comment.content }}</div>
+              <div class="flex flex-wrap gap-3 mt-2 text-sm text-muted">
+                <span v-if="getArticleInfo(comment)">
+                  <i class="fa-solid fa-file-lines mr-1" style="color: #1E9FFF;"></i>
+                  {{ getArticleInfo(comment).title }}
+                </span>
+                <span>
+                  <i class="fa-solid fa-heart mr-1" style="color: #FF69B4;"></i>
+                  {{ comment.like_count || 0 }}
+                </span>
+                <span>
+                  <i class="fa-solid fa-reply mr-1" style="color: #3B82F6;"></i>
+                  {{ comment.reply_count || 0 }}
+                </span>
+                <span>
+                  <i class="fa-solid fa-clock mr-1" style="color: #999;"></i>
+                  {{ formatDate(comment.created_at) }}
+                </span>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <a v-if="comment.article_id" :href="`/article/${comment.article_id}`" target="_blank" class="layui-btn layui-btn-primary layui-btn-sm">
+                <i class="fa-solid fa-eye"></i>
+              </a>
+              <button class="layui-btn layui-btn-danger layui-btn-sm" @click="$emit('delete', comment.id)">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else class="layui-card-body text-center py-8">
+        <i class="fa-solid fa-message" style="font-size: 48px; color: #dcdcdc;"></i>
+        <div class="text-muted mt-2">{{ searchQuery ? '未找到匹配的评论' : '暂无评论数据' }}</div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-center gap-4 mt-4" v-if="pagination.totalPages > 1">
+      <div class="layui-laypage">
+        <button 
+          v-for="page in visiblePages" 
+          :key="page"
+          class="layui-laypage-btn"
+          :class="{ 'layui-laypage-curr': page === pagination.page }"
+          @click="handlePageChange(page)"
+        >
+          {{ page }}
+        </button>
+      </div>
+      <div class="text-sm text-muted">
         第 {{ pagination.page }} / {{ pagination.totalPages }} 页 (共 {{ pagination.total }} 条)
       </div>
     </div>
@@ -144,6 +131,18 @@ export default {
       )
     })
 
+    const visiblePages = computed(() => {
+      const total = props.pagination.totalPages
+      const current = props.pagination.page
+      const pages = []
+      const start = Math.max(1, current - 2)
+      const end = Math.min(total, current + 2)
+      for (let i = start; i <= end; i++) {
+        pages.push(i)
+      }
+      return pages
+    })
+
     const formatDate = (dateString) => {
       if (!dateString) return '-'
       const date = new Date(dateString)
@@ -177,6 +176,7 @@ export default {
       currentPage,
       searchQuery,
       filteredComments,
+      visiblePages,
       formatDate,
       getUserInfo,
       getUserName,
@@ -186,3 +186,9 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.last\:border-b-0:last-child {
+  border-bottom: none;
+}
+</style>

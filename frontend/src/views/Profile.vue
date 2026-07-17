@@ -1,310 +1,233 @@
 <template>
-  <v-row v-if="user">
-    <!-- 用户信息卡片 -->
-    <v-col cols="12" md="4">
-      <v-card class="pa-6 text-center" elevation="2">
-        <v-avatar size="150" class="mb-4">
-          <UserAvatar :user="user" :size="150" />
-        </v-avatar>
-        
-        <div class="mb-4">
-          <div class="text-h5 font-weight-bold mb-1">{{ user.display_name }}</div>
-          <div class="text-body-2 text-medium-emphasis">@{{ user.username }}</div>
-          <v-chip v-if="user.role === 'admin'" color="error" size="small" class="mt-2">
-            <v-icon start size="small">mdi-shield-crown</v-icon>
-            管理员
-          </v-chip>
-        </div>
-
-        <v-btn v-if="isOwnProfile" variant="outlined" color="primary" @click="changeAvatar" block>
-          <v-icon start>mdi-camera</v-icon>
-          更换头像
-        </v-btn>
-        <v-btn v-else variant="tonal" :color="followStatus.is_following ? 'default' : 'primary'" @click="handleFollow" block>
-          <v-icon start>{{ followStatus.is_following ? 'mdi-check' : 'mdi-plus' }}</v-icon>
-          {{ followStatus.is_following ? '已关注' : followStatus.is_followed ? '回关' : '关注' }}
-        </v-btn>
-
-        <v-divider class="my-4"></v-divider>
-
-        <!-- 统计数据 -->
-        <v-row dense>
-          <v-col cols="4" class="text-center cursor-pointer" @click="goToFollowing">
-            <div class="text-h6 font-weight-bold">{{ followingCount }}</div>
-            <div class="text-caption text-medium-emphasis">关注</div>
-          </v-col>
-          <v-col cols="4" class="text-center cursor-pointer" @click="goToFollowers">
-            <div class="text-h6 font-weight-bold">{{ followersCount }}</div>
-            <div class="text-caption text-medium-emphasis">粉丝</div>
-          </v-col>
-          <v-col cols="4" class="text-center">
-            <div class="text-h6 font-weight-bold">{{ articleCount }}</div>
-            <div class="text-caption text-medium-emphasis">文章</div>
-          </v-col>
-        </v-row>
-
-        <v-divider class="my-4"></v-divider>
-
-        <!-- 用户信息列表 -->
-        <v-list density="compact" class="text-left">
-          <v-list-item prepend-icon="mdi-qqchat">
-            <v-list-item-title>QQ号：{{ user.qq_number || '未设置' }}</v-list-item-title>
-          </v-list-item>
-          <v-list-item prepend-icon="mdi-pencil">
-            <v-list-item-title class="whitespace-pre-line">签名：{{ user.signature || '暂无签名' }}</v-list-item-title>
-          </v-list-item>
-          <v-list-item prepend-icon="mdi-calendar">
-            <v-list-item-title>注册时间：{{ formatDate(user.created_at) }}</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-card>
-    </v-col>
-
-    <!-- 文章和编辑资料 -->
-    <v-col cols="12" md="8">
-      <!-- 编辑资料卡片 -->
-      <v-card v-if="isOwnProfile" class="pa-6 mb-4" elevation="2">
-        <v-card-title class="d-flex align-center mb-4">
-          <v-icon class="mr-2">mdi-account-edit</v-icon>
-          编辑资料
-        </v-card-title>
-        
-        <v-form @submit.prevent="updateProfile">
-          <v-text-field
-            v-model="editForm.display_name"
-            label="显示名称"
-            variant="outlined"
-            prepend-inner-icon="mdi-card-account-details"
-            class="mb-4"
-          ></v-text-field>
+  <div v-if="user" class="profile-page">
+    <div class="profile-container">
+      <div class="profile-sidebar">
+        <div class="user-card">
+          <div class="user-avatar">
+            <UserAvatar :user="user" :size="150" />
+          </div>
           
-          <v-textarea
-            v-model="editForm.signature"
-            label="个性化签名"
-            variant="outlined"
-            rows="3"
-            class="mb-4"
-            hint="最多200个字符"
-            persistent-hint
-            counter="200"
-          ></v-textarea>
-          
-          <v-btn type="submit" color="primary" prepend-icon="mdi-content-save">
-            保存修改
-          </v-btn>
-        </v-form>
-      </v-card>
+          <div class="user-info">
+            <div class="user-name">{{ user.display_name }}</div>
+            <div class="user-username">@{{ user.username }}</div>
+            <span v-if="user.role === 'admin'" class="admin-tag">
+              <i class="fa-solid fa-shield-halved"></i>
+              管理员
+            </span>
+          </div>
 
-      <!-- 文章列表 -->
-      <v-card class="pa-6" elevation="2">
-        <v-card-title class="d-flex align-center mb-4">
-          <v-icon class="mr-2">mdi-file-document</v-icon>
-          {{ isOwnProfile ? '我的文章' : '他的文章' }}
-          <v-spacer></v-spacer>
-        </v-card-title>
+          <div class="user-actions">
+            <button v-if="isOwnProfile" class="layui-btn layui-btn-normal layui-btn-sm w-full" @click="changeAvatar">
+              <i class="fa-solid fa-camera mr-2"></i>
+              更换头像
+            </button>
+            <button v-else class="layui-btn layui-btn-sm w-full" :class="followStatus.is_following ? 'layui-btn-primary' : 'layui-btn-normal'" @click="handleFollow">
+              <i :class="followStatus.is_following ? 'fa-solid fa-check' : 'fa-solid fa-plus'" class="mr-2"></i>
+              {{ followStatus.is_following ? '已关注' : followStatus.is_followed ? '回关' : '关注' }}
+            </button>
+          </div>
 
-        <v-tabs v-if="isOwnProfile" v-model="activeTab" color="primary" class="mb-4">
-          <v-tab value="published">已发布 ({{ myArticles.length }})</v-tab>
-          <v-tab value="drafts">草稿 ({{ drafts.length }})</v-tab>
-        </v-tabs>
-
-        <v-window v-if="isOwnProfile" v-model="activeTab">
-          <v-window-item value="published">
-            <div v-if="myArticles.length === 0" class="text-center pa-8">
-              <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-file-document-outline</v-icon>
-              <div class="text-body-1 text-medium-emphasis">暂无文章</div>
-              <v-btn color="primary" class="mt-4" to="/create">
-                <v-icon start>mdi-pencil</v-icon>
-                写文章
-              </v-btn>
+          <div class="stats-row">
+            <div class="stat-item" @click="goToFollowing">
+              <div class="stat-value">{{ followingCount }}</div>
+              <div class="stat-label">关注</div>
             </div>
-
-            <v-list v-else lines="two" class="pa-0">
-              <v-list-item
-                v-for="article in myArticles"
-                :key="article.id"
-                class="px-0"
-              >
-                <template v-slot:prepend>
-                  <UserAvatar :user="article.user" :size="50" />
-                </template>
-
-                <v-list-item-title class="font-weight-bold mb-1">
-                  <router-link :to="'/article/' + article.id" class="text-decoration-none text-primary">
-                    {{ article.title }}
-                  </router-link>
-                </v-list-item-title>
-                
-                <v-list-item-subtitle class="d-flex align-center flex-wrap gap-2">
-                  <span>
-                    <v-icon size="x-small">mdi-clock</v-icon>
-                    {{ formatDate(article.created_at) }}
-                  </span>
-                  <span>
-                    <v-icon size="x-small" class="text-error">mdi-heart</v-icon>
-                    {{ article.like_count }}
-                  </span>
-                  <span>
-                    <v-icon size="x-small">mdi-eye</v-icon>
-                    {{ article.view_count }}
-                  </span>
-                  <v-chip v-if="article.category" size="x-small" color="primary" variant="flat">
-                    {{ article.category.name }}
-                  </v-chip>
-                </v-list-item-subtitle>
-
-                <template v-slot:append>
-                  <v-btn
-                    variant="text"
-                    size="small"
-                    :to="'/create?id=' + article.id"
-                    color="primary"
-                    icon="mdi-pencil"
-                  ></v-btn>
-                  <v-btn
-                    variant="text"
-                    size="small"
-                    color="error"
-                    @click="deleteArticle(article.id)"
-                    icon="mdi-delete"
-                  ></v-btn>
-                </template>
-              </v-list-item>
-            </v-list>
-          </v-window-item>
-
-          <v-window-item value="drafts">
-            <div v-if="drafts.length === 0" class="text-center pa-8">
-              <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-file-edit-outline</v-icon>
-              <div class="text-body-1 text-medium-emphasis">暂无草稿</div>
-              <v-btn color="primary" class="mt-4" to="/create">
-                <v-icon start>mdi-pencil</v-icon>
-                写文章
-              </v-btn>
+            <div class="stat-item" @click="goToFollowers">
+              <div class="stat-value">{{ followersCount }}</div>
+              <div class="stat-label">粉丝</div>
             </div>
+            <div class="stat-item">
+              <div class="stat-value">{{ articleCount }}</div>
+              <div class="stat-label">文章</div>
+            </div>
+          </div>
 
-            <v-list v-else lines="two" class="pa-0">
-              <v-list-item
-                v-for="article in drafts"
-                :key="article.id"
-                class="px-0"
-              >
-                <template v-slot:prepend>
-                  <v-icon color="grey">mdi-file-document-outline</v-icon>
-                </template>
-
-                <v-list-item-title class="font-weight-bold mb-1">
-                  {{ article.title }}
-                </v-list-item-title>
-                
-                <v-list-item-subtitle class="d-flex align-center flex-wrap gap-2">
-                  <span>
-                    <v-icon size="x-small">mdi-clock</v-icon>
-                    最后修改：{{ formatDate(article.updated_at) }}
-                  </span>
-                  <v-chip v-if="article.category" size="x-small" color="default" variant="flat">
-                    {{ article.category.name }}
-                  </v-chip>
-                </v-list-item-subtitle>
-
-                <template v-slot:append>
-                  <v-btn
-                    variant="text"
-                    size="small"
-                    :to="'/create?id=' + article.id"
-                    color="primary"
-                    icon="mdi-pencil"
-                  ></v-btn>
-                  <v-btn
-                    variant="text"
-                    size="small"
-                    color="success"
-                    @click="publishDraft(article.id)"
-                    icon="mdi-send"
-                  ></v-btn>
-                  <v-btn
-                    variant="text"
-                    size="small"
-                    color="error"
-                    @click="deleteDraft(article.id)"
-                    icon="mdi-delete"
-                  ></v-btn>
-                </template>
-              </v-list-item>
-            </v-list>
-          </v-window-item>
-        </v-window>
-
-        <div v-if="myArticles.length === 0" class="text-center pa-8">
-          <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-file-document-outline</v-icon>
-          <div class="text-body-1 text-medium-emphasis">暂无文章</div>
+          <div class="info-list">
+            <div class="info-item">
+              <i class="fa-solid fa-comment"></i>
+              <span>QQ号：{{ user.qq_number || '未设置' }}</span>
+            </div>
+            <div class="info-item">
+              <i class="fa-solid fa-pencil"></i>
+              <span>签名：{{ user.signature || '暂无签名' }}</span>
+            </div>
+            <div class="info-item">
+              <i class="fa-solid fa-calendar"></i>
+              <span>注册时间：{{ formatDate(user.created_at) }}</span>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <v-list v-else lines="two" class="pa-0">
-          <v-list-item
-            v-for="article in myArticles"
-            :key="article.id"
-            class="px-0"
-          >
-            <template v-slot:prepend>
-              <UserAvatar :user="article.user" :size="50" />
-            </template>
-
-            <v-list-item-title class="font-weight-bold mb-1">
-              <router-link :to="'/article/' + article.id" class="text-decoration-none text-primary">
-                {{ article.title }}
-              </router-link>
-            </v-list-item-title>
+      <div class="profile-content">
+        <div v-if="isOwnProfile" class="edit-card">
+          <div class="card-header">
+            <i class="fa-solid fa-user-pen mr-2"></i>
+            编辑资料
+          </div>
+          
+          <form @submit.prevent="updateProfile" class="edit-form">
+            <div class="form-item">
+              <label class="form-label">显示名称</label>
+              <input 
+                type="text"
+                v-model="editForm.display_name"
+                placeholder="请输入显示名称"
+                class="layui-input"
+              />
+            </div>
             
-            <v-list-item-subtitle class="d-flex align-center flex-wrap gap-2">
-              <span>
-                <v-icon size="x-small">mdi-clock</v-icon>
-                {{ formatDate(article.created_at) }}
-              </span>
-              <span>
-                <v-icon size="x-small" class="text-error">mdi-heart</v-icon>
-                {{ article.like_count }}
-              </span>
-              <span>
-                <v-icon size="x-small">mdi-eye</v-icon>
-                {{ article.view_count }}
-              </span>
-              <v-chip v-if="article.category" size="x-small" color="primary" variant="flat">
-                {{ article.category.name }}
-              </v-chip>
-            </v-list-item-subtitle>
-          </v-list-item>
-        </v-list>
-      </v-card>
-    </v-col>
-  </v-row>
+            <div class="form-item">
+              <label class="form-label">个性化签名</label>
+              <textarea 
+                v-model="editForm.signature"
+                placeholder="请输入个性化签名"
+                rows="3"
+                class="layui-textarea"
+              ></textarea>
+            </div>
+            
+            <button type="submit" class="layui-btn layui-btn-normal">
+              <i class="fa-solid fa-save mr-2"></i>
+              保存修改
+            </button>
+          </form>
+        </div>
 
-  <!-- 未登录提示 -->
-  <v-container v-else-if="!isLoggedIn" fluid class="pa-4 fill-height">
-    <v-row justify="center" align="center" class="fill-height">
-      <v-col cols="12" sm="8" md="6" lg="4">
-        <v-card class="text-center pa-8" elevation="2">
-          <v-icon size="80" color="grey-lighten-1" class="mb-4">mdi-account-lock</v-icon>
-          <div class="text-h6 mb-4">登录后可查看个人中心</div>
-          <div class="text-body-2 text-medium-emphasis mb-6">
-            登录后您可以编辑个人资料、查看发布的文章、与其他人互动
+        <div class="articles-card">
+          <div class="card-header">
+            <i class="fa-solid fa-file-lines mr-2"></i>
+            {{ isOwnProfile ? '我的文章' : '他的文章' }}
           </div>
-          <div class="d-flex gap-2 justify-center">
-            <v-btn color="primary" to="/login" prepend-icon="mdi-login">
-              登录
-            </v-btn>
-            <v-btn variant="outlined" to="/register" prepend-icon="mdi-account-plus">
-              注册
-            </v-btn>
-          </div>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
 
-  <!-- 加载状态 -->
-  <div v-else class="d-flex justify-center align-center" style="min-height: 60vh;">
-    <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+          <div v-if="isOwnProfile" class="tabs">
+            <button 
+              class="tab-btn" 
+              :class="{ active: activeTab === 'published' }"
+              @click="activeTab = 'published'"
+            >
+              已发布 ({{ myArticles.length }})
+            </button>
+            <button 
+              class="tab-btn" 
+              :class="{ active: activeTab === 'drafts' }"
+              @click="activeTab = 'drafts'"
+            >
+              草稿 ({{ drafts.length }})
+            </button>
+          </div>
+
+          <div v-if="activeTab === 'published'" class="articles-list">
+            <div v-if="myArticles.length === 0" class="empty-state">
+              <i class="fa-regular fa-file-lines"></i>
+              <div>暂无文章</div>
+              <button class="layui-btn layui-btn-normal" @click="goToCreate">
+                <i class="fa-solid fa-pencil mr-2"></i>
+                写文章
+              </button>
+            </div>
+
+            <div v-else class="article-items">
+              <div v-for="article in myArticles" :key="article.id" class="article-item">
+                <div class="article-avatar">
+                  <UserAvatar :user="article.user" :size="50" />
+                </div>
+                <div class="article-info">
+                  <div class="article-title">
+                    <router-link :to="'/article/' + article.id">{{ article.title }}</router-link>
+                  </div>
+                  <div class="article-meta">
+                    <span class="meta-item">
+                      <i class="fa-regular fa-clock"></i>
+                      {{ formatDate(article.created_at) }}
+                    </span>
+                    <span class="meta-item">
+                      <i class="fa-solid fa-heart text-error"></i>
+                      {{ article.like_count }}
+                    </span>
+                    <span class="meta-item">
+                      <i class="fa-regular fa-eye"></i>
+                      {{ article.view_count }}
+                    </span>
+                    <span v-if="article.category" class="category-tag">{{ article.category.name }}</span>
+                  </div>
+                </div>
+                <div class="article-actions" v-if="isOwnProfile">
+                  <router-link :to="'/create?id=' + article.id" class="action-btn edit">
+                    <i class="fa-solid fa-pencil"></i>
+                  </router-link>
+                  <button class="action-btn delete" @click="deleteArticle(article.id)">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="activeTab === 'drafts'" class="articles-list">
+            <div v-if="drafts.length === 0" class="empty-state">
+              <i class="fa-regular fa-file-pen"></i>
+              <div>暂无草稿</div>
+              <button class="layui-btn layui-btn-normal" @click="goToCreate">
+                <i class="fa-solid fa-pencil mr-2"></i>
+                写文章
+              </button>
+            </div>
+
+            <div v-else class="article-items">
+              <div v-for="article in drafts" :key="article.id" class="article-item">
+                <div class="article-avatar">
+                  <i class="fa-regular fa-file-lines text-muted"></i>
+                </div>
+                <div class="article-info">
+                  <div class="article-title">{{ article.title }}</div>
+                  <div class="article-meta">
+                    <span class="meta-item">
+                      <i class="fa-regular fa-clock"></i>
+                      最后修改：{{ formatDate(article.updated_at) }}
+                    </span>
+                    <span v-if="article.category" class="category-tag">{{ article.category.name }}</span>
+                  </div>
+                </div>
+                <div class="article-actions">
+                  <router-link :to="'/create?id=' + article.id" class="action-btn edit">
+                    <i class="fa-solid fa-pencil"></i>
+                  </router-link>
+                  <button class="action-btn publish" @click="publishDraft(article.id)">
+                    <i class="fa-solid fa-paper-plane"></i>
+                  </button>
+                  <button class="action-btn delete" @click="deleteDraft(article.id)">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div v-else-if="!isLoggedIn" class="login-prompt">
+    <div class="prompt-card">
+      <i class="fa-solid fa-user-lock"></i>
+      <div class="prompt-title">登录后可查看个人中心</div>
+      <div class="prompt-desc">登录后您可以编辑个人资料、查看发布的文章、与其他人互动</div>
+      <div class="prompt-actions">
+        <router-link to="/login" class="layui-btn layui-btn-normal">
+          <i class="fa-solid fa-right-to-bracket mr-2"></i>
+          登录
+        </router-link>
+        <router-link to="/register" class="layui-btn layui-btn-primary">
+          <i class="fa-solid fa-user-plus mr-2"></i>
+          注册
+        </router-link>
+      </div>
+    </div>
+  </div>
+
+  <div v-else class="loading-state">
+    <div class="loading-spinner"></div>
   </div>
 </template>
 
@@ -361,9 +284,7 @@ export default {
         }
       } catch (error) {
         console.error('加载用户信息失败', error)
-        if (targetUserId.value) {
-          // 查看他人资料失败，保持加载状态
-        } else {
+        if (!targetUserId.value) {
           router.push('/')
         }
       }
@@ -397,7 +318,7 @@ export default {
           followStatus.value.mutual = false
         } else {
           await api.post('/friends/request', { user_id: user.value.id })
-          await showSuccess('已发送好友请求')
+          alert('已发送好友请求')
         }
       } catch (error) {
         console.error('好友操作失败', error)
@@ -558,6 +479,10 @@ export default {
       }
     }
 
+    const goToCreate = () => {
+      router.push('/create')
+    }
+
     const formatDate = (date) => {
       return new Date(date).toLocaleString('zh-CN')
     }
@@ -596,8 +521,419 @@ export default {
       followersCount,
       articleCount,
       isOwnProfile,
-      isLoggedIn
+      isLoggedIn,
+      goToCreate
     }
   }
 }
 </script>
+
+<style scoped>
+.profile-page {
+  padding: 24px 0;
+}
+
+.profile-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+  display: flex;
+  gap: 24px;
+}
+
+.profile-sidebar {
+  width: 360px;
+  flex-shrink: 0;
+}
+
+.profile-content {
+  flex: 1;
+}
+
+.user-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.user-avatar {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.user-info {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.user-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.user-username {
+  font-size: 14px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.admin-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #FF5722;
+  background: rgba(255, 87, 34, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.user-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-around;
+  padding: 16px 0;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 16px;
+}
+
+.stat-item {
+  text-align: center;
+  cursor: pointer;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #1E9FFF;
+  }
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #666;
+
+  i {
+    font-size: 14px;
+    color: #999;
+  }
+}
+
+.edit-card, .articles-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+}
+
+.card-header {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 12px 20px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+
+  &:hover {
+    color: #1E9FFF;
+  }
+
+  &.active {
+    color: #1E9FFF;
+    border-bottom-color: #1E9FFF;
+  }
+}
+
+.articles-list {
+  min-height: 200px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: #999;
+
+  i {
+    font-size: 64px;
+    margin-bottom: 16px;
+    color: #e8e8e8;
+  }
+
+  div {
+    font-size: 16px;
+    margin-bottom: 16px;
+    color: #666;
+  }
+}
+
+.article-items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.article-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #f0f0f0;
+  }
+}
+
+.article-avatar {
+  flex-shrink: 0;
+
+  i {
+    font-size: 32px;
+    color: #999;
+  }
+}
+
+.article-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.article-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+
+  a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+      color: #1E9FFF;
+    }
+  }
+}
+
+.article-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: #999;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.category-tag {
+  font-size: 12px;
+  color: #1E9FFF;
+  background: rgba(30, 159, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.article-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+
+  &.edit {
+    background: rgba(30, 159, 255, 0.1);
+    color: #1E9FFF;
+
+    &:hover {
+      background: rgba(30, 159, 255, 0.2);
+    }
+  }
+
+  &.publish {
+    background: rgba(82, 196, 26, 0.1);
+    color: #52C41A;
+
+    &:hover {
+      background: rgba(82, 196, 26, 0.2);
+    }
+  }
+
+  &.delete {
+    background: rgba(255, 87, 34, 0.1);
+    color: #FF5722;
+
+    &:hover {
+      background: rgba(255, 87, 34, 0.2);
+    }
+  }
+}
+
+.text-error {
+  color: #FF5722;
+}
+
+.text-muted {
+  color: #999;
+}
+
+.login-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 24px;
+}
+
+.prompt-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 48px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+}
+
+.prompt-card i {
+  font-size: 64px;
+  color: #e8e8e8;
+  margin-bottom: 16px;
+}
+
+.prompt-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.prompt-desc {
+  font-size: 14px;
+  color: #999;
+  margin-bottom: 24px;
+}
+
+.prompt-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f0f0f0;
+  border-top-color: #1E9FFF;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.w-full {
+  width: 100%;
+}
+
+.mr-2 {
+  margin-right: 8px;
+}
+
+@media (max-width: 768px) {
+  .profile-container {
+    flex-direction: column;
+  }
+
+  .profile-sidebar {
+    width: 100%;
+  }
+}
+</style>

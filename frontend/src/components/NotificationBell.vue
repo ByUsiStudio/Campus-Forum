@@ -1,83 +1,51 @@
 <template>
-  <v-menu
-    v-model="menuOpen"
-    :close-on-content-click="false"
-    location="bottom end"
-    max-width="400"
-  >
-    <template v-slot:activator="{ props }">
-      <v-btn
-        v-bind="props"
-        icon
-        variant="text"
-        class="notification-btn"
-      >
-        <v-badge
-          :content="unreadCount"
-          :model-value="unreadCount > 0"
-          color="error"
-          overlap
-        >
-          <v-icon>mdi-bell</v-icon>
-        </v-badge>
-      </v-btn>
-    </template>
+  <div class="notification-wrapper" @click="toggleMenu">
+    <button class="notification-btn">
+      <span class="badge" v-if="unreadCount > 0">{{ unreadCount }}</span>
+      <i class="fa-solid fa-bell"></i>
+    </button>
 
-    <v-card>
-      <v-card-title class="d-flex justify-space-between align-center pa-3">
-        <span class="text-subtitle-1">通知</span>
-        <v-btn
-          v-if="unreadCount > 0"
-          variant="text"
-          size="small"
-          color="primary"
-          @click="markAllRead"
-        >
+    <div v-if="menuOpen" class="notification-dropdown">
+      <div class="dropdown-header">
+        <span class="dropdown-title">通知</span>
+        <button v-if="unreadCount > 0" class="mark-all-btn" @click.stop="markAllRead">
           全部已读
-        </v-btn>
-      </v-card-title>
+        </button>
+      </div>
 
-      <v-divider></v-divider>
+      <div class="dropdown-divider"></div>
 
-      <v-list v-if="notifications.length > 0" lines="three" max-height="400" class="overflow-auto">
-        <v-list-item
+      <div v-if="notifications.length > 0" class="notification-list">
+        <div
           v-for="notification in notifications"
           :key="notification.id"
-          :class="{ 'bg-grey-lighten-4': !notification.is_read }"
-          @click="handleClick(notification)"
+          class="notification-item"
+          :class="{ 'is-unread': !notification.is_read }"
+          @click.stop="handleClick(notification)"
         >
-          <template v-slot:prepend>
-            <v-avatar :color="getTypeColor(notification.type)" size="32">
-              <v-icon size="small" color="white">{{ getTypeIcon(notification.type) }}</v-icon>
-            </v-avatar>
-          </template>
+          <div class="notification-icon" :style="{ background: getTypeColor(notification.type) + '20', color: getTypeColor(notification.type) }">
+            <i :class="getTypeIcon(notification.type)"></i>
+          </div>
+          <div class="notification-content">
+            <div class="notification-title">{{ notification.title }}</div>
+            <div class="notification-body">{{ notification.content }}</div>
+            <div class="notification-time">{{ formatDate(notification.created_at) }}</div>
+          </div>
+        </div>
+      </div>
 
-          <v-list-item-title class="font-weight-medium">
-            {{ notification.title }}
-          </v-list-item-title>
-          <v-list-item-subtitle class="text-caption">
-            {{ notification.content }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle class="text-caption text-medium-emphasis mt-1">
-            {{ formatDate(notification.created_at) }}
-          </v-list-item-subtitle>
-        </v-list-item>
-      </v-list>
+      <div v-else class="empty-state">
+        <i class="fa-solid fa-inbox"></i>
+        <div>暂无通知</div>
+      </div>
 
-      <v-card-text v-else class="text-center py-8 text-medium-emphasis">
-        暂无通知
-      </v-card-text>
+      <div class="dropdown-divider" v-if="notifications.length > 0"></div>
 
-      <v-divider v-if="notifications.length > 0"></v-divider>
-
-      <v-card-actions v-if="notifications.length > 0">
-        <v-spacer></v-spacer>
-        <v-btn variant="text" color="primary" @click="goToNotifications">
-          查看全部
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-menu>
+      <div v-if="notifications.length > 0" class="dropdown-footer">
+        <button class="view-all-btn" @click.stop="goToNotifications">查看全部</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -122,6 +90,7 @@ export default {
           console.error('标记已读失败', error)
         }
       }
+      menuOpen.value = false
     }
 
     const markAllRead = async () => {
@@ -139,24 +108,31 @@ export default {
       router.push('/notifications')
     }
 
+    const toggleMenu = () => {
+      menuOpen.value = !menuOpen.value
+      if (menuOpen.value) {
+        loadNotifications()
+      }
+    }
+
     const getTypeColor = (type) => {
       const colors = {
-        system: 'primary',
-        activity: 'success',
-        update: 'info',
-        warning: 'warning'
+        system: '#1E9FFF',
+        activity: '#52C41A',
+        update: '#13C2C2',
+        warning: '#FAAD14'
       }
-      return colors[type] || 'default'
+      return colors[type] || '#999'
     }
 
     const getTypeIcon = (type) => {
       const icons = {
-        system: 'mdi-information',
-        activity: 'mdi-calendar-star',
-        update: 'mdi-update',
-        warning: 'mdi-alert'
+        system: 'fa-solid fa-info-circle',
+        activity: 'fa-solid fa-calendar-star',
+        update: 'fa-solid fa-refresh',
+        warning: 'fa-solid fa-exclamation-triangle'
       }
-      return icons[type] || 'mdi-bell'
+      return icons[type] || 'fa-solid fa-bell'
     }
 
     const formatDate = (date) => {
@@ -174,6 +150,13 @@ export default {
       return d.toLocaleDateString('zh-CN')
     }
 
+    const handleClickOutside = (event) => {
+      const wrapper = document.querySelector('.notification-wrapper')
+      if (wrapper && !wrapper.contains(event.target)) {
+        menuOpen.value = false
+      }
+    }
+
     onMounted(() => {
       const token = localStorage.getItem('token')
       if (token) {
@@ -183,12 +166,14 @@ export default {
           loadUnreadCount()
         }, 60000)
       }
+      document.addEventListener('click', handleClickOutside)
     })
 
     onUnmounted(() => {
       if (pollInterval) {
         clearInterval(pollInterval)
       }
+      document.removeEventListener('click', handleClickOutside)
     })
 
     return {
@@ -198,6 +183,7 @@ export default {
       handleClick,
       markAllRead,
       goToNotifications,
+      toggleMenu,
       getTypeColor,
       getTypeIcon,
       formatDate
@@ -207,7 +193,177 @@ export default {
 </script>
 
 <style scoped>
+.notification-wrapper {
+  position: relative;
+}
+
 .notification-btn {
-  margin-left: 8px;
+  position: relative;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #666;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(30, 159, 255, 0.1);
+    color: #1E9FFF;
+  }
+}
+
+.badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #FF5722;
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 360px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.dropdown-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.mark-all-btn {
+  background: none;
+  border: none;
+  color: #1E9FFF;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+
+  &:hover {
+    background: rgba(30, 159, 255, 0.1);
+  }
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #f0f0f0;
+}
+
+.notification-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: #f8f9fa;
+  }
+
+  &.is-unread {
+    background: rgba(30, 159, 255, 0.04);
+  }
+}
+
+.notification-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.notification-body {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notification-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  color: #999;
+
+  i {
+    font-size: 32px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  div {
+    font-size: 14px;
+  }
+}
+
+.dropdown-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #f0f0f0;
+  text-align: right;
+}
+
+.view-all-btn {
+  background: none;
+  border: none;
+  color: #1E9FFF;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+
+  &:hover {
+    background: rgba(30, 159, 255, 0.1);
+  }
 }
 </style>

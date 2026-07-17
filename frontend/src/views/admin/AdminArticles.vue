@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="pa-6">
+  <div class="admin-articles">
     <ArticlesPanel
       :articles="articles"
       :loading="loading"
@@ -15,31 +15,45 @@
       @update:page="articlePage = $event; loadArticles()"
       @update:filter="articleFilter = $event; articlePage = 1; loadArticles()"
     />
-  </v-container>
 
-  <v-dialog v-model="statusDialog.show" max-width="480">
-    <v-card class="dialog-card">
-      <v-card-title class="dialog-title">
-        <v-icon class="title-icon">mdi-file-edit</v-icon>
-        修改文章状态
-      </v-card-title>
-      <v-card-text class="dialog-body">
-        <div class="article-preview">
-          <div class="preview-label">文章预览</div>
-          <div class="preview-title">{{ statusDialog.article?.title }}</div>
+    <div v-if="statusDialog.show" class="modal-overlay" @click.self="statusDialog.show = false">
+      <div class="modal-content">
+        <div class="layui-card">
+          <div class="layui-card-header d-flex align-center gap-3">
+            <i class="fa-solid fa-file-pen"></i>
+            <span>修改文章状态</span>
+          </div>
+          <div class="layui-card-body">
+            <div class="article-preview">
+              <div class="preview-label">文章预览</div>
+              <div class="preview-title">{{ statusDialog.article?.title }}</div>
+            </div>
+            <div class="status-radio-group mt-4">
+              <label :class="['radio-label', { active: statusDialog.status === 'pending' }]">
+                <input type="radio" v-model="statusDialog.status" value="pending" />
+                <i class="fa-solid fa-circle-dot"></i>
+                <span>待审核</span>
+              </label>
+              <label :class="['radio-label', { active: statusDialog.status === 'published' }]">
+                <input type="radio" v-model="statusDialog.status" value="published" />
+                <i class="fa-solid fa-circle-dot"></i>
+                <span>已发布</span>
+              </label>
+              <label :class="['radio-label', { active: statusDialog.status === 'rejected' }]">
+                <input type="radio" v-model="statusDialog.status" value="rejected" />
+                <i class="fa-solid fa-circle-dot"></i>
+                <span>已拒绝</span>
+              </label>
+            </div>
+          </div>
+          <div class="layui-card-footer d-flex justify-end gap-3">
+            <button class="layui-btn layui-btn-primary" @click="statusDialog.show = false">取消</button>
+            <button class="layui-btn" @click="handleEditStatus">确认修改</button>
+          </div>
         </div>
-        <v-radio-group v-model="statusDialog.status" class="mt-4">
-          <v-radio label="待审核" value="pending" color="warning"></v-radio>
-          <v-radio label="已发布" value="published" color="success"></v-radio>
-          <v-radio label="已拒绝" value="rejected" color="error"></v-radio>
-        </v-radio-group>
-      </v-card-text>
-      <v-card-actions class="dialog-actions">
-        <v-btn variant="text" @click="statusDialog.show = false">取消</v-btn>
-        <v-btn color="primary" variant="flat" @click="handleEditStatus">确认修改</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -151,36 +165,50 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.dialog-card {
-  border-radius: 20px !important;
+.admin-articles {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  width: 90%;
+  max-width: 480px;
+  background: white;
+  border-radius: 12px;
   overflow: hidden;
 }
 
-.dialog-title {
+.d-flex {
   display: flex;
+}
+
+.align-center {
   align-items: center;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.gap-3 {
   gap: 12px;
-  padding: 24px 24px 16px;
-  font-size: 1.2rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
 }
 
-.title-icon {
-  width: 40px;
-  height: 40px;
-  padding: 8px;
-  border-radius: 10px;
-  background: rgba(103, 80, 164, 0.1);
-}
-
-.dialog-body {
-  padding: 24px !important;
-}
-
-.dialog-actions {
-  padding: 16px 24px 24px;
-  gap: 12px;
+.mt-4 {
+  margin-top: 16px;
 }
 
 .article-preview {
@@ -199,5 +227,42 @@ onMounted(() => {
   font-size: 1rem;
   font-weight: 600;
   color: #1a1a2e;
+}
+
+.status-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 12px;
+  border-radius: 8px;
+  transition: background 0.3s;
+}
+
+.radio-label:hover {
+  background: #f5f5f5;
+}
+
+.radio-label.active {
+  background: #e6f7ff;
+}
+
+.radio-label input {
+  display: none;
+}
+
+.radio-label i {
+  font-size: 18px;
+  color: #ccc;
+}
+
+.radio-label.active i {
+  color: #1E9FFF;
 }
 </style>

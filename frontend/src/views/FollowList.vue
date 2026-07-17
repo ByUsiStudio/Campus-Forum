@@ -1,65 +1,72 @@
 <template>
   <div class="follow-list-page">
-    <v-card class="pa-6">
-      <div class="d-flex align-center mb-4">
-        <v-btn icon variant="text" @click="router.back()">
-          <v-icon>mdi-arrow-left</v-icon>
-        </v-btn>
-        <v-card-title class="pa-0">{{ pageTitle }}</v-card-title>
+    <div class="follow-card">
+      <div class="card-header">
+        <button class="back-btn" @click="router.back()">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <h2 class="page-title">{{ pageTitle }}</h2>
       </div>
 
-      <v-tabs v-model="tab" align-tabs="start" class="mb-4">
-        <v-tab value="following">关注 ({{ followingCount }})</v-tab>
-        <v-tab value="followers">粉丝 ({{ followersCount }})</v-tab>
-      </v-tabs>
-
-      <div v-if="loading" class="text-center pa-8">
-        <v-progress-circular indeterminate color="primary"></v-progress-circular>
+      <div class="tabs-container">
+        <button 
+          class="tab-btn" 
+          :class="{ active: tab === 'following' }"
+          @click="tab = 'following'"
+        >
+          关注 ({{ followingCount }})
+        </button>
+        <button 
+          class="tab-btn" 
+          :class="{ active: tab === 'followers' }"
+          @click="tab = 'followers'"
+        >
+          粉丝 ({{ followersCount }})
+        </button>
       </div>
 
-      <div v-else-if="currentList.length === 0" class="text-center pa-8 text-medium-emphasis">
+      <div v-if="loading" class="loading-state">
+        <div class="loading-spinner"></div>
+      </div>
+
+      <div v-else-if="currentList.length === 0" class="empty-state">
         暂无{{ tab === 'following' ? '关注' : '粉丝' }}
       </div>
 
-      <v-list v-else>
-        <v-list-item
-          v-for="userItem in currentList"
+      <div v-else class="follow-list">
+        <div 
+          v-for="userItem in currentList" 
           :key="userItem.id"
-          class="px-0"
+          class="follow-item"
         >
-          <template v-slot:prepend>
-            <UserAvatar :user="userItem" :size="50" />
-          </template>
+          <router-link :to="'/profile?id=' + userItem.id" class="avatar-link">
+            <div class="user-avatar">
+              <i class="fa-solid fa-user"></i>
+            </div>
+          </router-link>
 
-          <v-list-item-title class="font-weight-bold">
-            <router-link :to="'/profile?id=' + userItem.id" class="text-decoration-none">
-              {{ userItem.display_name || userItem.username }}
-            </router-link>
-          </v-list-item-title>
+          <div class="user-info">
+            <div class="user-name">
+              <router-link :to="'/profile?id=' + userItem.id">
+                {{ userItem.display_name || userItem.username }}
+              </router-link>
+              <span v-if="userItem.role === 'admin'" class="admin-tag">管理员</span>
+            </div>
+            <div class="user-username">@{{ userItem.username }}</div>
+            <div v-if="userItem.signature" class="user-signature">{{ userItem.signature }}</div>
+          </div>
 
-          <v-list-item-subtitle class="text-caption">
-            @{{ userItem.username }}
-            <span v-if="userItem.role === 'admin'" class="text-primary ml-1">管理员</span>
-          </v-list-item-subtitle>
-
-          <v-list-item-subtitle v-if="userItem.signature" class="text-truncate">
-            {{ userItem.signature }}
-          </v-list-item-subtitle>
-
-          <template v-slot:append>
-            <v-btn
-              v-if="!isOwnProfile && currentUser && currentUser.id !== userItem.id"
-              variant="outlined"
-              size="small"
-              :color="isFollowing(userItem.id) ? 'default' : 'primary'"
-              @click="handleFollowToggle(userItem)"
-            >
-              {{ isFollowing(userItem.id) ? '已关注' : '关注' }}
-            </v-btn>
-          </template>
-        </v-list-item>
-      </v-list>
-    </v-card>
+          <button
+            v-if="!isOwnProfile && currentUser && currentUser.id !== userItem.id"
+            class="follow-btn"
+            :class="{ followed: isFollowing(userItem.id) }"
+            @click="handleFollowToggle(userItem)"
+          >
+            {{ isFollowing(userItem.id) ? '已关注' : '关注' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -147,7 +154,6 @@ const handleFollowToggle = async (user) => {
       followingCount.value--
     } else {
       await api.post('/friends/request', { user_id: user.id })
-      await showSuccess('已发送好友请求')
     }
   } catch (error) {
     console.error('操作失败', error)
@@ -188,5 +194,209 @@ watch(() => [route.query.userId, route.query.id, route.query.tab], ([newUserId, 
   max-width: 800px;
   margin: 0 auto;
   padding: 16px;
+}
+
+.follow-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #333;
+  cursor: pointer;
+  margin-right: 16px;
+  padding: 8px;
+  border-radius: 6px;
+  
+  &:hover {
+    background: #f5f5f5;
+  }
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.tabs-container {
+  display: flex;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 16px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.3s ease;
+  
+  &.active {
+    color: var(--primary);
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 2px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+  }
+  
+  &:hover {
+    color: var(--primary);
+  }
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f0f0f0;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px;
+  color: #999;
+}
+
+.follow-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.follow-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.avatar-link {
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  
+  i {
+    font-size: 24px;
+  }
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+  
+  a {
+    color: #333;
+    text-decoration: none;
+    
+    &:hover {
+      color: var(--primary);
+    }
+  }
+}
+
+.admin-tag {
+  font-size: 11px;
+  color: white;
+  background: var(--primary);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.user-username {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 4px;
+}
+
+.user-signature {
+  font-size: 13px;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.follow-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--primary);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary);
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: rgba(30, 159, 255, 0.1);
+  }
+  
+  &.followed {
+    background: #f5f5f5;
+    border-color: #e8e8e8;
+    color: #666;
+  }
 }
 </style>

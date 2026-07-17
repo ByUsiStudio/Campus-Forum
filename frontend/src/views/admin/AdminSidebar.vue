@@ -1,89 +1,70 @@
 <template>
-  <v-container fluid class="pa-4 pa-md-6">
-    <!-- 添加新侧边栏项表单 -->
-    <v-card class="mb-4" variant="flat" rounded="lg">
-      <v-card-title class="pb-2">
-        <v-icon start size="20">mdi-plus-circle</v-icon>
-        添加新侧边栏项
-      </v-card-title>
-      <v-card-text>
-        <v-row dense>
-          <v-col cols="12" sm="5">
-            <v-text-field
+  <div class="admin-sidebar">
+    <div class="layui-card mb-4">
+      <div class="layui-card-header">
+        <i class="fa-solid fa-circle-plus"></i>
+        <span>添加新侧边栏项</span>
+      </div>
+      <div class="layui-card-body">
+        <div class="form-row">
+          <div class="form-item">
+            <input
               v-model="newItem.title"
-              label="标题"
+              type="text"
               placeholder="例如：联系我们"
-              variant="outlined"
-              density="compact"
-              hide-details
+              class="layui-input"
             />
-          </v-col>
-          <v-col cols="12" sm="5">
-            <v-text-field
+          </div>
+          <div class="form-item">
+            <input
               v-model="newItem.url"
-              label="链接地址"
+              type="text"
               placeholder="例如：https://example.com"
-              variant="outlined"
-              density="compact"
-              hide-details
+              class="layui-input"
             />
-          </v-col>
-          <v-col cols="12" sm="2">
-            <v-btn color="primary" block height="40" @click="addSidebarItem">
-              <v-icon start>mdi-plus</v-icon>
-              添加
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
-
-    <!-- 侧边栏项列表 -->
-    <v-card variant="flat" rounded="lg">
-      <v-card-title class="pb-2">
-        <v-icon start size="20">mdi-web</v-icon>
-        侧边栏配置
-      </v-card-title>
-      <v-list lines="two" v-if="sidebarItems.length > 0">
-        <v-list-item v-for="(item, index) in sidebarItems" :key="item.id || index" class="py-3">
-          <template v-slot:prepend>
-            <v-avatar size="48" color="primary" variant="tonal">
-              <v-icon>mdi-link</v-icon>
-            </v-avatar>
-          </template>
-
-          <v-list-item-title class="font-weight-medium mb-1">
-            {{ item.title }}
-          </v-list-item-title>
-
-          <v-list-item-subtitle>
-            {{ item.url }}
-          </v-list-item-subtitle>
-
-          <template v-slot:append>
-            <v-btn size="small" color="error" variant="text" @click="removeSidebarItem(index)">
-              <v-icon>mdi-delete</v-icon>
-              <v-tooltip activator="parent">删除</v-tooltip>
-            </v-btn>
-          </template>
-        </v-list-item>
-      </v-list>
-
-      <v-card-text v-else class="text-center py-8">
-        <v-icon size="48" color="grey-lighten-1">mdi-inbox</v-icon>
-        <div class="text-body-1 text-medium-emphasis mt-2">
-          暂无侧边栏项
+          </div>
+          <div class="form-item btn-item">
+            <button class="layui-btn" @click="addSidebarItem">
+              <i class="fa-solid fa-plus"></i>添加
+            </button>
+          </div>
         </div>
-      </v-card-text>
+      </div>
+    </div>
 
-      <v-card-actions class="pa-4" v-if="sidebarItems.length > 0">
-        <v-btn color="primary" variant="flat" @click="saveSidebarConfig" :loading="saving">
-          <v-icon start>mdi-check</v-icon>
-          保存配置
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-container>
+    <div class="layui-card">
+      <div class="layui-card-header">
+        <i class="fa-solid fa-globe"></i>
+        <span>侧边栏配置</span>
+      </div>
+
+      <div v-if="sidebarItems.length > 0" class="item-list">
+        <div v-for="(item, index) in sidebarItems" :key="item.id || index" class="item-row">
+          <div class="item-avatar">
+            <i class="fa-solid fa-link"></i>
+          </div>
+          <div class="item-content">
+            <div class="item-title">{{ item.title }}</div>
+            <div class="item-url">{{ item.url }}</div>
+          </div>
+          <button class="delete-btn" @click="removeSidebarItem(index)">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      </div>
+
+      <div v-else class="empty-state">
+        <i class="fa-solid fa-inbox"></i>
+        <div class="empty-text">暂无侧边栏项</div>
+      </div>
+
+      <div v-if="sidebarItems.length > 0" class="layui-card-footer">
+        <button class="layui-btn" @click="saveSidebarConfig" :disabled="saving">
+          <i class="fa-solid fa-check"></i>保存配置
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -147,3 +128,123 @@ onMounted(() => {
   loadSidebarConfig()
 })
 </script>
+
+<style scoped>
+.admin-sidebar {
+  padding: 20px;
+}
+
+.layui-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-item {
+  flex: 1;
+
+  &.btn-item {
+    flex: none;
+  }
+}
+
+.item-list {
+  padding: 8px 0;
+}
+
+.item-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.item-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(30, 159, 255, 0.1);
+  color: #1E9FFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.item-url {
+  font-size: 13px;
+  color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delete-btn {
+  padding: 6px;
+  background: transparent;
+  border: none;
+  color: #999;
+  font-size: 16px;
+  cursor: pointer;
+
+  &:hover {
+    color: #FF5722;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.empty-state i {
+  font-size: 48px;
+  color: #e0e0e0;
+  margin-bottom: 16px;
+}
+
+.empty-text {
+  font-size: 15px;
+  color: #999;
+}
+
+.layui-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 20px;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+  }
+}
+</style>

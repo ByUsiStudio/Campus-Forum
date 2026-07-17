@@ -1,76 +1,63 @@
 <template>
   <div>
-    <!-- 搜索栏 -->
-    <v-card class="mb-4 pa-3" variant="flat" rounded="lg">
-      <v-row dense align="center">
-        <v-col cols="12" sm="8">
-          <v-text-field
-            v-model="searchQuery"
-            placeholder="搜索用户..."
-            prepend-inner-icon="mdi-magnify"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-          />
-        </v-col>
-        <v-col cols="12" sm="4" class="text-end">
-          <v-btn variant="tonal" color="primary" @click="$emit('refresh')" :loading="loading" prepend-icon="mdi-refresh">
-            刷新
-          </v-btn>
-        </v-col>
-      </v-row>
-    </v-card>
+    <div class="layui-card mb-4">
+      <div class="layui-card-body d-flex flex-wrap gap-3">
+        <div class="search-box flex-1 min-w-[200px]">
+          <div class="layui-input-group">
+            <div class="layui-input-group-prepend">
+              <span class="layui-input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+            </div>
+            <input type="text" v-model="searchQuery" placeholder="搜索用户..." class="layui-input" />
+          </div>
+        </div>
+        <button class="layui-btn" @click="$emit('refresh')" :disabled="loading">
+          <i class="fa-solid fa-rotate-right"></i>
+          刷新
+        </button>
+      </div>
+    </div>
 
-    <!-- 用户列表 -->
-    <v-card variant="flat" rounded="lg">
-      <v-list lines="two" v-if="filteredUsers.length > 0">
-        <v-list-item v-for="user in filteredUsers" :key="user.id" class="py-3">
-          <template v-slot:prepend>
+    <div class="layui-card">
+      <div v-if="filteredUsers.length > 0" class="users-list">
+        <div v-for="user in filteredUsers" :key="user.id" class="user-item">
+          <div class="user-avatar-wrap">
             <UserAvatar :user="user" :size="48" />
-          </template>
+          </div>
 
-          <v-list-item-title class="font-weight-medium">
-            {{ user.display_name }}
-            <v-chip size="x-small" :color="getRoleColor(user.role)" variant="tonal" class="ml-2">
-              {{ getRoleText(user.role) }}
-            </v-chip>
-            <v-chip size="x-small" :color="user.status === 'banned' ? 'error' : 'success'" variant="tonal" class="ml-1">
-              {{ user.status === 'banned' ? '已封禁' : '正常' }}
-            </v-chip>
-          </v-list-item-title>
+          <div class="user-info">
+            <div class="user-name-wrap">
+              <span class="user-name font-weight-medium">{{ user.display_name }}</span>
+              <span :class="['role-tag', getRoleClass(user.role)]">{{ getRoleText(user.role) }}</span>
+              <span :class="['status-tag', user.status === 'banned' ? 'error' : 'success']">
+                {{ user.status === 'banned' ? '已封禁' : '正常' }}
+              </span>
+            </div>
+            <div class="user-meta">ID: {{ user.id }} | QQ: {{ user.qq_number || '-' }} | {{ formatDate(user.created_at) }}</div>
+          </div>
 
-          <v-list-item-subtitle>
-            ID: {{ user.id }} | QQ: {{ user.qq_number || '-' }} | {{ formatDate(user.created_at) }}
-          </v-list-item-subtitle>
+          <div class="user-actions">
+            <button v-if="canEditRole(user)" class="action-btn" @click="$emit('edit-role', user)" title="修改角色">
+              <i class="fa-solid fa-user-pen"></i>
+            </button>
+            <button v-if="canBanUser(user)" :class="['action-btn', user.status === 'banned' ? 'success' : 'warning']" 
+                    @click="$emit(user.status === 'banned' ? 'unban' : 'ban', user)" 
+                    :title="user.status === 'banned' ? '解封' : '封禁'">
+              <i :class="user.status === 'banned' ? 'fa-solid fa-lock-open' : 'fa-solid fa-lock'"></i>
+            </button>
+            <button v-if="canDeleteUser(user)" class="action-btn danger" @click="$emit('delete', user)" title="删除">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
 
-          <template v-slot:append>
-            <v-btn-group variant="text" density="compact" divided>
-              <v-btn size="small" color="primary" @click="$emit('edit-role', user)" v-if="canEditRole(user)">
-                <v-icon>mdi-account-edit</v-icon>
-                <v-tooltip activator="parent">修改角色</v-tooltip>
-              </v-btn>
-              <v-btn size="small" :color="user.status === 'banned' ? 'success' : 'warning'" 
-                     @click="$emit(user.status === 'banned' ? 'unban' : 'ban', user)" v-if="canBanUser(user)">
-                <v-icon>{{ user.status === 'banned' ? 'mdi-lock-open' : 'mdi-lock' }}</v-icon>
-                <v-tooltip activator="parent">{{ user.status === 'banned' ? '解封' : '封禁' }}</v-tooltip>
-              </v-btn>
-              <v-btn size="small" color="error" @click="$emit('delete', user)" v-if="canDeleteUser(user)">
-                <v-icon>mdi-delete</v-icon>
-                <v-tooltip activator="parent">删除</v-tooltip>
-              </v-btn>
-            </v-btn-group>
-          </template>
-        </v-list-item>
-      </v-list>
-
-      <v-card-text v-else class="text-center py-8">
-        <v-icon size="48" color="grey-lighten-1">mdi-account-search</v-icon>
+      <div v-else class="empty-state">
+        <i class="fa-solid fa-user-search" style="font-size: 48px; color: #ccc;"></i>
         <div class="text-body-1 text-medium-emphasis mt-2">
           {{ searchQuery ? '未找到匹配的用户' : '暂无用户数据' }}
         </div>
-      </v-card-text>
-    </v-card>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -102,8 +89,8 @@ export default {
     }
   },
   methods: {
-    getRoleColor(role) {
-      return { admin: 'error', system: 'warning', user: 'primary' }[role] || 'grey'
+    getRoleClass(role) {
+      return { admin: 'admin', system: 'system', user: 'user' }[role] || 'user'
     },
     getRoleText(role) {
       return { admin: '管理员', system: '系统管理员', user: '普通用户' }[role] || '用户'
@@ -133,3 +120,166 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.d-flex {
+  display: flex;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.gap-3 {
+  gap: 12px;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.min-w-\[200px\] {
+  min-width: 200px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.users-list {
+  padding: 0;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 12px;
+}
+
+.user-item:last-child {
+  border-bottom: none;
+}
+
+.user-avatar-wrap {
+  flex-shrink: 0;
+}
+
+.user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.user-name {
+  font-weight: 500;
+}
+
+.role-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.role-tag.admin {
+  background: #fff2f0;
+  color: #ff4d4f;
+}
+
+.role-tag.system {
+  background: #fffbe6;
+  color: #faad14;
+}
+
+.role-tag.user {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.status-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.status-tag.success {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.status-tag.error {
+  background: #fff2f0;
+  color: #ff4d4f;
+}
+
+.user-meta {
+  font-size: 13px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.user-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  transition: all 0.3s;
+}
+
+.action-btn:hover {
+  background: #f0f0f0;
+  color: #1E9FFF;
+}
+
+.action-btn.warning:hover {
+  color: #FAAD14;
+}
+
+.action-btn.success:hover {
+  color: #52C41A;
+}
+
+.action-btn.danger:hover {
+  background: #fff2f0;
+  color: #FF5722;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px;
+}
+
+.text-body-1 {
+  font-size: 16px;
+}
+
+.text-medium-emphasis {
+  color: #999;
+}
+
+.font-weight-medium {
+  font-weight: 500;
+}
+
+.mt-2 {
+  margin-top: 8px;
+}
+</style>

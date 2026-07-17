@@ -1,55 +1,36 @@
 <template>
-  <v-container fluid class="pa-4 pa-md-6">
-    <!-- 公告编辑表单 -->
-    <v-card variant="flat" rounded="lg">
-      <v-card-title class="pb-2">
-        <v-icon start size="20">mdi-bullhorn</v-icon>
-        公告管理
-      </v-card-title>
-
-      <v-card-text>
-        <v-form ref="announcementForm" v-model="formValid">
-          <v-textarea
-            v-model="announcementContent"
-            label="公告内容"
-            placeholder="请输入公告内容..."
-            variant="outlined"
-            density="compact"
-            :rules="[rules.required]"
-            prepend-inner-icon="mdi-text"
-            rows="5"
-            counter
-            :maxlength="500"
-            class="mb-4"
-          />
-
-          <v-alert
-            v-if="announcementContent"
-            type="info"
-            variant="tonal"
-            density="compact"
-            class="mb-4"
-            icon="mdi-information"
-          >
-            公告将显示在网站首页顶部，内容过长可能会影响显示效果。
-          </v-alert>
-        </v-form>
-      </v-card-text>
-
-      <v-card-actions class="pa-4">
-        <v-btn
-          color="primary"
-          variant="flat"
+  <div class="admin-announcement">
+    <div class="layui-card">
+      <div class="layui-card-header">
+        <i class="fa-solid fa-bullhorn"></i>
+        <span>公告管理</span>
+      </div>
+      <div class="layui-card-body">
+        <textarea
+          v-model="announcementContent"
+          placeholder="请输入公告内容..."
+          class="layui-textarea"
+          rows="5"
+          maxlength="500"
+        ></textarea>
+        <span class="char-count">{{ announcementContent.length }}/500</span>
+        
+        <div v-if="announcementContent" class="info-alert">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>公告将显示在网站首页顶部，内容过长可能会影响显示效果。</span>
+        </div>
+      </div>
+      <div class="layui-card-footer">
+        <button
+          class="layui-btn"
           @click="saveAnnouncement"
-          :loading="saving"
-          :disabled="!formValid"
+          :disabled="saving || !announcementContent.trim()"
         >
-          <v-icon start>mdi-content-save</v-icon>
-          保存公告
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-container>
+          <i class="fa-solid fa-floppy-disk"></i>保存公告
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -58,13 +39,7 @@ import { adminAnnouncementApi } from '../../api/admin'
 import { success, error } from '../../utils/modal'
 
 const announcementContent = ref('')
-const announcementForm = ref(null)
-const formValid = ref(false)
 const saving = ref(false)
-
-const rules = {
-  required: v => !!v || '此字段为必填项'
-}
 
 const loadAnnouncement = async () => {
   try {
@@ -93,3 +68,43 @@ onMounted(() => {
   loadAnnouncement()
 })
 </script>
+
+<style scoped>
+.admin-announcement {
+  padding: 20px;
+}
+
+.layui-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.info-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(30, 159, 255, 0.1);
+  color: #1E9FFF;
+  border-radius: 6px;
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.char-count {
+  display: block;
+  text-align: right;
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.layui-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 20px;
+}
+</style>

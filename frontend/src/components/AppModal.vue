@@ -1,67 +1,52 @@
 <template>
-  <v-dialog
-    :model-value="show"
-    @update:model-value="$emit('update:show', $event)"
-    :max-width="maxWidth"
-    :persistent="persistent"
-    scrollable
-  >
-    <v-card>
-      <!-- 头部 -->
-      <v-card-title class="d-flex align-center gap-3">
-        <v-icon
-          :color="iconColor"
-          :size="iconSize"
-        >
-          {{ icon }}
-        </v-icon>
-        <span class="text-h6">{{ title }}</span>
-      </v-card-title>
-      
-      <v-divider></v-divider>
-      
-      <!-- 内容 -->
-      <v-card-text class="pa-4">
-        <div v-if="type === 'prompt'" class="prompt-content">
-          <span>{{ message }}</span>
-          <v-text-field
-            v-model="internalValue"
-            :label="inputLabel || '输入内容'"
-            :type="inputType || 'text'"
-            :placeholder="inputPlaceholder"
-            :rows="inputRows || 1"
-            class="mt-4"
-            ref="inputRef"
-            @keydown.enter="handleConfirm"
-          ></v-text-field>
+  <div v-if="show" class="modal-overlay" @click.self="handleCancel">
+    <div class="modal-content animate-scale-in" :style="{ maxWidth: maxWidth }">
+      <div class="layui-card">
+        <div class="layui-card-header d-flex align-center gap-3">
+          <i :class="getIconClass(icon)" :style="{ color: getIconColor(iconColor), fontSize: iconSize + 'px' }"></i>
+          <span style="font-size: 18px; font-weight: 600;">{{ title }}</span>
         </div>
-        <div v-else>
-          <span>{{ message }}</span>
+        
+        <hr class="layui-bg-gray" />
+        
+        <div class="layui-card-body">
+          <div v-if="type === 'prompt'" class="prompt-content">
+            <span>{{ message }}</span>
+            <input
+              v-model="internalValue"
+              :type="inputType || 'text'"
+              :placeholder="inputPlaceholder || (inputLabel || '输入内容')"
+              class="layui-input mt-4"
+              ref="inputRef"
+              @keydown.enter="handleConfirm"
+            />
+          </div>
+          <div v-else>
+            <span>{{ message }}</span>
+          </div>
         </div>
-      </v-card-text>
-      
-      <v-divider></v-divider>
-      
-      <!-- 底部按钮 -->
-      <v-card-actions class="justify-end gap-3 pa-4">
-        <v-btn
-          v-if="showCancel"
-          variant="outlined"
-          color="secondary"
-          @click="handleCancel"
-        >
-          {{ cancelText || '取消' }}
-        </v-btn>
-        <v-btn
-          :color="confirmColor"
-          :variant="confirmVariant"
-          @click="handleConfirm"
-        >
-          {{ confirmText || '确定' }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        
+        <hr class="layui-bg-gray" />
+        
+        <div class="layui-card-footer d-flex justify-end gap-3">
+          <button
+            v-if="showCancel"
+            class="layui-btn layui-btn-primary"
+            @click="handleCancel"
+          >
+            {{ cancelText || '取消' }}
+          </button>
+          <button
+            class="layui-btn"
+            :class="confirmVariant === 'outline' ? 'layui-btn-primary' : ''"
+            @click="handleConfirm"
+          >
+            {{ confirmText || '确定' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -76,7 +61,7 @@ export default {
     },
     type: {
       type: String,
-      default: 'alert', // alert, confirm, prompt
+      default: 'alert',
       validator: (value) => ['alert', 'confirm', 'prompt'].includes(value)
     },
     title: {
@@ -123,7 +108,6 @@ export default {
       type: Boolean,
       default: false
     },
-    // Prompt specific props
     inputValue: {
       type: String,
       default: ''
@@ -154,6 +138,774 @@ export default {
       return props.type === 'confirm' || props.type === 'prompt'
     })
     
+    const mdiToFa = {
+      'mdi-alert-circle': 'fa-solid fa-circle-exclamation',
+      'mdi-check-circle': 'fa-solid fa-circle-check',
+      'mdi-info': 'fa-solid fa-circle-info',
+      'mdi-warning': 'fa-solid fa-triangle-exclamation',
+      'mdi-help-circle': 'fa-solid fa-circle-question',
+      'mdi-close': 'fa-solid fa-xmark',
+      'mdi-plus': 'fa-solid fa-plus',
+      'mdi-edit': 'fa-solid fa-pencil',
+      'mdi-delete': 'fa-solid fa-trash',
+      'mdi-settings': 'fa-solid fa-gear',
+      'mdi-user': 'fa-solid fa-user',
+      'mdi-home': 'fa-solid fa-house',
+      'mdi-bell': 'fa-solid fa-bell',
+      'mdi-search': 'fa-solid fa-search',
+      'mdi-mail': 'fa-solid fa-envelope',
+      'mdi-lock': 'fa-solid fa-lock',
+      'mdi-unlock': 'fa-solid fa-unlock',
+      'mdi-download': 'fa-solid fa-download',
+      'mdi-upload': 'fa-solid fa-upload',
+      'mdi-save': 'fa-solid fa-floppy-disk',
+      'mdi-eye': 'fa-solid fa-eye',
+      'mdi-eye-off': 'fa-solid fa-eye-slash',
+      'mdi-share': 'fa-solid fa-share-nodes',
+      'mdi-heart': 'fa-solid fa-heart',
+      'mdi-star': 'fa-solid fa-star',
+      'mdi-star-outline': 'fa-regular fa-star',
+      'mdi-check': 'fa-solid fa-check',
+      'mdi-x': 'fa-solid fa-xmark',
+      'mdi-arrow-left': 'fa-solid fa-arrow-left',
+      'mdi-arrow-right': 'fa-solid fa-arrow-right',
+      'mdi-arrow-up': 'fa-solid fa-arrow-up',
+      'mdi-arrow-down': 'fa-solid fa-arrow-down',
+      'mdi-chevron-left': 'fa-solid fa-chevron-left',
+      'mdi-chevron-right': 'fa-solid fa-chevron-right',
+      'mdi-menu': 'fa-solid fa-bars',
+      'mdi-logout': 'fa-solid fa-right-from-bracket',
+      'mdi-calendar': 'fa-solid fa-calendar',
+      'mdi-clock': 'fa-solid fa-clock',
+      'mdi-image': 'fa-solid fa-image',
+      'mdi-video': 'fa-solid fa-video',
+      'mdi-file': 'fa-solid fa-file',
+      'mdi-file-text': 'fa-solid fa-file-lines',
+      'mdi-folder': 'fa-solid fa-folder',
+      'mdi-link': 'fa-solid fa-link',
+      'mdi-tag': 'fa-solid fa-tag',
+      'mdi-filter': 'fa-solid fa-filter',
+      'mdi-sort': 'fa-solid fa-arrow-down-wide-short',
+      'mdi-refresh': 'fa-solid fa-rotate-right',
+      'mdi-play': 'fa-solid fa-play',
+      'mdi-pause': 'fa-solid fa-pause',
+      'mdi-volume-high': 'fa-solid fa-volume-high',
+      'mdi-volume-mute': 'fa-solid fa-volume-xmark',
+      'mdi-fullscreen': 'fa-solid fa-expand',
+      'mdi-list': 'fa-solid fa-list',
+      'mdi-grid': 'fa-solid fa-grid-3x3',
+      'mdi-chart-bar': 'fa-solid fa-chart-bar',
+      'mdi-chart-line': 'fa-solid fa-chart-line',
+      'mdi-chart-pie': 'fa-solid fa-chart-pie',
+      'mdi-wallet': 'fa-solid fa-wallet',
+      'mdi-coins': 'fa-solid fa-coins',
+      'mdi-gift': 'fa-solid fa-gift',
+      'mdi-trophy': 'fa-solid fa-trophy',
+      'mdi-award': 'fa-solid fa-award',
+      'mdi-medal': 'fa-solid fa-medal',
+      'mdi-crown': 'fa-solid fa-crown',
+      'mdi-shield': 'fa-solid fa-shield',
+      'mdi-shield-check': 'fa-solid fa-shield-check',
+      'mdi-shield-alert': 'fa-solid fa-shield-exclamation',
+      'mdi-lock-open': 'fa-solid fa-lock-open',
+      'mdi-key': 'fa-solid fa-key',
+      'mdi-comment': 'fa-solid fa-comment',
+      'mdi-comment-outline': 'fa-regular fa-comment',
+      'mdi-heart-outline': 'fa-regular fa-heart',
+      'mdi-account': 'fa-solid fa-user',
+      'mdi-account-circle': 'fa-solid fa-user-circle',
+      'mdi-account-outline': 'fa-regular fa-user',
+      'mdi-account-group': 'fa-solid fa-users',
+      'mdi-book': 'fa-solid fa-book',
+      'mdi-book-open': 'fa-solid fa-book-open',
+      'mdi-graduation-cap': 'fa-solid fa-graduation-cap',
+      'mdi-pencil': 'fa-solid fa-pencil',
+      'mdi-format-bold': 'fa-solid fa-bold',
+      'mdi-format-italic': 'fa-solid fa-italic',
+      'mdi-format-underline': 'fa-solid fa-underline',
+      'mdi-format-strikethrough': 'fa-solid fa-strikethrough',
+      'mdi-format-list-bulleted': 'fa-solid fa-list',
+      'mdi-format-list-numbered': 'fa-solid fa-list-ol',
+      'mdi-format-quote': 'fa-solid fa-quote-right',
+      'mdi-format-code': 'fa-solid fa-code',
+      'mdi-align-left': 'fa-solid fa-align-left',
+      'mdi-align-center': 'fa-solid fa-align-center',
+      'mdi-align-right': 'fa-solid fa-align-right',
+      'mdi-align-justify': 'fa-solid fa-align-justify',
+      'mdi-github': 'fa-brands fa-github',
+      'mdi-globe': 'fa-solid fa-globe',
+      'mdi-external-link': 'fa-solid fa-arrow-up-right-from-square',
+      'mdi-undo': 'fa-solid fa-rotate-left',
+      'mdi-redo': 'fa-solid fa-rotate-right',
+      'mdi-archive': 'fa-solid fa-archive',
+      'mdi-history': 'fa-solid fa-history',
+      'mdi-cloud': 'fa-solid fa-cloud',
+      'mdi-database': 'fa-solid fa-database',
+      'mdi-server': 'fa-solid fa-server',
+      'mdi-wifi': 'fa-solid fa-wifi',
+      'mdi-camera': 'fa-solid fa-camera',
+      'mdi-microphone': 'fa-solid fa-microphone',
+      'mdi-headphones': 'fa-solid fa-headphones',
+      'mdi-flask': 'fa-solid fa-flask-vial',
+      'mdi-atom': 'fa-solid fa-atom',
+      'mdi-robot': 'fa-solid fa-robot',
+      'mdi-tune': 'fa-solid fa-sliders',
+      'mdi-magnify': 'fa-solid fa-magnifying-glass',
+      'mdi-crop': 'fa-solid fa-crop',
+      'mdi-zoom-in': 'fa-solid fa-magnifying-glass-plus',
+      'mdi-zoom-out': 'fa-solid fa-magnifying-glass-minus',
+      'mdi-copy': 'fa-solid fa-copy',
+      'mdi-cut': 'fa-solid fa-cut',
+      'mdi-paste': 'fa-solid fa-paste',
+      'mdi-clipboard': 'fa-solid fa-clipboard',
+      'mdi-send': 'fa-solid fa-paper-plane',
+      'mdi-reply': 'fa-solid fa-reply',
+      'mdi-reply-all': 'fa-solid fa-reply-all',
+      'mdi-trash-can': 'fa-solid fa-trash',
+      'mdi-flag': 'fa-solid fa-flag',
+      'mdi-bookmark': 'fa-solid fa-bookmark',
+      'mdi-bookmark-outline': 'fa-regular fa-bookmark',
+      'mdi-bell-ring': 'fa-solid fa-bell',
+      'mdi-bell-off': 'fa-solid fa-bell-slash',
+      'mdi-rss': 'fa-solid fa-rss',
+      'mdi-lightbulb': 'fa-solid fa-lightbulb',
+      'mdi-lightbulb-outline': 'fa-regular fa-lightbulb',
+      'mdi-sun': 'fa-solid fa-sun',
+      'mdi-moon': 'fa-solid fa-moon',
+      'mdi-cloud-sun': 'fa-solid fa-cloud-sun',
+      'mdi-cloud-rain': 'fa-solid fa-cloud-rain',
+      'mdi-cloud-lightning': 'fa-solid fa-cloud-bolt',
+      'mdi-snowflake': 'fa-solid fa-snowflake',
+      'mdi-wind': 'fa-solid fa-wind',
+      'mdi-droplet': 'fa-solid fa-droplet',
+      'mdi-fire': 'fa-solid fa-flame',
+      'mdi-tree': 'fa-solid fa-tree',
+      'mdi-leaf': 'fa-solid fa-leaf',
+      'mdi-mountain': 'fa-solid fa-mountain',
+      'mdi-earth': 'fa-solid fa-globe',
+      'mdi-map': 'fa-solid fa-map',
+      'mdi-map-marker': 'fa-solid fa-map-pin',
+      'mdi-navigation': 'fa-solid fa-compass',
+      'mdi-target': 'fa-solid fa-target',
+      'mdi-crosshair': 'fa-solid fa-crosshair',
+      'mdi-circle-dot': 'fa-solid fa-circle-dot',
+      'mdi-circle-outline': 'fa-regular fa-circle',
+      'mdi-square': 'fa-solid fa-square',
+      'mdi-square-outline': 'fa-regular fa-square',
+      'mdi-triangle': 'fa-solid fa-triangle',
+      'mdi-diamond': 'fa-solid fa-diamond',
+      'mdi-hexagon': 'fa-solid fa-hexagon',
+      'mdi-hexagon-outline': 'fa-regular fa-hexagon',
+      'mdi-play-circle': 'fa-solid fa-circle-play',
+      'mdi-pause-circle': 'fa-solid fa-circle-pause',
+      'mdi-stop-circle': 'fa-solid fa-circle-stop',
+      'mdi-skip-next': 'fa-solid fa-forward-step',
+      'mdi-skip-previous': 'fa-solid fa-backward-step',
+      'mdi-fast-forward': 'fa-solid fa-fast-forward',
+      'mdi-fast-rewind': 'fa-solid fa-fast-backward',
+      'mdi-shuffle': 'fa-solid fa-shuffle',
+      'mdi-repeat': 'fa-solid fa-repeat',
+      'mdi-volume-1': 'fa-solid fa-volume-low',
+      'mdi-volume-2': 'fa-solid fa-volume-high',
+      'mdi-subtitles': 'fa-solid fa-closed-captioning',
+      'mdi-aspect-ratio': 'fa-solid fa-square',
+      'mdi-rotate-ccw': 'fa-solid fa-rotate-left',
+      'mdi-rotate-cw': 'fa-solid fa-rotate-right',
+      'mdi-flip-horizontal': 'fa-solid fa-rotate-horizontal',
+      'mdi-flip-vertical': 'fa-solid fa-rotate-vertical',
+      'mdi-chevron-up': 'fa-solid fa-chevron-up',
+      'mdi-chevron-down': 'fa-solid fa-chevron-down',
+      'mdi-dots-horizontal': 'fa-solid fa-ellipsis-horizontal',
+      'mdi-dots-vertical': 'fa-solid fa-ellipsis-vertical',
+      'mdi-minus-circle': 'fa-solid fa-circle-minus',
+      'mdi-plus-circle': 'fa-solid fa-circle-plus',
+      'mdi-close-circle': 'fa-solid fa-circle-xmark',
+      'mdi-alert-circle-outline': 'fa-regular fa-circle-exclamation',
+      'mdi-info-circle': 'fa-solid fa-circle-info',
+      'mdi-help-circle-outline': 'fa-regular fa-circle-question',
+      'mdi-lock-circle': 'fa-solid fa-lock',
+      'mdi-pencil-circle': 'fa-solid fa-pen-to-square',
+      'mdi-download-circle': 'fa-solid fa-download',
+      'mdi-upload-circle': 'fa-solid fa-upload',
+      'mdi-share-circle': 'fa-solid fa-share-nodes',
+      'mdi-star-circle': 'fa-solid fa-star',
+      'mdi-heart-circle': 'fa-solid fa-heart',
+      'mdi-bookmark-circle': 'fa-solid fa-bookmark',
+      'mdi-calendar-circle': 'fa-solid fa-calendar',
+      'mdi-clock-circle': 'fa-solid fa-clock',
+      'mdi-bell-circle': 'fa-solid fa-bell',
+      'mdi-mail-circle': 'fa-solid fa-envelope',
+      'mdi-phone-circle': 'fa-solid fa-phone',
+      'mdi-map-marker-circle': 'fa-solid fa-map-pin',
+      'mdi-globe-circle': 'fa-solid fa-globe',
+      'mdi-camera-circle': 'fa-solid fa-camera',
+      'mdi-image-circle': 'fa-solid fa-image',
+      'mdi-video-circle': 'fa-solid fa-video',
+      'mdi-file-circle': 'fa-solid fa-file',
+      'mdi-folder-circle': 'fa-solid fa-folder',
+      'mdi-link-circle': 'fa-solid fa-link',
+      'mdi-tag-circle': 'fa-solid fa-tag',
+      'mdi-chart-circle': 'fa-solid fa-chart-pie',
+      'mdi-trending-circle': 'fa-solid fa-trending-up',
+      'mdi-wallet-circle': 'fa-solid fa-wallet',
+      'mdi-coins-circle': 'fa-solid fa-coins',
+      'mdi-gift-circle': 'fa-solid fa-gift',
+      'mdi-trophy-circle': 'fa-solid fa-trophy',
+      'mdi-award-circle': 'fa-solid fa-award',
+      'mdi-medal-circle': 'fa-solid fa-medal',
+      'mdi-crown-circle': 'fa-solid fa-crown',
+      'mdi-shield-circle': 'fa-solid fa-shield',
+      'mdi-key-circle': 'fa-solid fa-key',
+      'mdi-eye-circle': 'fa-solid fa-eye',
+      'mdi-face-circle': 'fa-solid fa-face-smile',
+      'mdi-account-circle-off': 'fa-solid fa-user-xmark',
+      'mdi-account-check-circle': 'fa-solid fa-user-check',
+      'mdi-account-alert-circle': 'fa-solid fa-user-exclamation',
+      'mdi-account-edit-circle': 'fa-solid fa-user-pen',
+      'mdi-account-plus-circle': 'fa-solid fa-user-plus',
+      'mdi-account-minus-circle': 'fa-solid fa-user-minus',
+      'mdi-account-multiple-circle': 'fa-solid fa-users',
+      'mdi-account-group-circle': 'fa-solid fa-users',
+      'mdi-account-settings-circle': 'fa-solid fa-user-gear',
+      'mdi-account-search-circle': 'fa-solid fa-user-search',
+      'mdi-account-off': 'fa-solid fa-user-xmark',
+      'mdi-account-check': 'fa-solid fa-user-check',
+      'mdi-account-alert': 'fa-solid fa-user-exclamation',
+      'mdi-account-edit': 'fa-solid fa-user-pen',
+      'mdi-account-plus': 'fa-solid fa-user-plus',
+      'mdi-account-minus': 'fa-solid fa-user-minus',
+      'mdi-account-multiple': 'fa-solid fa-users',
+      'mdi-log-in': 'fa-solid fa-right-to-bracket',
+      'mdi-log-out': 'fa-solid fa-right-from-bracket',
+      'mdi-login': 'fa-solid fa-right-to-bracket',
+      'mdi-apps': 'fa-solid fa-grid-3x3',
+      'mdi-list-box': 'fa-solid fa-list-checks',
+      'mdi-list-checks': 'fa-solid fa-list-checks',
+      'mdi-list-ordered': 'fa-solid fa-list-ol',
+      'mdi-list-unordered': 'fa-solid fa-list',
+      'mdi-tree': 'fa-solid fa-folder-tree',
+      'mdi-view-dashboard': 'fa-solid fa-gauge',
+      'mdi-view-list': 'fa-solid fa-list',
+      'mdi-view-grid': 'fa-solid fa-grid-3x3',
+      'mdi-view-agenda': 'fa-solid fa-calendar-days',
+      'mdi-view-carousel': 'fa-solid fa-images',
+      'mdi-view-column': 'fa-solid fa-columns',
+      'mdi-view-fullscreen': 'fa-solid fa-expand',
+      'mdi-gesture': 'fa-solid fa-hand',
+      'mdi-mouse-variant': 'fa-solid fa-computer-mouse',
+      'mdi-pointer': 'fa-solid fa-hand-pointer',
+      'mdi-move': 'fa-solid fa-arrows-up-down-left-right',
+      'mdi-resize': 'fa-solid fa-maximize',
+      'mdi-grip': 'fa-solid fa-grip-horizontal',
+      'mdi-grip-horizontal': 'fa-solid fa-grip-horizontal',
+      'mdi-grip-vertical': 'fa-solid fa-grip-vertical',
+      'mdi-grab': 'fa-solid fa-hand',
+      'mdi-grabbing': 'fa-solid fa-hand',
+      'mdi-clipboard-list': 'fa-solid fa-clipboard-list',
+      'mdi-clipboard-check': 'fa-solid fa-clipboard-check',
+      'mdi-clipboard-edit': 'fa-solid fa-clipboard-pen',
+      'mdi-todo': 'fa-solid fa-list-checks',
+      'mdi-checkbox-marked': 'fa-solid fa-check-square',
+      'mdi-checkbox-blank': 'fa-solid fa-square',
+      'mdi-check-all': 'fa-solid fa-square-check',
+      'mdi-check-square': 'fa-solid fa-check-square',
+      'mdi-check-square-outline': 'fa-regular fa-check-square',
+      'mdi-check-bold': 'fa-solid fa-check',
+      'mdi-close-bold': 'fa-solid fa-xmark',
+      'mdi-minus': 'fa-solid fa-minus',
+      'mdi-minus-bold': 'fa-solid fa-minus',
+      'mdi-minus-square': 'fa-solid fa-square-minus',
+      'mdi-plus-bold': 'fa-solid fa-plus',
+      'mdi-plus-square': 'fa-solid fa-square-plus',
+      'mdi-chevron-left-circle': 'fa-solid fa-circle-chevron-left',
+      'mdi-chevron-right-circle': 'fa-solid fa-circle-chevron-right',
+      'mdi-chevron-up-circle': 'fa-solid fa-circle-chevron-up',
+      'mdi-chevron-down-circle': 'fa-solid fa-circle-chevron-down',
+      'mdi-expand-horizontal': 'fa-solid fa-expand',
+      'mdi-expand-vertical': 'fa-solid fa-expand',
+      'mdi-collapse-horizontal': 'fa-solid fa-compress',
+      'mdi-collapse-vertical': 'fa-solid fa-compress',
+      'mdi-more-horizontal': 'fa-solid fa-ellipsis-horizontal',
+      'mdi-more-vertical': 'fa-solid fa-ellipsis-vertical',
+      'mdi-more-circle': 'fa-solid fa-circle-ellipsis-horizontal',
+      'mdi-check-circle-outline': 'fa-regular fa-circle-check',
+      'mdi-close-circle-outline': 'fa-regular fa-circle-xmark',
+      'mdi-alert-triangle': 'fa-solid fa-triangle-exclamation',
+      'mdi-alert-octagon': 'fa-solid fa-octagon-exclamation',
+      'mdi-bell-outline': 'fa-regular fa-bell',
+      'mdi-message': 'fa-solid fa-message',
+      'mdi-message-outline': 'fa-regular fa-message',
+      'mdi-forum': 'fa-solid fa-comments',
+      'mdi-face': 'fa-solid fa-face-smile',
+      'mdi-eye-circle': 'fa-solid fa-eye',
+      'mdi-book-open': 'fa-solid fa-book-open',
+      'mdi-library': 'fa-solid fa-book-bookmark',
+      'mdi-school': 'fa-solid fa-school',
+      'mdi-pencil-box': 'fa-solid fa-pencil',
+      'mdi-edit-outline': 'fa-solid fa-pencil',
+      'mdi-format': 'fa-solid fa-font',
+      'mdi-format-color-text': 'fa-solid fa-type',
+      'mdi-format-color-fill': 'fa-solid fa-palette',
+      'mdi-format-size': 'fa-solid fa-text-height',
+      'mdi-border-all': 'fa-solid fa-table',
+      'mdi-border-none': 'fa-solid fa-border-none',
+      'mdi-border-left': 'fa-solid fa-border-left',
+      'mdi-border-right': 'fa-solid fa-border-right',
+      'mdi-border-top': 'fa-solid fa-border-top',
+      'mdi-border-bottom': 'fa-solid fa-border-bottom',
+      'mdi-horizontal-rule': 'fa-solid fa-minus',
+      'mdi-link-variant': 'fa-solid fa-link',
+      'mdi-image-outline': 'fa-solid fa-image',
+      'mdi-image-plus': 'fa-solid fa-image-plus',
+      'mdi-image-off': 'fa-solid fa-image-xmark',
+      'mdi-video-outline': 'fa-solid fa-video',
+      'mdi-youtube': 'fa-brands fa-youtube',
+      'mdi-twitter': 'fa-brands fa-twitter',
+      'mdi-facebook': 'fa-brands fa-facebook',
+      'mdi-instagram': 'fa-brands fa-instagram',
+      'mdi-discord': 'fa-brands fa-discord',
+      'mdi-telegram': 'fa-brands fa-telegram',
+      'mdi-qqchat': 'fa-brands fa-qq',
+      'mdi-wechat': 'fa-brands fa-weixin',
+      'mdi-whatsapp': 'fa-brands fa-whatsapp',
+      'mdi-phone': 'fa-solid fa-phone',
+      'mdi-website': 'fa-solid fa-globe',
+      'mdi-refresh-circle': 'fa-solid fa-rotate-right',
+      'mdi-reload': 'fa-solid fa-rotate-right',
+      'mdi-delete-forever': 'fa-solid fa-trash',
+      'mdi-delete-sweep': 'fa-solid fa-trash',
+      'mdi-restore': 'fa-solid fa-rotate-left',
+      'mdi-cloud-download': 'fa-solid fa-cloud-download',
+      'mdi-cloud-upload': 'fa-solid fa-cloud-upload',
+      'mdi-cloud-outline': 'fa-solid fa-cloud',
+      'mdi-cloud-off': 'fa-solid fa-cloud-xmark',
+      'mdi-cpu': 'fa-solid fa-cpu',
+      'mdi-harddrive': 'fa-solid fa-hard-drive',
+      'mdi-memory': 'fa-solid fa-memory-stick',
+      'mdi-network': 'fa-solid fa-network-wired',
+      'mdi-bluetooth': 'fa-brands fa-bluetooth',
+      'mdi-usb': 'fa-solid fa-usb',
+      'mdi-printer': 'fa-solid fa-printer',
+      'mdi-scanner': 'fa-solid fa-scanner',
+      'mdi-monitor': 'fa-solid fa-monitor',
+      'mdi-laptop': 'fa-solid fa-laptop',
+      'mdi-tablet': 'fa-solid fa-tablet-screen-button',
+      'mdi-smartphone': 'fa-solid fa-mobile-screen-button',
+      'mdi-watch': 'fa-solid fa-watch',
+      'mdi-calculator': 'fa-solid fa-calculator',
+      'mdi-keyboard': 'fa-solid fa-keyboard',
+      'mdi-gamepad': 'fa-solid fa-gamepad',
+      'mdi-joystick': 'fa-solid fa-gamepad-2',
+      'mdi-controller': 'fa-solid fa-gamepad',
+      'mdi-beaker': 'fa-solid fa-flask-conical',
+      'mdi-dna': 'fa-solid fa-dna',
+      'mdi-molecule': 'fa-solid fa-atom',
+      'mdi-cog-outline': 'fa-solid fa-gear',
+      'mdi-settings-outline': 'fa-solid fa-gear',
+      'mdi-sliders': 'fa-solid fa-sliders',
+      'mdi-filter-variant': 'fa-solid fa-filter',
+      'mdi-sort-variant': 'fa-solid fa-arrow-down-wide-short',
+      'mdi-funnel': 'fa-solid fa-filter',
+      'mdi-search-web': 'fa-solid fa-search',
+      'mdi-magnify-minus': 'fa-solid fa-search-minus',
+      'mdi-magnify-plus': 'fa-solid fa-search-plus',
+      'mdi-fit-screen': 'fa-solid fa-expand',
+      'mdi-window-maximize': 'fa-solid fa-square-maximize',
+      'mdi-window-minimize': 'fa-solid fa-square-minimize',
+      'mdi-window-restore': 'fa-solid fa-square',
+      'mdi-close-box': 'fa-solid fa-square-xmark',
+      'mdi-minus-box': 'fa-solid fa-square-minus',
+      'mdi-plus-box': 'fa-solid fa-square-plus',
+      'mdi-open-in-new': 'fa-solid fa-arrow-up-right-from-square',
+      'mdi-open-in-app': 'fa-solid fa-up-right-from-square',
+      'mdi-duplicate': 'fa-solid fa-copy',
+      'mdi-select-all': 'fa-solid fa-square-check',
+      'mdi-deselect': 'fa-solid fa-square',
+      'mdi-clipboard-text': 'fa-solid fa-clipboard-list',
+      'mdi-share-variant': 'fa-solid fa-share-nodes',
+      'mdi-share-all': 'fa-solid fa-share-nodes',
+      'mdi-export': 'fa-solid fa-file-export',
+      'mdi-import': 'fa-solid fa-file-import',
+      'mdi-send-outline': 'fa-solid fa-paper-plane',
+      'mdi-forward': 'fa-solid fa-forward',
+      'mdi-email-open': 'fa-solid fa-envelope-open',
+      'mdi-email-outline': 'fa-solid fa-envelope',
+      'mdi-email-alert': 'fa-solid fa-envelope-circle-check',
+      'mdi-email-check': 'fa-solid fa-envelope-check',
+      'mdi-email-off': 'fa-solid fa-envelope-xmark',
+      'mdi-spam': 'fa-solid fa-envelope-open-text',
+      'mdi-trash-can-outline': 'fa-solid fa-trash',
+      'mdi-delete-empty': 'fa-solid fa-trash',
+      'mdi-delete-outline': 'fa-solid fa-trash',
+      'mdi-archive-outline': 'fa-solid fa-archive',
+      'mdi-star-box': 'fa-solid fa-star',
+      'mdi-star-box-outline': 'fa-regular fa-star',
+      'mdi-flag-outline': 'fa-regular fa-flag',
+      'mdi-flag-cancel': 'fa-solid fa-flag',
+      'mdi-label': 'fa-solid fa-tag',
+      'mdi-label-outline': 'fa-solid fa-tag',
+      'mdi-bookmark-minus': 'fa-solid fa-bookmark-minus',
+      'mdi-bookmark-plus': 'fa-solid fa-bookmark-plus',
+      'mdi-calendar-outline': 'fa-solid fa-calendar',
+      'mdi-calendar-today': 'fa-solid fa-calendar-day',
+      'mdi-calendar-month': 'fa-solid fa-calendar-days',
+      'mdi-calendar-year': 'fa-solid fa-calendar',
+      'mdi-calendar-clock': 'fa-solid fa-calendar-clock',
+      'mdi-calendar-check': 'fa-solid fa-calendar-check',
+      'mdi-calendar-plus': 'fa-solid fa-calendar-plus',
+      'mdi-calendar-minus': 'fa-solid fa-calendar-minus',
+      'mdi-calendar-edit': 'fa-solid fa-calendar-pen',
+      'mdi-calendar-off': 'fa-solid fa-calendar-xmark',
+      'mdi-clock-outline': 'fa-solid fa-clock',
+      'mdi-clock-alert': 'fa-solid fa-clock-exclamation',
+      'mdi-clock-check': 'fa-solid fa-clock-check',
+      'mdi-clock-off': 'fa-solid fa-clock-xmark',
+      'mdi-bell-plus': 'fa-solid fa-bell-plus',
+      'mdi-bell-minus': 'fa-solid fa-bell-minus',
+      'mdi-notification': 'fa-solid fa-bell',
+      'mdi-notification-clear-all': 'fa-solid fa-bell',
+      'mdi-rss-box': 'fa-solid fa-rss',
+      'mdi-wifi-outline': 'fa-solid fa-wifi',
+      'mdi-wifi-off': 'fa-solid fa-wifi-slash',
+      'mdi-signal': 'fa-solid fa-signal',
+      'mdi-signal-cellular': 'fa-solid fa-signal',
+      'mdi-battery': 'fa-solid fa-battery-full',
+      'mdi-battery-outline': 'fa-solid fa-battery-full',
+      'mdi-battery-10': 'fa-solid fa-battery-empty',
+      'mdi-battery-20': 'fa-solid fa-battery-quarter',
+      'mdi-battery-30': 'fa-solid fa-battery-half',
+      'mdi-battery-50': 'fa-solid fa-battery-three-quarters',
+      'mdi-battery-60': 'fa-solid fa-battery-three-quarters',
+      'mdi-battery-80': 'fa-solid fa-battery-full',
+      'mdi-battery-90': 'fa-solid fa-battery-full',
+      'mdi-battery-charging': 'fa-solid fa-battery-charging',
+      'mdi-battery-warning': 'fa-solid fa-battery-low',
+      'mdi-battery-alert': 'fa-solid fa-battery-low',
+      'mdi-power': 'fa-solid fa-power-off',
+      'mdi-power-plug': 'fa-solid fa-plug',
+      'mdi-flash': 'fa-solid fa-bolt',
+      'mdi-flash-off': 'fa-solid fa-bolt-slash',
+      'mdi-lightbulb-off': 'fa-solid fa-lightbulb-slash',
+      'mdi-sun-outline': 'fa-solid fa-sun',
+      'mdi-moon-outline': 'fa-regular fa-moon',
+      'mdi-weather-sunny': 'fa-solid fa-sun',
+      'mdi-weather-night': 'fa-solid fa-moon',
+      'mdi-weather-partly-cloudy': 'fa-solid fa-cloud-sun',
+      'mdi-weather-cloudy': 'fa-solid fa-cloud',
+      'mdi-weather-rainy': 'fa-solid fa-cloud-rain',
+      'mdi-weather-lightning': 'fa-solid fa-cloud-bolt',
+      'mdi-weather-snowy': 'fa-solid fa-snowflake',
+      'mdi-weather-windy': 'fa-solid fa-wind',
+      'mdi-cloud-moon': 'fa-solid fa-cloud-moon',
+      'mdi-cloud-snow': 'fa-solid fa-cloud-snow',
+      'mdi-sunny': 'fa-solid fa-sun',
+      'mdi-night': 'fa-solid fa-moon',
+      'mdi-rain': 'fa-solid fa-cloud-rain',
+      'mdi-lightning': 'fa-solid fa-cloud-bolt',
+      'mdi-droplet-off': 'fa-solid fa-droplet-slash',
+      'mdi-droplet-outline': 'fa-solid fa-droplet',
+      'mdi-water': 'fa-solid fa-droplet',
+      'mdi-fire-outline': 'fa-solid fa-flame',
+      'mdi-fire-alert': 'fa-solid fa-flame',
+      'mdi-ice-cream': 'fa-solid fa-ice-cream',
+      'mdi-tree-deciduous': 'fa-solid fa-tree',
+      'mdi-tree-pine': 'fa-solid fa-tree',
+      'mdi-leaf-off': 'fa-solid fa-leaf',
+      'mdi-flower': 'fa-solid fa-flower-2',
+      'mdi-grass': 'fa-solid fa-tree-pine',
+      'mdi-nature': 'fa-solid fa-leaf',
+      'mdi-mountain-snow': 'fa-solid fa-mountain-snow',
+      'mdi-volcano': 'fa-solid fa-mountain',
+      'mdi-earth-africa': 'fa-solid fa-globe',
+      'mdi-earth-americas': 'fa-solid fa-globe',
+      'mdi-earth-asia': 'fa-solid fa-globe',
+      'mdi-earth-europe': 'fa-solid fa-globe',
+      'mdi-globe-outline': 'fa-solid fa-globe',
+      'mdi-map-outline': 'fa-solid fa-map',
+      'mdi-map-marker-radius': 'fa-solid fa-map-pin',
+      'mdi-map-marker-minus': 'fa-solid fa-map-pin',
+      'mdi-map-marker-plus': 'fa-solid fa-map-pin',
+      'mdi-map-marker-off': 'fa-solid fa-map-pin',
+      'mdi-map-search': 'fa-solid fa-map-location-dot',
+      'mdi-compass': 'fa-solid fa-compass',
+      'mdi-flag-checkered': 'fa-solid fa-flag',
+      'mdi-square-off-outline': 'fa-regular fa-square',
+      'mdi-triangle-outline': 'fa-solid fa-triangle',
+      'mdi-diamond-outline': 'fa-solid fa-diamond',
+      'mdi-octagon': 'fa-solid fa-octagon',
+      'mdi-octagon-outline': 'fa-solid fa-octagon',
+      'mdi-pentagon': 'fa-solid fa-pentagon',
+      'mdi-pentagon-outline': 'fa-solid fa-pentagon',
+      'mdi-rectangle': 'fa-solid fa-rectangle-horizontal',
+      'mdi-rectangle-outline': 'fa-solid fa-rectangle-horizontal',
+      'mdi-rectangle-horizontal': 'fa-solid fa-rectangle-horizontal',
+      'mdi-rectangle-vertical': 'fa-solid fa-rectangle-vertical',
+      'mdi-circle-half': 'fa-solid fa-circle-half-stroke',
+      'mdi-circle-slice-8': 'fa-solid fa-circle-quarter',
+      'mdi-circle-slice-4': 'fa-solid fa-circle-half-stroke',
+      'mdi-circle-slice-2': 'fa-solid fa-circle',
+      'mdi-circle-multiple': 'fa-solid fa-circle-nodes',
+      'mdi-circle-double': 'fa-solid fa-circle-nodes',
+      'mdi-ring': 'fa-solid fa-circle',
+      'mdi-ring-outline': 'fa-regular fa-circle',
+      'mdi-record': 'fa-solid fa-circle',
+      'mdi-disc': 'fa-solid fa-circle',
+      'mdi-cd': 'fa-solid fa-compact-disc',
+      'mdi-bluetooth-audio': 'fa-brands fa-bluetooth-b',
+      'mdi-headphones-bluetooth': 'fa-solid fa-headphones',
+      'mdi-speaker-bluetooth': 'fa-solid fa-volume-high',
+      'mdi-music': 'fa-solid fa-music',
+      'mdi-music-box': 'fa-solid fa-music',
+      'mdi-music-circle': 'fa-solid fa-music',
+      'mdi-play-circle-outline': 'fa-regular fa-circle-play',
+      'mdi-pause-circle-outline': 'fa-regular fa-circle-pause',
+      'mdi-stop-circle-outline': 'fa-regular fa-circle-stop',
+      'mdi-step-forward': 'fa-solid fa-step-forward',
+      'mdi-step-backward': 'fa-solid fa-step-backward',
+      'mdi-eject': 'fa-solid fa-eject',
+      'mdi-repeat-once': 'fa-solid fa-repeat-1',
+      'mdi-repeat-variant': 'fa-solid fa-repeat',
+      'mdi-volume-medium': 'fa-solid fa-volume-medium',
+      'mdi-volume-minus': 'fa-solid fa-volume-down',
+      'mdi-volume-plus': 'fa-solid fa-volume-up',
+      'mdi-subtitles-outline': 'fa-solid fa-closed-captioning',
+      'mdi-captions': 'fa-solid fa-closed-captioning',
+      'mdi-captions-off': 'fa-solid fa-closed-captioning',
+      'mdi-aspect-ratio-box': 'fa-solid fa-square',
+      'mdi-crop-16-9': 'fa-solid fa-square',
+      'mdi-crop-4-3': 'fa-solid fa-square',
+      'mdi-crop-free': 'fa-solid fa-square',
+      'mdi-rotate-3d': 'fa-solid fa-rotate',
+      'mdi-flip': 'fa-solid fa-arrows-up-down-left-right',
+      'mdi-mirror': 'fa-solid fa-rotate-horizontal',
+      'mdi-arrow-left-bold': 'fa-solid fa-arrow-left',
+      'mdi-arrow-right-bold': 'fa-solid fa-arrow-right',
+      'mdi-arrow-up-bold': 'fa-solid fa-arrow-up',
+      'mdi-arrow-down-bold': 'fa-solid fa-arrow-down',
+      'mdi-arrow-left-bold-outline': 'fa-solid fa-arrow-left',
+      'mdi-arrow-right-bold-outline': 'fa-solid fa-arrow-right',
+      'mdi-arrow-up-bold-outline': 'fa-solid fa-arrow-up',
+      'mdi-arrow-down-bold-outline': 'fa-solid fa-arrow-down',
+      'mdi-menu-down': 'fa-solid fa-chevron-down',
+      'mdi-menu-up': 'fa-solid fa-chevron-up',
+      'mdi-menu-left': 'fa-solid fa-chevron-left',
+      'mdi-menu-right': 'fa-solid fa-chevron-right',
+      'mdi-menu-down-outline': 'fa-solid fa-chevron-down',
+      'mdi-menu-up-outline': 'fa-solid fa-chevron-up',
+      'mdi-menu-left-outline': 'fa-solid fa-chevron-left',
+      'mdi-menu-right-outline': 'fa-solid fa-chevron-right',
+      'mdi-dots-horizontal-circle': 'fa-solid fa-circle-ellipsis-horizontal',
+      'mdi-dots-vertical-circle': 'fa-solid fa-circle-ellipsis-vertical',
+      'mdi-dots-three-horizontal': 'fa-solid fa-ellipsis-horizontal',
+      'mdi-dots-three-vertical': 'fa-solid fa-ellipsis-vertical',
+      'mdi-dots-three-circle': 'fa-solid fa-circle-ellipsis-horizontal',
+      'mdi-minus-circle-outline': 'fa-solid fa-circle-minus',
+      'mdi-plus-circle-outline': 'fa-solid fa-circle-plus',
+      'mdi-lock-circle-outline': 'fa-solid fa-lock',
+      'mdi-lock-open-circle': 'fa-solid fa-lock-open',
+      'mdi-lock-open-circle-outline': 'fa-solid fa-lock-open',
+      'mdi-pencil-circle-outline': 'fa-solid fa-pen-to-square',
+      'mdi-delete-circle-outline': 'fa-solid fa-trash',
+      'mdi-download-circle-outline': 'fa-solid fa-download',
+      'mdi-upload-circle-outline': 'fa-solid fa-upload',
+      'mdi-share-circle-outline': 'fa-solid fa-share-nodes',
+      'mdi-star-circle-outline': 'fa-regular fa-star',
+      'mdi-heart-circle-outline': 'fa-regular fa-heart',
+      'mdi-bookmark-circle-outline': 'fa-regular fa-bookmark',
+      'mdi-calendar-circle-outline': 'fa-solid fa-calendar',
+      'mdi-clock-circle-outline': 'fa-solid fa-clock',
+      'mdi-bell-circle-outline': 'fa-regular fa-bell',
+      'mdi-mail-circle-outline': 'fa-solid fa-envelope',
+      'mdi-phone-circle-outline': 'fa-solid fa-phone',
+      'mdi-map-marker-circle-outline': 'fa-solid fa-map-pin',
+      'mdi-globe-circle-outline': 'fa-solid fa-globe',
+      'mdi-camera-circle-outline': 'fa-solid fa-camera',
+      'mdi-microphone-circle-outline': 'fa-solid fa-microphone',
+      'mdi-headphones-circle-outline': 'fa-solid fa-headphones',
+      'mdi-volume-circle-outline': 'fa-solid fa-volume-high',
+      'mdi-image-circle-outline': 'fa-solid fa-image',
+      'mdi-video-circle-outline': 'fa-solid fa-video',
+      'mdi-file-circle-outline': 'fa-solid fa-file',
+      'mdi-folder-circle-outline': 'fa-solid fa-folder',
+      'mdi-link-circle-outline': 'fa-solid fa-link',
+      'mdi-tag-circle-outline': 'fa-solid fa-tag',
+      'mdi-chart-circle-outline': 'fa-solid fa-chart-pie',
+      'mdi-trending-circle-outline': 'fa-solid fa-trending-up',
+      'mdi-wallet-circle-outline': 'fa-solid fa-wallet',
+      'mdi-coins-circle-outline': 'fa-solid fa-coins',
+      'mdi-gift-circle-outline': 'fa-solid fa-gift',
+      'mdi-trophy-circle-outline': 'fa-solid fa-trophy',
+      'mdi-award-circle-outline': 'fa-solid fa-award',
+      'mdi-medal-circle-outline': 'fa-solid fa-medal',
+      'mdi-crown-circle-outline': 'fa-solid fa-crown',
+      'mdi-shield-circle-outline': 'fa-solid fa-shield',
+      'mdi-key-circle-outline': 'fa-solid fa-key',
+      'mdi-eye-circle-outline': 'fa-solid fa-eye',
+      'mdi-eye-off-circle': 'fa-solid fa-eye-slash',
+      'mdi-eye-off-circle-outline': 'fa-solid fa-eye-slash',
+      'mdi-eye-check-circle': 'fa-solid fa-eye-check',
+      'mdi-eye-check-circle-outline': 'fa-solid fa-eye-check',
+      'mdi-eye-alert-circle': 'fa-solid fa-eye-exclamation',
+      'mdi-eye-alert-circle-outline': 'fa-solid fa-eye-exclamation',
+      'mdi-face-circle-outline': 'fa-solid fa-face-smile',
+      'mdi-face-off-circle': 'fa-solid fa-face-frown',
+      'mdi-face-off-circle-outline': 'fa-solid fa-face-frown',
+      'mdi-account-circle-outline': 'fa-regular fa-user',
+      'mdi-account-circle-off-outline': 'fa-solid fa-user-xmark',
+      'mdi-account-check-circle-outline': 'fa-solid fa-user-check',
+      'mdi-account-alert-circle-outline': 'fa-solid fa-user-exclamation',
+      'mdi-account-edit-circle-outline': 'fa-solid fa-user-pen',
+      'mdi-account-plus-circle-outline': 'fa-solid fa-user-plus',
+      'mdi-account-minus-circle-outline': 'fa-solid fa-user-minus',
+      'mdi-account-multiple-circle-outline': 'fa-solid fa-users',
+      'mdi-account-group-circle-outline': 'fa-solid fa-users',
+      'mdi-account-settings-circle-outline': 'fa-solid fa-user-gear',
+      'mdi-account-search-circle-outline': 'fa-solid fa-user-search',
+      'mdi-account-off-outline': 'fa-solid fa-user-xmark',
+      'mdi-account-check-outline': 'fa-solid fa-user-check',
+      'mdi-account-alert-outline': 'fa-solid fa-user-exclamation',
+      'mdi-account-edit-outline': 'fa-solid fa-user-pen',
+      'mdi-account-plus-outline': 'fa-solid fa-user-plus',
+      'mdi-account-minus-outline': 'fa-solid fa-user-minus',
+      'mdi-account-multiple-outline': 'fa-solid fa-users',
+      'mdi-account-group-outline': 'fa-solid fa-users',
+      'mdi-account-settings-outline': 'fa-solid fa-user-gear',
+      'mdi-account-search-outline': 'fa-solid fa-user-search',
+      'mdi-log-in-variant': 'fa-solid fa-right-to-bracket',
+      'mdi-log-out-variant': 'fa-solid fa-right-from-bracket',
+      'mdi-sign-in-variant': 'fa-solid fa-right-to-bracket',
+      'mdi-sign-out-variant': 'fa-solid fa-right-from-bracket',
+      'mdi-apps-outline': 'fa-solid fa-grid-3x3',
+      'mdi-apps-square': 'fa-solid fa-grid-2x2',
+      'mdi-apps-square-outline': 'fa-solid fa-grid-2x2',
+      'mdi-grid-outline': 'fa-solid fa-grid-3x3',
+      'mdi-grid-3x3': 'fa-solid fa-grid-3x3',
+      'mdi-grid-3x3-outline': 'fa-solid fa-grid-3x3',
+      'mdi-grid-2x2': 'fa-solid fa-grid-2x2',
+      'mdi-grid-2x2-outline': 'fa-solid fa-grid-2x2',
+      'mdi-grid-large': 'fa-solid fa-grid-3x3',
+      'mdi-grid-large-outline': 'fa-solid fa-grid-3x3',
+      'mdi-grid-small': 'fa-solid fa-grid-2x2',
+      'mdi-grid-small-outline': 'fa-solid fa-grid-2x2',
+      'mdi-list-outline': 'fa-solid fa-list',
+      'mdi-list-box-outline': 'fa-solid fa-list-checks',
+      'mdi-list-checks-outline': 'fa-solid fa-list-checks',
+      'mdi-list-ordered-outline': 'fa-solid fa-list-ol',
+      'mdi-list-unordered-outline': 'fa-solid fa-list',
+      'mdi-tree-outline': 'fa-solid fa-folder-tree',
+      'mdi-tree-pine': 'fa-solid fa-tree',
+      'mdi-tree-deciduous': 'fa-solid fa-tree',
+      'mdi-view-dashboard-outline': 'fa-solid fa-gauge',
+      'mdi-view-dashboard-variant': 'fa-solid fa-gauge',
+      'mdi-view-dashboard-variant-outline': 'fa-solid fa-gauge',
+      'mdi-view-list-outline': 'fa-solid fa-list',
+      'mdi-view-grid-outline': 'fa-solid fa-grid-3x3',
+      'mdi-view-agenda-outline': 'fa-solid fa-calendar-days',
+      'mdi-view-headline': 'fa-solid fa-list',
+      'mdi-view-headline-outline': 'fa-solid fa-list',
+      'mdi-view-subtitles': 'fa-solid fa-closed-captioning',
+      'mdi-view-subtitles-outline': 'fa-solid fa-closed-captioning',
+      'mdi-view-text': 'fa-solid fa-file-lines',
+      'mdi-view-text-outline': 'fa-solid fa-file-lines',
+      'mdi-view-column-outline': 'fa-solid fa-columns',
+      'mdi-view-carousel-outline': 'fa-solid fa-images',
+      'mdi-view-array': 'fa-solid fa-grid-3x3',
+      'mdi-view-array-outline': 'fa-solid fa-grid-3x3',
+      'mdi-view-compact': 'fa-solid fa-grid-2x2',
+      'mdi-view-compact-outline': 'fa-solid fa-grid-2x2',
+      'mdi-view-fullscreen-outline': 'fa-solid fa-expand',
+      'mdi-view-split-vertical': 'fa-solid fa-grip-vertical',
+      'mdi-view-split-vertical-outline': 'fa-solid fa-grip-vertical',
+      'mdi-view-split-horizontal': 'fa-solid fa-grip-horizontal',
+      'mdi-view-split-horizontal-outline': 'fa-solid fa-grip-horizontal',
+      'mdi-view-split': 'fa-solid fa-grip-horizontal',
+      'mdi-view-split-outline': 'fa-solid fa-grip-horizontal',
+      'mdi-gesture-tap': 'fa-solid fa-hand-pointer',
+      'mdi-gesture-double-tap': 'fa-solid fa-hand-pointer',
+      'mdi-gesture-swipe': 'fa-solid fa-hand',
+      'mdi-gesture-swipe-left': 'fa-solid fa-hand',
+      'mdi-gesture-swipe-right': 'fa-solid fa-hand',
+      'mdi-gesture-swipe-up': 'fa-solid fa-hand',
+      'mdi-gesture-swipe-down': 'fa-solid fa-hand',
+      'mdi-gesture-zoom-in': 'fa-solid fa-magnifying-glass-plus',
+      'mdi-gesture-zoom-out': 'fa-solid fa-magnifying-glass-minus',
+      'mdi-gesture-rotate': 'fa-solid fa-rotate',
+      'mdi-gesture-drag-horizontal': 'fa-solid fa-grip-horizontal',
+      'mdi-gesture-drag-vertical': 'fa-solid fa-grip-vertical',
+      'mdi-gesture-pinch': 'fa-solid fa-hand',
+      'mdi-touchpad': 'fa-solid fa-square',
+      'mdi-touchpad-off': 'fa-solid fa-square-xmark',
+      'mdi-mouse-variant-off': 'fa-solid fa-computer-mouse',
+      'mdi-pointer-off': 'fa-solid fa-hand-pointer',
+      'mdi-move-horizontal': 'fa-solid fa-arrows-left-right',
+      'mdi-move-vertical': 'fa-solid fa-arrows-up-down',
+      'mdi-move-diagonal': 'fa-solid fa-arrows-up-down-left-right',
+      'mdi-resize-horizontal': 'fa-solid fa-arrows-left-right',
+      'mdi-resize-vertical': 'fa-solid fa-arrows-up-down',
+      'mdi-resize-diagonal': 'fa-solid fa-maximize',
+      'mdi-resize-diagonal-top': 'fa-solid fa-maximize',
+      'mdi-resize-diagonal-bottom': 'fa-solid fa-maximize',
+      'mdi-grip-lines': 'fa-solid fa-grip-horizontal',
+      'mdi-grip-lines-horizontal': 'fa-solid fa-grip-horizontal',
+      'mdi-grip-lines-vertical': 'fa-solid fa-grip-vertical',
+      'mdi-grab-horizontal': 'fa-solid fa-hand',
+      'mdi-grab-vertical': 'fa-solid fa-hand',
+      'mdi-grabbing-horizontal': 'fa-solid fa-hand',
+      'mdi-grabbing-vertical': 'fa-solid fa-hand',
+      'mdi-clipboard-arrow-down': 'fa-solid fa-clipboard-download',
+      'mdi-clipboard-arrow-up': 'fa-solid fa-clipboard-upload',
+      'mdi-clipboard-multiple': 'fa-solid fa-clipboard-list',
+      'mdi-clipboard-multiple-outline': 'fa-solid fa-clipboard-list',
+      'mdi-todo-outline': 'fa-solid fa-list-checks',
+      'mdi-todo-check': 'fa-solid fa-list-checks',
+      'mdi-todo-check-outline': 'fa-solid fa-list-checks',
+      'mdi-list-todo': 'fa-solid fa-list-checks',
+      'mdi-list-todo-outline': 'fa-solid fa-list-checks',
+      'mdi-checkbox-marked-circle': 'fa-solid fa-check-circle',
+      'mdi-checkbox-blank-circle': 'fa-regular fa-circle',
+      'mdi-checkbox-blank-outline': 'fa-regular fa-square',
+      'mdi-checkbox-blank-circle-outline': 'fa-regular fa-circle',
+      'mdi-check-all-outline': 'fa-solid fa-square-check',
+      'mdi-check-circle-outline': 'fa-regular fa-circle-check',
+      'mdi-close-outline': 'fa-solid fa-xmark',
+      'mdi-minus-outline': 'fa-solid fa-minus',
+      'mdi-minus-square-outline': 'fa-regular fa-square-minus',
+      'mdi-plus-outline': 'fa-solid fa-plus',
+      'mdi-plus-square-outline': 'fa-regular fa-square-plus',
+      'mdi-chevron-left-bold': 'fa-solid fa-chevron-left',
+      'mdi-chevron-right-bold': 'fa-solid fa-chevron-right',
+      'mdi-chevron-up-bold': 'fa-solid fa-chevron-up',
+      'mdi-chevron-down-bold': 'fa-solid fa-chevron-down',
+      'mdi-chevron-left-bold-outline': 'fa-solid fa-chevron-left',
+      'mdi-chevron-right-bold-outline': 'fa-solid fa-chevron-right',
+      'mdi-chevron-up-bold-outline': 'fa-solid fa-chevron-up',
+      'mdi-chevron-down-bold-outline': 'fa-solid fa-chevron-down',
+      'mdi-chevron-left-circle-outline': 'fa-solid fa-circle-chevron-left',
+      'mdi-chevron-right-circle-outline': 'fa-solid fa-circle-chevron-right',
+      'mdi-chevron-up-circle-outline': 'fa-solid fa-circle-chevron-up',
+      'mdi-chevron-down-circle-outline': 'fa-solid fa-circle-chevron-down'
+    }
+    
+    const getIconClass = (icon) => {
+      if (icon.startsWith('fa-')) {
+        return icon
+      }
+      return mdiToFa[icon] || 'fa-solid fa-circle-question'
+    }
+    
+    const getIconColor = (color) => {
+      const colors = {
+        primary: '#1E9FFF',
+        secondary: '#666',
+        warning: '#FAAD14',
+        error: '#FF4D4F',
+        success: '#52C41A',
+        info: '#1E9FFF',
+        default: '#666'
+      }
+      return colors[color] || colors.default
+    }
+    
     watch(() => props.inputValue, (val) => {
       internalValue.value = val
     })
@@ -180,6 +932,8 @@ export default {
       inputRef,
       internalValue,
       showCancel,
+      getIconClass,
+      getIconColor,
       handleConfirm,
       handleCancel
     }
@@ -188,8 +942,48 @@ export default {
 </script>
 
 <style scoped>
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  overflow: hidden;
+}
+
 .prompt-content {
   display: flex;
   flex-direction: column;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.gap-3 {
+  gap: 15px;
+}
+
+.mt-4 {
+  margin-top: 16px;
 }
 </style>

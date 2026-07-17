@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="pa-4 pa-md-6">
+  <div class="admin-titles">
     <TitlesPanel
       :titles="titles"
       :users="users"
@@ -10,69 +10,41 @@
       @delete-title="handleDeleteTitle"
       @refresh="loadTitles"
     />
-  </v-container>
 
-  <v-dialog v-model="grantDialog.show" :max-width="isMobile ? '100%' : '500'" :fullscreen="isMobile" transition="dialog-bottom-transition">
-    <v-card class="dialog-card">
-      <v-card-title class="dialog-title">
-        <v-avatar color="primary" size="40" class="mr-3">
-          <v-icon color="white" size="20">mdi-medal</v-icon>
-        </v-avatar>
-        <span>授予头衔</span>
-        <v-spacer />
-        <v-btn v-if="isMobile" icon variant="text" @click="grantDialog.show = false">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-      </v-card-title>
-      <v-card-text class="dialog-body">
-        <v-form ref="grantForm" v-model="formValid">
-          <v-select
-            v-model="grantDialog.selectedUserId"
-            :items="usersForSelect"
-            item-title="display_name"
-            item-value="id"
-            label="选择用户"
-            variant="outlined"
-            density="comfortable"
-            :rules="[rules.required]"
-            prepend-inner-icon="mdi-account"
-            class="mb-2"
-          >
-            <template #label>
-              <span class="text-body-2">选择用户</span>
-            </template>
-            <template #item="{ props, item }">
-              <v-list-item v-bind="props" :title="item.raw.display_name">
-                <template #prepend>
-                  <v-avatar size="32" class="mr-3">
-                    <v-img :src="item.raw.avatar || '/default-avatar.png'"></v-img>
-                  </v-avatar>
-                </template>
-                <template #subtitle>
-                  <span class="text-caption">@{{ item.raw.username }}</span>
-                </template>
-              </v-list-item>
-            </template>
-          </v-select>
-        </v-form>
-      </v-card-text>
-      <v-card-actions class="dialog-actions" :class="{ 'flex-column': isMobile }">
-        <v-btn variant="text" @click="grantDialog.show = false" :block="isMobile" class="mb-2 mb-md-0">
-          取消
-        </v-btn>
-        <v-btn
-          color="primary"
-          variant="flat"
-          @click="handleGrant"
-          :disabled="!formValid"
-          :block="isMobile"
-        >
-          <v-icon class="mr-1">mdi-check</v-icon>
-          确认授予
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+    <div v-if="grantDialog.show" class="modal-overlay" @click="grantDialog.show = false">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <div class="flex items-center gap-3">
+            <div class="avatar" style="width: 40px; height: 40px; background: #1E9FFF; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+              <i class="fa-solid fa-medal" style="color: white; font-size: 20px;"></i>
+            </div>
+            <span style="font-size: 18px; font-weight: 600;">授予头衔</span>
+          </div>
+          <button v-if="isMobile" class="layui-btn layui-btn-primary layui-btn-sm" @click="grantDialog.show = false">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="layui-form-item">
+            <label class="layui-form-label">选择用户</label>
+            <div class="layui-input-block">
+              <select v-model="grantDialog.selectedUserId" class="layui-select">
+                <option value="">请选择用户</option>
+                <option v-for="user in usersForSelect" :key="user.id" :value="user.id">{{ user.display_name }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="layui-btn layui-btn-primary" @click="grantDialog.show = false">取消</button>
+          <button class="layui-btn" @click="handleGrant" :disabled="!grantDialog.selectedUserId">
+            <i class="fa-solid fa-check mr-1"></i>
+            确认授予
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -84,8 +56,6 @@ import { confirm, success, error } from '../../utils/modal'
 const titles = ref([])
 const users = ref([])
 const loading = ref(true)
-const grantForm = ref(null)
-const formValid = ref(false)
 const isMobile = ref(false)
 
 const grantDialog = ref({
@@ -102,10 +72,6 @@ const usersForSelect = computed(() => {
     avatar: u.avatar
   }))
 })
-
-const rules = {
-  required: v => !!v || '此字段为必填项'
-}
 
 const checkMobile = () => {
   isMobile.value = window.innerWidth < 600
@@ -215,49 +181,62 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.dialog-card {
-  border-radius: 20px !important;
-  overflow: hidden;
+.admin-titles {
+  padding: 24px;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+  border-radius: 8px 8px 0 0;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  padding: 15px 20px;
+  border-top: 1px solid #E8E8E8;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 @media (max-width: 599px) {
-  .dialog-card {
-    border-radius: 0 !important;
+  .modal-content {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
   }
-}
-
-.dialog-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 24px 24px 16px;
-  font-size: 1.2rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
-}
-
-.dialog-body {
-  padding: 24px !important;
-}
-
-.dialog-actions {
-  padding: 16px 24px 24px;
-  gap: 12px;
-}
-
-:deep(.v-field) {
-  border-radius: 12px;
-}
-
-:deep(.v-field--outlined .v-field__outline) {
-  border-color: rgba(148, 163, 184, 0.3);
-}
-
-:deep(.v-field--focused .v-field__outline) {
-  border-color: rgb(var(--v-theme-primary));
-}
-
-:deep(.v-select .v-field) {
-  border-radius: 12px;
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+  }
 }
 </style>

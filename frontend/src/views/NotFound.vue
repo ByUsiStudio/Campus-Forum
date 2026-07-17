@@ -1,31 +1,27 @@
 <template>
-  <v-container class="min-h-screen">
-    <div class="error-page">
+  <div class="not-found-page">
+    <div class="error-card">
       <div class="error-icon">
-        <v-icon color="primary" size="150">mdi-file-question</v-icon>
+        <i class="fa-solid fa-circle-question"></i>
       </div>
       
-      <v-card-title class="text-center text-h3 font-weight-bold mb-4">
-        404 - 页面未找到
-      </v-card-title>
+      <h1 class="error-title">404 - 页面未找到</h1>
       
-      <v-card-text class="text-center">
-        <p class="text-body-1 mb-2">您访问的页面不存在</p>
-        <p class="text-body-2 text-secondary">该页面可能已被删除或URL地址有误</p>
-      </v-card-text>
+      <p class="error-message">您访问的页面不存在</p>
+      <p class="error-detail">该页面可能已被删除或URL地址有误</p>
       
-      <v-card-actions class="justify-center gap-3 mt-6">
-        <v-btn color="primary" @click="goHome">
-          <v-icon start>mdi-home</v-icon>
+      <div class="error-actions">
+        <button class="layui-btn layui-btn-normal" @click="goHome">
+          <i class="fa-solid fa-house mr-2"></i>
           返回首页
-        </v-btn>
-        <v-btn variant="outlined" @click="goBack">
-          <v-icon start>mdi-arrow-left</v-icon>
+        </button>
+        <button class="layui-btn layui-btn-primary" @click="goBack">
+          <i class="fa-solid fa-arrow-left mr-2"></i>
           返回上页
-        </v-btn>
-      </v-card-actions>
+        </button>
+      </div>
     </div>
-  </v-container>
+  </div>
 </template>
 
 <script>
@@ -57,16 +53,32 @@ export default {
 </script>
 
 <style scoped>
-.error-page {
+.not-found-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 24px;
+}
+
+.error-card {
+  background: white;
+  border-radius: 12px;
+  padding: 48px;
   text-align: center;
-  padding: 40px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   max-width: 500px;
-  margin: 0 auto;
 }
 
 .error-icon {
   margin-bottom: 32px;
-  animation: float 3s ease-in-out infinite;
+  
+  i {
+    font-size: 120px;
+    color: var(--primary);
+    animation: float 3s ease-in-out infinite;
+  }
 }
 
 @keyframes float {
@@ -76,5 +88,34 @@ export default {
   50% {
     transform: translateY(-10px);
   }
+}
+
+.error-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.error-message {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.error-detail {
+  font-size: 14px;
+  color: #999;
+  margin-bottom: 32px;
+}
+
+.error-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.mr-2 {
+  margin-right: 8px;
 }
 </style>

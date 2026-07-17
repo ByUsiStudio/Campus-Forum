@@ -2,164 +2,175 @@
   <div class="md-editor">
     <div class="toolbar">
       <div class="toolbar-group">
-        <v-btn variant="text" size="small" @click="insertFormat('**', '**')" title="粗体 (Ctrl+B)">
-          <v-icon size="18">mdi-format-bold</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" @click="insertFormat('*', '*')" title="斜体 (Ctrl+I)">
-          <v-icon size="18">mdi-format-italic</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" @click="insertFormat('~~', '~~')" title="删除线">
-          <v-icon size="18">mdi-format-strikethrough</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" @click="insertFormat('`', '`')" title="行内代码">
-          <v-icon size="18">mdi-code-tags</v-icon>
-        </v-btn>
+        <button class="toolbar-btn" @click="insertFormat('**', '**')" title="粗体 (Ctrl+B)">
+          <i class="fa-solid fa-bold"></i>
+        </button>
+        <button class="toolbar-btn" @click="insertFormat('*', '*')" title="斜体 (Ctrl+I)">
+          <i class="fa-solid fa-italic"></i>
+        </button>
+        <button class="toolbar-btn" @click="insertFormat('~~', '~~')" title="删除线">
+          <i class="fa-solid fa-strikethrough"></i>
+        </button>
+        <button class="toolbar-btn" @click="insertFormat('`', '`')" title="行内代码">
+          <i class="fa-solid fa-code"></i>
+        </button>
       </div>
 
-      <v-divider vertical class="mx-1" />
+      <div class="toolbar-divider"></div>
 
       <div class="toolbar-group">
-        <v-btn variant="text" size="small" @click="insertLine('# ')" title="标题1">H1</v-btn>
-        <v-btn variant="text" size="small" @click="insertLine('## ')" title="标题2">H2</v-btn>
-        <v-btn variant="text" size="small" @click="insertLine('### ')" title="标题3">H3</v-btn>
+        <button class="toolbar-btn" @click="insertLine('# ')" title="标题1">H1</button>
+        <button class="toolbar-btn" @click="insertLine('## ')" title="标题2">H2</button>
+        <button class="toolbar-btn" @click="insertLine('### ')" title="标题3">H3</button>
       </div>
 
-      <v-divider vertical class="mx-1" />
+      <div class="toolbar-divider"></div>
 
       <div class="toolbar-group">
-        <v-btn variant="text" size="small" @click="insertLine('- ')" title="无序列表">
-          <v-icon size="18">mdi-format-list-bulleted</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" @click="insertLine('1. ')" title="有序列表">
-          <v-icon size="18">mdi-format-list-numbered</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" @click="insertLine('- [ ] ')" title="任务列表">
-          <v-icon size="18">mdi-checkbox-marked-outline</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" @click="insertLine('> ')" title="引用">
-          <v-icon size="18">mdi-format-quote-close</v-icon>
-        </v-btn>
+        <button class="toolbar-btn" @click="insertLine('- ')" title="无序列表">
+          <i class="fa-solid fa-list"></i>
+        </button>
+        <button class="toolbar-btn" @click="insertLine('1. ')" title="有序列表">
+          <i class="fa-solid fa-list-ol"></i>
+        </button>
+        <button class="toolbar-btn" @click="insertLine('- [ ] ')" title="任务列表">
+          <i class="fa-regular fa-square"></i>
+        </button>
+        <button class="toolbar-btn" @click="insertLine('> ')" title="引用">
+          <i class="fa-solid fa-quote-right"></i>
+        </button>
       </div>
 
-      <v-divider vertical class="mx-1" />
+      <div class="toolbar-divider"></div>
 
       <div class="toolbar-group">
-        <v-btn variant="text" size="small" @click="insertLink" title="链接 (Ctrl+K)">
-          <v-icon size="18">mdi-link</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" @click="insertImage" title="图片">
-          <v-icon size="18">mdi-image</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" @click="insertVideo" title="视频">
-          <v-icon size="18">mdi-video</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" :color="isRecording ? 'red' : undefined" @click="toggleRecording" :loading="isRecording" :title="isRecording ? '停止录音' : '语音输入'">
-          <v-icon size="18">mdi-microphone{{ isRecording ? '-off' : '' }}</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" @click="insertTable" title="表格">
-          <v-icon size="18">mdi-table</v-icon>
-        </v-btn>
+        <button class="toolbar-btn" @click="insertLink" title="链接 (Ctrl+K)">
+          <i class="fa-solid fa-link"></i>
+        </button>
+        <button class="toolbar-btn" @click="insertImage" title="图片">
+          <i class="fa-solid fa-image"></i>
+        </button>
+        <button class="toolbar-btn" @click="insertVideo" title="视频">
+          <i class="fa-solid fa-video"></i>
+        </button>
+        <button 
+          class="toolbar-btn" 
+          :class="{ recording: isRecording }" 
+          @click="toggleRecording" 
+          :title="isRecording ? '停止录音' : '语音输入'"
+        >
+          <i :class="isRecording ? 'fa-solid fa-microphone-slash' : 'fa-solid fa-microphone'"></i>
+        </button>
+        <button class="toolbar-btn" @click="insertTable" title="表格">
+          <i class="fa-solid fa-table"></i>
+        </button>
       </div>
 
-      <v-divider vertical class="mx-1" />
+      <div class="toolbar-divider"></div>
 
       <div class="toolbar-group">
-        <v-btn variant="text" size="small" @click="insertCodeBlock" title="代码块">
-          <v-icon size="18">mdi-code-braces</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" @click="insertHr" title="分割线">
-          <v-icon size="18">mdi-minus</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" @click="insertMath" title="数学公式">
-          <v-icon size="18">mdi-function-variant</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" @click="insertMark" title="高亮文本">
-          <v-icon size="18">mdi-marker</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" @click="insertFootnote" title="脚注">
-          <v-icon size="18">mdi-text-box-outline</v-icon>
-        </v-btn>
-        <v-menu offset="8">
-          <template #activator="{ props }">
-            <v-btn variant="text" size="small" v-bind="props" title="提示框">
-              <v-icon size="18">mdi-lightbulb-outline</v-icon>
-              <v-icon size="14">mdi-chevron-down</v-icon>
-            </v-btn>
-          </template>
-          <v-list density="compact" class="container-menu">
-            <v-list-item @click="insertContainer('tip')">
-              <template #prepend>
-                <v-icon size="18" color="green">mdi-lightbulb</v-icon>
-              </template>
-              <v-list-item-title>💡 提示</v-list-item-title>
-            </v-list-item>
-            <v-list-item @click="insertContainer('info')">
-              <template #prepend>
-                <v-icon size="18" color="blue">mdi-information</v-icon>
-              </template>
-              <v-list-item-title>ℹ️ 信息</v-list-item-title>
-            </v-list-item>
-            <v-list-item @click="insertContainer('warning')">
-              <template #prepend>
-                <v-icon size="18" color="orange">mdi-alert</v-icon>
-              </template>
-              <v-list-item-title>⚠️ 警告</v-list-item-title>
-            </v-list-item>
-            <v-list-item @click="insertContainer('danger')">
-              <template #prepend>
-                <v-icon size="18" color="red">mdi-close-circle</v-icon>
-              </template>
-              <v-list-item-title>❌ 危险</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
+        <button class="toolbar-btn" @click="insertCodeBlock" title="代码块">
+          <i class="fa-solid fa-code-branch"></i>
+        </button>
+        <button class="toolbar-btn" @click="insertHr" title="分割线">
+          <i class="fa-solid fa-minus"></i>
+        </button>
+        <button class="toolbar-btn" @click="insertMath" title="数学公式">
+          <i class="fa-solid fa-square-root-variable"></i>
+        </button>
+        <button class="toolbar-btn" @click="insertMark" title="高亮文本">
+          <i class="fa-solid fa-highlighter"></i>
+        </button>
+        <button class="toolbar-btn" @click="insertFootnote" title="脚注">
+          <i class="fa-solid fa-subscript"></i>
+        </button>
+        
+        <div class="dropdown">
+          <button class="toolbar-btn dropdown-toggle" title="提示框">
+            <i class="fa-solid fa-lightbulb"></i>
+            <i class="fa-solid fa-chevron-down"></i>
+          </button>
+          <div class="dropdown-menu">
+            <button class="dropdown-item" @click="insertContainer('tip')">
+              <i class="fa-solid fa-lightbulb text-green"></i>
+              <span>💡 提示</span>
+            </button>
+            <button class="dropdown-item" @click="insertContainer('info')">
+              <i class="fa-solid fa-circle-info text-blue"></i>
+              <span>ℹ️ 信息</span>
+            </button>
+            <button class="dropdown-item" @click="insertContainer('warning')">
+              <i class="fa-solid fa-triangle-exclamation text-orange"></i>
+              <span>⚠️ 警告</span>
+            </button>
+            <button class="dropdown-item" @click="insertContainer('danger')">
+              <i class="fa-solid fa-circle-xmark text-red"></i>
+              <span>❌ 危险</span>
+            </button>
+          </div>
+        </div>
       </div>
 
-      <v-divider vertical class="mx-1" />
+      <div class="toolbar-divider"></div>
 
       <div class="toolbar-group">
-        <v-btn variant="text" size="small" @click="formatDoc('undo')" title="撤销 (Ctrl+Z)">
-          <v-icon size="18">mdi-undo</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" @click="formatDoc('redo')" title="重做 (Ctrl+Y)">
-          <v-icon size="18">mdi-redo</v-icon>
-        </v-btn>
+        <button class="toolbar-btn" @click="formatDoc('undo')" title="撤销 (Ctrl+Z)">
+          <i class="fa-solid fa-rotate-left"></i>
+        </button>
+        <button class="toolbar-btn" @click="formatDoc('redo')" title="重做 (Ctrl+Y)">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
       </div>
 
-      <v-spacer />
+      <div class="toolbar-spacer"></div>
 
       <div class="toolbar-group">
-        <v-btn variant="text" size="small" :color="viewMode === 'edit' ? 'primary' : undefined" @click="viewMode = 'edit'" title="编辑">
-          <v-icon size="18">mdi-pencil</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" :color="viewMode === 'split' ? 'primary' : undefined" @click="viewMode = 'split'" title="分屏">
-          <v-icon size="18">mdi-view-split-vertical</v-icon>
-        </v-btn>
-        <v-btn variant="text" size="small" :color="viewMode === 'preview' ? 'primary' : undefined" @click="viewMode = 'preview'" title="预览">
-          <v-icon size="18">mdi-eye</v-icon>
-        </v-btn>
+        <button 
+          class="toolbar-btn" 
+          :class="{ active: viewMode === 'edit' }" 
+          @click="viewMode = 'edit'" 
+          title="编辑"
+        >
+          <i class="fa-solid fa-pencil"></i>
+        </button>
+        <button 
+          class="toolbar-btn" 
+          :class="{ active: viewMode === 'split' }" 
+          @click="viewMode = 'split'" 
+          title="分屏"
+        >
+          <i class="fa-solid fa-columns"></i>
+        </button>
+        <button 
+          class="toolbar-btn" 
+          :class="{ active: viewMode === 'preview' }" 
+          @click="viewMode = 'preview'" 
+          title="预览"
+        >
+          <i class="fa-solid fa-eye"></i>
+        </button>
       </div>
 
-      <v-divider vertical class="mx-1" />
+      <div class="toolbar-divider"></div>
 
       <div class="status-bar">
         <span class="status-item">
-          <v-icon size="14">mdi-file-document-outline</v-icon>
+          <i class="fa-regular fa-file-lines"></i>
           <span>{{ stats.words }} 字</span>
         </span>
         <span class="status-divider">|</span>
         <span class="status-item">
-          <v-icon size="14">mdi-paragraph</v-icon>
+          <i class="fa-solid fa-paragraph"></i>
           <span>{{ stats.paragraphs }} 段落</span>
         </span>
         <span class="status-divider">|</span>
         <span class="status-item">
-          <v-icon size="14">mdi-format-list-numbered</v-icon>
+          <i class="fa-solid fa-list-ol"></i>
           <span>{{ stats.lines }} 行</span>
         </span>
         <span class="status-divider">|</span>
         <span class="status-item">
-          <v-icon size="14">mdi-tag</v-icon>
+          <i class="fa-solid fa-tags"></i>
           <span>{{ stats.tokens }} 标记</span>
         </span>
       </div>
@@ -186,7 +197,7 @@
             @click="applySuggestion(suggestion)"
             @mouseenter="selectedSuggestion = index"
           >
-            <v-icon size="14" :color="suggestion.color">{{ suggestion.icon }}</v-icon>
+            <i class="suggestion-icon" :style="{ color: suggestion.color }" :class="getFaIconClass(suggestion.icon)"></i>
             <span class="suggestion-text">{{ suggestion.text }}</span>
             <span class="suggestion-detail">{{ suggestion.detail }}</span>
           </div>
@@ -202,18 +213,18 @@
       <div class="upload-modal-container">
         <div class="upload-modal-header">
           <div class="modal-title">
-            <v-icon size="24" color="primary">{{ uploadType === 'image' ? 'mdi-image' : 'mdi-video' }}</v-icon>
+            <i :class="uploadType === 'image' ? 'fa-solid fa-image' : 'fa-solid fa-video'" class="text-primary"></i>
             <h3>{{ uploadType === 'image' ? '上传图片' : '上传视频' }}</h3>
           </div>
-          <v-btn icon variant="text" size="small" @click="closeUploadModal">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
+          <button class="close-btn" @click="closeUploadModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
         
         <div class="upload-modal-body">
           <div class="upload-area" @click="triggerFileInput" @dragover.prevent="onDragOver" @dragleave="onDragLeave" @drop.prevent="onDrop">
             <div v-if="!hasFiles" class="upload-placeholder">
-              <v-icon size="48" color="grey">mdi-cloud-upload</v-icon>
+              <i class="fa-solid fa-cloud-arrow-up text-grey"></i>
               <p class="upload-hint">点击或拖拽文件到此处</p>
               <p class="upload-format">支持格式：{{ uploadType === 'image' ? 'JPG, PNG, GIF, WebP' : 'MP4, WebM, MOV' }}</p>
             </div>
@@ -223,16 +234,16 @@
                 <div class="preview-thumb">
                   <img v-if="uploadType === 'image'" :src="file.preview" alt="preview" />
                   <div v-else class="video-placeholder">
-                    <v-icon size="32" color="grey">mdi-video</v-icon>
+                    <i class="fa-solid fa-video text-grey"></i>
                   </div>
                 </div>
                 <div class="file-info">
                   <span class="file-name">{{ file.name }}</span>
                   <span class="file-size">{{ formatFileSize(file.size) }}</span>
                 </div>
-                <v-btn icon variant="text" size="small" color="error" @click="removeFile(index)">
-                  <v-icon>mdi-delete</v-icon>
-                </v-btn>
+                <button class="remove-btn" @click="removeFile(index)">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
               </div>
             </div>
           </div>
@@ -251,25 +262,31 @@
               <span>正在上传...</span>
               <span>{{ uploadProgress }}%</span>
             </div>
-            <v-progress-linear :model-value="uploadProgress" color="primary" height="4" rounded />
+            <div class="progress-bar">
+              <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
+            </div>
           </div>
           
           <div v-if="uploadSuccess" class="upload-success">
-            <v-icon size="24" color="success">mdi-check-circle</v-icon>
+            <i class="fa-solid fa-check-circle text-green"></i>
             <span>上传成功！</span>
           </div>
           
           <div v-if="uploadError" class="upload-error">
-            <v-icon size="24" color="error">mdi-alert-circle</v-icon>
+            <i class="fa-solid fa-circle-exclamation text-red"></i>
             <span>{{ uploadError }}</span>
           </div>
         </div>
         
         <div class="upload-modal-footer">
-          <v-btn variant="text" @click="closeUploadModal">取消</v-btn>
-          <v-btn color="primary" :loading="isUploading" :disabled="!hasFiles || isUploading" @click="startUpload">
+          <button class="modal-btn cancel" @click="closeUploadModal">取消</button>
+          <button 
+            class="modal-btn primary" 
+            :disabled="!hasFiles || isUploading"
+            @click="startUpload"
+          >
             {{ isUploading ? '上传中...' : '开始上传' }}
-          </v-btn>
+          </button>
         </div>
       </div>
     </div>
@@ -278,17 +295,17 @@
       <div class="link-modal">
         <div class="modal-header">
           <h3>插入链接</h3>
-          <v-btn icon variant="text" size="small" @click="linkModalVisible = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
+          <button class="close-btn" @click="linkModalVisible = false">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
         <div class="modal-body">
-          <v-text-field v-model="linkText" label="链接文字" variant="outlined" class="mb-3" />
-          <v-text-field v-model="linkUrl" label="链接地址" variant="outlined" placeholder="https://" />
+          <input v-model="linkText" type="text" class="form-input" placeholder="链接文字" />
+          <input v-model="linkUrl" type="text" class="form-input" placeholder="链接地址 (https://)" />
         </div>
         <div class="modal-footer">
-          <v-btn variant="text" @click="linkModalVisible = false">取消</v-btn>
-          <v-btn color="primary" @click="confirmLink">确定</v-btn>
+          <button class="modal-btn cancel" @click="linkModalVisible = false">取消</button>
+          <button class="modal-btn primary" @click="confirmLink">确定</button>
         </div>
       </div>
     </div>
@@ -297,17 +314,17 @@
       <div class="table-modal">
         <div class="modal-header">
           <h3>插入表格</h3>
-          <v-btn icon variant="text" size="small" @click="tableModalVisible = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
+          <button class="close-btn" @click="tableModalVisible = false">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
         <div class="modal-body">
-          <v-text-field v-model.number="tableRows" label="行数" variant="outlined" type="number" min="1" max="10" class="mb-3" />
-          <v-text-field v-model.number="tableCols" label="列数" variant="outlined" type="number" min="1" max="10" />
+          <input v-model.number="tableRows" type="number" class="form-input" placeholder="行数" min="1" max="10" />
+          <input v-model.number="tableCols" type="number" class="form-input" placeholder="列数" min="1" max="10" />
         </div>
         <div class="modal-footer">
-          <v-btn variant="text" @click="tableModalVisible = false">取消</v-btn>
-          <v-btn color="primary" @click="confirmTable">确定</v-btn>
+          <button class="modal-btn cancel" @click="tableModalVisible = false">取消</button>
+          <button class="modal-btn primary" @click="confirmTable">确定</button>
         </div>
       </div>
     </div>
@@ -391,19 +408,17 @@ const suggestions = ref([])
 const selectedSuggestion = ref(0)
 const suggestionPosition = ref({ top: 0, left: 0 })
 
-// 语音识别相关
 const isRecording = ref(false)
 const recognition = ref(null)
 const recognitionSupported = ref(false)
 
-// 初始化语音识别
 const initRecognition = () => {
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     recognition.value = new SpeechRecognition()
-    recognition.value.lang = 'zh-CN' // 设置为中文
-    recognition.value.interimResults = true // 显示中间结果
-    recognition.value.continuous = false // 不连续识别，说完一句话就停止
+    recognition.value.lang = 'zh-CN'
+    recognition.value.interimResults = true
+    recognition.value.continuous = false
     
     recognition.value.onstart = () => {
       isRecording.value = true
@@ -411,18 +426,12 @@ const initRecognition = () => {
     
     recognition.value.onresult = (event) => {
       let finalTranscript = ''
-      let interimTranscript = ''
-      
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript
         if (event.results[i].isFinal) {
           finalTranscript += transcript
-        } else {
-          interimTranscript += transcript
         }
       }
-      
-      // 插入识别结果到编辑器
       if (finalTranscript) {
         insertAtCursor(finalTranscript)
       }
@@ -431,9 +440,7 @@ const initRecognition = () => {
     recognition.value.onerror = (event) => {
       console.error('语音识别错误:', event.error)
       isRecording.value = false
-      if (event.error === 'no-speech') {
-        // 没有检测到语音，不显示错误
-      } else if (event.error === 'not-allowed') {
+      if (event.error === 'not-allowed') {
         alert('请允许麦克风访问权限')
       }
     }
@@ -446,7 +453,6 @@ const initRecognition = () => {
   }
 }
 
-// 初始化时调用
 initRecognition()
 
 const md = new MarkdownIt({
@@ -523,15 +529,12 @@ md.use(taskLists, { enabled: true, label: true })
 
 const renderMath = (text) => {
   let result = text
-
   result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
     return katexBlock(formula.trim())
   })
-
   result = result.replace(/\$(.+?)\$/g, (match, formula) => {
     return katexInline(formula.trim())
   })
-
   return result
 }
 
@@ -543,15 +546,11 @@ const renderedContent = computed(() => {
 
 const stats = computed(() => {
   const text = content.value
-  
   const words = text.length
   const lines = text.split('\n').length
-  
   const paragraphs = text.split(/\n\n+/).filter(p => p.trim()).length
-  
   const tokenPattern = /(#+|```|`|\*\*|\*|~~|>|\[|\]|\(|)|\d+\./g
   const tokens = (text.match(tokenPattern) || []).length
-  
   return { words, paragraphs, lines, tokens }
 })
 
@@ -830,7 +829,6 @@ const insertTable = () => {
   tableModalVisible.value = true
 }
 
-// 语音识别控制函数
 const toggleRecording = () => {
   if (!recognitionSupported.value) {
     alert('您的浏览器不支持语音识别功能，请使用Chrome浏览器')
@@ -838,10 +836,8 @@ const toggleRecording = () => {
   }
   
   if (isRecording.value) {
-    // 停止录音
     recognition.value?.stop()
   } else {
-    // 开始录音
     try {
       recognition.value?.start()
     } catch (error) {
@@ -984,33 +980,58 @@ const triggerSuggestions = () => {
 
 const getSuggestions = (query) => {
   const markdownSuggestions = [
-    { text: '**粗体**', detail: '加粗文本', icon: 'mdi-format-bold', color: '#6750A4', insert: '**|**' },
-    { text: '*斜体*', detail: '倾斜文本', icon: 'mdi-format-italic', color: '#6750A4', insert: '*|*' },
-    { text: '~~删除线~~', detail: '删除文本', icon: 'mdi-format-strikethrough', color: '#6750A4', insert: '~~|~~' },
-    { text: '`代码`', detail: '行内代码', icon: 'mdi-code-tags', color: '#EC4899', insert: '`|`' },
-    { text: '==高亮==', detail: '高亮文本', icon: 'mdi-marker', color: '#FFC107', insert: '==|==' },
-    { text: '# 标题', detail: '一级标题', icon: 'mdi-format-header-1', color: '#1976D2', insert: '# |' },
-    { text: '## 标题', detail: '二级标题', icon: 'mdi-format-header-2', color: '#1976D2', insert: '## |' },
-    { text: '### 标题', detail: '三级标题', icon: 'mdi-format-header-3', color: '#1976D2', insert: '### |' },
-    { text: '- 列表项', detail: '无序列表', icon: 'mdi-format-list-bulleted', color: '#43A047', insert: '- |' },
-    { text: '1. 列表项', detail: '有序列表', icon: 'mdi-format-list-numbered', color: '#43A047', insert: '1. |' },
-    { text: '- [ ] 任务', detail: '待办任务', icon: 'mdi-checkbox-marked-outline', color: '#FB8C00', insert: '- [ ] |' },
-    { text: '> 引用', detail: '引用文本', icon: 'mdi-format-quote-close', color: '#7E57C2', insert: '> |' },
-    { text: '[链接](url)', detail: '插入链接', icon: 'mdi-link', color: '#0288D1', insert: '[|]()' },
-    { text: '![图片](url)', detail: '插入图片', icon: 'mdi-image', color: '#00ACC1', insert: '![](|)' },
-    { text: '```代码块', detail: '代码块', icon: 'mdi-code-braces', color: '#EC407A', insert: '```\n|\n```' },
-    { text: '---', detail: '分割线', icon: 'mdi-minus', color: '#9E9E9E', insert: '\n---\n' },
-    { text: ':::tip', detail: '提示框', icon: 'mdi-lightbulb', color: '#4CAF50', insert: ':::tip\n|\n:::' },
-    { text: ':::warning', detail: '警告框', icon: 'mdi-alert', color: '#FF9800', insert: ':::warning\n|\n:::' },
-    { text: ':::danger', detail: '危险框', icon: 'mdi-close-circle', color: '#f44336', insert: ':::danger\n|\n:::' },
-    { text: ':::info', detail: '信息框', icon: 'mdi-information', color: '#2196F3', insert: ':::info\n|\n:::' },
-    { text: '$$公式$$', detail: '数学公式', icon: 'mdi-function-variant', color: '#9C27B0', insert: '$$\n|\n$$' },
+    { text: '**粗体**', detail: '加粗文本', icon: 'fa-bold', color: '#6750A4', insert: '**|**' },
+    { text: '*斜体*', detail: '倾斜文本', icon: 'fa-italic', color: '#6750A4', insert: '*|*' },
+    { text: '~~删除线~~', detail: '删除文本', icon: 'fa-strikethrough', color: '#6750A4', insert: '~~|~~' },
+    { text: '`代码`', detail: '行内代码', icon: 'fa-code', color: '#EC4899', insert: '`|`' },
+    { text: '==高亮==', detail: '高亮文本', icon: 'fa-highlighter', color: '#FFC107', insert: '==|==' },
+    { text: '# 标题', detail: '一级标题', icon: 'fa-heading', color: '#1976D2', insert: '# |' },
+    { text: '## 标题', detail: '二级标题', icon: 'fa-heading', color: '#1976D2', insert: '## |' },
+    { text: '### 标题', detail: '三级标题', icon: 'fa-heading', color: '#1976D2', insert: '### |' },
+    { text: '- 列表项', detail: '无序列表', icon: 'fa-list', color: '#43A047', insert: '- |' },
+    { text: '1. 列表项', detail: '有序列表', icon: 'fa-list-ol', color: '#43A047', insert: '1. |' },
+    { text: '- [ ] 任务', detail: '待办任务', icon: 'fa-square', color: '#FB8C00', insert: '- [ ] |' },
+    { text: '> 引用', detail: '引用文本', icon: 'fa-quote-right', color: '#7E57C2', insert: '> |' },
+    { text: '[链接](url)', detail: '插入链接', icon: 'fa-link', color: '#0288D1', insert: '[|]()' },
+    { text: '![图片](url)', detail: '插入图片', icon: 'fa-image', color: '#00ACC1', insert: '![](|)' },
+    { text: '```代码块', detail: '代码块', icon: 'fa-code-branch', color: '#EC407A', insert: '```\n|\n```' },
+    { text: '---', detail: '分割线', icon: 'fa-minus', color: '#9E9E9E', insert: '\n---\n' },
+    { text: ':::tip', detail: '提示框', icon: 'fa-lightbulb', color: '#4CAF50', insert: ':::tip\n|\n:::' },
+    { text: ':::warning', detail: '警告框', icon: 'fa-triangle-exclamation', color: '#FF9800', insert: ':::warning\n|\n:::' },
+    { text: ':::danger', detail: '危险框', icon: 'fa-circle-xmark', color: '#f44336', insert: ':::danger\n|\n:::' },
+    { text: ':::info', detail: '信息框', icon: 'fa-circle-info', color: '#2196F3', insert: ':::info\n|\n:::' },
+    { text: '$$公式$$', detail: '数学公式', icon: 'fa-square-root-variable', color: '#9C27B0', insert: '$$\n|\n$$' },
   ]
 
   return markdownSuggestions.filter(s =>
     s.text.toLowerCase().includes(query.toLowerCase()) ||
     s.detail.toLowerCase().includes(query.toLowerCase())
   )
+}
+
+const getFaIconClass = (icon) => {
+  const iconMap = {
+    'fa-bold': 'fa-solid fa-bold',
+    'fa-italic': 'fa-solid fa-italic',
+    'fa-strikethrough': 'fa-solid fa-strikethrough',
+    'fa-code': 'fa-solid fa-code',
+    'fa-highlighter': 'fa-solid fa-highlighter',
+    'fa-heading': 'fa-solid fa-heading',
+    'fa-list': 'fa-solid fa-list',
+    'fa-list-ol': 'fa-solid fa-list-ol',
+    'fa-square': 'fa-regular fa-square',
+    'fa-quote-right': 'fa-solid fa-quote-right',
+    'fa-link': 'fa-solid fa-link',
+    'fa-image': 'fa-solid fa-image',
+    'fa-code-branch': 'fa-solid fa-code-branch',
+    'fa-minus': 'fa-solid fa-minus',
+    'fa-lightbulb': 'fa-solid fa-lightbulb',
+    'fa-triangle-exclamation': 'fa-solid fa-triangle-exclamation',
+    'fa-circle-xmark': 'fa-solid fa-circle-xmark',
+    'fa-circle-info': 'fa-solid fa-circle-info',
+    'fa-square-root-variable': 'fa-solid fa-square-root-variable'
+  }
+  return iconMap[icon] || 'fa-solid fa-circle-question'
 }
 
 const updateSuggestionPosition = () => {
@@ -1219,6 +1240,90 @@ const handlePreviewScroll = () => {
   gap: 2px;
 }
 
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #666;
+  transition: all 0.15s;
+  gap: 2px;
+  
+  &:hover {
+    background: #E5E5E5;
+    color: #333;
+  }
+  
+  &.active {
+    background: var(--primary);
+    color: white;
+  }
+  
+  &.recording {
+    color: #FF4D4F;
+  }
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: #E5E5E5;
+  margin: 0 4px;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  z-index: 1000;
+  display: none;
+}
+
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+  
+  &:hover {
+    background: #F5F5F5;
+  }
+}
+
+.text-green { color: #4CAF50; }
+.text-blue { color: #2196F3; }
+.text-orange { color: #FF9800; }
+.text-red { color: #f44336; }
+
 .status-bar {
   display: flex;
   align-items: center;
@@ -1309,6 +1414,10 @@ const handlePreviewScroll = () => {
 .suggestion-item:hover,
 .suggestion-item.active {
   background: #F5F5F5;
+}
+
+.suggestion-icon {
+  font-size: 14px;
 }
 
 .suggestion-text {
@@ -1498,8 +1607,36 @@ const handlePreviewScroll = () => {
   font-weight: 600;
 }
 
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  
+  &:hover {
+    color: #333;
+  }
+}
+
 .modal-body {
   padding: 20px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #E5E5E5;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
 }
 
 .modal-footer {
@@ -1508,6 +1645,38 @@ const handlePreviewScroll = () => {
   gap: 8px;
   padding: 16px 20px;
   border-top: 1px solid #E5E5E5;
+}
+
+.modal-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  
+  &.cancel {
+    background: #f5f5f5;
+    color: #666;
+    
+    &:hover {
+      background: #e8e8e8;
+    }
+  }
+  
+  &.primary {
+    background: var(--primary);
+    color: white;
+    
+    &:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
 }
 
 .upload-modal-overlay {
@@ -1556,6 +1725,9 @@ const handlePreviewScroll = () => {
   color: #1A1A1A;
 }
 
+.text-primary { color: var(--primary); }
+.text-grey { color: #999; }
+
 .upload-modal-body {
   padding: 24px;
   overflow-y: auto;
@@ -1588,6 +1760,10 @@ const handlePreviewScroll = () => {
   flex-direction: column;
   align-items: center;
   gap: 12px;
+}
+
+.upload-placeholder i {
+  font-size: 48px;
 }
 
 .upload-hint {
@@ -1640,6 +1816,10 @@ const handlePreviewScroll = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  
+  i {
+    font-size: 24px;
+  }
 }
 
 .file-info {
@@ -1663,6 +1843,19 @@ const handlePreviewScroll = () => {
   color: #999;
 }
 
+.remove-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #999;
+  cursor: pointer;
+  padding: 4px;
+  
+  &:hover {
+    color: #FF4D4F;
+  }
+}
+
 .file-input {
   display: none;
 }
@@ -1679,6 +1872,20 @@ const handlePreviewScroll = () => {
   color: #666;
 }
 
+.progress-bar {
+  height: 4px;
+  background: #E5E5E5;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
 .upload-success {
   display: flex;
   align-items: center;
@@ -1689,6 +1896,10 @@ const handlePreviewScroll = () => {
   background: #E8F5E9;
   border-radius: 8px;
   color: #2E7D32;
+  
+  i {
+    font-size: 20px;
+  }
 }
 
 .upload-error {
@@ -1698,242 +1909,6 @@ const handlePreviewScroll = () => {
   gap: 8px;
   margin-top: 16px;
   padding: 12px;
-  background: #FFEBEE;
-  border-radius: 8px;
-  color: #C62828;
 }
 
-.upload-modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 20px 24px;
-  border-top: 1px solid #E5E5E5;
-  background: #FAFAFA;
-}
-
-.container-menu {
-  min-width: 140px;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
-
-.markdown-body :deep(.header-anchor) {
-  position: absolute;
-  left: -24px;
-  color: #999;
-  text-decoration: none;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.markdown-body :deep(h1:hover .header-anchor),
-.markdown-body :deep(h2:hover .header-anchor),
-.markdown-body :deep(h3:hover .header-anchor),
-.markdown-body :deep(h4:hover .header-anchor) {
-  opacity: 1;
-}
-
-.markdown-body :deep(mark) {
-  background: linear-gradient(120deg, #ffeaa7 0%, #fdcb6e 100%);
-  padding: 2px 4px;
-  border-radius: 3px;
-}
-
-.markdown-body :deep(.footnotes) {
-  margin-top: 40px;
-  padding-top: 20px;
-  border-top: 2px solid #e5e5e5;
-  font-size: 14px;
-  color: #666;
-}
-
-.markdown-body :deep(.footnotes-list) {
-  padding-left: 20px;
-}
-
-.markdown-body :deep(.footnote-item) {
-  margin: 12px 0;
-}
-
-.markdown-body :deep(.footnote-ref) {
-  color: #6750A4;
-  font-weight: bold;
-  text-decoration: none;
-}
-
-.markdown-body :deep(.custom-container) {
-  margin: 16px 0;
-  padding: 14px 18px;
-  border-radius: 8px;
-  border-left: 4px solid;
-}
-
-.markdown-body :deep(.custom-container p) {
-  margin: 0;
-  font-weight: 600;
-}
-
-.markdown-body :deep(.custom-container.tip) {
-  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-  border-color: #4CAF50;
-}
-
-.markdown-body :deep(.custom-container.warning) {
-  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-  border-color: #FF9800;
-}
-
-.markdown-body :deep(.custom-container.danger) {
-  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-  border-color: #f44336;
-}
-
-.markdown-body :deep(.custom-container.info) {
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-  border-color: #2196F3;
-}
-
-.markdown-body :deep(.task-list-item) {
-  list-style: none;
-  margin-left: -24px;
-}
-
-.markdown-body :deep(.task-list-item input[type="checkbox"]) {
-  margin-right: 8px;
-  width: 16px;
-  height: 16px;
-  accent-color: #6750A4;
-}
-
-.markdown-body :deep(.emoji) {
-  display: inline;
-  vertical-align: middle;
-}
-
-.markdown-body :deep(kbd) {
-  display: inline-block;
-  padding: 2px 8px;
-  font-size: 0.9em;
-  font-family: 'JetBrains Mono', monospace;
-  color: #333;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-shadow: 0 2px 0 #ccc;
-}
-
-.markdown-body :deep(.code-block) {
-  position: relative;
-  border-radius: 8px;
-  overflow: hidden;
-  margin: 16px 0;
-}
-
-.markdown-body :deep(.code-block::before) {
-  content: attr(data-language);
-  position: absolute;
-  top: 0;
-  right: 0;
-  padding: 4px 12px;
-  font-size: 11px;
-  color: #888;
-  text-transform: uppercase;
-  background: rgba(0, 0, 0, 0.2);
-  font-weight: 500;
-}
-
-.markdown-body :deep(.code-block pre) {
-  margin: 0;
-  border-radius: 0;
-  background: #0d1117;
-}
-
-.markdown-body :deep(.code-block code) {
-  display: block;
-  padding: 16px;
-  overflow-x: auto;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-  font-size: 13px;
-  line-height: 1.6;
-  white-space: pre;
-}
-
-.markdown-body :deep(.hljs) {
-  background: #0d1117 !important;
-  color: #c9d1d9;
-}
-
-.markdown-body :deep(.hljs-keyword),
-.markdown-body :deep(.hljs-selector-tag),
-.markdown-body :deep(.hljs-built_in),
-.markdown-body :deep(.hljs-name),
-.markdown-body :deep(.hljs-tag) {
-  color: #ff7b72;
-}
-
-.markdown-body :deep(.hljs-string),
-.markdown-body :deep(.hljs-title),
-.markdown-body :deep(.hljs-section),
-.markdown-body :deep(.hljs-attribute),
-.markdown-body :deep(.hljs-literal),
-.markdown-body :deep(.hljs-template-tag),
-.markdown-body :deep(.hljs-template-variable),
-.markdown-body :deep(.hljs-type),
-.markdown-body :deep(.hljs-addition) {
-  color: #a5d6ff;
-}
-
-.markdown-body :deep(.hljs-comment),
-.markdown-body :deep(.hljs-quote),
-.markdown-body :deep(.hljs-deletion),
-.markdown-body :deep(.hljs-meta) {
-  color: #8b949e;
-}
-
-.markdown-body :deep(.hljs-number),
-.markdown-body :deep(.hljs-regexp),
-.markdown-body :deep(.hljs-literal),
-.markdown-body :deep(.hljs-bullet),
-.markdown-body :deep(.hljs-link) {
-  color: #ffa657;
-}
-
-.markdown-body :deep(.hljs-function),
-.markdown-body :deep(.hljs-title.function_) {
-  color: #d2a8ff;
-}
-
-.markdown-body :deep(.hljs-variable),
-.markdown-body :deep(.hljs-params) {
-  color: #c9d1d9;
-}
-
-.markdown-body :deep(.hljs-property) {
-  color: #79c0ff;
-}
-
-.markdown-body :deep(.hljs-operator) {
-  color: #ff7b72;
-}
-
-.markdown-body :deep(.hljs-class .hljs-title) {
-  color: #ffa657;
-}
-
-.markdown-body :deep(.hljs-attr) {
-  color: #a5d6ff;
-}
-
-.markdown-body :deep(.katex-block) {
-  margin: 16px 0;
-  padding: 16px;
-  background: #fafafa;
-  border-radius: 8px;
-  overflow-x: auto;
-}
-
-.markdown-body :deep(.katex) {
-  font-size: 1.1em;
-}
 </style>

@@ -1,91 +1,86 @@
 <template>
-  <v-container fluid class="pa-4">
-    <v-row justify="center">
-      <v-col cols="12" lg="10" xl="8">
-        <v-card elevation="2">
-          <v-card-item class="pa-4">
-            <div class="d-flex align-center justify-space-between flex-wrap gap-2">
-              <div class="d-flex align-center">
-                <v-btn icon="mdi-arrow-left" variant="text" @click="router.back()" class="mr-2"></v-btn>
-                <v-card-title class="text-h5">我的通知</v-card-title>
-              </div>
-              <v-btn
-                v-if="unreadCount > 0"
-                variant="tonal"
-                color="primary"
-                @click="markAllRead"
-                prepend-icon="mdi-check-all"
-              >
-                全部标记已读
-              </v-btn>
+  <div class="notifications-page">
+    <div class="notifications-container">
+      <div class="notifications-card">
+        <div class="card-header">
+          <div class="header-left">
+            <button class="back-btn" @click="router.back()">
+              <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h1 class="page-title">我的通知</h1>
+          </div>
+          <button 
+            v-if="unreadCount > 0"
+            class="layui-btn layui-btn-normal"
+            @click="markAllRead"
+          >
+            <i class="fa-solid fa-check-all mr-2"></i>
+            全部标记已读
+          </button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div v-if="notifications.length > 0" class="notifications-list">
+          <div 
+            v-for="notification in notifications"
+            :key="notification.id"
+            :class="['notification-item', { unread: !notification.is_read }]"
+          >
+            <div class="notification-avatar" :style="{ background: getTypeColor(notification.type) }">
+              <i :class="getTypeIcon(notification.type)" class="text-white"></i>
             </div>
-          </v-card-item>
-
-          <v-divider></v-divider>
-
-          <v-list lines="three" v-if="notifications.length > 0" class="pa-2">
-            <v-list-item
-              v-for="notification in notifications"
-              :key="notification.id"
-              :class="{ 'bg-blue-lighten-5': !notification.is_read }"
-              class="mb-2 rounded-lg"
-            >
-              <template v-slot:prepend>
-                <v-avatar :color="getTypeColor(notification.type)" size="48">
-                  <v-icon color="white">{{ getTypeIcon(notification.type) }}</v-icon>
-                </v-avatar>
-              </template>
-
-              <v-list-item-title class="font-weight-bold mb-2">
-                <v-chip size="small" :color="getTypeColor(notification.type)" class="mr-2">
+            
+            <div class="notification-content">
+              <div class="notification-title">
+                <span :class="['type-tag', getTypeColor(notification.type)]">
                   {{ getTypeText(notification.type) }}
-                </v-chip>
+                </span>
                 {{ notification.title }}
-              </v-list-item-title>
-
-              <v-list-item-subtitle class="text-body-2 mt-1">
-                {{ notification.content }}
-              </v-list-item-subtitle>
-
-              <v-list-item-subtitle class="text-caption text-medium-emphasis mt-2">
-                <v-icon size="small" class="mr-1">mdi-clock</v-icon>
+              </div>
+              <div class="notification-desc">{{ notification.content }}</div>
+              <div class="notification-time">
+                <i class="fa-solid fa-clock mr-1"></i>
                 {{ formatDate(notification.created_at) }}
-              </v-list-item-subtitle>
-
-              <template v-slot:append>
-                <v-btn
-                  v-if="!notification.is_read"
-                  variant="tonal"
-                  size="small"
-                  color="primary"
-                  @click="markRead(notification)"
-                >
-                  标记已读
-                </v-btn>
-              </template>
-            </v-list-item>
-          </v-list>
-
-          <v-card-text v-else class="text-center py-12">
-            <v-icon size="80" color="grey-lighten-2">mdi-bell-off-outline</v-icon>
-            <div class="text-h6 text-medium-emphasis mt-4">暂无通知</div>
-            <div class="text-body-2 text-medium-emphasis mt-2">
-              暂无新的通知消息
+              </div>
             </div>
-          </v-card-text>
 
-          <v-card-actions v-if="totalPages > 1" class="justify-center pb-4">
-            <v-pagination
-              v-model="page"
-              :length="totalPages"
-              :total-visible="5"
-              rounded="circle"
-            ></v-pagination>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
+            <button 
+              v-if="!notification.is_read"
+              class="mark-read-btn"
+              @click="markRead(notification)"
+            >
+              标记已读
+            </button>
+          </div>
+        </div>
+
+        <div v-else class="empty-state">
+          <i class="fa-regular fa-bell-slash"></i>
+          <div class="empty-title">暂无通知</div>
+          <div class="empty-desc">暂无新的通知消息</div>
+        </div>
+
+        <div v-if="totalPages > 1" class="pagination">
+          <button 
+            class="page-btn" 
+            :disabled="page <= 1"
+            @click="page--"
+          >
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <span class="page-info">{{ page }} / {{ totalPages }}</span>
+          <button 
+            class="page-btn" 
+            :disabled="page >= totalPages"
+            @click="page++"
+          >
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -149,22 +144,22 @@ export default {
 
     const getTypeColor = (type) => {
       const colors = {
-        system: 'primary',
-        activity: 'success',
-        update: 'info',
-        warning: 'warning'
+        system: '#1E9FFF',
+        activity: '#52C41A',
+        update: '#13C2C2',
+        warning: '#FAAD14'
       }
-      return colors[type] || 'default'
+      return colors[type] || '#999'
     }
 
     const getTypeIcon = (type) => {
       const icons = {
-        system: 'mdi-information',
-        activity: 'mdi-calendar-star',
-        update: 'mdi-update',
-        warning: 'mdi-alert'
+        system: 'fa-solid fa-circle-info',
+        activity: 'fa-solid fa-calendar-star',
+        update: 'fa-solid fa-rotate-right',
+        warning: 'fa-solid fa-triangle-exclamation'
       }
-      return icons[type] || 'mdi-bell'
+      return icons[type] || 'fa-solid fa-bell'
     }
 
     const getTypeText = (type) => {
@@ -205,3 +200,240 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.notifications-page {
+  padding: 24px 0;
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.notifications-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+.notifications-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #666;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  
+  &:hover {
+    background: #f5f5f5;
+    color: var(--primary);
+  }
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 20px 0;
+}
+
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: #f0f0f0;
+  }
+  
+  &.unread {
+    background: rgba(30, 159, 255, 0.05);
+    border-left: 4px solid var(--primary);
+  }
+}
+
+.notification-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  
+  i {
+    font-size: 24px;
+  }
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.type-tag {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: white;
+  
+  &.system {
+    background: #1E9FFF;
+  }
+  
+  &.activity {
+    background: #52C41A;
+  }
+  
+  &.update {
+    background: #13C2C2;
+  }
+  
+  &.warning {
+    background: #FAAD14;
+  }
+}
+
+.notification-desc {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.notification-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.mark-read-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--primary);
+  background: rgba(30, 159, 255, 0.1);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background: rgba(30, 159, 255, 0.2);
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: #999;
+  
+  i {
+    font-size: 64px;
+    margin-bottom: 16px;
+    color: #e8e8e8;
+  }
+}
+
+.empty-title {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #666;
+}
+
+.empty-desc {
+  font-size: 14px;
+  color: #999;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.page-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #666;
+  transition: all 0.2s;
+  
+  &:hover:not(:disabled) {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.page-info {
+  font-size: 14px;
+  color: #666;
+}
+
+.mr-1 {
+  margin-right: 4px;
+}
+
+.mr-2 {
+  margin-right: 8px;
+}
+</style>

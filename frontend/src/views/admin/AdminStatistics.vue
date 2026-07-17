@@ -1,153 +1,136 @@
 <template>
-  <v-container fluid>
-    <v-row>
-      <!-- 系统概览 -->
-      <v-col cols="12">
-        <v-card>
-          <v-card-title>
-            <v-icon left>mdi-chart-box</v-icon>
-            系统概览
-          </v-card-title>
-          <v-card-text>
-            <v-row>
-              <v-col cols="12" sm="6" md="3">
-                <v-card outlined>
-                  <v-card-text class="text-center">
-                    <v-icon color="primary" size="40">mdi-account-group</v-icon>
-                    <div class="headline mt-2">{{ overview.total_users }}</div>
-                    <div class="subtitle-2">总用户数</div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-card outlined>
-                  <v-card-text class="text-center">
-                    <v-icon color="success" size="40">mdi-file-document</v-icon>
-                    <div class="headline mt-2">{{ overview.total_articles }}</div>
-                    <div class="subtitle-2">总文章数</div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-card outlined>
-                  <v-card-text class="text-center">
-                    <v-icon color="info" size="40">mdi-comment</v-icon>
-                    <div class="headline mt-2">{{ overview.total_comments }}</div>
-                    <div class="subtitle-2">总评论数</div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-card outlined>
-                  <v-card-text class="text-center">
-                    <v-icon color="warning" size="40">mdi-account-circle</v-icon>
-                    <div class="headline mt-2">{{ overview.online_users }}</div>
-                    <div class="subtitle-2">在线用户</div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
+  <div class="admin-statistics">
+    <div class="layui-card mb-4">
+      <div class="layui-card-header">
+        <i class="fa-solid fa-chart-column mr-2"></i>
+        系统概览
+      </div>
+      <div class="layui-card-body">
+        <div class="layui-row">
+          <div class="layui-col-xs12 layui-col-sm6 layui-col-md3">
+            <div class="stat-card stat-card-primary">
+              <div class="stat-content text-center">
+                <i class="fa-solid fa-users" style="font-size: 40px; color: #1E9FFF;"></i>
+                <div style="font-size: 28px; font-weight: 700; margin-top: 10px;">{{ overview.total_users }}</div>
+                <div style="color: #666; font-size: 14px;">总用户数</div>
+              </div>
+            </div>
+          </div>
+          <div class="layui-col-xs12 layui-col-sm6 layui-col-md3">
+            <div class="stat-card stat-card-success">
+              <div class="stat-content text-center">
+                <i class="fa-solid fa-file-lines" style="font-size: 40px; color: #52C41A;"></i>
+                <div style="font-size: 28px; font-weight: 700; margin-top: 10px;">{{ overview.total_articles }}</div>
+                <div style="color: #666; font-size: 14px;">总文章数</div>
+              </div>
+            </div>
+          </div>
+          <div class="layui-col-xs12 layui-col-sm6 layui-col-md3">
+            <div class="stat-card stat-card-info">
+              <div class="stat-content text-center">
+                <i class="fa-solid fa-comment" style="font-size: 40px; color: #3B82F6;"></i>
+                <div style="font-size: 28px; font-weight: 700; margin-top: 10px;">{{ overview.total_comments }}</div>
+                <div style="color: #666; font-size: 14px;">总评论数</div>
+              </div>
+            </div>
+          </div>
+          <div class="layui-col-xs12 layui-col-sm6 layui-col-md3">
+            <div class="stat-card stat-card-warning">
+              <div class="stat-content text-center">
+                <i class="fa-solid fa-user-circle" style="font-size: 40px; color: #FAAD14;"></i>
+                <div style="font-size: 28px; font-weight: 700; margin-top: 10px;">{{ overview.online_users }}</div>
+                <div style="color: #666; font-size: 14px;">在线用户</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <!-- 最近7天统计 -->
-      <v-col cols="12" md="6">
-        <v-card>
-          <v-card-title>
-            <v-icon left>mdi-chart-line</v-icon>
+    <div class="layui-row">
+      <div class="layui-col-xs12 layui-col-md6">
+        <div class="layui-card mb-4">
+          <div class="layui-card-header">
+            <i class="fa-solid fa-chart-line mr-2"></i>
             最近7天活跃度
-          </v-card-title>
-          <v-card-text>
-            <v-simple-table>
-              <template v-slot:default>
-                <thead>
-                  <tr>
-                    <th>日期</th>
-                    <th>新增用户</th>
-                    <th>活跃用户</th>
-                    <th>新增文章</th>
-                    <th>新增评论</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="stat in recentStats" :key="stat.date">
-                    <td>{{ stat.date }}</td>
-                    <td>{{ stat.new_users }}</td>
-                    <td>{{ stat.active_users }}</td>
-                    <td>{{ stat.new_articles }}</td>
-                    <td>{{ stat.new_comments }}</td>
-                  </tr>
-                </tbody>
-              </template>
-            </v-simple-table>
-          </v-card-text>
-        </v-card>
-      </v-col>
+          </div>
+          <div class="layui-card-body">
+            <table class="layui-table">
+              <thead>
+                <tr>
+                  <th>日期</th>
+                  <th>新增用户</th>
+                  <th>活跃用户</th>
+                  <th>新增文章</th>
+                  <th>新增评论</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="stat in recentStats" :key="stat.date">
+                  <td>{{ stat.date }}</td>
+                  <td>{{ stat.new_users }}</td>
+                  <td>{{ stat.active_users }}</td>
+                  <td>{{ stat.new_articles }}</td>
+                  <td>{{ stat.new_comments }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
-      <!-- 热门文章 -->
-      <v-col cols="12" md="6">
-        <v-card>
-          <v-card-title>
-            <v-icon left>mdi-fire</v-icon>
+      <div class="layui-col-xs12 layui-col-md6">
+        <div class="layui-card mb-4">
+          <div class="layui-card-header">
+            <i class="fa-solid fa-flame mr-2"></i>
             热门文章
-          </v-card-title>
-          <v-card-text>
-            <v-list>
-              <v-list-item v-for="article in hotArticles" :key="article.id">
-                <v-list-item-content>
-                  <v-list-item-title>{{ article.title }}</v-list-item-title>
-                  <v-list-item-subtitle>
-                    <v-icon small>mdi-eye</v-icon> {{ article.view_count }}
-                    <v-icon small class="ml-2">mdi-heart</v-icon> {{ article.like_count }}
-                    <v-icon small class="ml-2">mdi-comment</v-icon> {{ article.comment_count }}
-                  </v-list-item-subtitle>
-                </v-list-item-content>
-                <v-list-item-action>
-                  <v-btn text small color="primary" :to="`/article/${article.id}`">
-                    查看
-                  </v-btn>
-                </v-list-item-action>
-              </v-list-item>
-            </v-list>
-          </v-card-text>
-        </v-card>
-      </v-col>
+          </div>
+          <div class="layui-card-body">
+            <div v-for="article in hotArticles" :key="article.id" class="article-item border-b last:border-b-0" style="padding: 10px 0;">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div style="font-weight: 500;">{{ article.title }}</div>
+                  <div style="color: #999; font-size: 12px; margin-top: 4px;">
+                    <i class="fa-solid fa-eye mr-2"></i>{{ article.view_count }}
+                    <i class="fa-solid fa-heart mr-2 ml-3"></i>{{ article.like_count }}
+                    <i class="fa-solid fa-comment mr-2 ml-3"></i>{{ article.comment_count }}
+                  </div>
+                </div>
+                <a :href="`/article/${article.id}`" class="layui-btn layui-btn-sm layui-btn-primary">查看</a>
+              </div>
+            </div>
+            <div v-if="hotArticles.length === 0" class="text-center py-8 text-muted">暂无热门文章</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <!-- 活跃用户 -->
-      <v-col cols="12">
-        <v-card>
-          <v-card-title>
-            <v-icon left>mdi-account-star</v-icon>
-            活跃用户
-          </v-card-title>
-          <v-card-text>
-            <v-row>
-              <v-col cols="12" sm="6" md="4" lg="3" v-for="user in activeUsers" :key="user.id">
-                <v-card outlined>
-                  <v-card-text class="text-center">
-                    <v-avatar size="60">
-                      <img :src="user.avatar || '/default-avatar.png'" alt="avatar">
-                    </v-avatar>
-                    <div class="mt-2">{{ user.display_name || user.username }}</div>
-                    <v-chip small color="success" class="mt-1">
-                      <v-icon small left>mdi-circle</v-icon>
-                      在线
-                    </v-chip>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
+    <div class="layui-card">
+      <div class="layui-card-header">
+        <i class="fa-solid fa-star mr-2"></i>
+        活跃用户
+      </div>
+      <div class="layui-card-body">
+        <div class="layui-row">
+          <div class="layui-col-xs12 layui-col-sm6 layui-col-md4 layui-col-lg3" v-for="user in activeUsers" :key="user.id">
+            <div class="user-card" style="text-align: center; padding: 15px; border: 1px solid #E8E8E8; border-radius: 8px; margin-bottom: 15px;">
+              <div class="avatar" style="width: 60px; height: 60px; border-radius: 50%; background: #F5F7FA; margin: 0 auto; overflow: hidden;">
+                <img :src="user.avatar || '/default-avatar.png'" alt="avatar" style="width: 100%; height: 100%; object-fit: cover;" />
+              </div>
+              <div style="margin-top: 10px;">{{ user.display_name || user.username }}</div>
+              <span class="layui-badge layui-bg-green" style="margin-top: 5px;">在线</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="activeUsers.length === 0" class="text-center py-8 text-muted">暂无活跃用户</div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue'
-import { statisticsApi } from '@/api'
+import { statisticsApi } from '../../api'
 
 export default {
   name: 'StatisticsDashboard',
@@ -191,7 +174,38 @@ export default {
 </script>
 
 <style scoped>
-.v-card {
-  margin-bottom: 16px;
+.admin-statistics {
+  padding: 24px;
+}
+
+.stat-card {
+  padding: 15px;
+  border: 1px solid #E8E8E8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.stat-card-primary {
+  border-left: 4px solid #1E9FFF;
+}
+
+.stat-card-success {
+  border-left: 4px solid #52C41A;
+}
+
+.stat-card-info {
+  border-left: 4px solid #3B82F6;
+}
+
+.stat-card-warning {
+  border-left: 4px solid #FAAD14;
+}
+
+.border-b {
+  border-bottom: 1px solid #E8E8E8;
+}
+
+.last\:border-b-0:last-child {
+  border-bottom: none;
 }
 </style>

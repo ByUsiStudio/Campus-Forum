@@ -1,133 +1,86 @@
 <template>
   <div>
-    <!-- 搜索和筛选栏 -->
-    <v-card class="mb-4 pa-3" variant="flat" rounded="lg">
-      <v-row dense align="center">
-        <v-col cols="12" sm="6" md="4">
-          <v-text-field
-            v-model="searchQuery"
-            placeholder="搜索文章标题..."
-            prepend-inner-icon="mdi-magnify"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-          />
-        </v-col>
-        <v-col cols="12" sm="6" md="3">
-          <v-select
-            v-model="localFilter"
-            :items="statusOptions"
-            item-title="label"
-            item-value="value"
-            label="状态筛选"
-            variant="outlined"
-            density="compact"
-            hide-details
-            @update:model-value="$emit('update:filter', $event)"
-          />
-        </v-col>
-        <v-col cols="12" sm="12" md="5" class="text-end">
-          <v-btn-group variant="tonal" density="compact">
-            <v-btn color="primary" @click="$emit('refresh')" :loading="loading">
-              <v-icon start>mdi-refresh</v-icon>
-              刷新
-            </v-btn>
-          </v-btn-group>
-        </v-col>
-      </v-row>
-    </v-card>
+    <div class="layui-card mb-4">
+      <div class="layui-card-body">
+        <div class="search-bar">
+          <div class="search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" v-model="searchQuery" placeholder="搜索文章标题..." class="layui-input" />
+          </div>
+          <select v-model="localFilter" @change="$emit('update:filter', localFilter)" class="layui-select">
+            <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+          <button class="layui-btn" @click="$emit('refresh')" :disabled="loading">
+            <i class="fa-solid fa-rotate-right"></i>
+            刷新
+          </button>
+        </div>
+      </div>
+    </div>
 
-    <!-- 文章列表 -->
-    <v-card variant="flat" rounded="lg">
-      <v-list lines="two" v-if="filteredArticles.length > 0">
-        <v-list-item v-for="article in filteredArticles" :key="article.id" class="py-3">
-          <template v-slot:prepend>
-            <v-avatar size="48" color="primary" variant="tonal">
-              <v-icon>mdi-file-document</v-icon>
-            </v-avatar>
-          </template>
+    <div class="layui-card">
+      <div v-if="filteredArticles.length > 0" class="articles-list">
+        <div v-for="article in filteredArticles" :key="article.id" class="article-item">
+          <div class="article-icon">
+            <i class="fa-solid fa-file-lines"></i>
+          </div>
 
-          <v-list-item-title class="font-weight-medium mb-1">
-            {{ article.title }}
-            <v-chip size="x-small" :color="getStatusColor(article.status)" variant="tonal" class="ml-2">
-              {{ getStatusText(article.status) }}
-            </v-chip>
-          </v-list-item-title>
-
-          <v-list-item-subtitle>
-            <div class="d-flex flex-wrap align-center ga-2">
-              <span class="d-flex align-center">
-                <v-icon size="14" class="mr-1">mdi-identifier</v-icon>
-                ID: {{ article.id }}
-              </span>
-              <span class="d-flex align-center">
-                <UserAvatar :user="article.User || {}" :size="20" class="mr-1" />
+          <div class="article-info">
+            <div class="article-title-wrap">
+              <span class="article-title font-weight-medium">{{ article.title }}</span>
+              <span :class="['status-tag', getStatusClass(article.status)]">{{ getStatusText(article.status) }}</span>
+            </div>
+            <div class="article-meta">
+              <span class="meta-item"><i class="fa-solid fa-hashtag"></i> ID: {{ article.id }}</span>
+              <span class="meta-item">
+                <UserAvatar :user="article.User || {}" :size="20" />
                 {{ article.User?.display_name || '-' }}
               </span>
-              <v-chip size="x-small" variant="tonal" color="primary" v-if="article.Category">
-                {{ article.Category.name }}
-              </v-chip>
+              <span v-if="article.Category" class="meta-item category-tag">{{ article.Category.name }}</span>
             </div>
-            <div class="d-flex flex-wrap align-center ga-3 mt-1">
-              <span class="d-flex align-center text-caption">
-                <v-icon size="14" color="pink" class="mr-1">mdi-heart</v-icon>
-                {{ article.like_count || 0 }}
-              </span>
-              <span class="d-flex align-center text-caption">
-                <v-icon size="14" color="blue" class="mr-1">mdi-eye</v-icon>
-                {{ article.view_count || 0 }}
-              </span>
-              <span class="d-flex align-center text-caption">
-                <v-icon size="14" color="grey" class="mr-1">mdi-clock-outline</v-icon>
-                {{ formatDate(article.created_at) }}
-              </span>
+            <div class="article-stats">
+              <span class="stat-item"><i class="fa-solid fa-heart" style="color: #FF5722;"></i> {{ article.like_count || 0 }}</span>
+              <span class="stat-item"><i class="fa-solid fa-eye" style="color: #1E9FFF;"></i> {{ article.view_count || 0 }}</span>
+              <span class="stat-item"><i class="fa-solid fa-clock"></i> {{ formatDate(article.created_at) }}</span>
             </div>
-          </v-list-item-subtitle>
+          </div>
 
-          <template v-slot:append>
-            <v-btn-group variant="text" density="compact" divided>
-              <v-btn size="small" color="primary" @click="$emit('change-status', article)" v-if="article.status !== 'deleted'">
-                <v-icon>mdi-state-machine</v-icon>
-                <v-tooltip activator="parent">修改状态</v-tooltip>
-              </v-btn>
-              <v-btn size="small" color="success" @click="$emit('restore', article)" v-if="article.status === 'deleted'">
-                <v-icon>mdi-restore</v-icon>
-                <v-tooltip activator="parent">恢复文章</v-tooltip>
-              </v-btn>
-              <v-btn size="small" color="info" :to="`/article/${article.id}`" target="_blank">
-                <v-icon>mdi-eye</v-icon>
-                <v-tooltip activator="parent">查看文章</v-tooltip>
-              </v-btn>
-              <v-btn size="small" color="error" @click="$emit('delete', article)" v-if="canDeleteArticle() && article.status !== 'deleted'">
-                <v-icon>mdi-delete</v-icon>
-                <v-tooltip activator="parent">删除</v-tooltip>
-              </v-btn>
-            </v-btn-group>
-          </template>
-        </v-list-item>
-      </v-list>
+          <div class="article-actions">
+            <button v-if="article.status !== 'deleted'" class="action-btn" @click="$emit('change-status', article)" title="修改状态">
+              <i class="fa-solid fa-refresh-cw"></i>
+            </button>
+            <button v-if="article.status === 'deleted'" class="action-btn success" @click="$emit('restore', article)" title="恢复文章">
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+            <router-link :to="`/article/${article.id}`" target="_blank" class="action-btn" title="查看文章">
+              <i class="fa-solid fa-eye"></i>
+            </router-link>
+            <button v-if="canDeleteArticle() && article.status !== 'deleted'" class="action-btn danger" @click="$emit('delete', article)" title="删除">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
 
-      <v-card-text v-else class="text-center py-8">
-        <v-icon size="48" color="grey-lighten-1">mdi-file-document-search</v-icon>
+      <div v-else class="empty-state">
+        <i class="fa-solid fa-file-lines" style="font-size: 48px; color: #ccc;"></i>
         <div class="text-body-1 text-medium-emphasis mt-2">
           {{ searchQuery ? '未找到匹配的文章' : '暂无文章数据' }}
         </div>
-      </v-card-text>
-    </v-card>
-
-    <!-- 分页 -->
-    <div class="d-flex align-center justify-center ga-4 mt-4" v-if="totalPages > 1">
-      <v-pagination
-        v-model="localPage"
-        :length="totalPages"
-        :total-visible="5"
-        rounded="lg"
-        @update:model-value="$emit('update:page', $event)"
-      />
-      <div class="text-caption text-medium-emphasis">
-        第 {{ page }} / {{ totalPages }} 页
       </div>
+    </div>
+
+    <div v-if="totalPages > 1" class="pagination-wrap">
+      <div class="layui-laypage">
+        <button class="layui-laypage-prev" :disabled="page <= 1" @click="handlePrevPage">上一页</button>
+        <span v-for="p in pageRange" :key="p" :class="['layui-laypage-curr', { active: p === page }]" @click="$emit('update:page', p)">
+          {{ p }}
+        </span>
+        <button class="layui-laypage-next" :disabled="page >= totalPages" @click="handleNextPage">下一页</button>
+      </div>
+      <div class="page-info">第 {{ page }} / {{ totalPages }} 页</div>
     </div>
   </div>
 </template>
@@ -194,13 +147,32 @@ export default {
       )
     })
 
-    const getStatusColor = (status) => {
-      const colors = {
-        pending: 'warning',
-        published: 'success',
-        rejected: 'error'
+    const pageRange = computed(() => {
+      const range = []
+      const total = props.totalPages
+      const current = props.page
+      const visible = 5
+      
+      let start = Math.max(1, current - Math.floor(visible / 2))
+      let end = Math.min(total, start + visible - 1)
+      
+      if (end - start + 1 < visible) {
+        start = Math.max(1, end - visible + 1)
       }
-      return colors[status] || 'default'
+      
+      for (let i = start; i <= end; i++) {
+        range.push(i)
+      }
+      return range
+    })
+
+    const getStatusClass = (status) => {
+      const classes = {
+        pending: 'pending',
+        published: 'published',
+        rejected: 'rejected'
+      }
+      return classes[status] || ''
     }
 
     const getStatusText = (status) => {
@@ -215,7 +187,7 @@ export default {
     const formatDate = (dateString) => {
       if (!dateString) return '-'
       const date = new Date(dateString)
-      return date.toLocaleString('zh-CN', {
+      return date.toLocaleDateString('zh-CN', {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'
@@ -226,16 +198,243 @@ export default {
       return props.currentUserRole === 'system' || props.currentUserRole === 'admin'
     }
 
+    const handlePrevPage = () => {
+      if (props.page > 1) {
+        emit('update:page', props.page - 1)
+      }
+    }
+
+    const handleNextPage = () => {
+      if (props.page < props.totalPages) {
+        emit('update:page', props.page + 1)
+      }
+    }
+
     return {
       localPage,
       localFilter,
       searchQuery,
       filteredArticles,
-      getStatusColor,
+      pageRange,
+      getStatusClass,
       getStatusText,
       formatDate,
-      canDeleteArticle
+      canDeleteArticle,
+      handlePrevPage,
+      handleNextPage
     }
   }
 }
 </script>
+
+<style scoped>
+.search-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-input-wrap {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+}
+
+.search-input-wrap i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #999;
+}
+
+.search-input-wrap input {
+  padding-left: 36px;
+}
+
+.layui-select {
+  min-width: 150px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.articles-list {
+  padding: 0;
+}
+
+.article-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 12px;
+}
+
+.article-item:last-child {
+  border-bottom: none;
+}
+
+.article-icon {
+  width: 48px;
+  height: 48px;
+  background: #e6f7ff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1E9FFF;
+  flex-shrink: 0;
+}
+
+.article-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.article-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.article-title {
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.status-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.status-tag.pending {
+  background: #fffbe6;
+  color: #faad14;
+}
+
+.status-tag.published {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.status-tag.rejected {
+  background: #fff2f0;
+  color: #ff4d4f;
+}
+
+.category-tag {
+  background: #e6f7ff;
+  color: #1890ff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.article-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #666;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta-item i {
+  font-size: 12px;
+}
+
+.article-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #999;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-item i {
+  font-size: 12px;
+}
+
+.article-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  transition: all 0.3s;
+}
+
+.action-btn:hover {
+  background: #f0f0f0;
+  color: #1E9FFF;
+}
+
+.action-btn.success:hover {
+  color: #52C41A;
+}
+
+.action-btn.danger:hover {
+  background: #fff2f0;
+  color: #FF5722;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px;
+}
+
+.text-body-1 {
+  font-size: 16px;
+}
+
+.text-medium-emphasis {
+  color: #999;
+}
+
+.font-weight-medium {
+  font-weight: 500;
+}
+
+.mt-2 {
+  margin-top: 8px;
+}
+
+.pagination-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.page-info {
+  font-size: 13px;
+  color: #999;
+}
+</style>

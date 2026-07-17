@@ -1,103 +1,69 @@
 <template>
-  <v-container fluid class="pa-4 pa-md-6">
-    <!-- 网站配置表单 -->
-    <v-card variant="flat" rounded="lg">
-      <v-card-title class="pb-2">
-        <v-icon start size="20">mdi-globe</v-icon>
-        网站配置
-      </v-card-title>
+  <div class="admin-site-config">
+    <div class="layui-card">
+      <div class="layui-card-header">
+        <i class="fa-solid fa-globe"></i>
+        <span>网站配置</span>
+      </div>
 
-      <v-card-text>
-        <v-form ref="siteForm" v-model="formValid">
-          <!-- 网站基本配置 -->
-          <div class="text-subtitle-2 font-weight-bold mb-3">基本配置</div>
-          <v-text-field
+      <div class="layui-card-body">
+        <div class="section-title">基本配置</div>
+        <div class="form-group">
+          <label class="form-label">网站标题</label>
+          <input
             v-model="siteConfigForm.siteTitle"
-            label="网站标题"
+            type="text"
             placeholder="校园论坛 - 分享与交流"
-            variant="outlined"
-            density="compact"
-            :rules="[rules.required]"
-            prepend-inner-icon="mdi-web"
-            clearable
-            counter="100"
+            class="layui-input"
             maxlength="100"
-            class="mb-4"
           />
+          <span class="char-count">{{ siteConfigForm.siteTitle.length }}/100</span>
+        </div>
 
-          <v-divider class="my-4" />
+        <div class="divider"></div>
 
-          <!-- 备案信息配置 -->
-          <div class="text-subtitle-2 font-weight-bold mb-2">备案信息</div>
-          <div class="text-caption text-medium-emphasis mb-3">
-            以下字段可选，不填写则不在页面底部显示
+        <div class="section-title">备案信息</div>
+        <div class="section-desc">以下字段可选，不填写则不在页面底部显示</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ICP备案号</label>
+            <input
+              v-model="siteConfigForm.icpNumber"
+              type="text"
+              placeholder="京ICP备12345678号"
+              class="layui-input"
+              maxlength="50"
+            />
           </div>
-          <v-row dense>
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="siteConfigForm.icpNumber"
-                label="ICP备案号"
-                placeholder="京ICP备12345678号"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-shield-check"
-                clearable
-                counter="50"
-                maxlength="50"
-              />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="siteConfigForm.publicSecurityNumber"
-                label="公安联网备案号"
-                placeholder="京公网安备 12345678901234567890号"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-police-badge"
-                clearable
-                counter="50"
-                maxlength="50"
-              />
-            </v-col>
-          </v-row>
+          <div class="form-group">
+            <label class="form-label">公安联网备案号</label>
+            <input
+              v-model="siteConfigForm.publicSecurityNumber"
+              type="text"
+              placeholder="京公网安备 12345678901234567890号"
+              class="layui-input"
+              maxlength="50"
+            />
+          </div>
+        </div>
 
-          <v-alert
-            v-if="siteConfigForm.siteTitle"
-            type="success"
-            variant="tonal"
-            density="compact"
-            class="mt-4"
-            icon="mdi-check-circle"
-          >
-            当前网站标题：<strong>{{ siteConfigForm.siteTitle }}</strong>
-          </v-alert>
-        </v-form>
-      </v-card-text>
+        <div v-if="siteConfigForm.siteTitle" class="success-alert">
+          <i class="fa-solid fa-check-circle"></i>
+          <span>当前网站标题：<strong>{{ siteConfigForm.siteTitle }}</strong></span>
+        </div>
+      </div>
 
-      <v-card-actions class="pa-4">
-        <v-btn
-          color="warning"
-          variant="outlined"
-          @click="resetForm"
-          :disabled="saving"
-        >
-          <v-icon start>mdi-refresh</v-icon>
-          重置
-        </v-btn>
-        <v-spacer />
-        <v-btn
-          color="primary"
-          variant="flat"
-          @click="saveSiteConfig"
-          :loading="saving"
-          :disabled="!formValid"
-        >
-          <v-icon start>mdi-content-save</v-icon>
-          保存配置
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-container>
+      <div class="layui-card-footer">
+        <button class="layui-btn layui-btn-primary" @click="resetForm" :disabled="saving">
+          <i class="fa-solid fa-rotate-right"></i>重置
+        </button>
+        <div class="spacer"></div>
+        <button class="layui-btn" @click="saveSiteConfig" :disabled="saving || !siteConfigForm.siteTitle.trim()">
+          <i class="fa-solid fa-floppy-disk"></i>保存配置
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -111,13 +77,7 @@ const siteConfigForm = ref({
   publicSecurityNumber: ''
 })
 
-const siteForm = ref(null)
-const formValid = ref(false)
 const saving = ref(false)
-
-const rules = {
-  required: v => !!v || '此字段为必填项'
-}
 
 const originalConfig = ref({
   siteTitle: '',
@@ -131,7 +91,6 @@ const loadSiteConfig = async () => {
     siteConfigForm.value.siteTitle = response.data.site_title || ''
     siteConfigForm.value.icpNumber = response.data.icp_number || ''
     siteConfigForm.value.publicSecurityNumber = response.data.public_security_number || ''
-    // 保存原始配置用于重置
     originalConfig.value = { ...siteConfigForm.value }
   } catch (err) {
     console.error('加载网站配置失败', err)
@@ -170,3 +129,94 @@ onMounted(() => {
   loadSiteConfig()
 })
 </script>
+
+<style scoped>
+.admin-site-config {
+  padding: 20px;
+}
+
+.layui-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.section-desc {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.char-count {
+  display: block;
+  text-align: right;
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.form-row {
+  display: flex;
+  gap: 24px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 24px 0;
+}
+
+.success-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(82, 196, 26, 0.1);
+  color: #52C41A;
+  border-radius: 6px;
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.layui-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+  }
+}
+</style>

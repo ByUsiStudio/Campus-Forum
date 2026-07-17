@@ -1,83 +1,65 @@
 <template>
   <div>
-    <!-- 添加新分区表单 -->
-    <v-card class="mb-4" variant="flat" rounded="lg">
-      <v-card-title class="pb-2">
-        <v-icon start size="20">mdi-plus-circle</v-icon>
+    <div class="layui-card mb-4">
+      <div class="layui-card-header">
+        <i class="fa-solid fa-plus-circle mr-2" style="font-size: 20px;"></i>
         添加新分区
-      </v-card-title>
-      <v-card-text>
-        <v-row dense>
-          <v-col cols="12" sm="4">
-            <v-text-field
-              v-model="formData.name"
-              label="分区名称"
-              placeholder="例如：技术交流"
-              variant="outlined"
-              density="compact"
-              hide-details
-            />
-          </v-col>
-          <v-col cols="12" sm="5">
-            <v-text-field
-              v-model="formData.description"
-              label="描述"
-              placeholder="分区简介"
-              variant="outlined"
-              density="compact"
-              hide-details
-            />
-          </v-col>
-          <v-col cols="12" sm="3">
-            <v-btn color="primary" block height="40" @click="handleAdd">
-              <v-icon start>mdi-plus</v-icon>
+      </div>
+      <div class="layui-card-body">
+        <div class="layui-row">
+          <div class="layui-col-xs12 layui-col-sm4">
+            <div class="layui-form-item">
+              <label class="layui-form-label">分区名称</label>
+              <div class="layui-input-block">
+                <input type="text" v-model="formData.name" placeholder="例如：技术交流" class="layui-input" />
+              </div>
+            </div>
+          </div>
+          <div class="layui-col-xs12 layui-col-sm5">
+            <div class="layui-form-item">
+              <label class="layui-form-label">描述</label>
+              <div class="layui-input-block">
+                <input type="text" v-model="formData.description" placeholder="分区简介" class="layui-input" />
+              </div>
+            </div>
+          </div>
+          <div class="layui-col-xs12 layui-col-sm3">
+            <button class="layui-btn layui-btn-fluid" style="height: 40px; margin-top: 30px;" @click="handleAdd">
+              <i class="fa-solid fa-plus mr-2"></i>
               添加
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
-
-    <!-- 分区列表 -->
-    <v-card variant="flat" rounded="lg">
-      <v-list lines="two" v-if="categories.length > 0">
-        <v-list-item v-for="cat in categories" :key="cat.id" class="py-3">
-          <template v-slot:prepend>
-            <v-avatar size="48" :color="cat.color || 'primary'" variant="tonal">
-              <span class="text-h6">{{ cat.sort_order || 0 }}</span>
-            </v-avatar>
-          </template>
-
-          <v-list-item-title class="font-weight-medium mb-1">
-            {{ cat.name }}
-          </v-list-item-title>
-
-          <v-list-item-subtitle>
-            {{ cat.description || '暂无描述' }}
-          </v-list-item-subtitle>
-
-          <template v-slot:append>
-            <v-btn-group variant="text" density="compact" divided>
-              <v-btn size="small" color="primary" @click="$emit('edit', cat)">
-                <v-icon>mdi-pencil</v-icon>
-                <v-tooltip activator="parent">编辑</v-tooltip>
-              </v-btn>
-              <v-btn size="small" color="error" @click="$emit('delete', cat)">
-                <v-icon>mdi-delete</v-icon>
-                <v-tooltip activator="parent">删除</v-tooltip>
-              </v-btn>
-            </v-btn-group>
-          </template>
-        </v-list-item>
-      </v-list>
-
-      <v-card-text v-else class="text-center py-8">
-        <v-icon size="48" color="grey-lighten-1">mdi-folder-outline</v-icon>
-        <div class="text-body-1 text-medium-emphasis mt-2">
-          暂无分区数据
+            </button>
+          </div>
         </div>
-      </v-card-text>
-    </v-card>
+      </div>
+    </div>
+
+    <div class="layui-card">
+      <div v-if="categories.length > 0">
+        <div v-for="cat in categories" :key="cat.id" class="layui-card-body border-b last:border-b-0" style="padding: 12px 15px;">
+          <div class="flex items-center gap-3">
+            <div class="avatar" :style="{ backgroundColor: cat.color || '#1E9FFF', width: '48px', height: '48px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+              <span style="color: white; font-size: 18px; font-weight: 600;">{{ cat.sort_order || 0 }}</span>
+            </div>
+            <div class="flex-1">
+              <div class="font-medium">{{ cat.name }}</div>
+              <div class="text-muted text-sm mt-1">{{ cat.description || '暂无描述' }}</div>
+            </div>
+            <div class="flex gap-2">
+              <button class="layui-btn layui-btn-sm" @click="$emit('edit', cat)">
+                <i class="fa-solid fa-pencil"></i>
+              </button>
+              <button class="layui-btn layui-btn-danger layui-btn-sm" @click="$emit('delete', cat)">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else class="layui-card-body text-center py-8">
+        <i class="fa-solid fa-folder-open" style="font-size: 48px; color: #dcdcdc;"></i>
+        <div class="text-muted mt-2">暂无分区数据</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -121,3 +103,9 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.last\:border-b-0:last-child {
+  border-bottom: none;
+}
+</style>
