@@ -4,7 +4,7 @@ import api from './index'
 export const friendApi = {
   // 发送好友请求
   sendFriendRequest: (data) => api.post('/friends/request', {
-    user_id: data.user_id,
+    friend_id: data.friend_id ?? data.user_id,
     message: data.message
   }),
 

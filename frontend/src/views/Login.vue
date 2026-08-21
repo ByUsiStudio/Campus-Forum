@@ -50,13 +50,14 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
 
 export default {
   name: 'Login',
   setup() {
     const router = useRouter()
+    const route = useRoute()
     const form = ref({
       username: '',
       password: ''
@@ -91,7 +92,13 @@ export default {
         // 通知 App.vue 更新状态
         window.dispatchEvent(new Event('user-updated'))
 
-        router.push('/')
+        // 登录成功后跳转：优先回到被拦截的目标页，否则回首页
+        const redirect = route.query.redirect
+        if (redirect && redirect.startsWith('/') && !redirect.startsWith('/login')) {
+          router.push(redirect)
+        } else {
+          router.push('/')
+        }
       } catch (err) {
         error.value = err.response?.data?.error || '登录失败'
       } finally {

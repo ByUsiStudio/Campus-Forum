@@ -67,6 +67,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
+import UserAvatar from '../components/UserAvatar.vue'
 import { success as showSuccess } from '../utils/modal'
 
 const router = useRouter()
@@ -78,9 +79,12 @@ const following = ref([])
 const followers = ref([])
 const currentUser = ref(null)
 const userId = ref(route.query.userId || route.query.id || null)
-const isOwnProfile = computed(() => !userId.value || currentUser.value?.id === parseInt(userId.value))
 const followingCount = ref(0)
 const followersCount = ref(0)
+
+const isOwnProfile = computed(
+  () => !userId.value || currentUser.value?.id === parseInt(userId.value, 10)
+)
 
 const pageTitle = computed(() => {
   if (isOwnProfile.value) {
@@ -101,40 +105,35 @@ const isFollowing = (targetUserId) => {
   return followingIds.value.has(targetUserId)
 }
 
-const loadFollowData = async () => {
-  if (!userId.value && !currentUser.value?.id) return
+const applyLists = (list) => {
+  const items = list || []
+  following.value = items
+  followers.value = items
+  followingCount.value = items.length
+  followersCount.value = items.length
+}
 
-  const targetId = userId.value || currentUser.value.id
+const loadOwnFollowData = async () => {
+  if (!currentUser.value?.id) return
   loading.value = true
-
   try {
-    const friendsRes = await api.get('/friends')
-
-    following.value = friendsRes.data.friends || []
-    followers.value = friendsRes.data.friends || []
-    followingCount.value = following.value.length
-    followersCount.value = followers.value.length
+    const res = await api.get('/friends')
+    applyLists(res.data.friends)
   } catch (error) {
-    console.error('获取好友列表失败', error)
+    console.error('获取关注/粉丝列表失败', error)
   } finally {
     loading.value = false
   }
 }
 
 const loadOtherUserFollowData = async () => {
-  if (!userId.value) return
-
+  if (!userId.value || !currentUser.value?.id) return
   loading.value = true
-
   try {
-    const friendsRes = await api.get(`/friends/mutual/${userId.value}`)
-
-    following.value = friendsRes.data.friends || []
-    followers.value = friendsRes.data.friends || []
-    followingCount.value = following.value.length
-    followersCount.value = followers.value.length
+    const res = await api.get(`/friends/mutual/${userId.value}`)
+    applyLists(res.data.mutual_friends || res.data.friends)
   } catch (error) {
-    console.error('获取好友列表失败', error)
+    console.error('获取对方的关注/粉丝列表失败', error)
   } finally {
     loading.value = false
   }
@@ -145,13 +144,22 @@ const handleFollowToggle = async (user) => {
     if (isFollowing(user.id)) {
       await api.delete(`/friends/${user.id}`)
       following.value = following.value.filter(u => u.id !== user.id)
-      followingCount.value--
+      followingCount.value = following.value.length
     } else {
-      await api.post('/friends/request', { user_id: user.id })
+      // 后端好友请求接口期望 friend_id 字段
+      await api.post('/friends/request', { friend_id: user.id })
       await showSuccess('已发送好友请求')
     }
   } catch (error) {
     console.error('操作失败', error)
+  }
+}
+
+const loadData = () => {
+  if (userId.value) {
+    loadOtherUserFollowData()
+  } else {
+    loadOwnFollowData()
   }
 }
 
@@ -163,25 +171,19 @@ onMounted(async () => {
       currentUser.value = profileRes.data
     }
   } catch (error) {
-    console.error('获取当前用户失败', error)
+    console.error('获取当前用户信息失败', error)
   }
-
-  if (userId.value) {
-    loadOtherUserFollowData()
-  } else {
-    loadFollowData()
-  }
+  loadData()
 })
 
-watch(() => [route.query.userId, route.query.id, route.query.tab], ([newUserId, newId, newTab]) => {
-  userId.value = newUserId || newId || null
-  tab.value = newTab || 'following'
-  if (userId.value) {
-    loadOtherUserFollowData()
-  } else {
-    loadFollowData()
+watch(
+  () => [route.query.userId, route.query.id, route.query.tab],
+  ([newUserId, newId, newTab]) => {
+    userId.value = newUserId || newId || null
+    tab.value = newTab || 'following'
+    loadData()
   }
-})
+)
 </script>
 
 <style scoped>

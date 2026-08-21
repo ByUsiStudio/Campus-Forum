@@ -11,7 +11,6 @@
       </v-card-title>
 
       <v-card-text>
-        <!-- 话题列表 -->
         <v-row>
           <v-col cols="12" sm="6" md="4" v-for="topic in topics" :key="topic.id">
             <v-card outlined hover class="topic-card" @click="viewTopic(topic.id)">
@@ -52,7 +51,6 @@
           </v-col>
         </v-row>
 
-        <!-- 分页 -->
         <div class="text-center mt-4">
           <v-pagination
             v-model="page"
@@ -64,7 +62,6 @@
       </v-card-text>
     </v-card>
 
-    <!-- 话题详情对话框 -->
     <v-dialog v-model="topicDialog" max-width="800">
       <v-card v-if="selectedTopic">
         <v-card-title>
@@ -134,8 +131,8 @@ export default {
       try {
         const res = await topicApi.getTopics(page.value, limit.value)
         if (res.data.success) {
-          topics.value = res.data.data.topics
-          total.value = res.data.data.total
+          topics.value = res.data.data.topics || []
+          total.value = res.data.data.total || 0
         }
       } catch (error) {
         console.error('加载话题失败:', error)
@@ -147,14 +144,12 @@ export default {
         const res = await topicApi.getTopic(topicId)
         if (res.data.success) {
           selectedTopic.value = res.data.data.topic
-          topicArticles.value = res.data.data.articles
+          topicArticles.value = res.data.data.articles || []
           topicDialog.value = true
 
-          // 检查是否已关注
           const followedRes = await topicApi.getFollowedTopics()
-          if (followedRes.data.success) {
-            isFollowing.value = followedRes.data.data.some(f => f.topic_id === topicId)
-          }
+          const followedList = (followedRes.data.success && followedRes.data.data) || []
+          isFollowing.value = followedList.some(f => f.topic_id === topicId)
         }
       } catch (error) {
         console.error('加载话题详情失败:', error)
@@ -162,12 +157,15 @@ export default {
     }
 
     const followTopic = async () => {
+      const topicId = selectedTopic.value?.id
+      if (!topicId) return
+
       try {
         if (isFollowing.value) {
-          await topicApi.unfollowTopic(selectedTopic.value.id)
+          await topicApi.unfollowTopic(topicId)
           isFollowing.value = false
         } else {
-          await topicApi.followTopic(selectedTopic.value.id)
+          await topicApi.followTopic(topicId)
           isFollowing.value = true
         }
       } catch (error) {
@@ -179,8 +177,8 @@ export default {
       try {
         const res = await topicApi.getTopics(1, 20, true)
         if (res.data.success) {
-          topics.value = res.data.data.topics
-          total.value = res.data.data.total
+          topics.value = res.data.data.topics || []
+          total.value = res.data.data.total || 0
         }
       } catch (error) {
         console.error('加载热门话题失败:', error)

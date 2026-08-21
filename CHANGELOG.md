@@ -8,8 +8,17 @@
 
 ## [2.2.0] - 2026-08-22
 
+### 重构
+
+- 保持现有界面 UI（Vuetify 3 布局/配色/组件）不变的前提下，全量重写前端代码实现：统一 APIs 对接层、规范视图与组件逻辑
+- 重写 API 请求层（`api/index.js`）为统一封装：修复请求拦截器中 `getErrorMessage` 未定义的潜在崩溃，改进 token 自动刷新（并发去重、队列按序放行、刷新失败跳登录），统一错误解析与提示
+- 重写路由守卫（`main.js`）：文章详情/分类/排行榜/话题等只读页面在未登录时也可浏览（与后端公开接口一致），登录页支持登录后回跳原目标页
+- 逐文件重写全部视图的 `<script>` 逻辑（模板/UI 保持逐字不变），清理死代码与调试日志，统一 API 调用规范
+- 重写 `api/friend.js` 并与后端对齐：好友/关注请求字段由 `user_id` 修正为后端要求的 `friend_id`
+
 ### 修复
 
+- 修复"关注/添加好友"功能因请求体字段名（`user_id` → `friend_id`）与后端不匹配而完全失效的问题（涉及 `Article`、`Profile`、`FollowList`）
 - 修复系统日志页（AdminSystemLogs）请求带上了双重 `/api` 前缀（`/api/api/system-logs`）导致接口 404 的问题
 - 清理指向不存在后端接口的死代码：移除 `api/user.js` 中的 `getUserFollowing`/`getUserFollowers`（`/users/:id/following|followers`）、`api/notification.js` 中的 `/follow-notifications*` 系列封装
 - 修复管理后台底部导航与顶栏引用了不存在的路由名（`AdminDashboard`→`AdminIndex`、`AdminSettings`→`AdminSiteConfig`），导航跳转恢复正常

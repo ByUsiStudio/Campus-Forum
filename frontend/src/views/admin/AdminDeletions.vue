@@ -1,6 +1,5 @@
 <template>
   <v-container fluid class="pa-4 pa-md-6">
-    <!-- 删除申请列表 -->
     <v-card variant="flat" rounded="lg">
       <v-card-title class="pb-2">
         <v-icon start size="20">mdi-delete-forever</v-icon>
@@ -70,7 +69,7 @@ const deletionRequests = ref([])
 const loadDeletionRequests = async () => {
   try {
     const response = await adminDeletionApi.getRequests()
-    deletionRequests.value = response.data.requests || []
+    deletionRequests.value = response.data?.requests || response.data || []
   } catch (err) {
     console.error('加载删除申请失败', err)
     error('加载删除申请失败')
@@ -92,11 +91,11 @@ const formatTime = (timeString) => {
 const approveDeletion = async (id) => {
   const confirmed = await confirm('确定要批准此删除申请吗？')
   if (!confirmed) return
-  
+
   try {
     await adminDeletionApi.approveRequest(id)
     success('已批准删除')
-    loadDeletionRequests()
+    await loadDeletionRequests()
   } catch (err) {
     console.error('批准删除失败', err)
     error(err.response?.data?.error || '操作失败')
@@ -106,18 +105,16 @@ const approveDeletion = async (id) => {
 const rejectDeletion = async (id) => {
   const confirmed = await confirm('确定要拒绝此删除申请吗？')
   if (!confirmed) return
-  
+
   try {
     await adminDeletionApi.rejectRequest(id)
     success('已拒绝删除')
-    loadDeletionRequests()
+    await loadDeletionRequests()
   } catch (err) {
     console.error('拒绝删除失败', err)
     error(err.response?.data?.error || '操作失败')
   }
 }
 
-onMounted(() => {
-  loadDeletionRequests()
-})
+onMounted(loadDeletionRequests)
 </script>

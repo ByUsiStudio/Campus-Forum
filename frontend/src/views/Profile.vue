@@ -311,7 +311,7 @@
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import api, { articleApi } from '../api'
+import api, { articleApi, userApi, friendApi, uploadApi } from '../api'
 import UserAvatar from '../components/UserAvatar.vue'
 import { success as showSuccess } from '../utils/modal'
 
@@ -325,6 +325,7 @@ export default {
     const router = useRouter()
     const token = ref(localStorage.getItem('token'))
     const user = ref(null)
+    const currentUser = ref(null)
     const myArticles = ref([])
     const drafts = ref([])
     const activeTab = ref('published')
@@ -337,34 +338,32 @@ export default {
       is_followed: false,
       mutual: false
     })
-    const targetUserId = computed(() => route.query.id || route.query.userId)
-    const currentUser = ref(null)
     const followingCount = ref(0)
     const followersCount = ref(0)
     const articleCount = ref(0)
+
+    const targetUserId = computed(() => route.query.id || route.query.userId)
+    const isLoggedIn = computed(() => !!token.value)
     const isOwnProfile = computed(() => {
       return !targetUserId.value || (currentUser.value && currentUser.value.id === user.value?.id)
     })
-    const isLoggedIn = computed(() => !!token.value)
 
     const loadProfile = async () => {
       if (!token.value && !targetUserId.value) return
-      
+
       try {
         if (targetUserId.value) {
-          const response = await api.get(`/users/${targetUserId.value}`)
+          const response = await userApi.getUserByID(targetUserId.value)
           user.value = response.data
         } else {
           const response = await api.get('/profile')
           user.value = response.data
-          editForm.value.display_name = user.value.display_name
+          editForm.value.display_name = user.value.display_name || ''
           editForm.value.signature = user.value.signature || ''
         }
       } catch (error) {
         console.error('加载用户信息失败', error)
-        if (targetUserId.value) {
-          // 查看他人资料失败，保持加载状态
-        } else {
+        if (!targetUserId.value) {
           router.push('/')
         }
       }
@@ -374,11 +373,12 @@ export default {
       if (!user.value || isOwnProfile.value || !currentUser.value) return
 
       try {
-        const response = await api.get(`/friends/status/${user.value.id}`)
+        const response = await friendApi.checkFriendStatus(user.value.id)
+        const isFriend = !!response.data.is_friend
         followStatus.value = {
-          is_following: response.data.is_friend,
-          is_followed: response.data.is_friend,
-          mutual: response.data.is_friend
+          is_following: isFriend,
+          is_followed: isFriend,
+          mutual: isFriend
         }
       } catch (error) {
         console.error('加载好友状态失败', error)
@@ -393,11 +393,12 @@ export default {
 
       try {
         if (followStatus.value.is_following) {
-          await api.delete(`/friends/${user.value.id}`)
+          await friendApi.deleteFriend(user.value.id)
           followStatus.value.is_following = false
+          followStatus.value.is_followed = false
           followStatus.value.mutual = false
         } else {
-          await api.post('/friends/request', { user_id: user.value.id })
+          await friendApi.sendFriendRequest({ user_id: user.value.id })
           await showSuccess('已发送好友请求')
         }
       } catch (error) {
@@ -421,7 +422,7 @@ export default {
       if (!user.value) return
       try {
         const targetId = targetUserId.value || user.value.id
-        const friendsRes = await api.get(`/friends/mutual/${targetId}`)
+        const friendsRes = await friendApi.getMutualFriends(targetId)
         followingCount.value = friendsRes.data.friends?.length || 0
         followersCount.value = friendsRes.data.friends?.length || 0
       } catch (error) {
@@ -432,20 +433,13 @@ export default {
     const loadMyArticles = async () => {
       try {
         if (targetUserId.value) {
-          const response = await api.get(`/users/${targetUserId.value}/articles`)
+          const response = await userApi.getUserArticles(targetUserId.value)
           myArticles.value = response.data.articles || []
-          articleCount.value = myArticles.value.length
         } else {
-          const response = await api.get('/articles', {
-            params: { page: 1, page_size: 50 }
-          })
-          if (user.value) {
-            myArticles.value = response.data.articles.filter(
-              a => a.user_id === user.value.id
-            )
-            articleCount.value = myArticles.value.length
-          }
+          const response = await articleApi.getMyArticles()
+          myArticles.value = response.data.articles || response.data || []
         }
+        articleCount.value = myArticles.value.length
       } catch (error) {
         console.error('加载文章失败', error)
       }
@@ -477,7 +471,7 @@ export default {
     const deleteDraft = async (id) => {
       if (!confirm('确定要删除这篇草稿吗？')) return
       try {
-        await api.delete(`/articles/${id}`)
+        await articleApi.deleteArticle(id)
         await loadDrafts()
         alert('删除成功')
       } catch (error) {
@@ -517,7 +511,7 @@ export default {
         formData.append('avatar', file)
 
         try {
-          const response = await api.post('/upload/avatar', formData)
+          const response = await uploadApi.uploadAvatar(formData)
           user.value.avatar = response.data.url
           const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
           storedUser.avatar = response.data.url
@@ -540,7 +534,7 @@ export default {
         if (!reason) return
 
         try {
-          await api.delete(`/articles/${id}`, { data: { reason } })
+          await articleApi.deleteArticle(id, { data: { reason } })
           alert('删除申请已提交，等待管理员审核')
           myArticles.value = myArticles.value.filter(a => a.id !== id)
         } catch (error) {
@@ -549,7 +543,7 @@ export default {
         }
       } else {
         try {
-          await api.delete(`/articles/${id}`)
+          await articleApi.deleteArticle(id)
           myArticles.value = myArticles.value.filter(a => a.id !== id)
           alert('删除成功')
         } catch (error) {
@@ -560,13 +554,18 @@ export default {
     }
 
     const formatDate = (date) => {
+      if (!date) return ''
       return new Date(date).toLocaleString('zh-CN')
     }
 
     onMounted(() => {
       const storedUser = localStorage.getItem('user')
       if (storedUser) {
-        currentUser.value = JSON.parse(storedUser)
+        try {
+          currentUser.value = JSON.parse(storedUser)
+        } catch (e) {
+          currentUser.value = null
+        }
       }
       loadProfile().then(() => {
         loadMyArticles()
@@ -585,7 +584,6 @@ export default {
       updateProfile,
       changeAvatar,
       deleteArticle,
-      loadDrafts,
       publishDraft,
       deleteDraft,
       formatDate,

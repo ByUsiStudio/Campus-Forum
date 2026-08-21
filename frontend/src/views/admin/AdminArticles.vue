@@ -81,8 +81,8 @@ const loadArticles = async () => {
     })
     articles.value = response.data.articles
     articleTotalPages.value = response.data.total_pages
-  } catch (error) {
-    console.error('加载文章列表失败', error)
+  } catch (e) {
+    console.error('加载文章列表失败', e)
   } finally {
     loading.value = false
   }
@@ -92,8 +92,8 @@ const loadCurrentUser = async () => {
   try {
     const response = await api.get('/profile')
     currentUserRole.value = response.data.role
-  } catch (error) {
-    console.error('加载当前用户失败', error)
+  } catch (e) {
+    console.error('加载当前用户失败', e)
     router.push('/login')
   }
 }
@@ -112,9 +112,9 @@ const handleEditStatus = async () => {
     success('修改成功')
     statusDialog.value.show = false
     loadArticles()
-  } catch (error) {
-    console.error('修改状态失败', error)
-    error(error.response?.data?.error || '修改失败')
+  } catch (e) {
+    console.error('修改状态失败', e)
+    error(e.response?.data?.error || '修改失败')
   }
 }
 
@@ -125,9 +125,9 @@ const handleDeleteArticle = async (article) => {
     await api.delete(`/articles/${article.id}`)
     success('删除成功')
     loadArticles()
-  } catch (error) {
-    console.error('删除文章失败', error)
-    error(error.response?.data?.error || '删除失败')
+  } catch (e) {
+    console.error('删除文章失败', e)
+    error(e.response?.data?.error || '删除失败')
   }
 }
 
@@ -138,9 +138,9 @@ const handleRestoreArticle = async (article) => {
     await api.post(`/articles/${article.id}/restore`)
     success('恢复成功')
     loadArticles()
-  } catch (error) {
-    console.error('恢复文章失败', error)
-    error(error.response?.data?.error || '恢复失败')
+  } catch (e) {
+    console.error('恢复文章失败', e)
+    error(e.response?.data?.error || '恢复失败')
   }
 }
 

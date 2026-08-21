@@ -297,6 +297,7 @@ export default {
     const showVoiceDialog = ref(false)
     const voiceTab = ref('record')
     const voiceFile = ref(null)
+    const voiceFileInput = ref(null)
     const recordedBlob = ref(null)
     const recordedAudioUrl = ref('')
     const recordedAudioRef = ref(null)
@@ -401,9 +402,7 @@ export default {
           throw new Error('文章ID不存在')
         }
 
-        console.log('准备跳转到文章页面:', `/article/${newArticleId}`)
         await router.push(`/article/${newArticleId}`)
-        console.log('跳转成功')
       } catch (error) {
         console.error('提交或跳转失败', error)
         await showError('提交失败: ' + (error.message || '未知错误'))
@@ -422,8 +421,6 @@ export default {
         const formData = new FormData()
         const extension = audioBlob.type === 'audio/webm' ? 'webm' : 'mp3'
         formData.append('voice', audioBlob, `voice.${extension}`)
-
-        const oldUrl = voiceUrl.value
         const response = await api.post('/upload/voice', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
@@ -523,7 +520,6 @@ export default {
 
       isUploadingVoice.value = true
       try {
-        const oldUrl = voiceUrl.value
         const formData = new FormData()
         formData.append('voice', voiceFile.value)
 
@@ -545,12 +541,6 @@ export default {
 
     const removeVoice = () => {
       voiceUrl.value = ''
-    }
-
-    const resetVoiceDialog = () => {
-      voiceTab.value = 'record'
-      voiceFile.value = null
-      discardRecording()
     }
 
     onUnmounted(() => {
@@ -592,6 +582,7 @@ export default {
       showVoiceDialog,
       voiceTab,
       voiceFile,
+      voiceFileInput,
       recordedBlob,
       recordedAudioUrl,
       recordedAudioRef,
@@ -603,8 +594,7 @@ export default {
       confirmVoice,
       discardRecording,
       uploadSelectedFile,
-      removeVoice,
-      resetVoiceDialog
+      removeVoice
     }
   }
 }

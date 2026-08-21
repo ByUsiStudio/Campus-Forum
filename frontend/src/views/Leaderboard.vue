@@ -120,15 +120,16 @@ export default {
     }
 
     const getScoreText = (score) => {
+      const value = Number(score) || 0
       const texts = {
-        experience: `${Math.floor(score)} 经验值`,
-        articles: `${Math.floor(score)} 篇文章`,
-        likes: `${Math.floor(score)} 个点赞`,
-        comments: `${Math.floor(score)} 条评论`,
-        sign_in: `${Math.floor(score)} 天签到`,
-        active: `${score.toFixed(1)} 活跃度`
+        experience: `${Math.floor(value)} 经验值`,
+        articles: `${Math.floor(value)} 篇文章`,
+        likes: `${Math.floor(value)} 个点赞`,
+        comments: `${Math.floor(value)} 条评论`,
+        sign_in: `${Math.floor(value)} 天签到`,
+        active: `${value.toFixed(1)} 活跃度`
       }
-      return texts[selectedType.value] || `${Math.floor(score)} 分`
+      return texts[selectedType.value] || `${Math.floor(value)} 分`
     }
 
     const loadLeaderboard = async () => {

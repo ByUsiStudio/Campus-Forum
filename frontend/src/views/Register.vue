@@ -98,7 +98,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '../api'
+import { authApi } from '../api'
 
 export default {
   name: 'Register',
@@ -118,7 +118,7 @@ export default {
 
     const checkInit = async () => {
       try {
-        const response = await api.get('/auth/check-init')
+        const response = await authApi.checkInit()
         if (!response.data.initialized) {
           isInit.value = true
         }
@@ -130,34 +130,30 @@ export default {
     const handleRegister = async () => {
       error.value = ''
       success.value = ''
-      
+
       if (!isInit.value && form.value.password !== confirmPassword.value) {
         error.value = '两次输入的密码不一致'
         return
       }
-      
+
       if (form.value.password.length < 6) {
         error.value = '密码长度不能少于6位'
         return
       }
-      
+
       loading.value = true
-      
+
       try {
-        let response
         if (isInit.value) {
-          response = await api.post('/auth/init-admin', form.value)
+          await authApi.initAdmin(form.value)
           success.value = '系统初始化成功！即将跳转到登录页...'
-          setTimeout(() => {
-            router.push('/login')
-          }, 2000)
         } else {
-          response = await api.post('/auth/register', form.value)
+          await authApi.register(form.value)
           success.value = '注册成功！即将跳转到登录页...'
-          setTimeout(() => {
-            router.push('/login')
-          }, 2000)
         }
+        setTimeout(() => {
+          router.push('/login')
+        }, 2000)
       } catch (err) {
         error.value = err.response?.data?.error || '操作失败'
       } finally {

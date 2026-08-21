@@ -138,25 +138,42 @@ const router = createRouter({
     routes
 })
 
-// 路由守卫
-const publicPaths = ['/login', '/register', '/forgot-password', '/', '/search']
+// 无需登录即可访问的页面（浏览类只读页面 + 认证页）
+// 与后端公开接口保持一致，使未登录用户可直接浏览内容
+const publicPaths = [
+    '/',                  // 首页
+    '/login',             // 登录
+    '/register',          // 注册
+    '/forgot-password',   // 忘记密码
+    '/search',            // 搜索
+    '/leaderboard',       // 排行榜
+    '/topics',            // 话题列表
+    '/article/',          // 文章详情（前缀匹配）
+    '/category/',         // 分类
+    '/video',             // 视频播放
+    '/403'                // 403
+]
 
 router.beforeEach((to, from, next) => {
     const token = localStorage.getItem('token')
 
-    if (publicPaths.includes(to.path)) {
-        if (token && (to.path === '/login' || to.path === '/register')) {
-            next('/')
-        } else {
-            next()
-        }
-    } else {
-        if (!token) {
-            next('/login')
-        } else {
-            next()
-        }
+    const isPublic = publicPaths.some(p => to.path === p || to.path.startsWith(p))
+
+    // 已登录用户访问 /login /register 时回到首页，避免重复登录
+    if (token && (to.path === '/login' || to.path === '/register')) {
+        return next('/')
     }
+
+    if (isPublic) {
+        return next()
+    }
+
+    // 受限页面：未登录跳转登录页，并带上原目标以便登录后回跳
+    if (!token) {
+        return next({ path: '/login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : {} })
+    }
+
+    next()
 })
 
 const app = createApp(App)

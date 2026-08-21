@@ -60,6 +60,7 @@ export default {
   setup() {
     const route = useRoute()
     const router = useRouter()
+
     const searchQuery = ref('')
     const currentQuery = ref('')
     const articles = ref([])
@@ -68,27 +69,24 @@ export default {
     const page = ref(1)
     const pageSize = ref(20)
 
-    const search = async () => {
-      if (!searchQuery.value.trim()) {
+    const loadArticles = async () => {
+      const keyword = currentQuery.value.trim()
+      if (!keyword) {
+        articles.value = []
+        total.value = 0
         return
       }
 
-      currentQuery.value = searchQuery.value.trim()
-      page.value = 1
-      router.replace({ path: '/search', query: { q: currentQuery.value, page: 1 } })
-      await loadArticles()
-    }
-
-    const loadArticles = async () => {
       loading.value = true
       try {
         const response = await articleApi.searchArticles({
-          keyword: currentQuery.value,
+          keyword,
           page: page.value,
           page_size: pageSize.value
         })
-        articles.value = response.data.articles || []
-        total.value = response.data.total || 0
+        const data = response.data || {}
+        articles.value = data.articles || []
+        total.value = data.total || 0
       } catch (error) {
         console.error('搜索失败', error)
       } finally {
@@ -96,22 +94,41 @@ export default {
       }
     }
 
-    const handlePageChange = (newPage) => {
-      page.value = newPage
-      router.replace({ path: '/search', query: { q: currentQuery.value, page: newPage } })
-      loadArticles()
-    }
+    const applyUrlState = (forceReload = false) => {
+      const q = typeof route.query.q === 'string' ? route.query.q : ''
+      const p = parseInt(route.query.page, 10) || 1
+      const qChanged = q !== currentQuery.value
+      const pChanged = p !== page.value
 
-    onMounted(() => {
-      if (route.query.q) {
-        searchQuery.value = route.query.q
-        currentQuery.value = route.query.q
-        if (route.query.page) {
-          page.value = parseInt(route.query.page) || 1
-        }
+      searchQuery.value = q
+      currentQuery.value = q
+      page.value = p
+
+      if (forceReload || qChanged || pChanged) {
         loadArticles()
       }
-    })
+    }
+
+    const search = () => {
+      const q = searchQuery.value.trim()
+      if (!q) return
+
+      if (q === currentQuery.value && page.value === 1) {
+        loadArticles()
+        return
+      }
+
+      router.replace({ path: '/search', query: { q, page: 1 } })
+    }
+
+    const handlePageChange = (newPage) => {
+      if (newPage === page.value) return
+      router.replace({ path: '/search', query: { q: currentQuery.value, page: newPage } })
+    }
+
+    watch(() => route.query, () => applyUrlState())
+
+    onMounted(() => applyUrlState(true))
 
     return {
       searchQuery,

@@ -739,7 +739,7 @@ export default {
           followStatus.value.mutual = false
         } else {
           // 发送好友请求
-          await api.post('/friends/request', { user_id: article.value.user_id })
+          await api.post('/friends/request', { friend_id: article.value.user_id })
           await showSuccess('已发送好友请求')
         }
       } catch (error) {

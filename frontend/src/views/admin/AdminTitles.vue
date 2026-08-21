@@ -132,12 +132,20 @@ const loadUsers = async () => {
   }
 }
 
-const addTitle = async () => {
-  const titleName = prompt('请输入头衔名称：')
-  if (!titleName) return
+// 子组件通过 @add-title 传入完整表单 { name, description, color, icon }
+const addTitle = async (payload) => {
+  const titleData = payload && typeof payload === 'object'
+    ? { name: payload.name, description: payload.description, color: payload.color, icon: payload.icon }
+    : { name: payload }
+
+  const name = (titleData.name || '').trim()
+  if (!name) {
+    error('请输入头衔名称')
+    return
+  }
 
   try {
-    await adminTitleApi.createTitle({ name: titleName })
+    await adminTitleApi.createTitle(titleData)
     success('添加成功')
     loadTitles()
   } catch (err) {
@@ -146,7 +154,9 @@ const addTitle = async () => {
   }
 }
 
-const grantTitle = (titleId) => {
+// 子组件通过 @grant 传入 grantForm 或触发授予对话框时传入 titleId
+const grantTitle = (payload) => {
+  const titleId = payload && typeof payload === 'object' ? payload.title_id : payload
   grantDialog.value = {
     show: true,
     titleId,
@@ -174,7 +184,8 @@ const handleGrant = async () => {
   }
 }
 
-const revokeTitle = async (titleId, userId) => {
+// 子组件通过 @revoke 传入 (userId, titleId)
+const revokeTitle = async (userId, titleId) => {
   const confirmed = await confirm('确定要撤销此头衔吗？')
   if (!confirmed) return
 

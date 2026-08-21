@@ -142,6 +142,7 @@ import { success, error } from '../../utils/modal'
 // 密码占位符，表示密码已设置但不可见
 const PASSWORD_PLACEHOLDER = '••••••••••••••••'
 
+/** SMTP 配置表单数据 */
 const smtpConfigForm = ref({
   host: '',
   port: 587,
@@ -152,19 +153,21 @@ const smtpConfigForm = ref({
 })
 
 const smtpForm = ref(null)
-const formValid = ref(false)
-const showPassword = ref(false)
-const saving = ref(false)
-const testing = ref(false)
-const passwordSet = ref(false) // 标记密码是否已设置
-const passwordChanged = ref(false) // 标记密码是否被用户修改
+const formValid = ref(false) // 表单整体校验结果
+const showPassword = ref(false) // 是否明文显示密码
+const saving = ref(false) // 是否正在保存
+const testing = ref(false) // 是否正在测试
+const passwordSet = ref(false) // 后端是否已设置密码
+const passwordChanged = ref(false) // 用户是否修改了密码字段
 
+/** 表单校验规则 */
 const rules = {
   required: v => !!v || '此字段为必填项',
   email: v => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址',
   number: v => !isNaN(parseFloat(v)) && isFinite(v) || '请输入有效的数字'
 }
 
+/** 加载当前 SMTP 配置 */
 const loadSmtpConfig = async () => {
   try {
     const response = await adminSiteConfigApi.getConfig()
@@ -184,11 +187,12 @@ const loadSmtpConfig = async () => {
   }
 }
 
+/** 用户修改密码字段时标记密码已更改 */
 const onPasswordChange = () => {
-  // 当用户修改密码字段时，标记密码已更改
   passwordChanged.value = true
 }
 
+/** 保存 SMTP 配置 */
 const saveSmtpConfig = async () => {
   saving.value = true
   try {
@@ -197,20 +201,16 @@ const saveSmtpConfig = async () => {
       smtp_port: smtpConfigForm.value.port,
       smtp_username: smtpConfigForm.value.username,
       smtp_from: smtpConfigForm.value.from,
-      smtp_from_name: smtpConfigForm.value.fromName
+      smtp_from_name: smtpConfigForm.value.fromName,
+      // 密码字段为占位符或未修改时传空字符串，表示不更新密码
+      smtp_password: passwordChanged.value && smtpConfigForm.value.password !== PASSWORD_PLACEHOLDER
+        ? smtpConfigForm.value.password
+        : ''
     }
-    
-    // 只有当密码被修改时才发送新密码
-    // 如果密码是占位符或未修改，发送空字符串表示不更新密码
-    if (passwordChanged.value && smtpConfigForm.value.password !== PASSWORD_PLACEHOLDER) {
-      updateData.smtp_password = smtpConfigForm.value.password
-    } else {
-      updateData.smtp_password = '' // 空字符串表示不修改密码
-    }
-    
+
     await adminSiteConfigApi.updateConfig(updateData)
     success('SMTP配置保存成功')
-    // 重新加载配置以更新状态
+    // 重新加载配置以刷新密码设置状态
     loadSmtpConfig()
   } catch (err) {
     console.error('保存SMTP配置失败', err)
@@ -220,16 +220,16 @@ const saveSmtpConfig = async () => {
   }
 }
 
+/** 测试 SMTP 配置 */
 const testSmtpConfig = async () => {
   testing.value = true
   try {
-    // 测试时需要使用实际密码，如果密码未修改则无法测试
+    // 密码未修改且为占位符时，后端不持有明文，无法测试
     if (!passwordChanged.value && smtpConfigForm.value.password === PASSWORD_PLACEHOLDER) {
       error('密码已设置但不可见，无法测试。请先输入新密码后再测试。')
-      testing.value = false
       return
     }
-    
+
     await adminSiteConfigApi.testSmtp({
       smtp_host: smtpConfigForm.value.host,
       smtp_port: smtpConfigForm.value.port,

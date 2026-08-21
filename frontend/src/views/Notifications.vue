@@ -91,7 +91,7 @@
 <script>
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '../api'
+import { notificationApi } from '../api'
 
 export default {
   name: 'Notifications',
@@ -105,12 +105,12 @@ export default {
 
     const loadNotifications = async () => {
       try {
-        const response = await api.get('/notifications')
+        const response = await notificationApi.getNotifications()
         const allNotifications = response.data.notifications || []
-        
+
         const total = allNotifications.length
         totalPages.value = Math.ceil(total / pageSize)
-        
+
         const start = (page.value - 1) * pageSize
         notifications.value = allNotifications.slice(start, start + pageSize)
       } catch (error) {
@@ -120,7 +120,7 @@ export default {
 
     const loadUnreadCount = async () => {
       try {
-        const response = await api.get('/notifications/unread-count')
+        const response = await notificationApi.getUnreadCount()
         unreadCount.value = response.data.unread_count || 0
       } catch (error) {
         console.error('加载未读数量失败', error)
@@ -129,7 +129,7 @@ export default {
 
     const markRead = async (notification) => {
       try {
-        await api.post(`/notifications/${notification.id}/read`)
+        await notificationApi.markNotificationRead(notification.id)
         notification.is_read = true
         unreadCount.value = Math.max(0, unreadCount.value - 1)
       } catch (error) {
@@ -139,8 +139,8 @@ export default {
 
     const markAllRead = async () => {
       try {
-        await api.post('/notifications/read-all')
-        notifications.value.forEach(n => n.is_read = true)
+        await notificationApi.markAllNotificationsRead()
+        notifications.value.forEach((n) => { n.is_read = true })
         unreadCount.value = 0
       } catch (error) {
         console.error('标记全部已读失败', error)
@@ -191,6 +191,7 @@ export default {
     })
 
     return {
+      router,
       notifications,
       unreadCount,
       page,

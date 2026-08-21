@@ -107,7 +107,8 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import api from '../api'
+import { articleApi } from '../api'
+import { commonApi } from '../api'
 import Sidebar from '../components/Sidebar.vue'
 import ArticleList from '../components/ArticleList.vue'
 
@@ -143,7 +144,7 @@ export default {
         if (selectedCategory.value) {
           params.category_id = selectedCategory.value
         }
-        const response = await api.get('/articles', { params })
+        const response = await articleApi.getArticles(params)
         articles.value = response.data.articles
         totalPages.value = response.data.total_pages
       } catch (error) {
@@ -152,45 +153,45 @@ export default {
         loading.value = false
       }
     }
-    
+
     const loadCategories = async () => {
       try {
-        const response = await api.get('/categories')
+        const response = await commonApi.getCategories()
         categories.value = response.data.categories
       } catch (error) {
         console.error('加载分区失败', error)
       }
     }
-    
+
     const loadAnnouncement = async () => {
       try {
-        const response = await api.get('/announcement')
+        const response = await commonApi.getAnnouncement()
         announcement.value = response.data
       } catch (error) {
         console.error('加载公告失败', error)
       }
     }
-    
+
     const prevPage = () => {
       if (page.value > 1) {
         page.value--
         loadArticles()
       }
     }
-    
+
     const nextPage = () => {
       if (page.value < totalPages.value) {
         page.value++
         loadArticles()
       }
     }
-    
+
     onMounted(() => {
       loadArticles()
       loadCategories()
       loadAnnouncement()
     })
-    
+
     return {
       articles,
       categories,

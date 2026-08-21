@@ -72,7 +72,7 @@
 <script>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import api from '../api'
+import { authApi } from '../api'
 
 export default {
   name: 'ForgotPassword',
@@ -107,7 +107,7 @@ export default {
 
         loading.value = true
         try {
-          const response = await api.post('/password/reset-code', {
+          const response = await authApi.sendResetCode({
             qq_number: form.value.qq_number
           })
           success.value = response.data.message || '验证码已发送到您的QQ邮箱'
@@ -136,7 +136,7 @@ export default {
 
         loading.value = true
         try {
-          await api.post('/password/reset', {
+          await authApi.resetPassword({
             qq_number: form.value.qq_number,
             code: form.value.code,
             identifier: resetIdentifier.value,
