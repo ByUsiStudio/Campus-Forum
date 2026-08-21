@@ -6,6 +6,28 @@
 
 ---
 
+## [2.2.0] - 2026-08-22
+
+### 修复
+
+- 修复管理后台底部导航与顶栏引用了不存在的路由名（`AdminDashboard`→`AdminIndex`、`AdminSettings`→`AdminSiteConfig`），导航跳转恢复正常
+- 移除移动端应用抽屉中指向不存在页面的「聊天」入口及对应无效样式
+- 修复排行榜「查看」按钮指向不存在的 `/user/:id` 路由，改跳转至个人中心
+- 修复 `Profile` 与 `FollowList` 中未导入的 `showSuccess` 导致的关注操作运行时报错
+- 修复全局弹窗被 Esc/点击遮罩关闭后 Promise 永不 resolve、`await confirm/alert/prompt` 永久挂起的阻塞问题
+- 修复话题列表分页 `@input` 事件在 Vuetify 3 中不触发导致的分页失效
+- 修复评论嵌套回复在 `v-if`/`v-for` 同元素下（Vue 3 优先规则）导致的回复不渲染
+- 修复上传弹窗进度条使用失效的 `:value` 且无真实上传进度的问题，改用 XHR 实现真实进度、仅成功后置为 100%
+- 修复 Markdown 编辑器自动补全后残留光标占位符 `|` 的问题
+- 修复签到页签到后「签到记录」列表不刷新、以及 `v-icon left` 等 Vuetify 2 遗留写法失效的问题
+- 修复视频播放器退出全屏 `scrollTo` 使用无效 `behavior` 值的问题
+- 修复个人中心「已发布文章」在本人主页重复显示两遍的排版问题
+- 修复 404/403 错误页使用无效的 `min-h-screen`（Tailwind）类导致不垂直居中的问题
+- 兼容 Vuetify 3：修正 `UserLevel` 组件中 `white--text`/`headline`、`v-progress-linear :value`、`v-row dense`、`v-card outlined` 等失效写法
+- 清理文章详情与侧边栏中刷屏的调试日志
+
+---
+
 ## [2.0.4] - 2026-06-20
 
 ### 修复
