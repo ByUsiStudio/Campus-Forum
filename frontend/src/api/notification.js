@@ -22,18 +22,6 @@ export const notificationApi = {
 
   // 标记所有评论回复通知为已读
   markAllCommentReplyNotificationsRead: () => api.post('/comment-reply-notifications/read-all'),
-
-  // 获取粉丝通知
-  getFollowNotifications: () => api.get('/follow-notifications'),
-
-  // 标记粉丝通知为已读
-  markFollowNotificationRead: (id) => api.post(`/follow-notifications/${id}/read`),
-
-  // 标记所有粉丝通知为已读
-  markAllFollowNotificationsRead: () => api.post('/follow-notifications/read-all'),
-
-  // 获取粉丝通知未读数量
-  getFollowNotificationUnreadCount: () => api.get('/follow-notifications/unread-count'),
 }
 
 // 用户个人通知API

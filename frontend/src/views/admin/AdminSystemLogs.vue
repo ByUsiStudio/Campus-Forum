@@ -238,7 +238,7 @@ export default {
         if (filter.value.user_id) {
           params.user_id = filter.value.user_id
         }
-        const response = await api.get('/api/system-logs', { params })
+        const response = await api.get('/system-logs', { params })
         logs.value = response.data.logs
         total.value = response.data.total
       } catch (error) {
@@ -250,7 +250,7 @@ export default {
 
     const loadModules = async () => {
       try {
-        const response = await api.get('/api/system-logs/modules')
+        const response = await api.get('/system-logs/modules')
         modules.value = response.data.modules
       } catch (error) {
         console.error('加载模块列表失败:', error)
@@ -263,7 +263,7 @@ export default {
       }
       deleting.value = true
       try {
-        await api.delete('/api/system-logs/old', { params: { days: 90 } })
+        await api.delete('/system-logs/old', { params: { days: 90 } })
         alert('旧日志删除成功')
         await loadLogs()
       } catch (error) {

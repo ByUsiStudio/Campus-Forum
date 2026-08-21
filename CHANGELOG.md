@@ -10,6 +10,8 @@
 
 ### 修复
 
+- 修复系统日志页（AdminSystemLogs）请求带上了双重 `/api` 前缀（`/api/api/system-logs`）导致接口 404 的问题
+- 清理指向不存在后端接口的死代码：移除 `api/user.js` 中的 `getUserFollowing`/`getUserFollowers`（`/users/:id/following|followers`）、`api/notification.js` 中的 `/follow-notifications*` 系列封装
 - 修复管理后台底部导航与顶栏引用了不存在的路由名（`AdminDashboard`→`AdminIndex`、`AdminSettings`→`AdminSiteConfig`），导航跳转恢复正常
 - 移除移动端应用抽屉中指向不存在页面的「聊天」入口及对应无效样式
 - 修复排行榜「查看」按钮指向不存在的 `/user/:id` 路由，改跳转至个人中心
