@@ -82,12 +82,14 @@ const loading = ref(true)
 const categoryForm = ref(null)
 const formValid = ref(false)
 
-const editCategoryDialog = ref({
+const emptyDialog = () => ({
   show: false,
   category: null,
   name: '',
   description: ''
 })
+
+const editCategoryDialog = ref(emptyDialog())
 
 const rules = {
   required: v => !!v || '此字段为必填项'
@@ -106,12 +108,8 @@ const loadCategories = async () => {
 }
 
 const addCategory = () => {
-  editCategoryDialog.value = {
-    show: true,
-    category: null,
-    name: '',
-    description: ''
-  }
+  editCategoryDialog.value = emptyDialog()
+  editCategoryDialog.value.show = true
   formValid.value = false
 }
 

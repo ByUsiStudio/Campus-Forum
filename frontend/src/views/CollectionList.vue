@@ -153,7 +153,7 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { collectionApi } from '@/api'
+import { collectionApi } from '../api'
 
 export default {
   name: 'CollectionList',

@@ -289,7 +289,7 @@
 
 <script>
 import { ref, onMounted } from 'vue'
-import { userNotificationApi, permissionGroupApi, adminUserApi } from '../../api'
+import { adminUserNotificationApi, permissionGroupApi, adminUserApi } from '../../api'
 
 export default {
   name: 'AdminUserNotifications',
@@ -407,7 +407,7 @@ export default {
 
       sending.value = true
       try {
-        await userNotificationApi.sendNotification(notificationForm.value)
+        await adminUserNotificationApi.sendNotification(notificationForm.value)
         alert('通知发送成功')
         resetNotificationForm()
       } catch (error) {

@@ -131,6 +131,11 @@ export default {
     const modules = ref([])
     const total = ref(0)
 
+    // FIXME-TEMPLATE: the template binds `:options.sync="pagination"` on v-data-table.
+    // This is a Vue2/Vuetify2 legacy pattern with no effect in Vuetify 3. Keep the
+    // pagination state here because `loadLogs` reads page/itemsPerPage from it, but the
+    // binding itself does not sync back. To wire real paging, update the template to
+    // use `v-model:options` (or `@update:options`) instead. Template kept unchanged.
     const pagination = ref({
       page: 1,
       itemsPerPage: 20,

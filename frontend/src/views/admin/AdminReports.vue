@@ -268,6 +268,9 @@
 </template>
 
 <script>
+// FIXME-TEMPLATE: The <template> uses Vuetify-2 legacy `dense` prop on <v-row>
+// (lines ~71 and ~201). Vuetify 3 <v-row> has no `dense`; use `density="compact"`
+// or spacing props instead if aligning with Vuetify 3. UI left unchanged on purpose.
 import { ref, computed, onMounted } from 'vue'
 import { reportApi } from '../../api'
 
@@ -287,7 +290,6 @@ export default {
     const totalPages = computed(() => Math.ceil(totalReports.value / pageSize.value))
     const viewDialog = ref(false)
     const selectedReport = ref(null)
-    const handleNote = ref('')
 
     const filters = ref({
       search: '',
@@ -409,7 +411,6 @@ export default {
 
     const viewReport = (report) => {
       selectedReport.value = report
-      handleNote.value = ''
       viewDialog.value = true
     }
 
@@ -448,7 +449,6 @@ export default {
       targetTypeOptions,
       viewDialog,
       selectedReport,
-      handleNote,
       debounceSearch,
       loadReports,
       refreshData,

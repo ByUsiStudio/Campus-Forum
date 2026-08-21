@@ -378,7 +378,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import api from '../../api'
+import api, { adminUserApi } from '../../api'
 
 export default {
   name: 'AdminUsers',
@@ -402,6 +402,11 @@ export default {
     const editDialog = ref(false)
     const banDialog = ref(false)
     const selectedUser = ref(null)
+    // FIXME-TEMPLATE: the template has <v-form ref="editForm">, which binds a Vuetify
+    // form instance to the name "editForm"; this ref is also used as a reactive data
+    // object below. Renaming one side requires a template change, so we keep the data
+    // object here (the form instance is never validated/reset via the ref, so behavior
+    // is unchanged). To fix properly, rename the template ref or this object.
     const editForm = ref({
       id: null,
       username: '',
@@ -466,6 +471,8 @@ export default {
         if (filters.value.status) params.status = filters.value.status
         if (filters.value.online) params.online = filters.value.online
 
+        // adminUserApi.getUsers() does not accept params, so use the default api for
+        // the paginated/filtered listing (endpoint must stay without the /api prefix).
         const response = await api.get('/admin/users', { params })
         users.value = response.data.users || []
         totalUsers.value = response.data.total || 0
@@ -522,7 +529,7 @@ export default {
       const now = new Date()
       const diff = now - date
       const minutes = Math.floor(diff / 60000)
-      
+
       if (minutes < 1) return '刚刚'
       if (minutes < 60) return `${minutes}分钟前`
       const hours = Math.floor(minutes / 60)
@@ -545,7 +552,7 @@ export default {
     const saveUser = async () => {
       saving.value = true
       try {
-        await api.put(`/admin/users/${editForm.value.id}`, {
+        await adminUserApi.updateUser(editForm.value.id, {
           display_name: editForm.value.display_name,
           signature: editForm.value.signature,
           role: editForm.value.role
@@ -568,9 +575,7 @@ export default {
     const confirmBan = async () => {
       actionLoading.value = true
       try {
-        await api.post(`/admin/users/${selectedUser.value.id}/ban`, {
-          reason: banReason.value
-        })
+        await adminUserApi.banUser(selectedUser.value.id, banReason.value)
         banDialog.value = false
         loadUsers()
       } catch (error) {
@@ -582,10 +587,10 @@ export default {
 
     const unbanUser = async (user) => {
       if (!confirm(`确定要解封用户 ${user.display_name || user.username} 吗？`)) return
-      
+
       actionLoading.value = true
       try {
-        await api.post(`/admin/users/${user.id}/unban`)
+        await adminUserApi.unbanUser(user.id)
         loadUsers()
       } catch (error) {
         console.error('解封用户失败:', error)
@@ -596,10 +601,10 @@ export default {
 
     const deleteUser = async (user) => {
       if (!confirm(`确定要删除用户 ${user.display_name || user.username} 吗？此操作不可恢复！`)) return
-      
+
       actionLoading.value = true
       try {
-        await api.delete(`/admin/users/${user.id}`)
+        await adminUserApi.deleteUser(user.id)
         loadUsers()
       } catch (error) {
         console.error('删除用户失败:', error)

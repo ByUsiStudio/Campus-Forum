@@ -142,11 +142,13 @@ import { ref, onMounted } from 'vue'
 import { adminNotificationApi } from '../../api/admin'
 import { confirm, success, error } from '../../utils/modal'
 
+// ---- 通知历史 ----
 const notifications = ref([])
 const notificationFormRef = ref(null)
 const formValid = ref(false)
 const sending = ref(false)
 
+// ---- 发送表单 ----
 const notificationForm = ref({
   type: 'system',
   target: 'all',
@@ -220,7 +222,7 @@ const handleSendNotification = async () => {
     await adminNotificationApi.createNotification(notificationForm.value)
     success('发送成功')
     notificationForm.value = { type: 'system', target: 'all', title: '', content: '' }
-    loadNotifications()
+    await loadNotifications()
   } catch (err) {
     console.error('发送通知失败', err)
     error(err.response?.data?.error || '发送失败')
@@ -236,7 +238,7 @@ const deleteNotification = async (id) => {
   try {
     await adminNotificationApi.deleteNotification(id)
     success('删除成功')
-    loadNotifications()
+    await loadNotifications()
   } catch (err) {
     console.error('删除通知失败', err)
     error(err.response?.data?.error || '删除失败')

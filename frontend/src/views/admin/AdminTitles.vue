@@ -156,11 +156,13 @@ const addTitle = async (payload) => {
 
 // 子组件通过 @grant 传入 grantForm 或触发授予对话框时传入 titleId
 const grantTitle = (payload) => {
-  const titleId = payload && typeof payload === 'object' ? payload.title_id : payload
+  const isObject = payload && typeof payload === 'object'
+  const titleId = isObject ? payload.title_id : payload
   grantDialog.value = {
     show: true,
     titleId,
-    selectedUserId: null
+    // 面板传入了 user_id 时预选用户
+    selectedUserId: isObject && payload.user_id ? payload.user_id : null
   }
 }
 

@@ -188,6 +188,17 @@ export default {
     }
   }
 }
+
+// FIXME-TEMPLATE: The markup block uses Vuetify-2-only props that cannot be switched from the
+// script alone. Update the markup accordingly before changing the UI; do not rely on script fixes:
+//   - v-icon prop "left" (L8, L58, L91, L121) -> use "start" in Vuetify 3
+//   - v-icon prop "small" (L101, L102, L103) -> use "size" in Vuetify 3
+//   - v-icon props "small left" (L134) -> "start" + "size" in Vuetify 3
+//   - v-card prop "outlined" (L14, L23, L32, L41, L127) -> "variant=outlined" in Vuetify 3
+//   - v-chip prop "small" (L133) -> use "size" in Vuetify 3
+//   - v-btn prop "text small" (L107) -> use "size" in Vuetify 3
+//   - typography classes "headline" / "subtitle-2" -> Vuetify 3 typography
+//   - v-simple-table (L62) -> use v-table in Vuetify 3
 </script>
 
 <style scoped>

@@ -450,7 +450,6 @@ export default {
       loadSiteTitle()
       loadAnnouncement()
 
-      // 监听登录/登出事件
       window.addEventListener('user-updated', () => {
         const storedUser = localStorage.getItem('user')
         if (storedUser) {
@@ -553,12 +552,10 @@ export default {
   text-decoration: underline;
 }
 
-/* 移动端底部导航栏 padding */
 .pb-navigation {
   padding-bottom: 56px !important;
 }
 
-/* 移动端搜索栏样式 */
 .mobile-search-bar {
   background: rgb(var(--v-theme-background));
   position: sticky;
@@ -574,7 +571,6 @@ export default {
   border-radius: 24px;
 }
 
-/* 移动端应用抽屉样式 */
 .app-drawer-overlay {
   position: fixed;
   top: 0;
@@ -659,7 +655,6 @@ export default {
   font-weight: 500;
 }
 
-/* Markdown 样式 */
 .markdown-body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   line-height: 1.6;
