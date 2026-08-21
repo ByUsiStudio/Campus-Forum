@@ -276,9 +276,6 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { signinApi } from '@/api'
-import { useUserStore } from '@/stores/user'
-
-const userStore = useUserStore()
 
 const loading = ref(true)
 const signing = ref(false)
