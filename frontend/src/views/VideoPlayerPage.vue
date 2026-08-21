@@ -1,21 +1,19 @@
 <template>
   <div class="video-page-container">
-    <div class="layui-card video-card">
-      <div class="layui-card-header text-center">
-        <h3 style="font-size: 18px;">视频播放</h3>
-      </div>
+    <v-card class="video-card" elevation="4">
+      <v-card-title class="text-center text-h5">视频播放</v-card-title>
       
-      <div class="layui-card-body text-center">
+      <v-card-text class="text-center">
         <VideoPlayer :src="videoUrl" :poster="posterUrl" />
-      </div>
+      </v-card-text>
       
-      <div class="layui-card-footer text-center">
-        <button class="layui-btn" @click="goBack">
-          <i class="fa-solid fa-arrow-left mr-1"></i>
+      <v-card-actions class="justify-center">
+        <v-btn color="primary" @click="goBack">
+          <v-icon start>mdi-arrow-left</v-icon>
           返回文章
-        </button>
-      </div>
-    </div>
+        </v-btn>
+      </v-card-actions>
+    </v-card>
   </div>
 </template>
 
@@ -73,9 +71,5 @@ export default {
   max-width: 950px;
   width: 100%;
   border-radius: 16px;
-}
-
-.mr-1 {
-  margin-right: 5px;
 }
 </style>

@@ -1,57 +1,88 @@
 <template>
   <div class="article-list">
+    <!-- 加载状态 -->
     <div v-if="loading" class="article-grid">
-      <div v-for="i in 6" :key="i" class="article-skeleton"></div>
+      <v-skeleton-loader
+        v-for="i in 6"
+        :key="i"
+        type="article"
+        class="article-skeleton"
+      />
     </div>
     
-    <div v-else-if="articles.length === 0" class="empty-state">
-      <i class="fa-regular fa-file-lines"></i>
-      <div class="empty-title">暂无文章</div>
-      <div class="empty-hint">快来发布第一篇文章吧</div>
+    <!-- 空状态 -->
+    <div v-else-if="articles.length === 0" class="text-center pa-12">
+      <v-icon size="80" color="grey-lighten-2" class="mb-4">mdi-text-box-outline</v-icon>
+      <div class="text-h6 text-medium-emphasis mb-2">暂无文章</div>
+      <div class="text-body-2 text-medium-emphasis">快来发布第一篇文章吧</div>
     </div>
     
+    <!-- 文章列表 -->
     <div v-else class="article-grid">
-      <div v-for="article in articles" :key="article.id" class="article-card">
-        <router-link :to="'/article/' + article.id" class="article-link">
+      <v-card
+        v-for="article in articles"
+        :key="article.id"
+        class="article-card"
+        variant="flat"
+        rounded="lg"
+      >
+        <router-link
+          :to="'/article/' + article.id"
+          class="article-link"
+        >
           <div class="article-header">
             <UserAvatar :user="article.user" :size="40" />
-            <div class="article-meta">
-              <div class="article-author">
-                <span v-if="article.is_pinned" class="pin-tag">
-                  <i class="fa-solid fa-thumbtack"></i>
+            <div class="article-meta flex-grow-1">
+              <div class="d-flex align-center gap-2">
+                <v-chip
+                  v-if="article.is_pinned"
+                  size="x-small"
+                  color="orange"
+                  variant="tonal"
+                  prepend-icon="mdi-pin"
+                >
                   置顶
-                </span>
-                <span>{{ article.user?.display_name || article.user?.username }}</span>
+                </v-chip>
+                <span class="text-body-2 font-weight-medium">{{ article.user?.display_name || article.user?.username }}</span>
               </div>
-              <div class="article-time">{{ formatDate(article.created_at) }}</div>
+              <div class="text-caption text-medium-emphasis">
+                {{ formatDate(article.created_at) }}
+              </div>
             </div>
-            <span v-if="article.category?.name" class="category-tag" :style="{ background: article.category.color + '20', color: article.category.color }">
+            <v-chip
+              v-if="article.category?.name"
+              size="x-small"
+              :color="article.category.color"
+              variant="tonal"
+            >
               {{ article.category.name }}
-            </span>
+            </v-chip>
           </div>
 
           <div class="article-title">{{ article.title }}</div>
 
-          <div class="article-excerpt">{{ getExcerpt(article.content) }}</div>
+          <div class="article-excerpt text-body-2 text-medium-emphasis">
+            {{ getExcerpt(article.content) }}
+          </div>
 
           <div class="article-footer">
             <div class="article-stats">
               <span class="stat-item">
-                <i class="fa-solid fa-heart text-error"></i>
+                <v-icon size="small" color="pink">mdi-heart</v-icon>
                 {{ article.like_count || 0 }}
               </span>
               <span class="stat-item">
-                <i class="fa-regular fa-eye"></i>
+                <v-icon size="small">mdi-eye-outline</v-icon>
                 {{ article.view_count || 0 }}
               </span>
               <span class="stat-item">
-                <i class="fa-regular fa-comment"></i>
+                <v-icon size="small">mdi-comment-outline</v-icon>
                 {{ article.comment_count || 0 }}
               </span>
             </div>
           </div>
         </router-link>
-      </div>
+      </v-card>
     </div>
   </div>
 </template>
@@ -132,17 +163,17 @@ export default {
 }
 
 .article-card {
-  background: #fff;
-  border: 1px solid #f0f0f0;
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.25s ease;
+}
 
-  &:hover {
-    border-color: rgba(30, 159, 255, 0.3);
-    box-shadow: 0 4px 20px rgba(30, 159, 255, 0.1);
-    transform: translateY(-4px);
-  }
+.article-card:hover {
+  border-color: rgba(var(--v-theme-primary), 0.3);
+  box-shadow: 0 4px 20px rgba(var(--v-theme-primary), 0.1);
+  transform: translateY(-4px);
 }
 
 .article-link {
@@ -167,42 +198,17 @@ export default {
   min-width: 0;
 }
 
-.article-author {
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.pin-tag {
-  font-size: 12px;
-  color: #FAAD14;
-  background: rgba(250, 173, 20, 0.1);
-  padding: 2px 8px;
-  border-radius: 4px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.article-time {
-  font-size: 12px;
-  color: #999;
-  margin-top: 4px;
-}
-
-.category-tag {
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 4px;
+.author-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: rgb(var(--v-theme-on-surface));
+  line-height: 1.3;
 }
 
 .article-title {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 600;
-  color: #333;
+  color: rgb(var(--v-theme-primary));
   line-height: 1.4;
   margin-bottom: 8px;
   display: -webkit-box;
@@ -213,13 +219,11 @@ export default {
 }
 
 .article-card:hover .article-title {
-  color: #1E9FFF;
+  color: rgb(var(--v-theme-secondary));
 }
 
 .article-excerpt {
   flex: 1;
-  font-size: 14px;
-  color: #666;
   line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -233,7 +237,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.06);
 }
 
 .article-stats {
@@ -246,41 +250,14 @@ export default {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 13px;
-  color: #666;
-}
-
-.text-error {
-  color: #FF5722;
+  font-size: 0.75rem;
+  color: rgb(var(--v-theme-on-surface));
+  opacity: 0.7;
 }
 
 .article-skeleton {
-  background: #f5f5f5;
   border-radius: 12px;
   overflow: hidden;
-  height: 200px;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 48px 24px;
-
-  i {
-    font-size: 80px;
-    color: #e8e8e8;
-    margin-bottom: 16px;
-  }
-
-  .empty-title {
-    font-size: 18px;
-    color: #666;
-    margin-bottom: 8px;
-  }
-
-  .empty-hint {
-    font-size: 14px;
-    color: #999;
-  }
 }
 
 @media (max-width: 600px) {

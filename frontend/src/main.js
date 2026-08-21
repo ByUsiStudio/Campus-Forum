@@ -1,15 +1,53 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
-import './styles/style.less'
-import { useStore } from './stores'
+import './styles/style.css'
 
+// Highlight.js 语法高亮
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
 window.hljs = hljs
 
-const app = createApp(App)
+// Vuetify
+import 'vuetify/styles'
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
+import '@mdi/font/css/materialdesignicons.css'
 
+const vuetify = createVuetify({
+  components,
+  directives,
+  theme: {
+    defaultTheme: 'light',
+    themes: {
+      light: {
+        colors: {
+          primary: '#6750A4',
+          secondary: '#625B71',
+          error: '#B3261E',
+          background: '#FEF7FF',
+          surface: '#FFFFFF',
+          surfaceVariant: '#E7E0EC',
+          onPrimary: '#FFFFFF',
+          onSecondary: '#FFFFFF',
+          onBackground: '#1C1B1F',
+          onSurface: '#1C1B1F',
+        }
+      }
+    }
+  },
+  defaults: {
+    VBtn: {
+      variant: 'flat',
+    },
+    VCard: {
+      elevation: 1,
+    }
+  }
+})
+
+// 导入组件
 import Home from './views/Home.vue'
 import Login from './views/Login.vue'
 import Register from './views/Register.vue'
@@ -27,6 +65,7 @@ import SignIn from './views/SignIn.vue'
 import NotFound from './views/NotFound.vue'
 import Forbidden from './views/Forbidden.vue'
 
+// 导入后台管理子组件
 import AdminIndex from './views/admin/AdminIndex.vue'
 import AdminUsers from './views/admin/AdminUsers.vue'
 import AdminArticles from './views/admin/AdminArticles.vue'
@@ -44,6 +83,7 @@ import AdminSMTPConfig from './views/admin/AdminSMTPConfig.vue'
 import AdminNotifications from './views/admin/AdminNotifications.vue'
 import AdminStatistics from './views/admin/AdminStatistics.vue'
 
+// 导入新功能组件
 import Leaderboard from './views/Leaderboard.vue'
 import TopicList from './views/TopicList.vue'
 import CollectionList from './views/CollectionList.vue'
@@ -98,20 +138,20 @@ const router = createRouter({
     routes
 })
 
-const store = useStore()
-store.init()
-
+// 路由守卫
 const publicPaths = ['/login', '/register', '/forgot-password', '/', '/search']
 
 router.beforeEach((to, from, next) => {
+    const token = localStorage.getItem('token')
+
     if (publicPaths.includes(to.path)) {
-        if (store.isLoggedIn.value && (to.path === '/login' || to.path === '/register')) {
+        if (token && (to.path === '/login' || to.path === '/register')) {
             next('/')
         } else {
             next()
         }
     } else {
-        if (!store.isLoggedIn.value) {
+        if (!token) {
             next('/login')
         } else {
             next()
@@ -119,5 +159,7 @@ router.beforeEach((to, from, next) => {
     }
 })
 
+const app = createApp(App)
+app.use(vuetify)
 app.use(router)
 app.mount('#app')

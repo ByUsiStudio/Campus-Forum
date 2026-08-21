@@ -1,71 +1,71 @@
 <template>
   <div class="d-flex justify-center align-center" style="min-height: 80vh;">
-    <div class="layui-card" style="width: 100%; max-width: 400px; padding: 24px;">
-      <div class="text-center mb-4">
-        <h2 style="color: var(--primary); font-size: 20px; font-weight: 600;">找回密码</h2>
-      </div>
+    <v-card width="100%" max-width="400" class="pa-6">
+      <v-card-title class="text-h5 text-center pb-4" style="color: rgb(var(--v-theme-primary));">
+        找回密码
+      </v-card-title>
 
-      <div class="layui-card-body">
-        <div v-if="error" class="layui-alert layui-alert-danger mb-4">{{ error }}</div>
-        <div v-if="success" class="layui-alert layui-alert-success mb-4">{{ success }}</div>
+      <v-card-text>
+        <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
+        <v-alert v-if="success" type="success" variant="tonal" class="mb-4">{{ success }}</v-alert>
 
-        <form @submit.prevent="handleSubmit" class="layui-form">
-          <div class="layui-form-item">
-            <label class="layui-form-label">QQ号码</label>
-            <div class="layui-input-group">
-              <div class="layui-input-group-prepend">
-                <span class="layui-input-group-text"><i class="fa-solid fa-message"></i></span>
-              </div>
-              <input type="text" v-model="form.qq_number" class="layui-input" placeholder="请输入QQ号码" required />
-            </div>
-          </div>
+        <v-form @submit.prevent="handleSubmit">
+          <v-text-field
+            v-model="form.qq_number"
+            label="QQ号码"
+            variant="outlined"
+            required
+            prepend-inner-icon="mdi-qqchat"
+            class="mb-4"
+          ></v-text-field>
 
           <div v-if="step === 2">
-            <div class="layui-form-item">
-              <label class="layui-form-label">验证码</label>
-              <div class="layui-input-group">
-                <div class="layui-input-group-prepend">
-                  <span class="layui-input-group-text"><i class="fa-solid fa-shield-check"></i></span>
-                </div>
-                <input type="text" v-model="form.code" class="layui-input" placeholder="请输入验证码" required />
-              </div>
-            </div>
+            <v-text-field
+              v-model="form.code"
+              label="验证码"
+              variant="outlined"
+              required
+              prepend-inner-icon="mdi-shield-check"
+              class="mb-4"
+            ></v-text-field>
 
-            <div class="layui-form-item">
-              <label class="layui-form-label">新密码</label>
-              <div class="layui-input-group">
-                <div class="layui-input-group-prepend">
-                  <span class="layui-input-group-text"><i class="fa-solid fa-lock"></i></span>
-                </div>
-                <input type="password" v-model="form.password" class="layui-input" placeholder="请输入新密码" required />
-              </div>
-            </div>
+            <v-text-field
+              v-model="form.password"
+              label="新密码"
+              variant="outlined"
+              type="password"
+              required
+              prepend-inner-icon="mdi-lock"
+              class="mb-4"
+            ></v-text-field>
 
-            <div class="layui-form-item">
-              <label class="layui-form-label">确认密码</label>
-              <div class="layui-input-group">
-                <div class="layui-input-group-prepend">
-                  <span class="layui-input-group-text"><i class="fa-solid fa-lock-check"></i></span>
-                </div>
-                <input type="password" v-model="form.confirm_password" class="layui-input" placeholder="请再次输入密码" required />
-              </div>
-            </div>
+            <v-text-field
+              v-model="form.confirm_password"
+              label="确认密码"
+              variant="outlined"
+              type="password"
+              required
+              prepend-inner-icon="mdi-lock-check"
+              class="mb-4"
+            ></v-text-field>
           </div>
 
-          <button
+          <v-btn
             type="submit"
-            class="layui-btn layui-btn-lg layui-btn-fluid"
-            :disabled="loading"
+            color="primary"
+            block
+            size="large"
+            :loading="loading"
           >
             {{ loading ? '处理中...' : buttonText }}
-          </button>
-        </form>
+          </v-btn>
+        </v-form>
 
-        <div class="text-center mt-4 text-secondary" style="font-size: 14px;">
-          想起密码了？ <router-link to="/login" style="color: var(--primary);">返回登录</router-link>
+        <div class="text-center mt-4 text-body-2">
+          想起密码了？ <router-link to="/login" class="text-primary">返回登录</router-link>
         </div>
-      </div>
-    </div>
+      </v-card-text>
+    </v-card>
   </div>
 </template>
 

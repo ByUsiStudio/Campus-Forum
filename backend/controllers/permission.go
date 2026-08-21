@@ -5,6 +5,7 @@ import (
 	"forum/database"
 	"forum/models"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -83,6 +84,9 @@ func CreatePermissionGroup(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建权限组失败"})
 		return
 	}
+
+	logOperation(c, ActionCreate, ModulePermission,
+		"创建权限组 - 名称: "+req.Name+", Level: "+strconv.Itoa(level))
 
 	c.JSON(http.StatusOK, gin.H{"message": "创建成功", "group": group})
 }

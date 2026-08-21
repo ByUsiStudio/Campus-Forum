@@ -12,13 +12,12 @@ Campus Forum 是一个功能完善的校园社区论坛系统，采用前后端�
 - **数据库**：MySQL + GORM
 - **认证**：JWT
 - **文件存储**：WebDAV
-- **架构模式**：Repository-Service-Controller
+- **即时通讯**：IM Server
 
 ### 前端
 - **框架**：Vue 3
-- **UI 组件**：Layui
+- **UI 组件**：Vuetify 3
 - **路由**：Vue Router
-- **状态管理**：Pinia-like Store
 - **构建工具**：Vite
 
 ### 部署
@@ -50,6 +49,12 @@ Campus Forum 是一个功能完善的校园社区论坛系统，采用前后端�
 - 好友备注名管理
 - 好友列表查看
 - 共同好友查看
+
+### 即时聊天
+- 实时消息发送与接收
+- 会话列表管理
+- 未读消息计数
+- 消息已读标记
 
 ### 内容管理
 - 文章分类管理
@@ -89,24 +94,20 @@ Campus Forum 是一个功能完善的校园社区论坛系统，采用前后端�
 ```
 campus-forum/
 ├── backend/              # Go 后端服务
-│   ├── controllers/      # 控制器层（HTTP 处理）
-│   ├── service/          # 服务层（业务逻辑）
-│   ├── repository/       # 仓储层（数据访问）
-│   ├── models/           # 数据模型
-│   ├── middleware/       # 中间件
+│   ├── controllers/      # 控制器层
 │   ├── database/         # 数据库初始化
+│   ├── middleware/        # 中间件
+│   ├── models/           # 数据模型
 │   ├── utils/            # 工具函数
-│   ├── init/             # 系统初始化
-│   ├── main.go           # 入口文件
+│   ├── sdk/              # 第三方 SDK（IM Server）
+│   ├── main.go          # 入口文件
 │   └── config.json       # 配置文件
 ├── frontend/             # Vue 前端应用
 │   ├── src/
-│   │   ├── api/          # API 接口
-│   │   ├── stores/       # 状态管理
-│   │   ├── hooks/        # 自定义 hooks
-│   │   ├── utils/        # 工具函数
-│   │   ├── components/   # 公共组件
-│   │   ├── views/        # 页面视图
+│   │   ├── api/         # API 接口
+│   │   ├── components/  # 公共组件
+│   │   ├── views/       # 页面视图
+│   │   ├── utils/       # 工具函数
 │   │   ├── App.vue
 │   │   └── main.js
 │   └── index.html
@@ -123,9 +124,6 @@ campus-forum/
 
 - Docker >= 20.10
 - Docker Compose >= 2.0
-- Go >= 1.21
-- Node.js >= 18
-- MySQL >= 8.0
 
 ### 使用 Docker Compose 部署
 
@@ -175,12 +173,12 @@ npm run build
 
 ### Linux/macOS
 ```bash
-./build.sh 3.0.0
+./build.sh
 ```
 
 ### Windows
 ```batch
-build.bat 3.0.0
+build.bat
 ```
 
 ## 使用已经打包好的镜像
@@ -252,45 +250,6 @@ docker run -d \
     }
 }
 ```
-
-## 架构说明
-
-### 后端三层架构
-
-**Repository 层** - 数据访问层，封装数据库操作：
-- 通用 CRUD 操作（BaseRepository）
-- 模型专用查询方法
-- 事务管理
-
-**Service 层** - 业务逻辑层：
-- 实现核心业务逻辑
-- 调用 Repository 进行数据访问
-- 统一错误处理
-
-**Controller 层** - HTTP 控制层：
-- 处理 HTTP 请求和响应
-- 参数校验
-- 调用 Service 层处理业务
-
-### 前端架构
-
-**Store** - 状态管理：
-- 集中管理全局状态
-- 用户认证状态
-- 站点配置
-- 通知状态
-
-**API 层** - 请求管理：
-- Axios 封装
-- 请求/响应拦截器
-- Token 自动刷新
-- 统一错误处理
-
-**Hooks** - 组合式函数：
-- 分页处理
-- 防抖/节流
-- 滚动监听
-- 尺寸监听
 
 ## 开源说明
 

@@ -1,15 +1,12 @@
 <template>
-  <div v-if="show" class="upload-modal-overlay" @click="close">
-    <div class="upload-modal" @click.stop>
-      <div class="modal-header">
-        <i :class="uploadType === 'image' ? 'fa-solid fa-image' : 'fa-solid fa-video'" class="modal-icon"></i>
-        <span class="modal-title">{{ uploadType === 'image' ? '上传图片' : '上传视频' }}</span>
-        <button class="close-btn" @click="close">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
+  <v-dialog :model-value="show" @update:model-value="val => emit('update:show', val)" max-width="500px">
+    <v-card class="upload-modal">
+      <v-card-title class="modal-title">
+        <v-icon class="title-icon">{{ uploadType === 'image' ? 'mdi-image' : 'mdi-video' }}</v-icon>
+        {{ uploadType === 'image' ? '上传图片' : '上传视频' }}
+      </v-card-title>
       
-      <div class="modal-body">
+      <v-card-text class="modal-body">
         <div class="upload-area" @click="triggerFileInput" @dragover.prevent @drop.prevent="handleDrop">
           <input
             ref="fileInput"
@@ -18,7 +15,9 @@
             style="display: none"
             @change="handleFileSelect"
           />
-          <i :class="uploadType === 'image' ? 'fa-solid fa-image-plus' : 'fa-solid fa-video-plus'" class="upload-icon"></i>
+          <v-icon size="48" color="primary" class="upload-icon">
+            {{ uploadType === 'image' ? 'mdi-image-plus' : 'mdi-video-plus' }}
+          </v-icon>
           <div class="upload-text">点击或拖拽文件到此处</div>
           <div class="upload-hint">
             {{ uploadType === 'image' ? '支持 JPG、PNG、GIF 格式' : '支持 MP4、WebM 格式' }}
@@ -26,9 +25,12 @@
         </div>
 
         <div v-if="uploading" class="upload-progress">
-          <div class="progress-bar">
-            <div class="progress-fill" :style="{ width: progress + '%' }"></div>
-          </div>
+          <v-progress-linear
+            :value="progress"
+            color="primary"
+            height="8"
+            rounded
+          ></v-progress-linear>
           <div class="progress-text">{{ progress }}%</div>
         </div>
 
@@ -36,31 +38,37 @@
           <div v-for="(file, index) in uploadedFiles" :key="index" class="uploaded-item">
             <img v-if="uploadType === 'image'" :src="file.url" class="uploaded-preview" />
             <div v-else class="video-preview">
-              <i class="fa-solid fa-play-circle"></i>
+              <v-icon size="32" color="primary">mdi-play-circle</v-icon>
             </div>
             <div class="uploaded-info">
               <div class="uploaded-name">{{ file.name }}</div>
               <div class="uploaded-url">{{ file.url }}</div>
             </div>
-            <button class="delete-btn" @click="removeFile(index)">
-              <i class="fa-solid fa-trash"></i>
-            </button>
+            <v-btn
+              variant="text"
+              color="error"
+              size="small"
+              @click="removeFile(index)"
+            >
+              <v-icon>mdi-delete</v-icon>
+            </v-btn>
           </div>
         </div>
-      </div>
+      </v-card-text>
 
-      <div class="modal-footer">
-        <button class="cancel-btn" @click="close">取消</button>
-        <button
-          class="confirm-btn"
+      <v-card-actions class="modal-actions">
+        <v-btn variant="text" @click="close">取消</v-btn>
+        <v-btn
+          color="primary"
+          variant="flat"
           @click="confirm"
           :disabled="uploadedFiles.length === 0 || uploading"
         >
           确认插入
-        </button>
-      </div>
-    </div>
-  </div>
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup>
@@ -161,65 +169,27 @@ const close = () => {
 </script>
 
 <style scoped>
-.upload-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
 .upload-modal {
-  background: #fff;
   border-radius: 16px;
-  width: 90%;
-  max-width: 500px;
   overflow: hidden;
 }
 
-.modal-header {
+.modal-title {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 20px 24px;
   background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  font-weight: 600;
 }
 
-.modal-icon {
+.title-icon {
   width: 36px;
   height: 36px;
   padding: 6px;
   border-radius: 10px;
-  background: rgba(30, 159, 255, 0.1);
-  color: #1E9FFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-title {
-  flex: 1;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  color: #999;
-  cursor: pointer;
-  padding: 4px;
-
-  &:hover {
-    color: #666;
-  }
+  background: rgba(103, 80, 164, 0.1);
 }
 
 .modal-body {
@@ -227,60 +197,44 @@ const close = () => {
 }
 
 .upload-area {
-  border: 2px dashed rgba(30, 159, 255, 0.3);
+  border: 2px dashed rgba(103, 80, 164, 0.3);
   border-radius: 12px;
   padding: 32px;
   text-align: center;
   cursor: pointer;
   transition: border-color 0.2s, background-color 0.2s;
   background: #fafbfc;
+}
 
-  &:hover {
-    border-color: rgba(30, 159, 255, 0.6);
-    background: #f5f6ff;
-  }
+.upload-area:hover {
+  border-color: rgba(103, 80, 164, 0.6);
+  background: #f5f6ff;
 }
 
 .upload-icon {
-  font-size: 48px;
-  color: #1E9FFF;
   margin-bottom: 12px;
 }
 
 .upload-text {
   font-size: 1rem;
   font-weight: 500;
-  color: #333;
+  color: #1a1a2e;
   margin-bottom: 8px;
 }
 
 .upload-hint {
   font-size: 0.85rem;
-  color: #666;
+  color: #6b7280;
 }
 
 .upload-progress {
   margin-top: 20px;
 }
 
-.progress-bar {
-  height: 8px;
-  background: #e8e8e8;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: #1E9FFF;
-  border-radius: 4px;
-  transition: width 0.3s ease;
-}
-
 .progress-text {
   text-align: center;
   font-size: 0.85rem;
-  color: #666;
+  color: #6b7280;
   margin-top: 8px;
 }
 
@@ -315,8 +269,6 @@ const close = () => {
   justify-content: center;
   background: #e5e7eb;
   border-radius: 8px;
-  font-size: 24px;
-  color: #1E9FFF;
 }
 
 .uploaded-info {
@@ -326,70 +278,22 @@ const close = () => {
 
 .uploaded-name {
   font-weight: 500;
-  color: #333;
+  color: #1a1a2e;
   font-size: 0.9rem;
 }
 
 .uploaded-url {
   font-size: 0.75rem;
-  color: #666;
+  color: #6b7280;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-top: 4px;
 }
 
-.delete-btn {
-  background: none;
-  border: none;
-  color: #FF5722;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 6px;
-
-  &:hover {
-    background: rgba(255, 87, 34, 0.1);
-  }
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+.modal-actions {
   padding: 16px 24px;
-  border-top: 1px solid #f0f0f0;
-}
-
-.cancel-btn {
-  padding: 8px 20px;
-  background: #f5f5f5;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #666;
-
-  &:hover {
-    background: #e8e8e8;
-  }
-}
-
-.confirm-btn {
-  padding: 8px 20px;
-  background: #1E9FFF;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #fff;
-
-  &:hover:not(:disabled) {
-    background: #0086E6;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+  gap: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
 </style>

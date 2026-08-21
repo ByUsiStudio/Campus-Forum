@@ -2,22 +2,24 @@
 setlocal EnableDelayedExpansion
 
 if "%~1"=="" (
-    echo Error: Please provide version number, e.g.: build.bat 3.0.0
+    echo Error: Please provide version number, e.g.: build.bat 1.0.0
     exit /b 1
 )
 set VERSION=%~1
 
 echo ========================================
 echo   Campus Forum Build Script (Windows)
-echo   Version: %VERSION%
 echo ========================================
 echo.
 
+:: Get the root directory
 set ROOT_DIR=%cd%
 
+:: Create build directory
 if not exist "build" mkdir build
 if exist "build\web" rmdir /s /q "build\web"
 
+:: Copy config.json to build directory
 echo    - Copying config.json...
 copy /y "%ROOT_DIR%\backend\config.json" "%ROOT_DIR%\build\config.json" >nul 2>&1
 if errorlevel 1 (
@@ -26,30 +28,13 @@ if errorlevel 1 (
 )
 echo    [OK] config.json
 
-echo [1/3] Building frontend...
-cd /d %ROOT_DIR%\frontend
-call npm install
-if errorlevel 1 (
-    echo    [FAIL] npm install
-    exit /b 1
-)
-echo    [OK] npm install
-
-call npm run build
-if errorlevel 1 (
-    echo    [FAIL] npm run build
-    exit /b 1
-)
-echo    [OK] npm run build
-
-move /y dist "%ROOT_DIR%\build\web" >nul 2>&1
-
-echo.
-echo [2/3] Building backend...
+:: Build backend with version injection
+echo [1/4] Building backend...
 cd /d %ROOT_DIR%\backend
 set GO111MODULE=on
 set GOFLAGS=-mod=mod
 
+:: Set ldflags for version injection
 set LDFLAGS=-X forum/controllers.FrontendVersion=%VERSION% -X forum/controllers.BackendVersion=%VERSION% -X forum/controllers.SwaggerVersion=%VERSION%
 
 echo    - Building Windows-AMD64...
@@ -82,6 +67,27 @@ if errorlevel 1 (
 )
 echo    [OK] Linux-ARM64
 
+:: Build frontend
+echo.
+echo [2/3] Building frontend...
+cd /d %ROOT_DIR%\frontend
+call npm install
+if errorlevel 1 (
+    echo    [FAIL] npm install
+    exit /b 1
+)
+echo    [OK] npm install
+
+call npm run build
+if errorlevel 1 (
+    echo    [FAIL] npm run build
+    exit /b 1
+)
+echo    [OK] npm run build
+
+move /y dist "%ROOT_DIR%\build\web" >nul 2>&1
+
+:: Create zip archive
 echo.
 echo [3/3] Creating archive...
 cd /d %ROOT_DIR%
@@ -100,10 +106,6 @@ echo.
 echo Output: %cd%\forum_v%VERSION%.zip
 echo.
 echo Compile artifacts:
-echo   - server-windows-amd64.exe (Windows backend)
-echo   - server-linux-amd64      (Linux x64 backend)
-echo   - server-linux-arm64      (Linux ARM64 backend)
-echo   - web/                    (Frontend)
-echo.
-echo Architecture: Repository-Service-Controller
+echo   - server-*.exe/.sh    (Forum backend)
+echo   - web/                (Frontend)
 echo.

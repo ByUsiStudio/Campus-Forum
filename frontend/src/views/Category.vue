@@ -5,28 +5,30 @@
     </div>
     
     <div class="main-content">
-      <div class="layui-card mb-4" style="padding: 24px;">
-        <h2 style="font-size: 24px; font-weight: 600; margin: 0;">{{ categoryName }}</h2>
-      </div>
+      <v-card class="pa-6 mb-4">
+        <v-card-title class="text-h5">{{ categoryName }}</v-card-title>
+      </v-card>
       
       <ArticleList :articles="articles" />
       
-      <div class="flex justify-center items-center gap-4 mt-4" v-if="totalPages > 1">
-        <button 
+      <div class="d-flex justify-center align-center gap-4 mt-4" v-if="totalPages > 1">
+        <v-btn 
           @click="prevPage" 
           :disabled="page === 1" 
-          class="layui-btn layui-btn-primary"
+          variant="outlined"
+          color="primary"
         >
           上一页
-        </button>
-        <span style="color: #666;">第 {{ page }} / {{ totalPages }} 页</span>
-        <button 
+        </v-btn>
+        <span class="text-body-2">第 {{ page }} / {{ totalPages }} 页</span>
+        <v-btn 
           @click="nextPage" 
           :disabled="page === totalPages" 
-          class="layui-btn layui-btn-primary"
+          variant="outlined"
+          color="primary"
         >
           下一页
-        </button>
+        </v-btn>
       </div>
     </div>
   </div>

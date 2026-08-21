@@ -3,7 +3,10 @@ import vue from '@vitejs/plugin-vue'
 import fs from 'fs'
 import path from 'path'
 
+// 优先从命令行参数获取版本号
 let version = 'unknown'
+
+// 从命令行参数解析版本号 (e.g., --version=1.3.5)
 const args = process.argv.slice(2)
 for (const arg of args) {
   if (arg.startsWith('--version=')) {
@@ -12,6 +15,7 @@ for (const arg of args) {
   }
 }
 
+// 如果命令行没有传入，尝试读取 version.json
 if (version === 'unknown') {
   try {
     const versionPath = path.resolve(__dirname, '../version.json')
@@ -32,29 +36,13 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
-      '@styles': path.resolve(__dirname, 'src/styles')
-    }
-  },
-  css: {
-    preprocessorOptions: {
-      less: {
-        javascriptEnabled: true,
-        additionalData: `@import "${path.resolve(__dirname, 'src/styles/style.less')}";`
-      }
+      '@': path.resolve(__dirname, 'src')
     }
   },
   server: {
-    port: 3000,
-    proxy: {
-      '/api': {
-        target: 'http://0.0.0.0:3620',
-        changeOrigin: true
-      }
-    }
+    port: 3000
   },
   build: {
-    outDir: '../backend/dist',
     assetsDir: 'assets',
     rollupOptions: {
       output: {

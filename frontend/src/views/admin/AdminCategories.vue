@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-categories">
+  <v-container fluid class="pa-6">
     <CategoriesPanel
       :categories="categories"
       :loading="loading"
@@ -8,55 +8,67 @@
       @delete="handleDeleteCategory"
       @refresh="loadCategories"
     />
+  </v-container>
 
-    <div v-if="editCategoryDialog.show" class="dialog-overlay" @click.self="closeCategoryDialog">
-      <div class="dialog-content">
-        <div class="dialog-header">
-          <div class="dialog-title">
-            <div class="title-avatar" :class="editCategoryDialog.category ? 'primary' : 'success'">
-              <i class="fa-solid" :class="editCategoryDialog.category ? 'fa-pencil' : 'fa-plus'"></i>
-            </div>
-            <span>{{ editCategoryDialog.category ? '编辑分区' : '添加分区' }}</span>
-          </div>
-          <button class="dialog-close" @click="closeCategoryDialog">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-        <div class="dialog-body">
-          <div class="form-group">
-            <label class="form-label">分区名称</label>
-            <input
-              v-model="editCategoryDialog.name"
-              type="text"
-              placeholder="例如：表白墙"
-              class="layui-input"
-            />
-          </div>
-          <div class="form-group">
-            <label class="form-label">分区描述</label>
-            <textarea
-              v-model="editCategoryDialog.description"
-              placeholder="描述分区的内容和用途..."
-              class="layui-textarea"
-              rows="3"
-              maxlength="200"
-            ></textarea>
-            <span class="char-count">{{ editCategoryDialog.description.length }}/200</span>
-          </div>
-        </div>
-        <div class="dialog-footer">
-          <button class="layui-btn layui-btn-primary" @click="closeCategoryDialog">取消</button>
-          <button
-            class="layui-btn"
-            @click="handleEditCategory"
-            :disabled="!editCategoryDialog.name.trim()"
+  <v-dialog v-model="editCategoryDialog.show" max-width="500">
+    <v-card class="dialog-card">
+      <v-card-title class="dialog-title">
+        <v-avatar :color="editCategoryDialog.category ? 'primary' : 'success'" size="40" class="mr-3">
+          <v-icon color="white" size="20">{{ editCategoryDialog.category ? 'mdi-pencil' : 'mdi-plus' }}</v-icon>
+        </v-avatar>
+        {{ editCategoryDialog.category ? '编辑分区' : '添加分区' }}
+      </v-card-title>
+      <v-card-text class="dialog-body">
+        <v-form ref="categoryForm" v-model="formValid">
+          <v-text-field
+            v-model="editCategoryDialog.name"
+            label="分区名称"
+            placeholder="例如：表白墙"
+            variant="outlined"
+            density="comfortable"
+            :rules="[rules.required]"
+            prepend-inner-icon="mdi-tag"
+            clearable
+            class="mb-4"
           >
-            <i class="fa-solid fa-check"></i>保存
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+            <template #label>
+              <span class="text-body-2">分区名称</span>
+            </template>
+          </v-text-field>
+
+          <v-textarea
+            v-model="editCategoryDialog.description"
+            label="分区描述"
+            placeholder="描述分区的内容和用途..."
+            variant="outlined"
+            density="comfortable"
+            prepend-inner-icon="mdi-text"
+            rows="3"
+            counter
+            :maxlength="200"
+          >
+            <template #label>
+              <span class="text-body-2">分区描述</span>
+            </template>
+          </v-textarea>
+        </v-form>
+      </v-card-text>
+      <v-card-actions class="dialog-actions">
+        <v-btn variant="text" @click="closeCategoryDialog" class="mr-2">
+          取消
+        </v-btn>
+        <v-btn
+          color="primary"
+          variant="flat"
+          @click="handleEditCategory"
+          :disabled="!formValid"
+        >
+          <v-icon class="mr-1">mdi-check</v-icon>
+          保存
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup>
@@ -67,6 +79,8 @@ import { confirm, success, error } from '../../utils/modal'
 
 const categories = ref([])
 const loading = ref(true)
+const categoryForm = ref(null)
+const formValid = ref(false)
 
 const editCategoryDialog = ref({
   show: false,
@@ -74,6 +88,10 @@ const editCategoryDialog = ref({
   name: '',
   description: ''
 })
+
+const rules = {
+  required: v => !!v || '此字段为必填项'
+}
 
 const loadCategories = async () => {
   loading.value = true
@@ -94,6 +112,7 @@ const addCategory = () => {
     name: '',
     description: ''
   }
+  formValid.value = false
 }
 
 const showEditCategoryDialog = (category) => {
@@ -154,109 +173,39 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.admin-categories {
-  padding: 20px;
-}
-
-.dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.dialog-content {
-  background: #fff;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
+.dialog-card {
+  border-radius: 20px !important;
   overflow: hidden;
-}
-
-.dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px;
-  background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
-  border-bottom: 1px solid #f0f0f0;
 }
 
 .dialog-title {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.title-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 20px;
-
-  &.primary {
-    background: #1E9FFF;
-  }
-
-  &.success {
-    background: #52C41A;
-  }
-}
-
-.dialog-close {
-  padding: 4px;
-  background: transparent;
-  border: none;
-  color: #999;
-  font-size: 20px;
-  cursor: pointer;
-
-  &:hover {
-    color: #333;
-  }
+  padding: 24px 24px 16px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
 }
 
 .dialog-body {
-  padding: 24px;
+  padding: 24px !important;
 }
 
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 8px;
-}
-
-.char-count {
-  display: block;
-  text-align: right;
-  font-size: 12px;
-  color: #999;
-  margin-top: 4px;
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
+.dialog-actions {
+  padding: 16px 24px 24px;
   gap: 12px;
-  padding: 16px 24px;
-  border-top: 1px solid #f0f0f0;
+}
+
+:deep(.v-field) {
+  border-radius: 12px;
+}
+
+:deep(.v-field--outlined .v-field__outline) {
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+:deep(.v-field--focused .v-field__outline) {
+  border-color: rgb(var(--v-theme-primary));
 }
 </style>

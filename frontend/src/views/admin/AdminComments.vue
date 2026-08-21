@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-comments">
+  <v-container fluid class="pa-6">
     <CommentsPanel
       :comments="allComments"
       :loading="loading"
@@ -8,7 +8,7 @@
       @refresh="loadComments"
       @page-change="handlePageChange"
     />
-  </div>
+  </v-container>
 </template>
 
 <script setup>
@@ -29,10 +29,12 @@ const pagination = ref({
 const loadComments = async (page = 1) => {
   loading.value = true
   try {
+    console.log('开始加载评论列表，页码:', page)
     const response = await adminCommentApi.getComments({
       page: page,
       page_size: pagination.value.pageSize
     })
+    console.log('评论列表响应:', response.data)
     allComments.value = response.data.comments || []
     pagination.value = {
       page: response.data.page || 1,
@@ -40,6 +42,8 @@ const loadComments = async (page = 1) => {
       total: response.data.total || 0,
       totalPages: response.data.total_pages || 0
     }
+    console.log('加载的评论数量:', allComments.value.length)
+    console.log('分页信息:', pagination.value)
   } catch (err) {
     console.error('加载评论列表失败', err)
     error('加载评论列表失败')
@@ -69,9 +73,3 @@ onMounted(() => {
   loadComments()
 })
 </script>
-
-<style scoped>
-.admin-comments {
-  padding: 20px;
-}
-</style>
