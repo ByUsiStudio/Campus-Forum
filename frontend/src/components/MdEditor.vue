@@ -1042,14 +1042,19 @@ const applySuggestion = (suggestion) => {
   const lastNewline = beforeCursor.lastIndexOf('\n')
   const startIndex = Math.max(lastSpace, lastNewline) + 1
 
-  const newText = content.value.substring(0, startIndex) + suggestion.insert + content.value.substring(pos)
+  // `|` 用作光标占位符，插入后需从内容中移除
+  const insert = suggestion.insert || ''
+  const markerIndex = insert.indexOf('|')
+  const cleanInsert = insert.replace(/\|/g, '')
+
+  const newText = content.value.substring(0, startIndex) + cleanInsert + content.value.substring(pos)
   content.value = newText
 
   suggestions.value = []
 
   nextTick(() => {
     textarea.focus()
-    const cursorPos = startIndex + suggestion.insert.indexOf('|')
+    const cursorPos = startIndex + (markerIndex >= 0 ? markerIndex : cleanInsert.length)
     textarea.setSelectionRange(cursorPos, cursorPos)
   })
 

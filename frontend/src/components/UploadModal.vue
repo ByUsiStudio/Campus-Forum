@@ -26,7 +26,7 @@
 
         <div v-if="uploading" class="upload-progress">
           <v-progress-linear
-            :value="progress"
+            :model-value="progress"
             color="primary"
             height="8"
             rounded
@@ -72,7 +72,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits } from 'vue'
+import { ref } from 'vue'
 
 const props = defineProps({
   show: {
@@ -112,38 +112,65 @@ const handleDrop = (event) => {
   }
 }
 
-const uploadFile = async (file) => {
+const uploadFile = (file) => {
   uploading.value = true
   progress.value = 0
 
   const formData = new FormData()
   formData.append(props.uploadType, file)
 
-  try {
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest()
     const token = localStorage.getItem('token')
-    const response = await fetch(`/api/upload/${props.uploadType}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': token ? `Bearer ${token}` : ''
-      },
-      body: formData
-    })
+    xhr.open('POST', `/api/upload/${props.uploadType}`)
 
-    const data = await response.json()
-    if (data.url) {
-      uploadedFiles.value.push({
-        name: file.name,
-        url: data.url
-      })
-    } else {
-      console.error('Upload failed:', data.error)
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`)
     }
-  } catch (error) {
-    console.error('Upload failed:', error)
-  } finally {
-    uploading.value = false
-    progress.value = 100
-  }
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        progress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+      }
+    }
+
+    xhr.onload = () => {
+      try {
+        const data = JSON.parse(xhr.responseText)
+        if (xhr.status >= 200 && xhr.status < 300 && data.url) {
+          progress.value = 100
+          uploadedFiles.value.push({
+            name: file.name,
+            url: data.url
+          })
+        } else {
+          progress.value = 0
+          console.error('Upload failed:', data.error || data.message || `HTTP ${xhr.status}`)
+        }
+      } catch (error) {
+        progress.value = 0
+        console.error('Upload failed:', error)
+      } finally {
+        uploading.value = false
+        resolve()
+      }
+    }
+
+    xhr.onerror = () => {
+      progress.value = 0
+      uploading.value = false
+      console.error('Upload failed: network error')
+      resolve()
+    }
+
+    xhr.onabort = () => {
+      progress.value = 0
+      uploading.value = false
+      resolve()
+    }
+
+    xhr.send(formData)
+  })
 }
 
 const removeFile = (index) => {

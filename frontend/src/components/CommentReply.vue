@@ -86,24 +86,24 @@
       </template>
     </v-list-item>
 
-    <CommentReply
-      v-if="reply.replies && reply.replies.length > 0"
-      v-for="reply in replies"
-      :key="'nested-' + reply.id"
-      :replies="reply.replies"
-      :commentLiked="commentLiked"
-      :token="token"
-      :currentUser="currentUser"
-      :replyingTo="replyingTo"
-      :localReplyContent="localReplyContent"
-      :localReplyIsAnonymous="localReplyIsAnonymous"
-      @toggleLike="$emit('toggleLike', $event)"
-      @showReplyForm="$emit('showReplyForm', $event)"
-      @deleteComment="$emit('deleteComment', $event.id, $event.comment)"
-      @goToUserProfile="$emit('goToUserProfile', $event)"
-      @submitReply="$emit('submitReply', $event)"
-      @cancelReply="$emit('cancelReply')"
-    />
+    <template v-for="reply in replies" :key="'nested-' + reply.id">
+      <CommentReply
+        v-if="reply.replies && reply.replies.length > 0"
+        :replies="reply.replies"
+        :commentLiked="commentLiked"
+        :token="token"
+        :currentUser="currentUser"
+        :replyingTo="replyingTo"
+        :localReplyContent="localReplyContent"
+        :localReplyIsAnonymous="localReplyIsAnonymous"
+        @toggleLike="$emit('toggleLike', $event)"
+        @showReplyForm="$emit('showReplyForm', $event)"
+        @deleteComment="$emit('deleteComment', $event.id, $event.comment)"
+        @goToUserProfile="$emit('goToUserProfile', $event)"
+        @submitReply="$emit('submitReply', $event)"
+        @cancelReply="$emit('cancelReply')"
+      />
+    </template>
   </v-list>
 </template>
 

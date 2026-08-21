@@ -3,7 +3,7 @@
     :model-value="show"
     @update:model-value="$emit('update:show', $event)"
     :max-width="maxWidth"
-    :persistent="persistent"
+    :persistent="true"
     scrollable
   >
     <v-card>

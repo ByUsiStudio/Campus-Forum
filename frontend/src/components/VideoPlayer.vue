@@ -51,7 +51,7 @@ const handleFullscreenChange = () => {
     document.body.style.overflow = 'hidden'
   } else {
     document.body.style.overflow = ''
-    window.scrollTo({ top: scrollPosition, behavior: 'instant' })
+    window.scrollTo({ top: scrollPosition, behavior: 'auto' })
   }
 }
 

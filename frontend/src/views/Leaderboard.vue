@@ -36,7 +36,7 @@
           <v-list-item v-for="(item, index) in leaderboard" :key="item.id">
             <v-list-item-avatar>
               <v-avatar :color="getRankColor(index + 1)" size="40">
-                <span class="white--text headline">{{ item.rank }}</span>
+                <span class="text-white text-h6">{{ item.rank }}</span>
               </v-avatar>
             </v-list-item-avatar>
 
@@ -53,7 +53,7 @@
             </v-list-item-content>
 
             <v-list-item-action>
-              <v-btn text small color="primary" :to="`/user/${item.user.id}`">
+              <v-btn text small color="primary" :to="`/profile?id=${item.user.id}`">
                 查看
               </v-btn>
             </v-list-item-action>

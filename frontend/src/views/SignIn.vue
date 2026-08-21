@@ -41,7 +41,7 @@
               :loading="signing"
               @click="handleSignIn"
             >
-              <v-icon left>mdi-pencil</v-icon>
+              <v-icon start>mdi-pencil</v-icon>
               立即签到
             </v-btn>
           </div>
@@ -101,7 +101,7 @@
       <!-- 连续签到奖励说明 -->
       <v-card class="mb-4" elevation="1">
         <v-card-title class="text-subtitle-1 pb-0">
-          <v-icon left size="20">mdi-gift</v-icon>
+          <v-icon start size="20">mdi-gift</v-icon>
           连续签到奖励
         </v-card-title>
         <v-card-text>
@@ -147,7 +147,7 @@
       <v-card class="mb-4" elevation="1">
         <v-card-title class="d-flex justify-space-between align-center">
           <span class="text-subtitle-1">
-            <v-icon left size="20">mdi-trophy</v-icon>
+            <v-icon start size="20">mdi-trophy</v-icon>
             签到排行榜
           </span>
           <v-btn-toggle v-model="rankType" mandatory density="compact" variant="outlined" divided>
@@ -217,7 +217,7 @@
       <!-- 签到历史 -->
       <v-card elevation="1">
         <v-card-title class="text-subtitle-1">
-          <v-icon left size="20">mdi-history</v-icon>
+          <v-icon start size="20">mdi-history</v-icon>
           签到记录
         </v-card-title>
         <v-card-text class="pa-0">
@@ -366,6 +366,7 @@ const handleSignIn = async () => {
     // 更新状态
     await fetchStatus()
     await fetchRankings()
+    await fetchHistory()
   } catch (error) {
     snackbar.text = error.response?.data?.error || '签到失败'
     snackbar.color = 'error'

@@ -1,6 +1,8 @@
 <template>
-  <v-container class="min-h-screen">
-    <div class="error-page">
+  <v-container fluid class="fill-height">
+    <v-row justify="center" align="center" class="fill-height">
+      <v-col cols="12" sm="8" md="6" lg="5">
+        <div class="error-page">
       <div class="error-icon">
         <v-icon color="warning" size="150">mdi-alert-lock</v-icon>
       </div>
@@ -24,7 +26,9 @@
           返回上页
         </v-btn>
       </v-card-actions>
-    </div>
+        </div>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 

@@ -58,7 +58,7 @@
             v-model="page"
             :length="totalPages"
             :total-visible="7"
-            @input="loadTopics"
+            @update:model-value="loadTopics"
           ></v-pagination>
         </div>
       </v-card-text>

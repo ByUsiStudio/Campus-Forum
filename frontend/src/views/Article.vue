@@ -571,17 +571,11 @@ export default {
     
     const loadArticle = async () => {
       try {
-        console.log('尝试加载文章，ID:', route.params.id)
-        console.log('当前路由:', route.fullPath)
-        console.log('路由参数:', JSON.stringify(route.params))
-        
         if (!route.params.id) {
           throw new Error('文章ID为空')
         }
         
         const articleRes = await api.get(`/articles/${route.params.id}`)
-        console.log('API状态码:', articleRes.status)
-        console.log('API返回数据:', JSON.stringify(articleRes.data, null, 2))
         
         // 尝试多种数据结构
         const articleData = articleRes.data.article || articleRes.data
@@ -626,8 +620,6 @@ export default {
         
         initVideoPlayers()
         loadFollowStatus()
-        
-        console.log('文章加载成功')
       } catch (error) {
         console.error('加载文章失败', error)
         console.error('错误详情:', error.response?.data || error.message)

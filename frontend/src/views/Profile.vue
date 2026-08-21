@@ -235,12 +235,12 @@
           </v-window-item>
         </v-window>
 
-        <div v-if="myArticles.length === 0" class="text-center pa-8">
+        <div v-if="!isOwnProfile && myArticles.length === 0" class="text-center pa-8">
           <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-file-document-outline</v-icon>
           <div class="text-body-1 text-medium-emphasis">暂无文章</div>
         </div>
 
-        <v-list v-else lines="two" class="pa-0">
+        <v-list v-else-if="!isOwnProfile" lines="two" class="pa-0">
           <v-list-item
             v-for="article in myArticles"
             :key="article.id"
@@ -313,6 +313,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api, { articleApi } from '../api'
 import UserAvatar from '../components/UserAvatar.vue'
+import { success as showSuccess } from '../utils/modal'
 
 export default {
   name: 'Profile',

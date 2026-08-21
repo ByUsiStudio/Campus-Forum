@@ -1,21 +1,21 @@
 <template>
   <v-card class="user-level-card">
     <v-card-title class="d-flex align-center">
-      <v-icon left>mdi-star</v-icon>
+      <v-icon class="mr-2">mdi-star</v-icon>
       用户等级
     </v-card-title>
     <v-card-text>
       <div class="level-info">
         <div class="level-badge">
           <v-avatar size="80" color="primary">
-            <span class="white--text headline">{{ level.level }}</span>
+            <span class="text-white text-h4">{{ level.level }}</span>
           </v-avatar>
           <div class="level-title mt-2">{{ level.title }}</div>
         </div>
         
         <div class="experience-bar mt-4">
           <v-progress-linear
-            :value="experiencePercent"
+            :model-value="experiencePercent"
             color="primary"
             height="10"
             rounded
@@ -31,21 +31,21 @@
 
       <div class="achievements-section">
         <div class="d-flex align-center mb-3">
-          <v-icon left>mdi-trophy</v-icon>
-          <span class="subtitle-1">成就徽章</span>
-          <v-chip small color="primary" class="ml-2">{{ unlockedCount }} / {{ totalCount }}</v-chip>
+          <v-icon class="mr-2">mdi-trophy</v-icon>
+          <span class="text-subtitle-1">成就徽章</span>
+          <v-chip size="small" color="primary" class="ml-2">{{ unlockedCount }} / {{ totalCount }}</v-chip>
         </div>
 
-        <v-row dense>
+        <v-row density="compact">
           <v-col cols="12" sm="6" md="4" v-for="achievement in achievements" :key="achievement.id">
-            <v-card outlined class="achievement-card">
+            <v-card variant="outlined" class="achievement-card">
               <v-card-text class="text-center">
                 <v-icon :color="getRarityColor(achievement.achievement.rarity)" size="40">
                   {{ achievement.achievement.icon || 'mdi-medal' }}
                 </v-icon>
                 <div class="achievement-name mt-2">{{ achievement.achievement.name }}</div>
                 <div class="achievement-desc mt-1">{{ achievement.achievement.description }}</div>
-                <v-chip small :color="getRarityColor(achievement.achievement.rarity)" class="mt-2">
+                <v-chip size="small" :color="getRarityColor(achievement.achievement.rarity)" class="mt-2">
                   {{ getRarityText(achievement.achievement.rarity) }}
                 </v-chip>
                 <div v-if="achievement.unlocked_at" class="mt-2 text-caption">

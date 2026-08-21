@@ -82,7 +82,7 @@
 
     <!-- 移动端管理后台底部导航栏 -->
     <v-bottom-navigation v-if="!hideAppBar && isMobile && isAdminPage" grow color="primary" app>
-      <v-btn :to="{ name: 'AdminDashboard' }" value="dashboard">
+      <v-btn :to="{ name: 'AdminIndex' }" value="dashboard">
         <v-icon>mdi-view-dashboard</v-icon>
         <span>控制台</span>
       </v-btn>
@@ -97,7 +97,7 @@
         <span>文章管理</span>
       </v-btn>
       
-      <v-btn :to="{ name: 'AdminSettings' }" value="settings">
+      <v-btn :to="{ name: 'AdminSiteConfig' }" value="settings">
         <v-icon>mdi-settings</v-icon>
         <span>系统设置</span>
       </v-btn>
@@ -173,10 +173,10 @@
           <v-btn variant="text" v-if="token" @click="logout" color="white" prepend-icon="mdi-logout">退出</v-btn>
         </div>
         <div class="nav-links" v-else>
-          <v-btn variant="text" :to="{ name: 'AdminDashboard' }" color="white" prepend-icon="mdi-view-dashboard">控制台</v-btn>
+          <v-btn variant="text" :to="{ name: 'AdminIndex' }" color="white" prepend-icon="mdi-view-dashboard">控制台</v-btn>
           <v-btn variant="text" :to="{ name: 'AdminUsers' }" color="white" prepend-icon="mdi-account-multiple">用户管理</v-btn>
           <v-btn variant="text" :to="{ name: 'AdminArticles' }" color="white" prepend-icon="mdi-file-document">文章管理</v-btn>
-          <v-btn variant="text" :to="{ name: 'AdminSettings' }" color="white" prepend-icon="mdi-settings">系统设置</v-btn>
+          <v-btn variant="text" :to="{ name: 'AdminSiteConfig' }" color="white" prepend-icon="mdi-settings">系统设置</v-btn>
           <v-btn variant="text" to="/" color="white" prepend-icon="mdi-home">返回首页</v-btn>
         </div>
       </template>
@@ -202,10 +202,10 @@
           </template>
         </template>
         <template v-else>
-          <v-list-item :to="{ name: 'AdminDashboard' }" @click="drawer = false" prepend-icon="mdi-view-dashboard" title="控制台"></v-list-item>
+          <v-list-item :to="{ name: 'AdminIndex' }" @click="drawer = false" prepend-icon="mdi-view-dashboard" title="控制台"></v-list-item>
           <v-list-item :to="{ name: 'AdminUsers' }" @click="drawer = false" prepend-icon="mdi-account-multiple" title="用户管理"></v-list-item>
           <v-list-item :to="{ name: 'AdminArticles' }" @click="drawer = false" prepend-icon="mdi-file-document" title="文章管理"></v-list-item>
-          <v-list-item :to="{ name: 'AdminSettings' }" @click="drawer = false" prepend-icon="mdi-settings" title="系统设置"></v-list-item>
+          <v-list-item :to="{ name: 'AdminSiteConfig' }" @click="drawer = false" prepend-icon="mdi-settings" title="系统设置"></v-list-item>
           <v-divider class="my-2"></v-divider>
           <v-list-item to="/" @click="drawer = false" prepend-icon="mdi-home" title="返回首页"></v-list-item>
           <v-list-item @click="logout" prepend-icon="mdi-logout" title="退出" class="text-secondary"></v-list-item>
@@ -371,14 +371,13 @@ export default {
         { path: '/create', icon: 'mdi-pencil', label: '写文章' },
         { path: '/notifications', icon: 'mdi-bell', label: '通知' },
         { path: '/signin', icon: 'mdi-calendar-check', label: '签到' },
-        { path: '/chat', icon: 'mdi-chat', label: '聊天' },
         { path: '/profile', icon: 'mdi-account', label: '我的' }
       ]
       if (isAdmin.value) {
         items.push({ path: '/admin', icon: 'mdi-shield-crown', label: '管理后台' })
       }
       return items.filter(item => {
-        if (item.path === '/create' || item.path === '/notifications' || item.path === '/profile' || item.path === '/signin' || item.path === '/chat') {
+        if (item.path === '/create' || item.path === '/notifications' || item.path === '/profile' || item.path === '/signin') {
           return token.value
         }
         return true
@@ -533,12 +532,6 @@ export default {
 
 .search-field :deep(.v-icon) {
   color: white !important;
-}
-
-.chat-badge {
-  position: absolute;
-  top: -4px;
-  right: -8px;
 }
 
 .open-source-footer {
