@@ -227,6 +227,10 @@
               <a href="https://gitee.com/byusistudio/campus-forum" target="_blank" class="open-source-link">
                 <v-icon size="small" class="mr-1">mdi-git</v-icon>Gitee
               </a>
+              <span class="text-caption text-medium-emphasis">与</span>
+              <a href="https://codeberg.org/byusistudio/campus-forum" target="_blank" class="open-source-link">
+                <v-icon size="small" class="mr-1">mdi-git</v-icon>Codeberg
+              </a>
               <span class="text-caption text-medium-emphasis">开源</span>
             </div>
             <div class="text-caption text-medium-emphasis text-center mt-1">
