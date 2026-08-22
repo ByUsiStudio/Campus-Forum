@@ -8,4 +8,6 @@
 /*.zip
 *.log
 /debug-admin-tab-switch-error.md
-*.bak
+*.
+
+/.npm-cache
