@@ -10,4 +10,4 @@
 /debug-admin-tab-switch-error.md
 *.
 
-/.npm-cache
+.npm-cache/
