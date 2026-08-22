@@ -2,29 +2,32 @@
   <div class="article-list">
     <!-- 加载状态 -->
     <div v-if="loading" class="article-grid">
-      <v-skeleton-loader
+      <el-card
         v-for="i in 6"
         :key="i"
-        type="article"
-        class="article-skeleton"
-      />
+        shadow="always"
+        class="article-card article-skeleton"
+      >
+        <el-skeleton :rows="5" animated />
+      </el-card>
     </div>
-    
+
     <!-- 空状态 -->
-    <div v-else-if="articles.length === 0" class="text-center pa-12">
-      <v-icon size="80" color="grey-lighten-2" class="mb-4">mdi-text-box-outline</v-icon>
-      <div class="text-h6 text-medium-emphasis mb-2">暂无文章</div>
-      <div class="text-body-2 text-medium-emphasis">快来发布第一篇文章吧</div>
+    <div v-else-if="articles.length === 0" class="empty-state">
+      <el-icon :size="80" class="text-secondary empty-icon">
+        <Document />
+      </el-icon>
+      <div class="empty-title">暂无文章</div>
+      <div class="text-secondary empty-subtitle">快来发布第一篇文章吧</div>
     </div>
-    
+
     <!-- 文章列表 -->
     <div v-else class="article-grid">
-      <v-card
+      <el-card
         v-for="article in articles"
         :key="article.id"
+        shadow="hover"
         class="article-card"
-        variant="flat"
-        rounded="lg"
       >
         <router-link
           :to="'/article/' + article.id"
@@ -32,68 +35,76 @@
         >
           <div class="article-header">
             <UserAvatar :user="article.user" :size="40" />
-            <div class="article-meta flex-grow-1">
-              <div class="d-flex align-center gap-2">
-                <v-chip
+            <div class="article-meta">
+              <div class="meta-top">
+                <el-tag
                   v-if="article.is_pinned"
-                  size="x-small"
-                  color="orange"
-                  variant="tonal"
-                  prepend-icon="mdi-pin"
+                  size="small"
+                  color="rgba(255,165,0,0.12)"
+                  class="pinned-tag"
+                  effect="plain"
                 >
+                  <el-icon class="tag-icon"><Promotion /></el-icon>
                   置顶
-                </v-chip>
-                <span class="text-body-2 font-weight-medium">{{ article.user?.display_name || article.user?.username }}</span>
+                </el-tag>
+                <span class="author-name">{{ article.user?.display_name || article.user?.username }}</span>
               </div>
-              <div class="text-caption text-medium-emphasis">
+              <div class="text-secondary article-date">
                 {{ formatDate(article.created_at) }}
               </div>
             </div>
-            <v-chip
+            <el-tag
               v-if="article.category?.name"
-              size="x-small"
+              size="small"
               :color="article.category.color"
-              variant="tonal"
+              effect="light"
+              class="category-tag"
             >
               {{ article.category.name }}
-            </v-chip>
+            </el-tag>
           </div>
 
           <div class="article-title">{{ article.title }}</div>
 
-          <div class="article-excerpt text-body-2 text-medium-emphasis">
+          <div class="article-excerpt text-secondary">
             {{ getExcerpt(article.content) }}
           </div>
 
           <div class="article-footer">
             <div class="article-stats">
               <span class="stat-item">
-                <v-icon size="small" color="pink">mdi-heart</v-icon>
+                <el-icon class="stat-icon stat-like"><SemiSelect /></el-icon>
                 {{ article.like_count || 0 }}
               </span>
               <span class="stat-item">
-                <v-icon size="small">mdi-eye-outline</v-icon>
+                <el-icon class="stat-icon"><View /></el-icon>
                 {{ article.view_count || 0 }}
               </span>
               <span class="stat-item">
-                <v-icon size="small">mdi-comment-outline</v-icon>
+                <el-icon class="stat-icon"><ChatDotRound /></el-icon>
                 {{ article.comment_count || 0 }}
               </span>
             </div>
           </div>
         </router-link>
-      </v-card>
+      </el-card>
     </div>
   </div>
 </template>
 
 <script>
+import { Document, Promotion, SemiSelect, View, ChatDotRound } from '@element-plus/icons-vue'
 import UserAvatar from './UserAvatar.vue'
 
 export default {
   name: 'ArticleList',
   components: {
-    UserAvatar
+    UserAvatar,
+    Document,
+    Promotion,
+    SemiSelect,
+    View,
+    ChatDotRound
   },
   props: {
     articles: {
@@ -163,17 +174,21 @@ export default {
 }
 
 .article-card {
-  background: rgb(var(--v-theme-surface));
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-  border-radius: 12px;
+  background: var(--campus-surface);
+  border: 1px solid var(--campus-border);
+  border-radius: var(--campus-radius);
   overflow: hidden;
   transition: all 0.25s ease;
 }
 
 .article-card:hover {
-  border-color: rgba(var(--v-theme-primary), 0.3);
-  box-shadow: 0 4px 20px rgba(var(--v-theme-primary), 0.1);
+  border-color: var(--campus-primary);
+  box-shadow: 0 4px 20px rgba(103, 80, 164, 0.12);
   transform: translateY(-4px);
+}
+
+.article-card :deep(.el-card__body) {
+  padding: 0;
 }
 
 .article-link {
@@ -198,17 +213,46 @@ export default {
   min-width: 0;
 }
 
+.meta-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pinned-tag {
+  border: none;
+  color: #e6a23c;
+}
+
+.pinned-tag .tag-icon {
+  margin-right: 2px;
+  vertical-align: -2px;
+}
+
+.category-tag {
+  flex-shrink: 0;
+}
+
 .author-name {
   font-weight: 600;
   font-size: 0.875rem;
-  color: rgb(var(--v-theme-on-surface));
+  color: var(--campus-text);
   line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.article-date {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin-top: 2px;
 }
 
 .article-title {
   font-size: 1rem;
   font-weight: 600;
-  color: rgb(var(--v-theme-primary));
+  color: var(--campus-primary);
   line-height: 1.4;
   margin-bottom: 8px;
   display: -webkit-box;
@@ -219,11 +263,12 @@ export default {
 }
 
 .article-card:hover .article-title {
-  color: rgb(var(--v-theme-secondary));
+  color: var(--campus-primary-dark);
 }
 
 .article-excerpt {
   flex: 1;
+  font-size: 0.875rem;
   line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -237,7 +282,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   padding-top: 12px;
-  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.06);
+  border-top: 1px solid var(--campus-border);
 }
 
 .article-stats {
@@ -251,13 +296,51 @@ export default {
   align-items: center;
   gap: 4px;
   font-size: 0.75rem;
-  color: rgb(var(--v-theme-on-surface));
+  color: var(--campus-text);
   opacity: 0.7;
 }
 
+.stat-icon {
+  font-size: 14px;
+}
+
+.stat-like {
+  color: #ec6b8f;
+}
+
 .article-skeleton {
-  border-radius: 12px;
-  overflow: hidden;
+  cursor: default;
+}
+
+.article-skeleton:hover {
+  border-color: var(--campus-border);
+  box-shadow: var(--campus-shadow);
+  transform: none;
+}
+
+.article-skeleton :deep(.el-card__body) {
+  padding: 16px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 16px;
+}
+
+.empty-icon {
+  margin-bottom: 16px;
+  display: block;
+}
+
+.empty-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--campus-text);
+}
+
+.empty-subtitle {
+  font-size: 0.875rem;
 }
 
 @media (max-width: 600px) {

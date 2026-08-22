@@ -1,49 +1,38 @@
 <template>
-  <v-container fluid class="fill-height">
-    <v-row justify="center" align="center" class="fill-height">
-      <v-col cols="12" sm="8" md="6" lg="5">
-        <div class="error-page">
-      <div class="error-icon">
-        <v-icon color="primary" size="150">mdi-file-question</v-icon>
-      </div>
-      
-      <v-card-title class="text-center text-h3 font-weight-bold mb-4">
-        404 - 页面未找到
-      </v-card-title>
-      
-      <v-card-text class="text-center">
-        <p class="text-body-1 mb-2">您访问的页面不存在</p>
-        <p class="text-body-2 text-secondary">该页面可能已被删除或URL地址有误</p>
-      </v-card-text>
-      
-      <v-card-actions class="justify-center gap-3 mt-6">
-        <v-btn color="primary" @click="goHome">
-          <v-icon start>mdi-home</v-icon>
-          返回首页
-        </v-btn>
-        <v-btn variant="outlined" @click="goBack">
-          <v-icon start>mdi-arrow-left</v-icon>
-          返回上页
-        </v-btn>
-      </v-card-actions>
-        </div>
-      </v-col>
-    </v-row>
-  </v-container>
+  <div class="page-container error-container">
+    <div class="card-surface error-page">
+      <el-result icon="404" title="404" sub-title="您访问的页面不存在">
+        <template #extra>
+          <p class="text-secondary mb-4">该页面可能已被删除或URL地址有误</p>
+          <div class="action-row">
+            <el-button type="primary" @click="goHome">
+              <el-icon class="mr-1"><Home /></el-icon>
+              返回首页
+            </el-button>
+            <el-button @click="goBack">
+              <el-icon class="mr-1"><ArrowLeft /></el-icon>
+              返回上页
+            </el-button>
+          </div>
+        </template>
+      </el-result>
+    </div>
+  </div>
 </template>
 
 <script>
 import { useRouter } from 'vue-router'
+import { Home, ArrowLeft } from '@element-plus/icons-vue'
 
 export default {
   name: 'NotFound',
   setup() {
     const router = useRouter()
-    
+
     const goHome = () => {
       router.push('/')
     }
-    
+
     const goBack = () => {
       if (window.history.length > 1) {
         router.back()
@@ -51,34 +40,37 @@ export default {
         router.push('/')
       }
     }
-    
+
     return {
       goHome,
-      goBack
+      goBack,
+      Home,
+      ArrowLeft
     }
   }
 }
 </script>
 
 <style scoped>
+.error-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
 .error-page {
-  text-align: center;
-  padding: 40px;
+  width: 100%;
   max-width: 500px;
-  margin: 0 auto;
+  padding: 40px;
+  text-align: center;
 }
 
-.error-icon {
-  margin-bottom: 32px;
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+.action-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
 }
 </style>

@@ -1,20 +1,20 @@
-import api from './index'
+﻿import api from './http'
 
-// 评论相关API
+// 璇勮鐩稿叧API
 export const commentApi = {
-  // 创建评论
+  // 鍒涘缓璇勮
   createComment: (articleId, data) => api.post(`/articles/${articleId}/comments`, {
     content: data.content,
     parent_id: data.parent_id || null,
     is_anonymous: data.is_anonymous || false
   }),
 
-  // 删除评论
+  // 鍒犻櫎璇勮
   deleteComment: (id) => api.delete(`/comments/${id}`),
 
-  // 点赞评论
+  // 鐐硅禐璇勮
   likeComment: (id) => api.post(`/comments/${id}/like`),
 
-  // 取消点赞
+  // 鍙栨秷鐐硅禐
   unlikeComment: (id) => api.delete(`/comments/${id}/like`),
 }

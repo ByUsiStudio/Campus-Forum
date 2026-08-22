@@ -1,119 +1,159 @@
 <template>
-  <v-container>
-    <v-card>
-      <v-card-title class="d-flex align-center">
-        <v-icon left>mdi-tag-multiple</v-icon>
-        话题广场
-        <v-btn text color="primary" class="ml-auto" @click="showHotTopics">
-          <v-icon left>mdi-fire</v-icon>
-          热门话题
-        </v-btn>
-      </v-card-title>
-
-      <v-card-text>
-        <v-row>
-          <v-col cols="12" sm="6" md="4" v-for="topic in topics" :key="topic.id">
-            <v-card outlined hover class="topic-card" @click="viewTopic(topic.id)">
-              <v-card-text>
-                <div class="d-flex align-center mb-2">
-                  <v-avatar size="40" color="primary">
-                    <v-icon dark>{{ topic.icon || 'mdi-tag' }}</v-icon>
-                  </v-avatar>
-                  <div class="ml-3">
-                    <div class="title">{{ topic.display_name || topic.name }}</div>
-                    <div class="caption">{{ topic.description }}</div>
-                  </div>
-                </div>
-                
-                <v-row class="mt-2">
-                  <v-col cols="6">
-                    <v-chip small>
-                      <v-icon small left>mdi-file-document</v-icon>
-                      {{ topic.article_count }} 文章
-                    </v-chip>
-                  </v-col>
-                  <v-col cols="6">
-                    <v-chip small>
-                      <v-icon small left>mdi-account</v-icon>
-                      {{ topic.follow_count }} 关注
-                    </v-chip>
-                  </v-col>
-                </v-row>
-
-                <div v-if="topic.is_hot" class="mt-2">
-                  <v-chip small color="orange">
-                    <v-icon small left>mdi-fire</v-icon>
-                    热门
-                  </v-chip>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-
-        <div class="text-center mt-4">
-          <v-pagination
-            v-model="page"
-            :length="totalPages"
-            :total-visible="7"
-            @update:model-value="loadTopics"
-          ></v-pagination>
+  <div class="page-container topic-list-page">
+    <el-card class="mb-4 card-surface">
+      <template #header>
+        <div class="topic-header">
+          <el-icon :size="22" class="topic-header-icon"><Collection /></el-icon>
+          <span class="topic-header-title">话题广场</span>
+          <el-button
+            type="primary"
+            plain
+            class="topic-header-btn"
+            @click="showHotTopics"
+          >
+            <el-icon class="mr-1"><TrendCharts /></el-icon>
+            热门话题
+          </el-button>
         </div>
-      </v-card-text>
-    </v-card>
+      </template>
 
-    <v-dialog v-model="topicDialog" max-width="800">
-      <v-card v-if="selectedTopic">
-        <v-card-title>
-          <v-avatar size="40" color="primary" class="mr-3">
-            <v-icon dark>{{ selectedTopic.icon || 'mdi-tag' }}</v-icon>
-          </v-avatar>
-          {{ selectedTopic.display_name || selectedTopic.name }}
-          <v-btn text color="primary" class="ml-auto" @click="followTopic">
-            <v-icon left>{{ isFollowing ? 'mdi-heart' : 'mdi-heart-outline' }}</v-icon>
+      <!-- 话题卡片网格 -->
+      <div v-if="topics.length" class="topic-grid">
+        <div
+          v-for="topic in topics"
+          :key="topic.id"
+          class="topic-grid-item"
+        >
+          <el-card
+            shadow="hover"
+            class="topic-card cursor-pointer"
+            :body-style="{ padding: '16px' }"
+            @click="viewTopic(topic.id)"
+          >
+            <div class="topic-main">
+              <el-avatar :size="40" class="topic-avatar">
+                <el-icon :size="22"><PriceTag /></el-icon>
+              </el-avatar>
+              <div class="topic-info">
+                <div class="topic-name">{{ topic.display_name || topic.name }}</div>
+                <div class="topic-desc text-secondary">{{ topic.description }}</div>
+              </div>
+            </div>
+
+            <div class="topic-stats mt-2">
+              <el-tag size="small" effect="plain" class="topic-stat-tag">
+                <el-icon class="mr-1"><Document /></el-icon>
+                {{ topic.article_count }} 文章
+              </el-tag>
+              <el-tag size="small" effect="plain" class="topic-stat-tag">
+                <el-icon class="mr-1"><User /></el-icon>
+                {{ topic.follow_count }} 关注
+              </el-tag>
+            </div>
+
+            <div v-if="topic.is_hot" class="mt-2">
+              <el-tag size="small" type="warning" effect="light">
+                <el-icon class="mr-1"><TrendCharts /></el-icon>
+                热门
+              </el-tag>
+            </div>
+          </el-card>
+        </div>
+      </div>
+
+      <el-empty v-else description="暂无话题" />
+
+      <!-- 分页 -->
+      <div v-if="totalPages > 1" class="text-center mt-4">
+        <el-pagination
+          layout="prev, pager, next"
+          v-model:current-page="page"
+          :page-size="limit"
+          :total="total"
+          @current-change="loadTopics"
+        />
+      </div>
+    </el-card>
+
+    <!-- 话题详情弹窗 -->
+    <el-dialog
+      v-model="topicDialog"
+      width="800px"
+      :title="selectedTopic ? (selectedTopic.display_name || selectedTopic.name) : ''"
+    >
+      <template v-if="selectedTopic">
+        <div class="topic-dialog-header mb-4">
+          <el-avatar :size="40" class="topic-avatar mr-2">
+            <el-icon :size="22"><PriceTag /></el-icon>
+          </el-avatar>
+          <el-button
+            type="primary"
+            :plain="!isFollowing"
+            @click="followTopic"
+          >
+            <el-icon class="mr-1">
+              <Star v-if="isFollowing" />
+              <StarFilled v-else />
+            </el-icon>
             {{ isFollowing ? '已关注' : '关注' }}
-          </v-btn>
-        </v-card-title>
+          </el-button>
+        </div>
 
-        <v-card-text>
-          <div class="mb-4">{{ selectedTopic.description }}</div>
+        <div class="mb-4 text-secondary">{{ selectedTopic.description }}</div>
 
-          <v-divider class="my-4"></v-divider>
+        <el-divider class="my-4" />
 
-          <div class="subtitle-1 mb-2">相关文章</div>
-          <v-list three-line>
-            <v-list-item v-for="articleTopic in topicArticles" :key="articleTopic.id">
-              <v-list-item-content>
-                <v-list-item-title>{{ articleTopic.article.title }}</v-list-item-title>
-                <v-list-item-subtitle>
-                  {{ articleTopic.article.user.display_name || articleTopic.article.user.username }}
-                  · {{ formatDate(articleTopic.article.created_at) }}
-                </v-list-item-subtitle>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-btn text small color="primary" :to="`/article/${articleTopic.article.id}`">
-                  查看
-                </v-btn>
-              </v-list-item-action>
-            </v-list-item>
-          </v-list>
-        </v-card-text>
+        <div class="topic-articles-title mb-2">相关文章</div>
+        <el-list v-if="topicArticles.length" class="topic-articles-list">
+          <el-list-item
+            v-for="articleTopic in topicArticles"
+            :key="articleTopic.id"
+            class="topic-article-item"
+          >
+            <div class="topic-article-main">
+              <div class="topic-article-title">{{ articleTopic.article.title }}</div>
+              <div class="topic-article-sub text-secondary">
+                {{ articleTopic.article.user.display_name || articleTopic.article.user.username }}
+                · {{ formatDate(articleTopic.article.created_at) }}
+              </div>
+            </div>
+            <el-button
+              link
+              type="primary"
+              @click="goArticle(articleTopic.article.id)"
+            >
+              查看
+            </el-button>
+          </el-list-item>
+        </el-list>
+        <el-empty v-else description="暂无相关文章" />
+      </template>
 
-        <v-card-actions>
-          <v-btn text @click="topicDialog = false">关闭</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </v-container>
+      <template #footer>
+        <el-button type="primary" plain @click="topicDialog = false">关闭</el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import {
+  Collection,
+  TrendCharts,
+  Document,
+  User,
+  PriceTag,
+  Star,
+  StarFilled
+} from '@element-plus/icons-vue'
 import { topicApi } from '@/api'
 
 export default {
   name: 'TopicList',
   setup() {
+    const router = useRouter()
     const topics = ref([])
     const page = ref(1)
     const limit = ref(20)
@@ -185,6 +225,10 @@ export default {
       }
     }
 
+    const goArticle = (articleId) => {
+      router.push(`/article/${articleId}`)
+    }
+
     const formatDate = (date) => {
       return new Date(date).toLocaleDateString('zh-CN')
     }
@@ -202,10 +246,18 @@ export default {
       selectedTopic,
       topicArticles,
       isFollowing,
+      Collection,
+      TrendCharts,
+      Document,
+      User,
+      PriceTag,
+      Star,
+      StarFilled,
       loadTopics,
       viewTopic,
       followTopic,
       showHotTopics,
+      goArticle,
       formatDate
     }
   }
@@ -213,12 +265,112 @@ export default {
 </script>
 
 <style scoped>
+.topic-list-page {
+  padding-top: 16px;
+}
+
 .topic-card {
-  cursor: pointer;
+  border-radius: var(--campus-radius);
   transition: transform 0.2s;
 }
 
 .topic-card:hover {
   transform: translateY(-4px);
+}
+
+.topic-header {
+  display: flex;
+  align-items: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  gap: 8px;
+}
+
+.topic-header-icon {
+  color: var(--campus-primary);
+}
+
+.topic-header-btn {
+  margin-left: auto;
+}
+
+.topic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.topic-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topic-avatar {
+  flex-shrink: 0;
+  color: #fff;
+  font-weight: 600;
+}
+
+.topic-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.topic-name {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--campus-text);
+}
+
+.topic-desc {
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topic-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.topic-stat-tag {
+  display: inline-flex;
+  align-items: center;
+}
+
+.topic-dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.topic-articles-title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.topic-article-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topic-article-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.topic-article-title {
+  font-weight: 500;
+  color: var(--campus-text);
+}
+
+.topic-article-sub {
+  font-size: 0.85rem;
 }
 </style>

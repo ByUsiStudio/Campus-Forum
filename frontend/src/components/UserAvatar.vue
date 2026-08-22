@@ -1,21 +1,19 @@
 <template>
-  <div class="user-avatar d-flex align-center">
-    <v-avatar :size="size" class="flex-shrink-0">
-      <v-img :src="user.avatar" :alt="user.display_name" />
-    </v-avatar>
+  <div class="user-avatar">
+    <el-avatar :size="size" :src="user?.avatar || ''" class="avatar" :style="avatarStyle">
+      {{ initial }}
+    </el-avatar>
     <div v-if="showUsername" class="user-info">
-      <div class="user-name" :class="nameSizeClass">{{ user.display_name }}</div>
-      <div class="titles-row">
-        <template v-for="title in displayTitles" :key="title.id || 'default'">
-          <v-chip
-            :size="chipSize"
-            :style="{ backgroundColor: adjustColorOpacity(title.color, 0.12), color: title.color, border: `1px solid ${adjustColorOpacity(title.color, 0.25)}` }"
-            class="title-chip"
-          >
-            <v-icon v-if="title.icon" start size="x-small">{{ title.icon }}</v-icon>
-            {{ title.name }}
-          </v-chip>
-        </template>
+      <div class="user-name" :style="nameStyle">{{ user?.display_name || user?.username || '未知用户' }}</div>
+      <div v-if="displayTitles.length" class="titles-row">
+        <span
+          v-for="title in displayTitles"
+          :key="title.id || 'default'"
+          class="title-chip"
+          :style="titleStyle(title.color)"
+        >
+          {{ title.name }}
+        </span>
       </div>
     </div>
   </div>
@@ -25,104 +23,72 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  user: {
-    type: Object,
-    required: true
-  },
-  size: {
-    type: Number,
-    default: 40
-  },
-  showUsername: {
-    type: Boolean,
-    default: true
-  },
-  maxVisibleTitles: {
-    type: Number,
-    default: 2
-  }
+  user: { type: Object, default: null },
+  size: { type: Number, default: 40 },
+  showUsername: { type: Boolean, default: true },
+  maxVisibleTitles: { type: Number, default: 2 }
 })
 
-const defaultTitle = {
-  id: 0,
-  name: '注册用户',
-  color: '#625B71',
-  icon: 'mdi-account',
-  description: '系统默认头衔'
-}
+const defaultTitle = { id: 0, name: '注册用户', color: '#625b71' }
 
 const displayTitles = computed(() => {
-  const titles = props.user.titles || []
-  const visibleTitles = titles.slice(0, props.maxVisibleTitles)
-  if (visibleTitles.length === 0) {
-    return [defaultTitle]
+  const titles = props.user?.titles || []
+  const visible = titles.slice(0, props.maxVisibleTitles)
+  return visible.length ? visible : [defaultTitle]
+})
+
+const initial = computed(() => (props.user?.display_name || props.user?.username || 'U')[0].toUpperCase())
+
+const nameStyle = computed(() => ({
+  fontWeight: props.size >= 48 ? 700 : 500,
+  fontSize: props.size >= 64 ? '18px' : props.size >= 48 ? '16px' : '14px'
+}))
+
+const avatarStyle = computed(() => ({
+  backgroundColor: 'var(--campus-primary)',
+  color: '#fff',
+  fontWeight: 600
+}))
+
+const titleStyle = (color) => {
+  const base = color || '#625b71'
+  return {
+    color: base,
+    border: `1px solid ${base}`,
+    backgroundColor: 'transparent'
   }
-  return visibleTitles
-})
-
-const nameSizeClass = computed(() => {
-  if (props.size >= 64) return 'text-h6 font-weight-bold'
-  if (props.size >= 48) return 'text-body-1 font-weight-bold'
-  return 'text-body-2 font-weight-medium'
-})
-
-const chipSize = computed(() => {
-  if (props.size >= 64) return 'small'
-  if (props.size >= 48) return 'x-small'
-  return 'x-small'
-})
-
-const adjustColorOpacity = (color, opacity) => {
-  if (!color) return `rgba(103, 80, 164, ${opacity})`
-  if (color.startsWith('#')) {
-    const r = parseInt(color.slice(1, 3), 16)
-    const g = parseInt(color.slice(3, 5), 16)
-    const b = parseInt(color.slice(5, 7), 16)
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`
-  }
-  return color
 }
 </script>
 
 <style scoped>
 .user-avatar {
+  display: flex;
+  align-items: center;
   min-width: 0;
 }
-
+.avatar {
+  flex-shrink: 0;
+}
 .user-info {
-  min-width: 0;
-  flex-shrink: 1;
   margin-left: 12px;
+  min-width: 0;
+  overflow: hidden;
 }
-
 .user-name {
   line-height: 1.3;
   word-break: break-word;
 }
-
 .titles-row {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 4px;
 }
-
 .title-chip {
-  font-weight: 500;
-  backdrop-filter: blur(2px);
-  height: 20px;
-  margin: 0;
-}
-
-.title-chip :deep(.v-icon) {
-  opacity: 0.9;
-}
-
-.title-chip :deep(.v-chip__content) {
-  gap: 2px;
-}
-
-.flex-shrink-0 {
-  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 </style>

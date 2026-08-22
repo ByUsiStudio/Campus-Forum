@@ -1,38 +1,46 @@
 <template>
-  <v-container fluid class="py-6">
-    <v-card class="mb-6">
-      <v-card-title class="d-flex align-center gap-2">
-        <v-icon size="28">mdi-magnify</v-icon>
-        <span class="text-h5">搜索结果</span>
-      </v-card-title>
-      <v-card-text>
-        <v-text-field
-          v-model="searchQuery"
-          prepend-inner-icon="mdi-magnify"
-          placeholder="输入关键词搜索..."
-          variant="outlined"
-          @keyup.enter="search"
-          clearable
-        ></v-text-field>
-        <div class="mt-4" v-if="currentQuery">
-          <div class="text-subtitle-2 text-medium-emphasis">
-            <v-icon class="mr-1" size="small">mdi-file-document</v-icon>
-            搜索 <strong>"{{ currentQuery }}"</strong> 找到 {{ total }} 篇文章
-          </div>
+  <div class="page-container search-page">
+    <el-card class="mb-4 search-card">
+      <template #header>
+        <div class="d-flex align-center gap-2 search-header">
+          <el-icon :size="28" class="search-header-icon"><Search /></el-icon>
+          <span class="search-title">搜索结果</span>
         </div>
-      </v-card-text>
-    </v-card>
+      </template>
 
-    <div v-if="loading" class="text-center py-8">
-      <v-progress-circular indeterminate size="48" color="primary"></v-progress-circular>
+      <el-input
+        v-model="searchQuery"
+        placeholder="输入关键词搜索..."
+        clearable
+        size="large"
+        @keyup.enter="search"
+      >
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+
+      <div class="mt-4" v-if="currentQuery">
+        <div class="text-secondary search-summary">
+          <el-icon class="summary-icon" :size="14"><Document /></el-icon>
+          搜索 <strong>"{{ currentQuery }}"</strong> 找到 {{ total }} 篇文章
+        </div>
+      </div>
+    </el-card>
+
+    <!-- 加载状态 -->
+    <div v-if="loading" class="text-center search-loading">
+      <el-icon :size="48" class="is-loading search-loading-icon"><Loading /></el-icon>
     </div>
 
-    <div v-else-if="articles.length === 0 && currentQuery" class="text-center py-12">
-      <v-icon size="80" class="text-grey-lighten-2">mdi-file-search</v-icon>
-      <div class="text-h5 text-medium-emphasis mt-4">没有找到相关文章</div>
-      <div class="text-subtitle-2 text-grey-lighten-1 mt-2">换个关键词试试吧</div>
+    <!-- 空状态 -->
+    <div v-else-if="articles.length === 0 && currentQuery" class="text-center search-empty">
+      <el-icon :size="80" class="search-empty-icon"><Search /></el-icon>
+      <div class="text-secondary search-empty-title mt-4">没有找到相关文章</div>
+      <div class="text-secondary search-empty-subtitle mt-2">换个关键词试试吧</div>
     </div>
 
+    <!-- 结果列表 -->
     <ArticleList
       v-else
       :articles="articles"
@@ -43,12 +51,13 @@
       :page-size="pageSize"
       @page-change="handlePageChange"
     />
-  </v-container>
+  </div>
 </template>
 
 <script>
 import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Search, Loading, Document } from '@element-plus/icons-vue'
 import ArticleList from '../components/ArticleList.vue'
 import { articleApi } from '../api'
 
@@ -144,3 +153,63 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.search-page {
+  padding-top: 16px;
+}
+
+.search-card {
+  border-radius: var(--campus-radius);
+}
+
+.search-header {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.search-header-icon {
+  color: var(--campus-primary);
+}
+
+.search-title {
+  line-height: 1.3;
+}
+
+.search-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+}
+
+.summary-icon {
+  flex-shrink: 0;
+}
+
+.search-loading {
+  padding: 40px 0;
+}
+
+.search-loading-icon {
+  color: var(--campus-primary);
+}
+
+.search-empty {
+  padding: 48px 0;
+}
+
+.search-empty-icon {
+  color: var(--campus-border);
+}
+
+.search-empty-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.search-empty-subtitle {
+  font-size: 0.875rem;
+  opacity: 0.75;
+}
+</style>

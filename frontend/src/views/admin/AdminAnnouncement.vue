@@ -1,70 +1,79 @@
 <template>
-  <v-container fluid class="pa-4 pa-md-6">
+  <div class="page-container">
     <!-- 公告编辑表单 -->
-    <v-card variant="flat" rounded="lg">
-      <v-card-title class="pb-2">
-        <v-icon start size="20">mdi-bullhorn</v-icon>
-        公告管理
-      </v-card-title>
+    <el-card shadow="never" class="mb-4">
+      <template #header>
+        <div class="card-header">
+          <el-icon><Bell /></el-icon>
+          <span>公告管理</span>
+        </div>
+      </template>
 
-      <v-card-text>
-        <v-form ref="announcementForm" v-model="formValid">
-          <v-textarea
+      <el-form ref="announcementForm" :model="formModel" :rules="rules">
+        <el-form-item prop="content">
+          <el-input
             v-model="announcementContent"
-            label="公告内容"
+            type="textarea"
+            :rows="5"
+            maxlength="500"
+            show-word-limit
             placeholder="请输入公告内容..."
-            variant="outlined"
-            density="compact"
-            :rules="[rules.required]"
-            prepend-inner-icon="mdi-text"
-            rows="5"
-            counter
-            :maxlength="500"
-            class="mb-4"
           />
+        </el-form-item>
 
-          <v-alert
-            v-if="announcementContent"
-            type="info"
-            variant="tonal"
-            density="compact"
-            class="mb-4"
-            icon="mdi-information"
-          >
-            公告将显示在网站首页顶部，内容过长可能会影响显示效果。
-          </v-alert>
-        </v-form>
-      </v-card-text>
+        <el-alert
+          v-if="announcementContent"
+          type="info"
+          :closable="false"
+          show-icon
+        >
+          公告将显示在网站首页顶部，内容过长可能会影响显示效果。
+        </el-alert>
+      </el-form>
 
-      <v-card-actions class="pa-4">
-        <v-btn
-          color="primary"
-          variant="flat"
-          @click="saveAnnouncement"
+      <div class="card-footer">
+        <el-button
+          type="primary"
           :loading="saving"
           :disabled="!formValid"
+          @click="saveAnnouncement"
         >
-          <v-icon start>mdi-content-save</v-icon>
+          <el-icon><Promotion /></el-icon>
           保存公告
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-container>
+        </el-button>
+      </div>
+    </el-card>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { adminAnnouncementApi } from '../../api/admin'
-import { success, error } from '../../utils/modal'
+import { ref, computed, onMounted } from 'vue'
+import { adminAnnouncementApi } from '@/api/admin'
+import { success, error } from '@/utils/message'
 
 const announcementContent = ref('')
 const announcementForm = ref(null)
-const formValid = ref(false)
 const saving = ref(false)
 
-const rules = {
-  required: v => !!v || '此字段为必填项'
+const activeRule = (rule, value, callback) => {
+  if (!value || !value.trim()) {
+    callback(new Error('此字段为必填项'))
+  } else {
+    callback()
+  }
 }
+
+const rules = {
+  content: [{ validator: activeRule, trigger: 'blur' }]
+}
+
+const formModel = computed(() => ({
+  content: announcementContent.value
+}))
+
+const formValid = computed(() => {
+  return !!(announcementContent.value && announcementContent.value.trim())
+})
 
 const loadAnnouncement = async () => {
   try {
@@ -93,3 +102,17 @@ onMounted(() => {
   loadAnnouncement()
 })
 </script>
+
+<style scoped>
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-start;
+}
+</style>

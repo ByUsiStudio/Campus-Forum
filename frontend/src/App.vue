@@ -1,797 +1,257 @@
 <template>
-  <v-app>
-    <!-- 公告弹窗 -->
-    <v-dialog v-model="announcementDialog" max-width="600" persistent>
-      <v-card>
-        <v-card-title class="d-flex align-center justify-space-between pa-4">
-          <div class="d-flex align-center">
-            <v-icon color="primary" class="mr-2">mdi-bullhorn</v-icon>
-            <span class="text-h6">公告</span>
-          </div>
-          <v-btn icon @click="closeAnnouncementDialog" variant="text">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-        <v-divider></v-divider>
-        <v-card-text class="pa-4">
-          <div class="markdown-body" v-html="announcementContent"></div>
-        </v-card-text>
-        <v-card-actions class="pa-4">
-          <v-checkbox
-            v-model="dontShowAgain"
-            label="不再显示"
-            density="compact"
-            hide-details
-          ></v-checkbox>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" variant="flat" @click="closeAnnouncementDialog">
-            关闭
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- 主要内容区域 -->
-    <v-main :class="{ 'pb-navigation': !hideAppBar && isMobile }" class="bg-grey-lighten-4">
-      <!-- 移动端顶部搜索栏 -->
-      <div v-if="!hideAppBar && isMobile && !isAdminPage" class="mobile-search-bar px-4 pt-3 pb-2">
-        <v-text-field
-          v-model="searchQuery"
-          prepend-inner-icon="mdi-magnify"
-          variant="solo"
-          density="compact"
-          placeholder="搜索..."
-          hide-details
-          rounded="pill"
-          bg-color="white"
-          @keyup.enter="handleSearch"
-          class="mobile-search-field"
-        ></v-text-field>
-      </div>
-      
-      <v-container v-if="!hideAppBar" fluid class="pa-4">
-        <router-view />
-      </v-container>
-      <v-container v-else>
-        <router-view />
-      </v-container>
-    </v-main>
-
-    <!-- 移动端底部导航栏 -->
-    <v-bottom-navigation v-if="!hideAppBar && isMobile && !isAdminPage" grow color="primary" app>
-      <v-btn to="/" value="home">
-        <v-icon>mdi-home</v-icon>
-        <span>首页</span>
-      </v-btn>
-      
-      <v-btn to="/create" value="create" v-if="token">
-        <v-icon>mdi-plus-circle</v-icon>
-        <span>发布</span>
-      </v-btn>
-      
-      <v-btn @click="appDrawer = true" value="drawer">
-        <v-icon>mdi-grid</v-icon>
-        <span>菜单</span>
-      </v-btn>
-      
-      <v-btn :to="token ? '/profile' : '/login'" :value="token ? 'profile' : 'login'">
-        <v-icon>mdi-account</v-icon>
-        <span>{{ token ? '我的' : '登录' }}</span>
-      </v-btn>
-    </v-bottom-navigation>
-
-    <!-- 移动端管理后台底部导航栏 -->
-    <v-bottom-navigation v-if="!hideAppBar && isMobile && isAdminPage" grow color="primary" app>
-      <v-btn :to="{ name: 'AdminIndex' }" value="dashboard">
-        <v-icon>mdi-view-dashboard</v-icon>
-        <span>控制台</span>
-      </v-btn>
-      
-      <v-btn :to="{ name: 'AdminUsers' }" value="users">
-        <v-icon>mdi-account-multiple</v-icon>
-        <span>用户管理</span>
-      </v-btn>
-      
-      <v-btn :to="{ name: 'AdminArticles' }" value="articles">
-        <v-icon>mdi-file-document</v-icon>
-        <span>文章管理</span>
-      </v-btn>
-      
-      <v-btn :to="{ name: 'AdminSiteConfig' }" value="settings">
-        <v-icon>mdi-settings</v-icon>
-        <span>系统设置</span>
-      </v-btn>
-    </v-bottom-navigation>
-
-    <!-- 移动端应用抽屉（从底部弹出） -->
-    <Teleport to="body">
-      <div v-if="appDrawer" class="app-drawer-overlay" @click="appDrawer = false">
-        <div class="app-drawer-content" @click.stop>
-          <div class="app-drawer-header">
-            <div class="app-drawer-title">应用菜单</div>
-            <v-btn icon @click="appDrawer = false" class="close-btn">
-              <v-icon>mdi-close</v-icon>
-            </v-btn>
-          </div>
-          
-          <v-divider class="mb-4"></v-divider>
-          
-          <div class="app-drawer-grid">
-            <v-btn 
-              v-for="item in appDrawerItems" 
-              :key="item.path"
-              :to="item.path"
-              class="drawer-item"
-              @click="appDrawer = false"
-            >
-              <v-icon size="32" class="drawer-icon">{{ item.icon }}</v-icon>
-              <span class="drawer-label">{{ item.label }}</span>
-            </v-btn>
-          </div>
-          
-          <v-divider class="mt-4 mb-3"></v-divider>
-          
-          <div class="app-drawer-footer">
-            <v-btn @click="logout" class="footer-btn">
-              <v-icon>mdi-logout</v-icon>
-              <span>退出登录</span>
-            </v-btn>
-          </div>
+  <div class="app-shell">
+    <!-- 顶部导航 -->
+    <header class="app-header">
+      <div class="app-header-inner">
+        <div class="app-brand">
+          <el-icon class="brand-icon"><Forum /></el-icon>
+          <router-link :to="isAdminPage ? '/admin' : '/'" class="brand-title">
+            {{ isAdminPage ? '管理后台' : appStore.siteTitle }}
+          </router-link>
         </div>
-      </div>
-    </Teleport>
 
-    <!-- 桌面端顶部导航栏 -->
-    <v-app-bar v-if="!hideAppBar && !isMobile" elevation="2" color="primary" scroll-behavior="collapse">
-      <v-app-bar-title class="d-flex align-center">
-        <v-icon class="mr-2">{{ isAdminPage ? 'mdi-shield-crown' : 'mdi-forum' }}</v-icon>
-        <router-link :to="isAdminPage ? '/admin' : '/'" class="logo-link">{{ isAdminPage ? '管理后台' : siteTitle }}</router-link>
-      </v-app-bar-title>
+        <nav class="app-nav" v-if="!isAdminPage">
+          <el-button v-if="!userStore.isLoggedIn" text @click="go('/login')">登录</el-button>
+          <el-button v-if="!userStore.isLoggedIn" text @click="go('/register')">注册</el-button>
+          <el-button v-if="userStore.isLoggedIn" text @click="go('/create')">
+            <el-icon><EditPen /></el-icon>&nbsp;写文章
+          </el-button>
+          <el-button v-if="userStore.isLoggedIn" text @click="go('/collections')">收藏</el-button>
+          <el-button v-if="userStore.isLoggedIn" text @click="go('/signin')">签到</el-button>
+          <el-button v-if="userStore.isLoggedIn" text @click="go('/topics')">话题</el-button>
+          <el-button v-if="userStore.isAdmin" text @click="go('/admin')">
+            <el-icon><Setting /></el-icon>&nbsp;管理后台
+          </el-button>
+        </nav>
 
-      <v-spacer></v-spacer>
-
-      <template v-slot:append>
-        <div class="nav-links" v-if="!isAdminPage">
-          <v-text-field
+        <div class="app-actions">
+          <el-input
             v-model="searchQuery"
-            prepend-inner-icon="mdi-magnify"
-            variant="outlined"
-            density="compact"
-            color="white"
-            placeholder="搜索..."
+            placeholder="搜索…"
+            clearable
+            class="search-input"
             @keyup.enter="handleSearch"
-            @click:prepend-inner="handleSearch"
-            class="search-field"
-          ></v-text-field>
-          <v-btn variant="text" to="/" color="white" prepend-icon="mdi-home">首页</v-btn>
-          <v-btn variant="text" to="/login" v-if="!token" color="white" prepend-icon="mdi-login">登录</v-btn>
-          <v-btn variant="text" to="/register" v-if="!token" color="white" prepend-icon="mdi-account-plus">注册</v-btn>
-          <v-btn variant="text" to="/create" v-if="token" color="white" prepend-icon="mdi-pencil">写文章</v-btn>
-          <NotificationBell v-if="token" />
-          <v-btn variant="text" to="/profile" v-if="token" color="white" prepend-icon="mdi-account">我的</v-btn>
-          <v-btn variant="text" to="/admin" v-if="isAdmin" color="error" prepend-icon="mdi-shield-crown">管理后台</v-btn>
-          <v-btn variant="text" v-if="token" @click="logout" color="white" prepend-icon="mdi-logout">退出</v-btn>
-        </div>
-        <div class="nav-links" v-else>
-          <v-btn variant="text" :to="{ name: 'AdminIndex' }" color="white" prepend-icon="mdi-view-dashboard">控制台</v-btn>
-          <v-btn variant="text" :to="{ name: 'AdminUsers' }" color="white" prepend-icon="mdi-account-multiple">用户管理</v-btn>
-          <v-btn variant="text" :to="{ name: 'AdminArticles' }" color="white" prepend-icon="mdi-file-document">文章管理</v-btn>
-          <v-btn variant="text" :to="{ name: 'AdminSiteConfig' }" color="white" prepend-icon="mdi-settings">系统设置</v-btn>
-          <v-btn variant="text" to="/" color="white" prepend-icon="mdi-home">返回首页</v-btn>
-        </div>
-      </template>
-    </v-app-bar>
+          >
+            <template #prefix><el-icon><Search /></el-icon></template>
+          </el-input>
 
-    <!-- 移动端抽屉导航（桌面端不使用） -->
-    <v-navigation-drawer v-if="!hideAppBar && isMobile" v-model="drawer" temporary color="surface">
-      <v-list nav density="comfortable">
-        <template v-if="!isAdminPage">
-          <v-list-item to="/" @click="drawer = false" prepend-icon="mdi-home" title="首页"></v-list-item>
-          <template v-if="!token">
-            <v-list-item to="/login" @click="drawer = false" prepend-icon="mdi-login" title="登录"></v-list-item>
-            <v-list-item to="/register" @click="drawer = false" prepend-icon="mdi-account-plus" title="注册"></v-list-item>
+          <el-badge v-if="userStore.isLoggedIn" :value="notificationStore.unreadCount" :hidden="notificationStore.unreadCount === 0" :offset="[-4,4]">
+            <el-button circle text @click="go('/notifications')">
+              <el-icon :size="20"><Bell /></el-icon>
+            </el-button>
+          </el-badge>
+
+          <template v-if="userStore.user">
+            <el-dropdown trigger="click" @command="onUserCommand">
+              <span class="user-trigger cursor-pointer">
+                <el-avatar :size="32" :src="userStore.user.avatar">
+                  {{ (userStore.user.display_name || userStore.user.username || 'U')[0] }}
+                </el-avatar>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="profile">
+                    <el-icon><User /></el-icon>个人中心
+                  </el-dropdown-item>
+                  <el-dropdown-item command="logout" divided>
+                    <el-icon><SwitchButton /></el-icon>退出登录
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </template>
-          <template v-if="token">
-            <v-list-item to="/create" @click="drawer = false" prepend-icon="mdi-pencil" title="写文章"></v-list-item>
-            <v-list-item to="/profile" @click="drawer = false" prepend-icon="mdi-account" title="我的"></v-list-item>
-            <v-list-item to="/notifications" @click="drawer = false" prepend-icon="mdi-bell" title="通知"></v-list-item>
-            <v-list-item to="/signin" @click="drawer = false" prepend-icon="mdi-calendar-check" title="签到"></v-list-item>
-            <v-list-item v-if="isAdmin" to="/admin" @click="drawer = false" prepend-icon="mdi-shield-crown" title="管理后台" class="text-error"></v-list-item>
-            <v-divider class="my-2"></v-divider>
-            <v-list-item @click="logout" prepend-icon="mdi-logout" title="退出" class="text-secondary"></v-list-item>
+          <template v-else>
+            <el-button type="primary" @click="go('/login')">登录</el-button>
           </template>
-        </template>
-        <template v-else>
-          <v-list-item :to="{ name: 'AdminIndex' }" @click="drawer = false" prepend-icon="mdi-view-dashboard" title="控制台"></v-list-item>
-          <v-list-item :to="{ name: 'AdminUsers' }" @click="drawer = false" prepend-icon="mdi-account-multiple" title="用户管理"></v-list-item>
-          <v-list-item :to="{ name: 'AdminArticles' }" @click="drawer = false" prepend-icon="mdi-file-document" title="文章管理"></v-list-item>
-          <v-list-item :to="{ name: 'AdminSiteConfig' }" @click="drawer = false" prepend-icon="mdi-settings" title="系统设置"></v-list-item>
-          <v-divider class="my-2"></v-divider>
-          <v-list-item to="/" @click="drawer = false" prepend-icon="mdi-home" title="返回首页"></v-list-item>
-          <v-list-item @click="logout" prepend-icon="mdi-logout" title="退出" class="text-secondary"></v-list-item>
-        </template>
-      </v-list>
-    </v-navigation-drawer>
+        </div>
+      </div>
+    </header>
+
+    <!-- 内容区 -->
+    <main class="app-main">
+      <router-view />
+    </main>
 
     <!-- 页脚 -->
-    <v-footer v-if="!hideAppBar" class="open-source-footer bg-transparent">
-      <v-container fluid>
-        <v-row justify="center" align="center">
-          <v-col cols="12" sm="auto">
-            <div class="d-flex align-center flex-wrap justify-center gap-2">
-              <span class="text-caption text-medium-emphasis">本论坛基于</span>
-              <a href="https://github.com/ByUsiStudio/Campus-Forum" target="_blank" class="open-source-link">
-                <v-icon size="small" class="mr-1">mdi-github</v-icon>GitHub
-              </a>
-              <span class="text-caption text-medium-emphasis">与</span>
-              <a href="https://gitee.com/byusistudio/campus-forum" target="_blank" class="open-source-link">
-                <v-icon size="small" class="mr-1">mdi-git</v-icon>Gitee
-              </a>
-              <span class="text-caption text-medium-emphasis">与</span>
-              <a href="https://codeberg.org/byusistudio/campus-forum" target="_blank" class="open-source-link">
-                <v-icon size="small" class="mr-1">mdi-git</v-icon>Codeberg
-              </a>
-              <span class="text-caption text-medium-emphasis">开源</span>
-            </div>
-            <div class="text-caption text-medium-emphasis text-center mt-1">
-              <a href="https://github.com/ByUsiStudio/Campus-Forum" target="_blank" class="open-source-link">
-                https://github.com/ByUsiStudio/Campus-Forum
-              </a>
-            </div>
-            <div class="text-caption text-medium-emphasis text-center mt-1">
-              <v-icon size="x-small" class="mr-1">mdi-tag</v-icon>
-              前端版本: {{ frontendVersion }} | 后端版本: {{ backendVersion || 'unknown' }}
-            </div>
-            <div v-if="icpNumber || publicSecurityNumber" class="d-flex align-center justify-center flex-wrap gap-4 mt-2">
-              <div v-if="icpNumber" class="icp-info">
-                <v-icon size="x-small" class="mr-1">mdi-shield-check</v-icon>
-                <a href="https://beian.miit.gov.cn" target="_blank" class="open-source-link">{{ icpNumber }}</a>
-              </div>
-              <div v-if="publicSecurityNumber" class="security-info">
-                <v-icon size="x-small" class="mr-1">mdi-police-badge</v-icon>
-                <span>{{ publicSecurityNumber }}</span>
-              </div>
-            </div>
-          </v-col>
-        </v-row>
-      </v-container>
-    </v-footer>
+    <footer class="app-footer">
+      <div class="app-footer-inner">
+        <span class="text-secondary">{{ appStore.siteTitle }}</span>
+        <span class="text-secondary">
+          前端 {{ appStore.frontendVersion || '—' }} / 后端 {{ appStore.backendVersion || '—' }}
+        </span>
+        <div v-if="appStore.icpNumber || appStore.publicSecurityNumber" class="footer-icp">
+          <span v-if="appStore.icpNumber">{{ appStore.icpNumber }}</span>
+          <span v-if="appStore.publicSecurityNumber">{{ appStore.publicSecurityNumber }}</span>
+        </div>
+      </div>
+    </footer>
 
-    <!-- 全局弹窗 -->
-    <AppModal
-      :show="modalState.show"
-      :type="modalState.type"
-      :title="modalState.title"
-      :message="modalState.message"
-      :icon="modalState.icon"
-      :icon-color="modalState.iconColor"
-      :confirm-text="modalState.confirmText"
-      :cancel-text="modalState.cancelText"
-      :confirm-color="modalState.confirmColor"
-      :input-value="modalState.inputValue"
-      :input-label="modalState.inputLabel"
-      :input-type="modalState.inputType"
-      :input-placeholder="modalState.inputPlaceholder"
-      :input-rows="modalState.inputRows"
-      @update:show="modalState.show = $event"
-      @confirm="(value) => handleConfirm(value)"
-      @cancel="handleCancel"
-    />
-  </v-app>
+    <!-- 公告弹窗 -->
+    <el-dialog
+      v-model="announcementVisible"
+      title="公告"
+      width="560px"
+      append-to-body
+    >
+      <div class="markdown-body" v-if="announcementContent" v-html="announcementContent"></div>
+      <template #footer>
+        <el-checkbox v-model="dontShowAgain">不再显示</el-checkbox>
+        <el-button type="primary" @click="closeAnnouncement">关闭</el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
-<script>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import api from './api'
-import AppModal from './components/AppModal.vue'
-import NotificationBell from './components/NotificationBell.vue'
-import { modalState, handleConfirm, handleCancel } from './utils/modal'
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { marked } from 'marked'
+import { useAppStore } from '@/stores/app'
+import { useUserStore } from '@/stores/user'
+import { useNotificationStore } from '@/stores/notification'
+import http from '@/api/http'
 
-export default {
-  name: 'App',
-  components: {
-    AppModal,
-    NotificationBell
-  },
-  setup() {
-    const router = useRouter()
-    const route = useRoute()
-    const token = ref(localStorage.getItem('token'))
-    const user = ref(null)
-    const drawer = ref(false)
-    const appDrawer = ref(false)
-    const isMobile = ref(false)
-    const hideAppBar = ref(false)
-    const backendVersion = ref(null)
-    const siteTitle = ref('校园论坛')
-    const frontendVersion = ref(typeof __FRONTEND_VERSION__ !== 'undefined' ? __FRONTEND_VERSION__ : 'unknown')
-    const icpNumber = ref(null)
-    const publicSecurityNumber = ref(null)
-    const searchQuery = ref('')
-    const announcementDialog = ref(false)
-    const announcementContent = ref('')
-    const dontShowAgain = ref(false)
+const route = useRoute()
+const router = useRouter()
 
-    const loadAnnouncement = async () => {
-      try {
-        const response = await api.get('/announcement')
-        if (response.data.content) {
-          announcementContent.value = marked(response.data.content)
-          const hideAnnouncement = localStorage.getItem('hideAnnouncement')
-          if (!hideAnnouncement) {
-            announcementDialog.value = true
-          }
-        }
-      } catch (error) {
-        console.error('加载公告失败', error)
-      }
-    }
+const appStore = useAppStore()
+const userStore = useUserStore()
+const notificationStore = useNotificationStore()
 
-    const closeAnnouncementDialog = () => {
-      if (dontShowAgain.value) {
-        localStorage.setItem('hideAnnouncement', 'true')
-      }
-      announcementDialog.value = false
-    }
+const searchQuery = ref('')
+const announcementVisible = ref(false)
+const announcementContent = ref('')
+const dontShowAgain = ref(false)
 
-    const handleSearch = () => {
-      if (searchQuery.value.trim()) {
-        router.push({ path: '/search', query: { q: searchQuery.value.trim() } })
-      }
-    }
-    
-    // 检测屏幕宽度
-    const checkMobile = () => {
-      isMobile.value = window.innerWidth < 768
-    }
-    
-    // 监听路由变化更新hideAppBar
-    watch(() => route.meta, (meta) => {
-      hideAppBar.value = meta?.hideAppBar || false
-    }, { immediate: true })
-    
-    const isAdmin = computed(() => {
-      return user.value && (user.value.role === 'admin' || user.value.role === 'system' || user.value.role === 'Admin' || user.value.role === 'System')
-    })
-    
-    const isAdminPage = computed(() => {
-      return route.path.startsWith('/admin')
-    })
-    
-    const logout = () => {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.dispatchEvent(new Event('user-logout'))
-      drawer.value = false
-      appDrawer.value = false
-      router.push('/login')
-    }
-    
-    const appDrawerItems = computed(() => {
-      const items = [
-        { path: '/', icon: 'mdi-home', label: '首页' },
-        { path: '/create', icon: 'mdi-pencil', label: '写文章' },
-        { path: '/notifications', icon: 'mdi-bell', label: '通知' },
-        { path: '/signin', icon: 'mdi-calendar-check', label: '签到' },
-        { path: '/profile', icon: 'mdi-account', label: '我的' }
-      ]
-      if (isAdmin.value) {
-        items.push({ path: '/admin', icon: 'mdi-shield-crown', label: '管理后台' })
-      }
-      return items.filter(item => {
-        if (item.path === '/create' || item.path === '/notifications' || item.path === '/profile' || item.path === '/signin') {
-          return token.value
-        }
-        return true
-      })
-    })
-    
-    const loadUser = async () => {
-      if (token.value) {
-        try {
-          const response = await api.get('/profile')
-          user.value = response.data
-          localStorage.setItem('user', JSON.stringify(response.data))
-        } catch (error) {
-          console.error('加载用户信息失败', error)
-          localStorage.removeItem('token')
-          token.value = null
-        }
-      }
-    }
+const isAdminPage = computed(() => route.path.startsWith('/admin'))
 
-    const loadVersion = async () => {
-      try {
-        const response = await api.get('/version')
-        backendVersion.value = response.data.backend?.version || response.data.backend_version || response.data.version
-        frontendVersion.value = response.data.frontend?.version || frontendVersion.value
-      } catch (error) {
-        console.error('加载版本信息失败', error)
-      }
-    }
+const go = (path) => router.push(path)
 
-    const loadSiteTitle = async () => {
-      try {
-        const response = await api.get('/site-config')
-        siteTitle.value = response.data.site_title || '校园论坛'
-        icpNumber.value = response.data.icp_number || null
-        publicSecurityNumber.value = response.data.public_security_number || null
-        document.title = siteTitle.value
-      } catch (error) {
-        console.error('加载网站标题失败', error)
-      }
-    }
+const handleSearch = () => {
+  const q = searchQuery.value.trim()
+  if (q) router.push({ path: '/search', query: { q } })
+}
 
-    const updateSiteTitle = (newTitle) => {
-      if (newTitle) {
-        siteTitle.value = newTitle
-        document.title = newTitle
-      }
-    }
-
-    watch(siteTitle, (newTitle) => {
-      if (newTitle) {
-        document.title = newTitle
-      }
-    })
-    
-    onMounted(() => {
-      checkMobile()
-      window.addEventListener('resize', checkMobile)
-
-      const storedUser = localStorage.getItem('user')
-      if (storedUser) {
-        user.value = JSON.parse(storedUser)
-      }
-      loadUser()
-      loadVersion()
-      loadSiteTitle()
-      loadAnnouncement()
-
-      window.addEventListener('user-updated', () => {
-        const storedUser = localStorage.getItem('user')
-        if (storedUser) {
-          user.value = JSON.parse(storedUser)
-        }
-        token.value = localStorage.getItem('token')
-      })
-
-      window.addEventListener('site-title-updated', (event) => {
-        if (event.detail) {
-          siteTitle.value = event.detail
-          document.title = event.detail
-        }
-      })
-
-      window.addEventListener('user-logout', () => {
-        user.value = null
-        token.value = null
-      })
-    })
-
-    return {
-      token,
-      user,
-      isAdmin,
-      isAdminPage,
-      logout,
-      modalState,
-      handleConfirm,
-      handleCancel,
-      isMobile,
-      drawer,
-      appDrawer,
-      appDrawerItems,
-      backendVersion,
-      siteTitle,
-      updateSiteTitle,
-      frontendVersion,
-      icpNumber,
-      publicSecurityNumber,
-      searchQuery,
-      handleSearch,
-      announcementDialog,
-      announcementContent,
-      dontShowAgain,
-      closeAnnouncementDialog
-    }
+const onUserCommand = (cmd) => {
+  if (cmd === 'profile') router.push('/profile')
+  if (cmd === 'logout') {
+    userStore.logout()
+    router.push('/login')
   }
 }
+
+const closeAnnouncement = () => {
+  if (dontShowAgain.value) localStorage.setItem('hideAnnouncement', 'true')
+  announcementVisible.value = false
+}
+
+const loadAnnouncement = async () => {
+  try {
+    const { data } = await http.get('/announcement')
+    if (data.content) {
+      announcementContent.value = marked(data.content)
+      if (!localStorage.getItem('hideAnnouncement')) {
+        announcementVisible.value = true
+      }
+    }
+  } catch (e) { /* ignore */ }
+}
+
+onMounted(() => {
+  appStore.initApp()
+  userStore.initUser()
+  if (userStore.isLoggedIn) notificationStore.startPolling()
+  loadAnnouncement()
+})
+
+onUnmounted(() => {
+  notificationStore.stopPolling()
+})
 </script>
 
-<style>
-.logo-link {
-  color: white !important;
-  text-decoration: none;
-  font-weight: bold;
-  font-size: 1.25rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.nav-links {
+<style scoped>
+.app-shell {
+  min-height: 100vh;
   display: flex;
-  gap: 4px;
-  align-items: center;
+  flex-direction: column;
 }
-
-.nav-links .v-btn {
-  font-weight: 500;
-}
-
-.search-field {
-  width: 240px;
-}
-
-.search-field :deep(.v-field__outline) {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.search-field :deep(.v-label),
-.search-field :deep(.v-field__input) {
-  color: white !important;
-}
-
-.search-field :deep(.v-icon) {
-  color: white !important;
-}
-
-.open-source-footer {
-  margin-top: auto;
-  padding: 16px 0;
-}
-
-.open-source-link {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.open-source-link:hover {
-  text-decoration: underline;
-}
-
-.pb-navigation {
-  padding-bottom: 56px !important;
-}
-
-.mobile-search-bar {
-  background: rgb(var(--v-theme-background));
+.app-header {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 100;
+  background: #fff;
+  border-bottom: 1px solid var(--campus-border);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
 }
-
-.mobile-search-field {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.mobile-search-field :deep(.v-field) {
-  border-radius: 24px;
-}
-
-.app-drawer-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 9999;
+.app-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 16px;
   display: flex;
-  align-items: flex-end;
-  animation: fadeIn 0.2s ease-out;
-}
-
-.app-drawer-content {
-  width: 100%;
-  max-height: 80vh;
-  background-color: #fff;
-  border-radius: 24px 24px 0 0;
-  padding: 16px;
-  animation: slideUp 0.3s ease-out;
-}
-
-.app-drawer-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 8px 16px;
-}
-
-.app-drawer-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1a1a2e;
-}
-
-.close-btn {
-  color: #6b7280;
-}
-
-.app-drawer-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  padding: 0 8px;
 }
-
-.drawer-item {
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.brand-icon {
+  color: var(--campus-primary);
+  font-size: 22px;
+}
+.brand-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--campus-text);
+  white-space: nowrap;
+}
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  overflow-x: auto;
+}
+.app-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.search-input {
+  width: 220px;
+}
+.user-trigger {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+.app-main {
+  flex: 1;
+}
+.app-footer {
+  border-top: 1px solid var(--campus-border);
+  background: #fff;
+}
+.app-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 8px;
-  border-radius: 12px;
-  transition: background-color 0.2s;
+  gap: 6px;
+  font-size: 13px;
 }
-
-.drawer-item:hover {
-  background-color: #f3f4f6;
-}
-
-.drawer-icon {
-  color: #4b5563;
-  margin-bottom: 8px;
-}
-
-.drawer-label {
-  font-size: 0.75rem;
-  color: #374151;
-  font-weight: 500;
-}
-
-.app-drawer-footer {
-  padding: 8px 16px;
-}
-
-.footer-btn {
-  width: 100%;
+.footer-icp {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  color: #ef4444;
-  font-weight: 500;
+  gap: 16px;
 }
-
-.markdown-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-  line-height: 1.6;
-  color: #24292e;
-}
-
-.markdown-body h1,
-.markdown-body h2,
-.markdown-body h3,
-.markdown-body h4,
-.markdown-body h5,
-.markdown-body h6 {
-  margin-top: 24px;
-  margin-bottom: 16px;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.markdown-body h1 {
-  font-size: 2em;
-  border-bottom: 1px solid #eaecef;
-  padding-bottom: .3em;
-}
-
-.markdown-body h2 {
-  font-size: 1.5em;
-  border-bottom: 1px solid #eaecef;
-  padding-bottom: .3em;
-}
-
-.markdown-body h3 {
-  font-size: 1.25em;
-}
-
-.markdown-body h4 {
-  font-size: 1em;
-}
-
-.markdown-body p {
-  margin-bottom: 16px;
-}
-
-.markdown-body ul,
-.markdown-body ol {
-  padding-left: 2em;
-  margin-bottom: 16px;
-}
-
-.markdown-body li {
-  margin-bottom: .25em;
-}
-
-.markdown-body code {
-  padding: .2em .4em;
-  margin: 0;
-  font-size: 85%;
-  background-color: rgba(27, 31, 35, .05);
-  border-radius: 3px;
-}
-
-.markdown-body pre {
-  padding: 16px;
-  overflow: auto;
-  font-size: 85%;
-  line-height: 1.45;
-  background-color: #f6f8fa;
-  border-radius: 3px;
-}
-
-.markdown-body pre code {
-  background-color: transparent;
-  padding: 0;
-}
-
-.markdown-body a {
-  color: #0366d6;
-  text-decoration: none;
-}
-
-.markdown-body a:hover {
-  text-decoration: underline;
-}
-
-.markdown-body img {
-  max-width: 100%;
-  box-sizing: content-box;
-  background-color: #fff;
-}
-
-.markdown-body blockquote {
-  padding: 0 1em;
-  color: #6a737d;
-  border-left: .25em solid #dfe2e5;
-  margin-bottom: 16px;
-}
-
-.markdown-body table {
-  border-spacing: 0;
-  border-collapse: collapse;
-  margin-bottom: 16px;
-}
-
-.markdown-body table th,
-.markdown-body table td {
-  padding: 6px 13px;
-  border: 1px solid #dfe2e5;
-}
-
-.markdown-body table th {
-  font-weight: 600;
-  background-color: #f6f8fa;
-}
-
-.markdown-body table tr {
-  background-color: #fff;
-  border-top: 1px solid #c6cbd1;
-}
-
-.markdown-body table tr:nth-child(2n) {
-  background-color: #f6f8fa;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+@media (max-width: 768px) {
+  .app-nav { display: none; }
+  .search-input { width: 140px; }
+  .app-header-inner { gap: 8px; }
 }
 </style>

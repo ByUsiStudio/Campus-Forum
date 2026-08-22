@@ -1,86 +1,74 @@
 <template>
-  <v-container fluid class="pa-6">
-    <CategoriesPanel
-      :categories="categories"
-      :loading="loading"
-      @add="addCategory"
-      @edit="showEditCategoryDialog"
-      @delete="handleDeleteCategory"
-      @refresh="loadCategories"
-    />
-  </v-container>
+  <div>
+    <el-card class="page-container" shadow="never">
+      <CategoriesPanel
+        :categories="categories"
+        :loading="loading"
+        @add="addCategory"
+        @edit="showEditCategoryDialog"
+        @delete="handleDeleteCategory"
+        @refresh="loadCategories"
+      />
+    </el-card>
 
-  <v-dialog v-model="editCategoryDialog.show" max-width="500">
-    <v-card class="dialog-card">
-      <v-card-title class="dialog-title">
-        <v-avatar :color="editCategoryDialog.category ? 'primary' : 'success'" size="40" class="mr-3">
-          <v-icon color="white" size="20">{{ editCategoryDialog.category ? 'mdi-pencil' : 'mdi-plus' }}</v-icon>
-        </v-avatar>
-        {{ editCategoryDialog.category ? '编辑分区' : '添加分区' }}
-      </v-card-title>
-      <v-card-text class="dialog-body">
-        <v-form ref="categoryForm" v-model="formValid">
-          <v-text-field
+    <el-dialog
+      v-model="editCategoryDialog.show"
+      width="500px"
+      class="dialog-card"
+      :title="null"
+    >
+      <template #header>
+        <div class="dialog-header">
+          <el-icon :size="20" class="dialog-header-icon">
+            <component :is="editCategoryDialog.category ? Edit : Plus" />
+          </el-icon>
+          <span>{{ editCategoryDialog.category ? '编辑分区' : '添加分区' }}</span>
+        </div>
+      </template>
+
+      <el-form ref="categoryForm" :model="editCategoryDialog" :rules="rules" label-position="top">
+        <el-form-item label="分区名称" prop="name" class="mb-4">
+          <el-input
             v-model="editCategoryDialog.name"
-            label="分区名称"
             placeholder="例如：表白墙"
-            variant="outlined"
-            density="comfortable"
-            :rules="[rules.required]"
-            prepend-inner-icon="mdi-tag"
             clearable
-            class="mb-4"
-          >
-            <template #label>
-              <span class="text-body-2">分区名称</span>
-            </template>
-          </v-text-field>
+            :prefix-icon="Tag"
+          />
+        </el-form-item>
 
-          <v-textarea
+        <el-form-item label="分区描述" prop="description">
+          <el-input
             v-model="editCategoryDialog.description"
-            label="分区描述"
+            type="textarea"
             placeholder="描述分区的内容和用途..."
-            variant="outlined"
-            density="comfortable"
-            prepend-inner-icon="mdi-text"
-            rows="3"
-            counter
-            :maxlength="200"
-          >
-            <template #label>
-              <span class="text-body-2">分区描述</span>
-            </template>
-          </v-textarea>
-        </v-form>
-      </v-card-text>
-      <v-card-actions class="dialog-actions">
-        <v-btn variant="text" @click="closeCategoryDialog" class="mr-2">
-          取消
-        </v-btn>
-        <v-btn
-          color="primary"
-          variant="flat"
-          @click="handleEditCategory"
-          :disabled="!formValid"
-        >
-          <v-icon class="mr-1">mdi-check</v-icon>
+            :rows="3"
+            maxlength="200"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="closeCategoryDialog" class="mr-2">取消</el-button>
+        <el-button type="primary" @click="handleEditCategory">
+          <el-icon class="mr-1"><Check /></el-icon>
           保存
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        </el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { Edit, Plus, Tag, Check } from '@element-plus/icons-vue'
 import CategoriesPanel from './CategoriesPanel.vue'
 import { adminCategoryApi } from '../../api/admin'
-import { confirm, success, error } from '../../utils/modal'
+import { confirm, success, error } from '@/utils/message'
 
 const categories = ref([])
 const loading = ref(true)
 const categoryForm = ref(null)
-const formValid = ref(false)
 
 const emptyDialog = () => ({
   show: false,
@@ -92,7 +80,9 @@ const emptyDialog = () => ({
 const editCategoryDialog = ref(emptyDialog())
 
 const rules = {
-  required: v => !!v || '此字段为必填项'
+  name: [
+    { required: true, message: '此字段为必填项', trigger: 'blur' }
+  ]
 }
 
 const loadCategories = async () => {
@@ -102,6 +92,7 @@ const loadCategories = async () => {
     categories.value = response.data.categories || []
   } catch (err) {
     console.error('加载分区列表失败', err)
+    error('加载分区列表失败')
   } finally {
     loading.value = false
   }
@@ -110,7 +101,6 @@ const loadCategories = async () => {
 const addCategory = () => {
   editCategoryDialog.value = emptyDialog()
   editCategoryDialog.value.show = true
-  formValid.value = false
 }
 
 const showEditCategoryDialog = (category) => {
@@ -153,7 +143,7 @@ const handleEditCategory = async () => {
 }
 
 const handleDeleteCategory = async (category) => {
-  const confirmed = await confirm(`确定要删除分区 "${category.name}" 吗？此操作不可恢复。`)
+  const confirmed = await confirm(`确定要删除分区 "${category.name}" 吗？此操作不可恢复。`).catch(() => null)
   if (!confirmed) return
   try {
     await adminCategoryApi.deleteCategory(category.id)
@@ -172,38 +162,21 @@ onMounted(() => {
 
 <style scoped>
 .dialog-card {
-  border-radius: 20px !important;
+  border-radius: 12px;
   overflow: hidden;
 }
 
-.dialog-title {
+.dialog-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 24px 24px 16px;
   font-size: 1.2rem;
   font-weight: 700;
   background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+  padding: 8px 4px;
 }
 
-.dialog-body {
-  padding: 24px !important;
-}
-
-.dialog-actions {
-  padding: 16px 24px 24px;
-  gap: 12px;
-}
-
-:deep(.v-field) {
-  border-radius: 12px;
-}
-
-:deep(.v-field--outlined .v-field__outline) {
-  border-color: rgba(148, 163, 184, 0.3);
-}
-
-:deep(.v-field--focused .v-field__outline) {
-  border-color: rgb(var(--v-theme-primary));
+.dialog-header-icon {
+  color: var(--el-color-primary);
 }
 </style>

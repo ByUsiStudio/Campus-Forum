@@ -1,88 +1,91 @@
 <template>
-  <v-menu
-    v-model="menuOpen"
-    :close-on-content-click="false"
-    location="bottom end"
-    max-width="400"
+  <el-popover
+    v-model:visible="menuOpen"
+    :width="400"
+    placement="bottom-end"
+    trigger="click"
+    :show-arrow="false"
+    popper-class="notification-popover"
   >
-    <template v-slot:activator="{ props }">
-      <v-btn
-        v-bind="props"
-        icon
-        variant="text"
+    <template #reference>
+      <el-badge
+        :value="unreadCount"
+        :hidden="unreadCount <= 0"
+        :max="99"
         class="notification-btn"
       >
-        <v-badge
-          :content="unreadCount"
-          :model-value="unreadCount > 0"
-          color="error"
-          overlap
+        <el-button
+          text
+          circle
+          class="bell-button"
+          aria-label="通知"
         >
-          <v-icon>mdi-bell</v-icon>
-        </v-badge>
-      </v-btn>
+          <el-icon :size="20"><Bell /></el-icon>
+        </el-button>
+      </el-badge>
     </template>
 
-    <v-card>
-      <v-card-title class="d-flex justify-space-between align-center pa-3">
-        <span class="text-subtitle-1">通知</span>
-        <v-btn
+    <div class="card-surface notification-card">
+      <div class="notification-header">
+        <span class="notification-title">通知</span>
+        <el-button
           v-if="unreadCount > 0"
-          variant="text"
+          text
+          type="primary"
           size="small"
-          color="primary"
           @click="markAllRead"
         >
           全部已读
-        </v-btn>
-      </v-card-title>
+        </el-button>
+      </div>
 
-      <v-divider></v-divider>
+      <el-divider class="notification-divider" />
 
-      <v-list v-if="notifications.length > 0" lines="three" max-height="400" class="overflow-auto">
-        <v-list-item
-          v-for="notification in notifications"
-          :key="notification.id"
-          :class="{ 'bg-grey-lighten-4': !notification.is_read }"
-          @click="handleClick(notification)"
-        >
-          <template v-slot:prepend>
-            <v-avatar :color="getTypeColor(notification.type)" size="32">
-              <v-icon size="small" color="white">{{ getTypeIcon(notification.type) }}</v-icon>
-            </v-avatar>
-          </template>
+      <el-scrollbar max-height="400px">
+        <ul v-if="notifications.length > 0" class="notification-list">
+          <li
+            v-for="notification in notifications"
+            :key="notification.id"
+            class="notification-item cursor-pointer"
+            :class="{ 'notification-item-unread': !notification.is_read }"
+            @click="handleClick(notification)"
+          >
+            <el-avatar
+              :size="32"
+              :style="{ backgroundColor: getTypeColor(notification.type) }"
+              class="notification-avatar"
+            >
+              <el-icon :size="16" color="white">
+                <component :is="getTypeIcon(notification.type)" />
+              </el-icon>
+            </el-avatar>
+            <div class="notification-body">
+              <div class="notification-item-title">{{ notification.title }}</div>
+              <div class="notification-item-content"> {{ notification.content }} </div>
+              <div class="notification-item-time text-secondary">{{ formatDate(notification.created_at) }}</div>
+            </div>
+          </li>
+        </ul>
+        <div v-else class="notification-empty text-secondary">
+          暂无通知
+        </div>
+      </el-scrollbar>
 
-          <v-list-item-title class="font-weight-medium">
-            {{ notification.title }}
-          </v-list-item-title>
-          <v-list-item-subtitle class="text-caption">
-            {{ notification.content }}
-          </v-list-item-subtitle>
-          <v-list-item-subtitle class="text-caption text-medium-emphasis mt-1">
-            {{ formatDate(notification.created_at) }}
-          </v-list-item-subtitle>
-        </v-list-item>
-      </v-list>
+      <el-divider v-if="notifications.length > 0" class="notification-divider" />
 
-      <v-card-text v-else class="text-center py-8 text-medium-emphasis">
-        暂无通知
-      </v-card-text>
-
-      <v-divider v-if="notifications.length > 0"></v-divider>
-
-      <v-card-actions v-if="notifications.length > 0">
-        <v-spacer></v-spacer>
-        <v-btn variant="text" color="primary" @click="goToNotifications">
+      <div v-if="notifications.length > 0" class="notification-footer">
+        <el-button text type="primary" size="small" @click="goToNotifications">
           查看全部
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-menu>
+        </el-button>
+      </div>
+    </div>
+  </el-popover>
 </template>
 
 <script>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { Bell, InfoFilled, Calendar, Refresh, Warning } from '@element-plus/icons-vue'
 import api from '../api'
 
 export default {
@@ -141,22 +144,22 @@ export default {
 
     const getTypeColor = (type) => {
       const colors = {
-        system: 'primary',
-        activity: 'success',
-        update: 'info',
-        warning: 'warning'
+        system: 'var(--campus-primary)',
+        activity: '#67c23a',
+        update: '#409eff',
+        warning: '#e6a23c'
       }
-      return colors[type] || 'default'
+      return colors[type] || 'var(--campus-text-secondary)'
     }
 
     const getTypeIcon = (type) => {
       const icons = {
-        system: 'mdi-information',
-        activity: 'mdi-calendar-star',
-        update: 'mdi-update',
-        warning: 'mdi-alert'
+        system: InfoFilled,
+        activity: Calendar,
+        update: Refresh,
+        warning: Warning
       }
-      return icons[type] || 'mdi-bell'
+      return icons[type] || Bell
     }
 
     const formatDate = (date) => {
@@ -209,5 +212,91 @@ export default {
 <style scoped>
 .notification-btn {
   margin-left: 8px;
+}
+
+.bell-button {
+  color: var(--campus-text);
+}
+
+.notification-card {
+  padding: 0;
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+}
+
+.notification-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--campus-text);
+}
+
+.notification-divider {
+  margin: 0;
+}
+
+.notification-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.notification-item-unread {
+  background: #f5f5fa;
+}
+
+.notification-item:hover {
+  background: #f5f6fa;
+}
+
+.notification-avatar {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.notification-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-item-title {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--campus-text);
+}
+
+.notification-item-content {
+  font-size: 13px;
+  color: var(--campus-text);
+  margin-top: 2px;
+  word-break: break-word;
+}
+
+.notification-item-time {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.notification-empty {
+  padding: 32px 0;
+  text-align: center;
+  margin: 0;
+}
+
+.notification-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 12px;
 }
 </style>

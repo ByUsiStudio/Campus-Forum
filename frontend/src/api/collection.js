@@ -1,4 +1,4 @@
-import api from './index'
+import api from './http'
 
 // 收藏夹管理API
 export const collectionApi = {

@@ -1,49 +1,34 @@
 <template>
-  <v-container fluid class="fill-height">
-    <v-row justify="center" align="center" class="fill-height">
-      <v-col cols="12" sm="8" md="6" lg="5">
-        <div class="error-page">
-      <div class="error-icon">
-        <v-icon color="warning" size="150">mdi-alert-lock</v-icon>
-      </div>
-      
-      <v-card-title class="text-center text-h3 font-weight-bold mb-4">
-        403 - 禁止访问
-      </v-card-title>
-      
-      <v-card-text class="text-center">
-        <p class="text-body-1 mb-2">您没有权限访问此页面</p>
-        <p class="text-body-2 text-secondary">请检查您的权限或联系管理员获取帮助</p>
-      </v-card-text>
-      
-      <v-card-actions class="justify-center gap-3 mt-6">
-        <v-btn color="primary" @click="goHome">
-          <v-icon start>mdi-home</v-icon>
-          返回首页
-        </v-btn>
-        <v-btn variant="outlined" @click="goBack">
-          <v-icon start>mdi-arrow-left</v-icon>
-          返回上页
-        </v-btn>
-      </v-card-actions>
+  <div class="page-container error-page">
+    <el-result icon="warning" title="403 - 禁止访问" sub-title="您没有权限访问此页面">
+      <template #extra>
+        <div class="error-actions">
+          <el-button type="primary" :icon="Home" @click="goHome">
+            返回首页
+          </el-button>
+          <el-button :icon="ArrowLeft" @click="goBack">
+            返回上页
+          </el-button>
         </div>
-      </v-col>
-    </v-row>
-  </v-container>
+        <p class="text-secondary error-hint">请检查您的权限或联系管理员获取帮助</p>
+      </template>
+    </el-result>
+  </div>
 </template>
 
 <script>
 import { useRouter } from 'vue-router'
+import { Home, ArrowLeft } from '@element-plus/icons-vue'
 
 export default {
   name: 'Forbidden',
   setup() {
     const router = useRouter()
-    
+
     const goHome = () => {
       router.push('/')
     }
-    
+
     const goBack = () => {
       if (window.history.length > 1) {
         router.back()
@@ -51,10 +36,12 @@ export default {
         router.push('/')
       }
     }
-    
+
     return {
       goHome,
-      goBack
+      goBack,
+      Home,
+      ArrowLeft
     }
   }
 }
@@ -62,23 +49,21 @@ export default {
 
 <style scoped>
 .error-page {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
   padding: 40px;
-  max-width: 500px;
-  margin: 0 auto;
 }
 
-.error-icon {
-  margin-bottom: 32px;
-  animation: pulse 2s ease-in-out infinite;
+.error-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 16px;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+.error-hint {
+  font-size: 14px;
 }
 </style>

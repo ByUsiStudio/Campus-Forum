@@ -1,53 +1,47 @@
-import api from './index'
+﻿import api from './http'
 
-// 通知相关API
+// 閫氱煡鐩稿叧API
 export const notificationApi = {
-  // 获取通知列表
+  // 鑾峰彇閫氱煡鍒楄〃
   getNotifications: () => api.get('/notifications'),
 
-  // 获取未读通知数量
+  // 鑾峰彇鏈閫氱煡鏁伴噺
   getUnreadCount: () => api.get('/notifications/unread-count'),
 
-  // 标记通知为已读
-  markNotificationRead: (id) => api.post(`/notifications/${id}/read`),
+  // 鏍囪閫氱煡涓哄凡璇?  markNotificationRead: (id) => api.post(`/notifications/${id}/read`),
 
-  // 标记所有通知为已读
-  markAllNotificationsRead: () => api.post('/notifications/read-all'),
+  // 鏍囪鎵€鏈夐€氱煡涓哄凡璇?  markAllNotificationsRead: () => api.post('/notifications/read-all'),
 
-  // 获取评论回复通知
+  // 鑾峰彇璇勮鍥炲閫氱煡
   getCommentReplyNotifications: () => api.get('/comment-reply-notifications'),
 
-  // 标记评论回复通知为已读
-  markCommentReplyNotificationRead: (id) => api.post(`/comment-reply-notifications/${id}/read`),
+  // 鏍囪璇勮鍥炲閫氱煡涓哄凡璇?  markCommentReplyNotificationRead: (id) => api.post(`/comment-reply-notifications/${id}/read`),
 
-  // 标记所有评论回复通知为已读
-  markAllCommentReplyNotificationsRead: () => api.post('/comment-reply-notifications/read-all'),
+  // 鏍囪鎵€鏈夎瘎璁哄洖澶嶉€氱煡涓哄凡璇?  markAllCommentReplyNotificationsRead: () => api.post('/comment-reply-notifications/read-all'),
 }
 
-// 用户个人通知API
+// 鐢ㄦ埛涓汉閫氱煡API
 export const userNotificationApi = {
-  // 获取用户通知列表
+  // 鑾峰彇鐢ㄦ埛閫氱煡鍒楄〃
   getUserNotifications: () => api.get('/user-notifications'),
 
-  // 获取单个通知详情
+  // 鑾峰彇鍗曚釜閫氱煡璇︽儏
   getNotification: (id) => api.get(`/user-notifications/${id}`),
 
-  // 标记通知为已读
-  markAsRead: (id) => api.post(`/user-notifications/${id}/read`),
+  // 鏍囪閫氱煡涓哄凡璇?  markAsRead: (id) => api.post(`/user-notifications/${id}/read`),
 
-  // 标记所有通知为已读
-  markAllAsRead: () => api.post('/user-notifications/read-all'),
+  // 鏍囪鎵€鏈夐€氱煡涓哄凡璇?  markAllAsRead: () => api.post('/user-notifications/read-all'),
 
-  // 删除通知
+  // 鍒犻櫎閫氱煡
   deleteNotification: (id) => api.delete(`/user-notifications/${id}`),
 
-  // 清空所有通知
+  // 娓呯┖鎵€鏈夐€氱煡
   clearAll: () => api.delete('/user-notifications/clear'),
 }
 
-// 管理员用户通知API
+// 绠＄悊鍛樼敤鎴烽€氱煡API
 export const adminUserNotificationApi = {
-  // 发送单个通知
+  // 鍙戦€佸崟涓€氱煡
   sendNotification: (data) => api.post('/user-notifications/send', {
     user_id: data.user_id,
     title: data.title,
@@ -55,7 +49,7 @@ export const adminUserNotificationApi = {
     type: data.type
   }),
 
-  // 批量发送通知
+  // 鎵归噺鍙戦€侀€氱煡
   sendBatchNotifications: (data) => api.post('/user-notifications/send-batch', {
     user_ids: data.user_ids,
     title: data.title,
@@ -63,6 +57,5 @@ export const adminUserNotificationApi = {
     type: data.type
   }),
 
-  // 获取用户通知（管理员）
-  getUserNotifications: (userId) => api.get(`/admin/user-notifications/${userId}`),
+  // 鑾峰彇鐢ㄦ埛閫氱煡锛堢鐞嗗憳锛?  getUserNotifications: (userId) => api.get(`/admin/user-notifications/${userId}`),
 }

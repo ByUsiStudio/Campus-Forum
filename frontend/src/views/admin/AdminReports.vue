@@ -8,271 +8,322 @@
           <p class="text-body-2 text-medium-emphasis">查看和处理用户提交的举报内容</p>
         </div>
         <div class="d-flex ga-3">
-          <v-btn color="primary" @click="refreshData" :loading="loading" variant="tonal">
-            <v-icon start>mdi-refresh</v-icon>
+          <el-button type="primary" :loading="loading" @click="refreshData">
+            <template #icon>
+              <el-icon><Refresh /></el-icon>
+            </template>
             刷新
-          </v-btn>
+          </el-button>
         </div>
       </div>
     </div>
 
     <!-- 统计卡片 -->
-    <v-row class="mb-6">
-      <v-col cols="12" sm="4">
-        <v-card elevation="0" class="stat-card stat-card-warning">
-          <v-card-text>
-            <div class="d-flex align-center justify-space-between">
-              <div>
-                <div class="text-h4 font-weight-bold">{{ stats.pending }}</div>
-                <div class="text-body-2 text-medium-emphasis">待处理</div>
-              </div>
-              <v-avatar color="warning" size="48" rounded="lg">
-                <v-icon>mdi-clock-alert</v-icon>
-              </v-avatar>
+    <el-row :gutter="20" class="mb-6">
+      <el-col :xs="24" :sm="8">
+        <el-card shadow="never" class="stat-card stat-card-warning">
+          <div class="d-flex align-center justify-space-between">
+            <div>
+              <div class="text-h4 font-weight-bold">{{ stats.pending }}</div>
+              <div class="text-body-2 text-medium-emphasis">待处理</div>
             </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="4">
-        <v-card elevation="0" class="stat-card stat-card-success">
-          <v-card-text>
-            <div class="d-flex align-center justify-space-between">
-              <div>
-                <div class="text-h4 font-weight-bold">{{ stats.resolved }}</div>
-                <div class="text-body-2 text-medium-emphasis">已处理</div>
-              </div>
-              <v-avatar color="success" size="48" rounded="lg">
-                <v-icon>mdi-check-circle</v-icon>
-              </v-avatar>
+            <el-avatar :size="48" class="stat-avatar-warning">
+              <el-icon :size="26"><AlarmClock /></el-icon>
+            </el-avatar>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="8">
+        <el-card shadow="never" class="stat-card stat-card-success">
+          <div class="d-flex align-center justify-space-between">
+            <div>
+              <div class="text-h4 font-weight-bold">{{ stats.resolved }}</div>
+              <div class="text-body-2 text-medium-emphasis">已处理</div>
             </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" sm="4">
-        <v-card elevation="0" class="stat-card stat-card-error">
-          <v-card-text>
-            <div class="d-flex align-center justify-space-between">
-              <div>
-                <div class="text-h4 font-weight-bold">{{ stats.rejected }}</div>
-                <div class="text-body-2 text-medium-emphasis">已驳回</div>
-              </div>
-              <v-avatar color="error" size="48" rounded="lg">
-                <v-icon>mdi-close-circle</v-icon>
-              </v-avatar>
+            <el-avatar :size="48" class="stat-avatar-success">
+              <el-icon :size="26"><CircleCheck /></el-icon>
+            </el-avatar>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="8">
+        <el-card shadow="never" class="stat-card stat-card-error">
+          <div class="d-flex align-center justify-space-between">
+            <div>
+              <div class="text-h4 font-weight-bold">{{ stats.rejected }}</div>
+              <div class="text-body-2 text-medium-emphasis">已驳回</div>
             </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+            <el-avatar :size="48" class="stat-avatar-error">
+              <el-icon :size="26"><CircleClose /></el-icon>
+            </el-avatar>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
 
     <!-- 筛选和搜索 -->
-    <v-card elevation="0" class="mb-4">
-      <v-card-text>
-        <v-row align="center" dense>
-          <v-col cols="12" md="6">
-            <v-text-field
-              v-model="filters.search"
-              placeholder="搜索举报内容..."
-              variant="outlined"
-              density="compact"
-              prepend-inner-icon="mdi-magnify"
-              hide-details
-              clearable
-              @update:model-value="debounceSearch"
+    <el-card shadow="never" class="mb-4">
+      <el-row :gutter="16" align="middle">
+        <el-col :xs="24" :md="10">
+          <el-input
+            v-model="filters.search"
+            placeholder="搜索举报内容..."
+            clearable
+            @input="debounceSearch"
+            @clear="loadReports"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+        </el-col>
+        <el-col :xs="12" :md="7">
+          <el-select
+            v-model="filters.status"
+            placeholder="状态"
+            clearable
+            style="width: 100%"
+            @change="loadReports"
+          >
+            <el-option
+              v-for="opt in statusOptions"
+              :key="opt.value"
+              :label="opt.title"
+              :value="opt.value"
             />
-          </v-col>
-          <v-col cols="6" md="3">
-            <v-select
-              v-model="filters.status"
-              :items="statusOptions"
-              label="状态"
-              variant="outlined"
-              density="compact"
-              hide-details
-              clearable
+          </el-select>
+        </el-col>
+        <el-col :xs="12" :md="7">
+          <el-select
+            v-model="filters.target_type"
+            placeholder="举报类型"
+            clearable
+            style="width: 100%"
+            @change="loadReports"
+          >
+            <el-option
+              v-for="opt in targetTypeOptions"
+              :key="opt.value"
+              :label="opt.title"
+              :value="opt.value"
             />
-          </v-col>
-          <v-col cols="6" md="3">
-            <v-select
-              v-model="filters.target_type"
-              :items="targetTypeOptions"
-              label="举报类型"
-              variant="outlined"
-              density="compact"
-              hide-details
-              clearable
-            />
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
+          </el-select>
+        </el-col>
+      </el-row>
+    </el-card>
 
     <!-- 举报列表 -->
-    <v-card elevation="0">
-      <v-card-title class="d-flex align-center justify-space-between">
-        <span>举报列表 ({{ totalReports }})</span>
-        <v-pagination
-          v-model="page"
-          :length="totalPages"
-          :total-visible="5"
-          density="compact"
-          @update:model-value="loadReports"
-        />
-      </v-card-title>
+    <el-card shadow="never">
+      <template #header>
+        <div class="card-header">
+          <span>举报列表 ({{ totalReports }})</span>
+          <el-pagination
+            v-model:current-page="page"
+            :page-size="pageSize"
+            layout="prev, pager, next"
+            :total="totalReports"
+            :pager-count="5"
+            @current-change="loadReports"
+          />
+        </div>
+      </template>
 
-      <v-data-table
-        :headers="headers"
-        :items="reports"
-        :loading="loading"
-        :items-per-page="pageSize"
-        class="elevation-0"
+      <el-table
+        :data="reports"
+        v-loading="loading"
+        style="width: 100%"
       >
-        <template v-slot:item.reporter="{ item }">
-          <div class="d-flex align-center py-2">
-            <v-avatar size="40" class="mr-3">
-              <v-img v-if="item.reporter?.avatar" :src="item.reporter.avatar" />
-              <span v-else class="text-primary font-weight-bold">
-                {{ item.reporter?.display_name?.[0] || item.reporter?.username?.[0] || '?' }}
-              </span>
-            </v-avatar>
-            <div>
-              <div class="font-weight-medium">{{ item.reporter?.display_name || item.reporter?.username }}</div>
-              <div class="text-caption text-medium-emphasis">{{ formatDate(item.created_at) }}</div>
+        <el-table-column label="举报人" min-width="200">
+          <template #default="{ row }">
+            <div class="d-flex align-center py-1">
+              <el-avatar :size="40" class="mr-3">
+                <img v-if="row.reporter?.avatar" :src="row.reporter.avatar" alt="" />
+                <span v-else class="avatar-fallback">
+                  {{ row.reporter?.display_name?.[0] || row.reporter?.username?.[0] || '?' }}
+                </span>
+              </el-avatar>
+              <div>
+                <div class="font-weight-medium">{{ row.reporter?.display_name || row.reporter?.username }}</div>
+                <div class="el-table-caption">{{ formatDate(row.created_at) }}</div>
+              </div>
             </div>
-          </div>
-        </template>
+          </template>
+        </el-table-column>
 
-        <template v-slot:item.target="{ item }">
-          <div>
-            <v-chip size="small" :color="getTargetTypeColor(item.target_type)" variant="tonal">
-              {{ getTargetTypeText(item.target_type) }}
-            </v-chip>
-            <div class="text-caption mt-1">ID: {{ item.target_id }}</div>
-          </div>
-        </template>
+        <el-table-column label="举报类型" width="150">
+          <template #default="{ row }">
+            <div>
+              <el-tag
+                size="small"
+                :type="getTargetTypeTagType(row.target_type)"
+                effect="light"
+              >
+                {{ getTargetTypeText(row.target_type) }}
+              </el-tag>
+              <div class="el-table-caption mt-1">ID: {{ row.target_id }}</div>
+            </div>
+          </template>
+        </el-table-column>
 
-        <template v-slot:item.reason="{ item }">
-          <div class="text-truncate" style="max-width: 200px;">
-            {{ item.reason }}
-          </div>
-        </template>
+        <el-table-column label="举报原因" min-width="200">
+          <template #default="{ row }">
+            <div class="text-truncate" style="max-width: 200px;">
+              {{ row.reason }}
+            </div>
+          </template>
+        </el-table-column>
 
-        <template v-slot:item.status="{ item }">
-          <v-chip
-            :color="getStatusColor(item.status)"
-            size="small"
-            variant="tonal"
-          >
-            {{ getStatusText(item.status) }}
-          </v-chip>
-        </template>
+        <el-table-column label="状态" width="120" align="center">
+          <template #default="{ row }">
+            <el-tag
+              :type="getStatusTagType(row.status)"
+              size="small"
+              effect="light"
+            >
+              {{ getStatusText(row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
 
-        <template v-slot:item.actions="{ item }">
-          <v-btn icon variant="text" size="small" @click="viewReport(item)">
-            <v-icon>mdi-eye</v-icon>
-          </v-btn>
-          <v-menu v-if="item.status === 'pending'">
-            <template v-slot:activator="{ props }">
-              <v-btn icon variant="text" size="small" v-bind="props">
-                <v-icon>mdi-dots-vertical</v-icon>
-              </v-btn>
-            </template>
-            <v-list density="compact">
-              <v-list-item @click="handleReport(item, 'resolved')" prepend-icon="mdi-check">
-                <v-list-item-title>标记为已处理</v-list-item-title>
-              </v-list-item>
-              <v-list-item @click="handleReport(item, 'rejected')" prepend-icon="mdi-close">
-                <v-list-item-title>驳回举报</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
-        </template>
-      </v-data-table>
-    </v-card>
+        <el-table-column label="时间" width="180">
+          <template #default="{ row }">
+            {{ formatDate(row.created_at) }}
+          </template>
+        </el-table-column>
+
+        <el-table-column label="操作" width="120" align="center">
+          <template #default="{ row }">
+            <el-button
+              type="primary"
+              link
+              :icon="View"
+              @click="viewReport(row)"
+            />
+            <el-dropdown
+              v-if="row.status === 'pending'"
+              trigger="click"
+              @command="(cmd) => handleDropdown(row, cmd)"
+            >
+              <el-button type="primary" link :icon="MoreFilled" />
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="resolved">
+                    <el-icon><Check /></el-icon>
+                    标记为已处理
+                  </el-dropdown-item>
+                  <el-dropdown-item command="rejected" divided>
+                    <el-icon><Close /></el-icon>
+                    驳回举报
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
 
     <!-- 查看举报详情对话框 -->
-    <v-dialog v-model="viewDialog" max-width="700">
-      <v-card v-if="selectedReport">
-        <v-card-title class="bg-primary text-white pa-4">
-          <v-icon class="mr-2">mdi-flag-variant</v-icon>
-          举报详情
-        </v-card-title>
-        <v-card-text class="pa-4">
-          <v-row dense>
-            <v-col cols="6">
-              <div class="text-caption text-medium-emphasis mb-1">举报人</div>
-              <div class="d-flex align-center">
-                <v-avatar size="32" class="mr-2">
-                  <v-img v-if="selectedReport.reporter?.avatar" :src="selectedReport.reporter.avatar" />
-                  <span v-else class="text-primary text-body-2">
-                    {{ selectedReport.reporter?.display_name?.[0] || '?' }}
-                  </span>
-                </v-avatar>
-                {{ selectedReport.reporter?.display_name || selectedReport.reporter?.username }}
-              </div>
-            </v-col>
-            <v-col cols="6">
-              <div class="text-caption text-medium-emphasis mb-1">举报类型</div>
-              <v-chip size="small" :color="getTargetTypeColor(selectedReport.target_type)" variant="tonal">
-                {{ getTargetTypeText(selectedReport.target_type) }}
-              </v-chip>
-            </v-col>
-            <v-col cols="12">
-              <div class="text-caption text-medium-emphasis mb-1">被举报内容ID</div>
-              <div class="font-weight-medium">{{ selectedReport.target_id }}</div>
-            </v-col>
-            <v-col cols="12">
-              <div class="text-caption text-medium-emphasis mb-1">举报原因</div>
-              <div class="font-weight-medium">{{ selectedReport.reason }}</div>
-            </v-col>
-            <v-col cols="12" v-if="selectedReport.description">
-              <div class="text-caption text-medium-emphasis mb-1">详细描述</div>
-              <div class="text-body-2">{{ selectedReport.description }}</div>
-            </v-col>
-            <v-col cols="12">
-              <div class="text-caption text-medium-emphasis mb-1">举报时间</div>
-              <div>{{ formatDateTime(selectedReport.created_at) }}</div>
-            </v-col>
-            <v-col cols="12" v-if="selectedReport.status !== 'pending'">
-              <v-divider class="mb-4" />
-              <div class="text-caption text-medium-emphasis mb-1">处理信息</div>
-              <div class="d-flex align-center mb-2">
-                <v-chip size="small" :color="getStatusColor(selectedReport.status)" variant="tonal" class="mr-2">
-                  {{ getStatusText(selectedReport.status) }}
-                </v-chip>
-                <span v-if="selectedReport.handler">处理人: {{ selectedReport.handler?.display_name || selectedReport.handler?.username }}</span>
-              </div>
-              <div v-if="selectedReport.handle_note" class="text-body-2">
-                <div class="text-caption text-medium-emphasis">处理备注:</div>
-                <div>{{ selectedReport.handle_note }}</div>
-              </div>
-              <div v-if="selectedReport.handled_at" class="text-caption text-medium-emphasis mt-2">
-                处理时间: {{ formatDateTime(selectedReport.handled_at) }}
-              </div>
-            </v-col>
-          </v-row>
-        </v-card-text>
-        <v-card-actions class="pa-4" v-if="selectedReport.status === 'pending'">
-          <v-spacer />
-          <v-btn variant="text" @click="viewDialog = false">关闭</v-btn>
-          <v-btn color="error" @click="handleReport(selectedReport, 'rejected')">驳回</v-btn>
-          <v-btn color="success" @click="handleReport(selectedReport, 'resolved')">标记已处理</v-btn>
-        </v-card-actions>
-        <v-card-actions class="pa-4" v-else>
-          <v-spacer />
-          <v-btn variant="text" @click="viewDialog = false">关闭</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <el-dialog
+      v-model="viewDialog"
+      title="举报详情"
+      width="700px"
+      :close-on-click-modal="false"
+    >
+      <template v-if="selectedReport">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="举报人">
+            <div class="d-flex align-center">
+              <el-avatar :size="32" class="mr-2">
+                <img v-if="selectedReport.reporter?.avatar" :src="selectedReport.reporter.avatar" alt="" />
+                <span v-else class="avatar-fallback">
+                  {{ selectedReport.reporter?.display_name?.[0] || '?' }}
+                </span>
+              </el-avatar>
+              {{ selectedReport.reporter?.display_name || selectedReport.reporter?.username }}
+            </div>
+          </el-descriptions-item>
+          <el-descriptions-item label="举报类型">
+            <el-tag
+              size="small"
+              :type="getTargetTypeTagType(selectedReport.target_type)"
+              effect="light"
+            >
+              {{ getTargetTypeText(selectedReport.target_type) }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="被举报内容ID" :span="2">
+            {{ selectedReport.target_id }}
+          </el-descriptions-item>
+          <el-descriptions-item label="举报原因" :span="2">
+            {{ selectedReport.reason }}
+          </el-descriptions-item>
+          <el-descriptions-item v-if="selectedReport.description" label="详细描述" :span="2">
+            {{ selectedReport.description }}
+          </el-descriptions-item>
+          <el-descriptions-item label="举报时间" :span="2">
+            {{ formatDateTime(selectedReport.created_at) }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <template v-if="selectedReport.status !== 'pending'">
+          <el-divider />
+          <div class="text-caption text-medium-emphasis mb-1">处理信息</div>
+          <div class="d-flex align-center mb-2">
+            <el-tag
+              size="small"
+              :type="getStatusTagType(selectedReport.status)"
+              effect="light"
+              class="mr-2"
+            >
+              {{ getStatusText(selectedReport.status) }}
+            </el-tag>
+            <span v-if="selectedReport.handler">
+              处理人: {{ selectedReport.handler?.display_name || selectedReport.handler?.username }}
+            </span>
+          </div>
+          <div v-if="selectedReport.handle_note" class="text-body-2">
+            <div class="text-caption text-medium-emphasis">处理备注:</div>
+            <div>{{ selectedReport.handle_note }}</div>
+          </div>
+          <div v-if="selectedReport.handled_at" class="text-caption text-medium-emphasis mt-2">
+            处理时间: {{ formatDateTime(selectedReport.handled_at) }}
+          </div>
+        </template>
+      </template>
+
+      <template #footer>
+        <el-button @click="viewDialog = false">关闭</el-button>
+        <template v-if="selectedReport?.status === 'pending'">
+          <el-button
+            type="danger"
+            @click="handleReport(selectedReport, 'rejected')"
+          >驳回</el-button>
+          <el-button
+            type="success"
+            @click="handleReport(selectedReport, 'resolved')"
+          >标记已处理</el-button>
+        </template>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-// FIXME-TEMPLATE: The <template> uses Vuetify-2 legacy `dense` prop on <v-row>
-// (lines ~71 and ~201). Vuetify 3 <v-row> has no `dense`; use `density="compact"`
-// or spacing props instead if aligning with Vuetify 3. UI left unchanged on purpose.
 import { ref, computed, onMounted } from 'vue'
+import {
+  Refresh,
+  Search,
+  AlarmClock,
+  CircleCheck,
+  CircleClose,
+  View,
+  MoreFilled,
+  Check,
+  Close
+} from '@element-plus/icons-vue'
 import { reportApi } from '../../api'
+import { prompt, error, success } from '@/utils/message'
 
 export default {
   name: 'AdminReports',
@@ -297,15 +348,6 @@ export default {
       target_type: null
     })
 
-    const headers = [
-      { title: '举报人', key: 'reporter', sortable: false },
-      { title: '举报类型', key: 'target', width: '150px' },
-      { title: '举报原因', key: 'reason' },
-      { title: '状态', key: 'status', width: '120px' },
-      { title: '时间', key: 'created_at', width: '180px' },
-      { title: '操作', key: 'actions', width: '100px', sortable: false }
-    ]
-
     const statusOptions = [
       { title: '全部', value: null },
       { title: '待处理', value: 'pending' },
@@ -325,6 +367,7 @@ export default {
     const debounceSearch = () => {
       if (searchTimeout) clearTimeout(searchTimeout)
       searchTimeout = setTimeout(() => {
+        page.value = 1
         loadReports()
       }, 500)
     }
@@ -336,6 +379,7 @@ export default {
           page: page.value,
           page_size: pageSize.value
         }
+        if (filters.value.search) params.search = filters.value.search
         if (filters.value.status) params.status = filters.value.status
         if (filters.value.target_type) params.target_type = filters.value.target_type
 
@@ -367,6 +411,15 @@ export default {
       return colors[type] || 'grey'
     }
 
+    const getTargetTypeTagType = (type) => {
+      const types = {
+        article: 'primary',
+        comment: 'warning',
+        user: 'success'
+      }
+      return types[type] || 'info'
+    }
+
     const getTargetTypeText = (type) => {
       const texts = {
         article: '文章',
@@ -383,6 +436,15 @@ export default {
         rejected: 'error'
       }
       return colors[status] || 'grey'
+    }
+
+    const getStatusTagType = (status) => {
+      const types = {
+        pending: 'warning',
+        resolved: 'success',
+        rejected: 'danger'
+      }
+      return types[status] || 'info'
     }
 
     const getStatusText = (status) => {
@@ -414,8 +476,15 @@ export default {
       viewDialog.value = true
     }
 
+    const handleDropdown = (report, command) => {
+      handleReport(report, command)
+    }
+
     const handleReport = async (report, status) => {
-      const note = prompt(`请输入处理备注 (${status === 'resolved' ? '已处理' : '驳回'}):`)
+      const note = await prompt(
+        `请输入处理备注 (${status === 'resolved' ? '已处理' : '驳回'}):`,
+        { placeholder: '处理备注' }
+      ).catch(() => null)
       if (note === null) return
 
       try {
@@ -423,11 +492,12 @@ export default {
           status,
           handle_note: note
         })
+        success('举报已处理')
         viewDialog.value = false
         loadReports()
       } catch (error) {
         console.error('处理举报失败:', error)
-        alert('处理失败')
+        error('处理失败')
       }
     }
 
@@ -444,7 +514,6 @@ export default {
       totalReports,
       totalPages,
       filters,
-      headers,
       statusOptions,
       targetTypeOptions,
       viewDialog,
@@ -453,12 +522,15 @@ export default {
       loadReports,
       refreshData,
       getTargetTypeColor,
+      getTargetTypeTagType,
       getTargetTypeText,
       getStatusColor,
+      getStatusTagType,
       getStatusText,
       formatDate,
       formatDateTime,
       viewReport,
+      handleDropdown,
       handleReport
     }
   }
@@ -471,6 +543,127 @@ export default {
   margin: 0 auto;
 }
 
+.mb-6 {
+  margin-bottom: 24px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.mb-1 {
+  margin-bottom: 4px;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
+}
+
+.mt-1 {
+  margin-top: 4px;
+}
+
+.mt-2 {
+  margin-top: 8px;
+}
+
+.mr-2 {
+  margin-right: 8px;
+}
+
+.mr-3 {
+  margin-right: 12px;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.justify-space-between {
+  justify-content: space-between;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.ga-4 {
+  gap: 16px;
+}
+
+.ga-3 {
+  gap: 12px;
+}
+
+.py-1 {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.text-h4 {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.text-h5 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.font-weight-bold {
+  font-weight: 700;
+}
+
+.font-weight-medium {
+  font-weight: 500;
+}
+
+.text-body-2 {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.text-caption {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.text-medium-emphasis {
+  color: var(--el-text-color-secondary);
+}
+
+.text-primary {
+  color: var(--el-color-primary);
+}
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avatar-fallback {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--el-color-primary);
+}
+
+.el-table-caption {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
 .stat-card {
   border-left: 4px solid;
   transition: transform 0.2s;
@@ -481,21 +674,36 @@ export default {
 }
 
 .stat-card-warning {
-  border-left-color: rgb(var(--v-theme-warning));
-  background: linear-gradient(135deg, rgba(var(--v-theme-warning), 0.08), rgba(var(--v-theme-warning), 0.02));
+  --stat-border: var(--el-color-warning);
+  border-left-color: var(--stat-border);
 }
 
 .stat-card-success {
-  border-left-color: rgb(var(--v-theme-success));
-  background: linear-gradient(135deg, rgba(var(--v-theme-success), 0.08), rgba(var(--v-theme-success), 0.02));
+  --stat-border: var(--el-color-success);
+  border-left-color: var(--stat-border);
 }
 
 .stat-card-error {
-  border-left-color: rgb(var(--v-theme-error));
-  background: linear-gradient(135deg, rgba(var(--v-theme-error), 0.08), rgba(var(--v-theme-error), 0.02));
+  --stat-border: var(--el-color-danger);
+  border-left-color: var(--stat-border);
+}
+
+.stat-avatar-warning {
+  background: var(--el-color-warning-light-9);
+  color: var(--el-color-warning);
+}
+
+.stat-avatar-success {
+  background: var(--el-color-success-light-9);
+  color: var(--el-color-success);
+}
+
+.stat-avatar-error {
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
 }
 
 .page-header h1 {
-  color: rgb(var(--v-theme-on-surface));
+  color: var(--el-text-color-primary);
 }
 </style>

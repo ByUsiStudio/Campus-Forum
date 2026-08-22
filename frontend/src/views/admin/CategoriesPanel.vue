@@ -1,91 +1,86 @@
 <template>
   <div>
     <!-- 添加新分区表单 -->
-    <v-card class="mb-4" variant="flat" rounded="lg">
-      <v-card-title class="pb-2">
-        <v-icon start size="20">mdi-plus-circle</v-icon>
-        添加新分区
-      </v-card-title>
-      <v-card-text>
-        <v-row dense>
-          <v-col cols="12" sm="4">
-            <v-text-field
-              v-model="formData.name"
-              label="分区名称"
-              placeholder="例如：技术交流"
-              variant="outlined"
-              density="compact"
-              hide-details
-            />
-          </v-col>
-          <v-col cols="12" sm="5">
-            <v-text-field
-              v-model="formData.description"
-              label="描述"
-              placeholder="分区简介"
-              variant="outlined"
-              density="compact"
-              hide-details
-            />
-          </v-col>
-          <v-col cols="12" sm="3">
-            <v-btn color="primary" block height="40" @click="handleAdd">
-              <v-icon start>mdi-plus</v-icon>
-              添加
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
+    <el-card class="mb-4" shadow="never" body-class="categories-panel-card">
+      <div slot="header" class="categories-panel-card__header">
+        <el-icon :size="20"><Plus /></el-icon>
+        <span>添加新分区</span>
+      </div>
+      <el-form :model="formData" inline class="categories-panel-form">
+        <el-form-item label="分区名称" class="form-item-narrow">
+          <el-input
+            v-model="formData.name"
+            placeholder="例如：技术交流"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item label="描述" class="form-item-wide">
+          <el-input
+            v-model="formData.description"
+            placeholder="分区简介"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item class="form-item-btn">
+          <el-button type="primary" @click="handleAdd">
+            <el-icon class="mr-1"><Plus /></el-icon>
+            添加
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
     <!-- 分区列表 -->
-    <v-card variant="flat" rounded="lg">
-      <v-list lines="two" v-if="categories.length > 0">
-        <v-list-item v-for="cat in categories" :key="cat.id" class="py-3">
-          <template v-slot:prepend>
-            <v-avatar size="48" :color="cat.color || 'primary'" variant="tonal">
-              <span class="text-h6">{{ cat.sort_order || 0 }}</span>
-            </v-avatar>
-          </template>
+    <el-card shadow="never" body-class="categories-panel-card">
+      <el-empty
+        v-if="categories.length === 0"
+        :image-size="120"
+        description="暂无分区数据"
+      />
+      <el-list v-else class="categories-panel-list">
+        <el-list-item v-for="cat in categories" :key="cat.id" class="py-3">
+          <div class="d-flex align-center">
+            <el-avatar
+              :size="48"
+              :style="avatarStyle(cat.color)"
+              class="mr-3"
+            >
+              <span>{{ cat.sort_order || 0 }}</span>
+            </el-avatar>
 
-          <v-list-item-title class="font-weight-medium mb-1">
-            {{ cat.name }}
-          </v-list-item-title>
+            <div class="flex-grow-1">
+              <div class="font-weight-medium mb-1">{{ cat.name }}</div>
+              <div class="list-item-subtitle">
+                {{ cat.description || '暂无描述' }}
+              </div>
+            </div>
 
-          <v-list-item-subtitle>
-            {{ cat.description || '暂无描述' }}
-          </v-list-item-subtitle>
-
-          <template v-slot:append>
-            <v-btn-group variant="text" density="compact" divided>
-              <v-btn size="small" color="primary" @click="$emit('edit', cat)">
-                <v-icon>mdi-pencil</v-icon>
-                <v-tooltip activator="parent">编辑</v-tooltip>
-              </v-btn>
-              <v-btn size="small" color="error" @click="$emit('delete', cat)">
-                <v-icon>mdi-delete</v-icon>
-                <v-tooltip activator="parent">删除</v-tooltip>
-              </v-btn>
-            </v-btn-group>
-          </template>
-        </v-list-item>
-      </v-list>
-
-      <v-card-text v-else class="text-center py-8">
-        <v-icon size="48" color="grey-lighten-1">mdi-folder-outline</v-icon>
-        <div class="text-body-1 text-medium-emphasis mt-2">
-          暂无分区数据
-        </div>
-      </v-card-text>
-    </v-card>
+            <div class="flex-shrink-0">
+              <el-tooltip content="编辑" :show-after="300">
+                <el-button size="small" type="primary" text @click="$emit('edit', cat)">
+                  <el-icon><Edit /></el-icon>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip content="删除" :show-after="300">
+                <el-button size="small" type="danger" text @click="$emit('delete', cat)">
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </div>
+          </div>
+        </el-list-item>
+      </el-list>
+    </el-card>
   </div>
 </template>
 
 <script>
 import { ref } from 'vue'
+import { Plus, Edit, Delete } from '@element-plus/icons-vue'
 
 export default {
   name: 'CategoriesPanel',
+  components: {},
   props: {
     categories: {
       type: Array,
@@ -104,6 +99,15 @@ export default {
       color: '#6750A4'
     })
 
+    const avatarStyle = (color) => {
+      const c = color || '#6750A4'
+      return {
+        backgroundColor: c + '22',
+        color: c,
+        fontWeight: 600
+      }
+    }
+
     const handleAdd = () => {
       if (!formData.value.name) return
       emit('add', formData.value)
@@ -116,8 +120,55 @@ export default {
 
     return {
       formData,
+      avatarStyle,
       handleAdd
     }
   }
 }
 </script>
+
+<style scoped>
+.categories-panel-card {
+  padding: 4px;
+}
+
+.categories-panel-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.categories-panel-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px 16px;
+}
+
+.categories-panel-form .el-form-item {
+  margin-bottom: 4px;
+}
+
+.form-item-narrow {
+  width: 240px;
+}
+
+.form-item-wide {
+  width: 300px;
+}
+
+.categories-panel-list {
+  padding: 0;
+}
+
+.list-item-subtitle {
+  color: var(--el-text-color-secondary);
+  font-size: 0.9rem;
+}
+
+.font-weight-medium {
+  font-weight: 500;
+}
+</style>

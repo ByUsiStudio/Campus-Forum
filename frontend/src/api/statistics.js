@@ -1,4 +1,4 @@
-import api from './index'
+import api from './http'
 
 // 数据统计与分析API
 export const statisticsApi = {

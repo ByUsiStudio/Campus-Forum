@@ -1,92 +1,87 @@
 <template>
-  <v-list class="ml-8 bg-grey-lighten-5 rounded">
-    <v-list-item
+  <el-list class="reply-list">
+    <el-list-item
       v-for="reply in replies"
       :key="reply.id"
-      class="py-2"
+      class="py-2 reply-item"
     >
-      <template v-slot:prepend>
-        <UserAvatar
-          :user="reply.user"
-          :size="32"
-          :showUsername="false"
-          class="cursor-pointer"
-          @click="$emit('goToUserProfile', reply.user.id)"
-        />
-      </template>
-
-      <v-list-item-title class="d-flex align-center gap-2 mb-1">
-        <span class="font-weight-medium text-body-2">
-          {{ reply.user.display_name || reply.user.username || '匿名用户' }}
-        </span>
-        <span class="text-caption text-medium-emphasis">
-          {{ formatDate(reply.created_at) }}
-        </span>
-      </v-list-item-title>
-
-      <v-list-item-subtitle class="text-body-2 comment-text">
-        {{ reply.content }}
-      </v-list-item-subtitle>
-
-      <template v-slot:append>
-        <div class="d-flex gap-1">
-          <v-btn
-            variant="text"
-            size="x-small"
-            @click="$emit('toggleLike', reply)"
-            :color="commentLiked[reply.id] ? 'primary' : 'default'"
-          >
-            <v-icon size="12">mdi-thumb-up</v-icon>
-            {{ reply.like_count }}
-          </v-btn>
-          <v-btn
-            variant="text"
-            size="x-small"
-            @click="$emit('showReplyForm', reply.id)"
-            v-if="token"
-          >
-            <v-icon size="12">mdi-reply</v-icon>
-            回复
-          </v-btn>
-          <v-btn
-            variant="text"
-            size="x-small"
-            color="error"
-            @click="$emit('deleteComment', reply.id, reply)"
-            v-if="canDeleteComment(reply)"
-          >
-            <v-icon size="12">mdi-delete</v-icon>
-          </v-btn>
+      <div class="reply-body">
+        <div class="reply-header">
+          <UserAvatar
+            :user="reply.user"
+            :size="32"
+            :showUsername="false"
+            class="cursor-pointer reply-avatar"
+            @click="$emit('goToUserProfile', reply.user.id)"
+          />
+          <div class="reply-meta">
+            <span class="reply-username">
+              {{ reply.user.display_name || reply.user.username || '匿名用户' }}
+            </span>
+            <span class="reply-time text-secondary">
+              {{ formatDate(reply.created_at) }}
+            </span>
+          </div>
         </div>
 
-        <v-expand-transition>
-          <div v-if="replyingTo === reply.id" class="reply-form mt-2">
-            <v-textarea
-              v-model="localReplyContent"
-              :placeholder="'回复 ' + (reply.user.display_name || reply.user.username || '匿名用户')"
-              variant="outlined"
-              rows="2"
-              density="compact"
-              hide-details
-            />
-            <div class="d-flex align-center gap-2 mt-2">
-              <v-checkbox
-                v-model="localReplyIsAnonymous"
-                label="匿名"
-                color="primary"
-                hide-details
-                density="compact"
-              />
-              <v-spacer></v-spacer>
-              <v-btn size="small" color="primary" @click="submitReply(reply.id)">发送</v-btn>
-              <v-btn size="small" variant="text" @click="cancelReply">取消</v-btn>
-            </div>
-          </div>
-        </v-expand-transition>
-      </template>
-    </v-list-item>
+        <div class="reply-content comment-text">
+          {{ reply.content }}
+        </div>
 
-    <template v-for="reply in replies" :key="'nested-' + reply.id">
+        <div class="reply-actions">
+          <el-button
+            text
+            size="small"
+            class="reply-action-btn"
+            @click="$emit('toggleLike', reply)"
+          >
+            <el-icon class="action-icon"><ThumbUp /></el-icon>
+            <span :class="commentLiked[reply.id] ? 'liked-text' : ''">
+              {{ reply.like_count }}
+            </span>
+          </el-button>
+          <el-button
+            v-if="token"
+            text
+            size="small"
+            class="reply-action-btn"
+            @click="$emit('showReplyForm', reply.id)"
+          >
+            <el-icon class="action-icon"><ChatDotRound /></el-icon>
+            回复
+          </el-button>
+          <el-button
+            v-if="canDeleteComment(reply)"
+            text
+            size="small"
+            class="reply-action-btn danger"
+            @click="$emit('deleteComment', reply.id, reply)"
+          >
+            <el-icon class="action-icon"><Delete /></el-icon>
+          </el-button>
+        </div>
+
+        <div v-if="replyingTo === reply.id" class="reply-form mt-2">
+          <el-textarea
+            v-model="localReplyContent"
+            :placeholder="'回复 ' + (reply.user.display_name || reply.user.username || '匿名用户')"
+            :rows="2"
+            resize="none"
+            class="reply-textarea"
+          />
+          <div class="d-flex align-center gap-2 mt-2 form-footer">
+            <el-checkbox v-model="localReplyIsAnonymous" size="small">
+              匿名
+            </el-checkbox>
+            <div class="flex-spacer"></div>
+            <el-button size="small" type="primary" @click="submitReply(reply.id)">
+              发送
+            </el-button>
+            <el-button size="small" text @click="cancelReply">取消</el-button>
+          </div>
+        </div>
+      </div>
+
       <CommentReply
         v-if="reply.replies && reply.replies.length > 0"
         :replies="reply.replies"
@@ -103,12 +98,13 @@
         @submitReply="$emit('submitReply', $event)"
         @cancelReply="$emit('cancelReply')"
       />
-    </template>
-  </v-list>
+    </el-list-item>
+  </el-list>
 </template>
 
 <script>
 import { ref, watch } from 'vue'
+import { ThumbUp, ChatDotRound, Delete } from '@element-plus/icons-vue'
 import UserAvatar from './UserAvatar.vue'
 
 export default {
@@ -190,6 +186,125 @@ export default {
 </script>
 
 <style scoped>
+.reply-list {
+  padding-left: 16px;
+  background: rgba(103, 80, 164, 0.04);
+  border-radius: 8px;
+  border-left: 2px solid var(--campus-border);
+}
+
+.reply-item {
+  padding: 8px 0;
+}
+
+.reply-item + .reply-item {
+  border-top: 1px solid var(--campus-border);
+}
+
+.reply-body {
+  width: 100%;
+  min-width: 0;
+}
+
+.reply-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.reply-avatar {
+  flex-shrink: 0;
+}
+
+.reply-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.reply-username {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--campus-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reply-time {
+  font-size: 12px;
+}
+
+.reply-content {
+  font-size: 13px;
+  color: var(--campus-text);
+  margin-bottom: 6px;
+}
+
+.reply-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.reply-action-btn {
+  padding: 4px 6px;
+  height: auto;
+  min-height: 0;
+  font-size: 12px;
+}
+
+.reply-action-btn.danger {
+  color: #f56c6c;
+}
+
+.reply-action-btn.danger:hover {
+  background-color: rgba(245, 108, 108, 0.1);
+}
+
+.action-icon {
+  margin-right: 2px;
+  font-size: 14px;
+}
+
+.liked-text {
+  color: var(--campus-primary);
+  font-weight: 500;
+}
+
+.reply-form {
+  margin-top: 8px;
+}
+
+.reply-textarea {
+  width: 100%;
+}
+
+.form-footer {
+  margin-top: 8px;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.mt-2 {
+  margin-top: 8px;
+}
+
+.flex-spacer {
+  flex: 1;
+}
+
 .comment-text {
   white-space: pre-wrap;
   word-break: break-word;

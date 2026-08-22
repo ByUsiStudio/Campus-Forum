@@ -6,6 +6,36 @@
 
 ---
 
+## [3.0.0] - 2026-08-22
+
+### 重大重构
+
+将前端从 **Vuetify 3** 彻底重构为 **Element Plus** 技术栈，采用 Vue 3 + Vite + Vue Router + **Pinia**。
+
+### 新增
+
+- 引入 **Pinia 状态管理**：`src/stores/`（`user` / `app` / `notification`），替代散落的 `localStorage` 与跨组件事件
+- 引入 **Element Plus** 组件体系及 `@element-plus/icons-vue`，全局组件/图标注册，中文本地化
+- 新增统一交互反馈工具 `src/utils/message.js`（`success / error / confirm / prompt / warning`，基于 `ElMessage` / `ElMessageBox`）
+
+### 重构
+
+- **目录分层**：路由独立为 `src/router/`（含守卫/懒加载），状态独立为 `src/stores/`，全局样式为 `src/styles/index.css`
+- **API 数据层**：新增统一 `src/api/http.js`（axios 实例，token 自动刷新、并发去重、统一错误提示）；`src/api/` 各业务模块统一从 `./http` 复用，`src/api/index.js` 默认导出 `http` 并透出全部具名模块
+- **路由守卫**：文章详情/分类/排行榜/话题等只读页面未登录可浏览，登录后自动回跳原目标页
+- **全部视图与组件**迁移到 Element Plus（`Home / Article / Profile / CreateArticle / 登录注册 / 排行榜 / 话题 / 后台管理全部页面 / 编辑器 MdEditor / MarkdownViewer / 上传 / 头像 等）
+
+### 修复
+
+- 修复 7 个 API 模块（`admin / collection / friend / leaderboard / level / statistics / topic`）因编码损坏导致注释吞并方法名、产生 `Unexpected token` 语法错误的问题（重写为正确的 UTF-8 内容）
+- 清理依赖与死代码：移除 `vuetify`、`@mdi/font`、`vue3-markdown-it`、`marked` 等旧依赖；删除 `src/utils/modal.js` 与 `src/styles/style.css`
+
+### 注意
+
+- 沙箱环境无法执行真实 `vite build`（esbuild 子进程被沙箱拦截）；本次以 `@vue/compiler-sfc` 全量编译校验（55 个 `.vue` 全部通过）+ Babel ESM 语法校验（23 个 `.js` 全部通过）作为验证依据，请在本地 `cd frontend && yarn install && yarn dev`（或 `yarn build`）做最终构建与浏览器确认
+
+---
+
 ## [2.2.0] - 2026-08-22
 
 ### 重构

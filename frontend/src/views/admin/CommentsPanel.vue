@@ -1,188 +1,269 @@
 <template>
   <div>
     <!-- 搜索栏 -->
-    <v-card class="mb-4 pa-3" variant="flat" rounded="lg">
-      <v-row dense align="center">
-        <v-col cols="12" sm="8">
-          <v-text-field
-            v-model="searchQuery"
-            placeholder="搜索评论内容..."
-            prepend-inner-icon="mdi-magnify"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-          />
-        </v-col>
-        <v-col cols="12" sm="4" class="text-end">
-          <v-btn variant="tonal" color="primary" @click="$emit('refresh')" :loading="loading" prepend-icon="mdi-refresh">
-            刷新
-          </v-btn>
-        </v-col>
-      </v-row>
-    </v-card>
+    <div class="search-bar mb-4">
+      <el-input
+        v-model="searchQuery"
+        placeholder="搜索评论内容或用户名..."
+        clearable
+        class="search-input"
+      >
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+      <el-button type="primary" :loading="loading" @click="$emit('refresh')">
+        <el-icon style="margin-right: 4px"><Refresh /></el-icon>
+        刷新
+      </el-button>
+    </div>
 
     <!-- 评论列表 -->
-    <v-card variant="flat" rounded="lg">
-      <v-list lines="three" v-if="filteredComments.length > 0">
-        <v-list-item v-for="comment in filteredComments" :key="comment.id" class="py-3">
-          <template v-slot:prepend>
-            <UserAvatar :user="getUserInfo(comment)" :size="48" />
-          </template>
-
-          <v-list-item-title class="font-weight-medium mb-1">
-            {{ getUserName(comment) }}
-            <v-chip size="x-small" color="grey" variant="tonal" class="ml-2" v-if="comment.is_anonymous">
+    <el-table
+      :data="filteredComments"
+      v-loading="loading"
+      empty-text="暂无评论数据"
+    >
+      <el-table-column label="评论用户" min-width="160">
+        <template #default="{ row }">
+          <div class="user-cell">
+            <UserAvatar :user="getUserInfo(row)" :size="36" :show-username="false" />
+            <span class="user-name">{{ getUserName(row) }}</span>
+            <el-tag
+              v-if="row.is_anonymous"
+              size="small"
+              type="info"
+              effect="plain"
+              class="anon-tag"
+            >
               匿名
-            </v-chip>
-          </v-list-item-title>
+            </el-tag>
+          </div>
+        </template>
+      </el-table-column>
 
-          <v-list-item-subtitle>
-            <div class="mb-2">{{ comment.content }}</div>
-            <div class="d-flex flex-wrap align-center ga-2">
-              <span class="d-flex align-center text-caption" v-if="getArticleInfo(comment)">
-                <v-icon size="14" color="primary" class="mr-1">mdi-file-document</v-icon>
-                {{ getArticleInfo(comment).title }}
-              </span>
-              <span class="d-flex align-center text-caption">
-                <v-icon size="14" color="pink" class="mr-1">mdi-heart</v-icon>
-                {{ comment.like_count || 0 }}
-              </span>
-              <span class="d-flex align-center text-caption">
-                <v-icon size="14" color="blue" class="mr-1">mdi-reply</v-icon>
-                {{ comment.reply_count || 0 }}
-              </span>
-              <span class="d-flex align-center text-caption">
-                <v-icon size="14" color="grey" class="mr-1">mdi-clock-outline</v-icon>
-                {{ formatDate(comment.created_at) }}
-              </span>
-            </div>
-          </v-list-item-subtitle>
+      <el-table-column label="评论内容" min-width="240" show-overflow-tooltip>
+        <template #default="{ row }">
+          <span>{{ row.content }}</span>
+        </template>
+      </el-table-column>
 
-          <template v-slot:append>
-            <v-btn-group variant="text" density="compact" divided>
-              <v-btn size="small" color="info" :to="`/article/${comment.article_id}`" target="_blank" v-if="comment.article_id">
-                <v-icon>mdi-eye</v-icon>
-                <v-tooltip activator="parent">查看文章</v-tooltip>
-              </v-btn>
-              <v-btn size="small" color="error" @click="$emit('delete', comment.id)">
-                <v-icon>mdi-delete</v-icon>
-                <v-tooltip activator="parent">删除</v-tooltip>
-              </v-btn>
-            </v-btn-group>
-          </template>
-        </v-list-item>
-      </v-list>
+      <el-table-column label="所属文章" min-width="180" show-overflow-tooltip>
+        <template #default="{ row }">
+          <el-link
+            v-if="getArticleInfo(row)"
+            type="primary"
+            :href="`/article/${row.article_id}`"
+            target="_blank"
+          >
+            <el-icon style="margin-right: 4px"><Document /></el-icon>
+            {{ getArticleInfo(row).title }}
+          </el-link>
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
 
-      <v-card-text v-else class="text-center py-8">
-        <v-icon size="48" color="grey-lighten-1">mdi-comment-text-outline</v-icon>
-        <div class="text-body-1 text-medium-emphasis mt-2">
-          {{ searchQuery ? '未找到匹配的评论' : '暂无评论数据' }}
-        </div>
-      </v-card-text>
-    </v-card>
+      <el-table-column label="互动" width="130">
+        <template #default="{ row }">
+          <div class="stats-cell">
+            <el-icon color="#f56c6c"><ChatDotRound /></el-icon>
+            <span class="stat-num">{{ row.reply_count || 0 }}</span>
+            <el-icon color="#409eff"><Pointer /></el-icon>
+            <span class="stat-num">{{ row.like_count || 0 }}</span>
+          </div>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="评论时间" width="170">
+        <template #default="{ row }">
+          <el-icon style="margin-right: 4px; vertical-align: middle"><Clock /></el-icon>
+          <span>{{ formatDate(row.created_at) }}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="操作" width="130" fixed="right">
+        <template #default="{ row }">
+          <el-button
+            v-if="row.article_id"
+            size="small"
+            type="info"
+            plain
+            @click="openArticle(row)"
+          >
+            查看文章
+          </el-button>
+          <el-button size="small" type="danger" plain @click="$emit('delete', row.id)">
+            删除
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <el-empty
+      v-if="filteredComments.length === 0"
+      :description="searchQuery ? '未找到匹配的评论' : '暂无评论数据'"
+      :image-size="80"
+    />
 
     <!-- 分页 -->
-    <div class="d-flex align-center justify-center ga-4 mt-4" v-if="pagination.totalPages > 1">
-      <v-pagination
-        v-model="currentPage"
-        :length="pagination.totalPages"
-        :total-visible="5"
-        rounded="lg"
-        @update:model-value="handlePageChange"
+    <div class="pagination-row" v-if="pagination.totalPages > 1">
+      <el-pagination
+        :current-page="currentPage"
+        :page-size="pagination.pageSize"
+        :total="pagination.total"
+        layout="prev, pager, next, total"
+        background
+        @current-change="handlePageChange"
       />
-      <div class="text-caption text-medium-emphasis">
+      <span class="page-text">
         第 {{ pagination.page }} / {{ pagination.totalPages }} 页 (共 {{ pagination.total }} 条)
-      </div>
+      </span>
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, watch, computed } from 'vue'
+import {
+  Search,
+  Refresh,
+  Document,
+  ChatDotRound,
+  Pointer,
+  Clock
+} from '@element-plus/icons-vue'
 import UserAvatar from '../../components/UserAvatar.vue'
 
-export default {
-  name: 'CommentsPanel',
-  components: {
-    UserAvatar
+const props = defineProps({
+  comments: {
+    type: Array,
+    default: () => []
   },
-  props: {
-    comments: {
-      type: Array,
-      default: () => []
-    },
-    loading: {
-      type: Boolean,
-      default: false
-    },
-    pagination: {
-      type: Object,
-      default: () => ({
-        page: 1,
-        pageSize: 20,
-        total: 0,
-        totalPages: 0
-      })
-    }
+  loading: {
+    type: Boolean,
+    default: false
   },
-  emits: ['delete', 'refresh', 'page-change'],
-  setup(props, { emit }) {
-    const currentPage = ref(1)
-    const searchQuery = ref('')
-
-    watch(() => props.pagination.page, (newVal) => {
-      currentPage.value = newVal
+  pagination: {
+    type: Object,
+    default: () => ({
+      page: 1,
+      pageSize: 20,
+      total: 0,
+      totalPages: 0
     })
+  }
+})
 
-    const filteredComments = computed(() => {
-      if (!searchQuery.value) return props.comments
-      const query = searchQuery.value.toLowerCase()
-      return props.comments.filter(comment => 
-        comment.content?.toLowerCase().includes(query) ||
-        getUserName(comment).toLowerCase().includes(query)
-      )
-    })
+const emit = defineEmits(['delete', 'refresh', 'page-change'])
 
-    const formatDate = (dateString) => {
-      if (!dateString) return '-'
-      const date = new Date(dateString)
-      return date.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    }
+const currentPage = ref(props.pagination.page || 1)
+const searchQuery = ref('')
 
-    const getUserInfo = (comment) => {
-      return comment.user || comment.User || {}
-    }
+watch(
+  () => props.pagination.page,
+  (newVal) => {
+    currentPage.value = newVal
+  }
+)
 
-    const getUserName = (comment) => {
-      const user = getUserInfo(comment)
-      return user.display_name || user.DisplayName || user.username || user.Username || '未知用户'
-    }
+const filteredComments = computed(() => {
+  if (!searchQuery.value) return props.comments
+  const query = searchQuery.value.toLowerCase()
+  return props.comments.filter(
+    (comment) =>
+      comment.content?.toLowerCase().includes(query) ||
+      getUserName(comment).toLowerCase().includes(query)
+  )
+})
 
-    const getArticleInfo = (comment) => {
-      return comment.article || comment.Article || null
-    }
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
 
-    const handlePageChange = (page) => {
-      emit('page-change', page)
-    }
+const getUserInfo = (comment) => comment.user || comment.User || {}
 
-    return {
-      currentPage,
-      searchQuery,
-      filteredComments,
-      formatDate,
-      getUserInfo,
-      getUserName,
-      getArticleInfo,
-      handlePageChange
-    }
+const getUserName = (comment) => {
+  const user = getUserInfo(comment)
+  return (
+    user.display_name ||
+    user.DisplayName ||
+    user.username ||
+    user.Username ||
+    '未知用户'
+  )
+}
+
+const getArticleInfo = (comment) => comment.article || comment.Article || null
+
+const handlePageChange = (page) => {
+  emit('page-change', page)
+}
+
+const openArticle = (row) => {
+  if (row.article_id) {
+    window.open(`/article/${row.article_id}`, '_blank')
   }
 }
 </script>
+
+<style scoped>
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-input {
+  max-width: 360px;
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-name {
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.anon-tag {
+  flex-shrink: 0;
+}
+
+.stats-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-num {
+  margin-right: 8px;
+  color: #606266;
+}
+
+.pagination-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.page-text {
+  font-size: 12px;
+  color: #909399;
+}
+</style>

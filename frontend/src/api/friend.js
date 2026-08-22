@@ -1,4 +1,4 @@
-import api from './index'
+import api from './http'
 
 // 好友相关API
 export const friendApi = {

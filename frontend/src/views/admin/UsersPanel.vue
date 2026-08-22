@@ -1,81 +1,137 @@
 <template>
   <div>
     <!-- 搜索栏 -->
-    <v-card class="mb-4 pa-3" variant="flat" rounded="lg">
-      <v-row dense align="center">
-        <v-col cols="12" sm="8">
-          <v-text-field
+    <el-card class="page-container mb-4" shadow="never">
+      <el-row :gutter="12" align="middle">
+        <el-col :xs="24" :sm="18">
+          <el-input
             v-model="searchQuery"
             placeholder="搜索用户..."
-            prepend-inner-icon="mdi-magnify"
-            variant="outlined"
-            density="compact"
-            hide-details
+            :prefix-icon="Search"
             clearable
           />
-        </v-col>
-        <v-col cols="12" sm="4" class="text-end">
-          <v-btn variant="tonal" color="primary" @click="$emit('refresh')" :loading="loading" prepend-icon="mdi-refresh">
+        </el-col>
+        <el-col :xs="24" :sm="6" class="search-actions">
+          <el-button
+            type="primary"
+            plain
+            :loading="loading"
+            :icon="Refresh"
+            @click="$emit('refresh')"
+          >
             刷新
-          </v-btn>
-        </v-col>
-      </v-row>
-    </v-card>
+          </el-button>
+        </el-col>
+      </el-row>
+    </el-card>
 
     <!-- 用户列表 -->
-    <v-card variant="flat" rounded="lg">
-      <v-list lines="two" v-if="filteredUsers.length > 0">
-        <v-list-item v-for="user in filteredUsers" :key="user.id" class="py-3">
-          <template v-slot:prepend>
-            <UserAvatar :user="user" :size="48" />
+    <el-card class="page-container" shadow="never">
+      <el-table :data="filteredUsers" v-loading="loading" v-if="filteredUsers.length > 0">
+        <el-table-column label="用户" min-width="220">
+          <template #default="{ row }">
+            <div class="user-cell">
+              <UserAvatar :user="row" :size="48" />
+            </div>
           </template>
+        </el-table-column>
 
-          <v-list-item-title class="font-weight-medium">
-            {{ user.display_name }}
-            <v-chip size="x-small" :color="getRoleColor(user.role)" variant="tonal" class="ml-2">
-              {{ getRoleText(user.role) }}
-            </v-chip>
-            <v-chip size="x-small" :color="user.status === 'banned' ? 'error' : 'success'" variant="tonal" class="ml-1">
-              {{ user.status === 'banned' ? '已封禁' : '正常' }}
-            </v-chip>
-          </v-list-item-title>
-
-          <v-list-item-subtitle>
-            ID: {{ user.id }} | QQ: {{ user.qq_number || '-' }} | {{ formatDate(user.created_at) }}
-          </v-list-item-subtitle>
-
-          <template v-slot:append>
-            <v-btn-group variant="text" density="compact" divided>
-              <v-btn size="small" color="primary" @click="$emit('edit-role', user)" v-if="canEditRole(user)">
-                <v-icon>mdi-account-edit</v-icon>
-                <v-tooltip activator="parent">修改角色</v-tooltip>
-              </v-btn>
-              <v-btn size="small" :color="user.status === 'banned' ? 'success' : 'warning'" 
-                     @click="$emit(user.status === 'banned' ? 'unban' : 'ban', user)" v-if="canBanUser(user)">
-                <v-icon>{{ user.status === 'banned' ? 'mdi-lock-open' : 'mdi-lock' }}</v-icon>
-                <v-tooltip activator="parent">{{ user.status === 'banned' ? '解封' : '封禁' }}</v-tooltip>
-              </v-btn>
-              <v-btn size="small" color="error" @click="$emit('delete', user)" v-if="canDeleteUser(user)">
-                <v-icon>mdi-delete</v-icon>
-                <v-tooltip activator="parent">删除</v-tooltip>
-              </v-btn>
-            </v-btn-group>
+        <el-table-column label="角色" width="130">
+          <template #default="{ row }">
+            <el-tag :type="getRoleType(row.role)" effect="light" size="small">
+              {{ getRoleText(row.role) }}
+            </el-tag>
           </template>
-        </v-list-item>
-      </v-list>
+        </el-table-column>
 
-      <v-card-text v-else class="text-center py-8">
-        <v-icon size="48" color="grey-lighten-1">mdi-account-search</v-icon>
-        <div class="text-body-1 text-medium-emphasis mt-2">
+        <el-table-column label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag
+              :type="row.status === 'banned' ? 'danger' : 'success'"
+              effect="light"
+              size="small"
+            >
+              {{ row.status === 'banned' ? '已封禁' : '正常' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="ID / 联系 / 注册时间" min-width="240">
+          <template #default="{ row }">
+            <div class="user-meta">
+              <span>ID: {{ row.id }}</span>
+              <span>QQ: {{ row.qq_number || '-' }}</span>
+              <span>{{ formatDate(row.created_at) }}</span>
+            </div>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="操作" width="150">
+          <template #default="{ row }">
+            <div class="action-btns">
+              <el-tooltip content="修改角色" placement="top">
+                <el-button
+                  size="small"
+                  text
+                  type="primary"
+                  :icon="Edit"
+                  v-if="canEditRole(row)"
+                  @click="$emit('edit-role', row)"
+                />
+              </el-tooltip>
+
+              <el-tooltip :content="row.status === 'banned' ? '解封' : '封禁'" placement="top">
+                <el-button
+                  size="small"
+                  text
+                  :type="row.status === 'banned' ? 'success' : 'warning'"
+                  :icon="row.status === 'banned' ? Unlock : Lock"
+                  v-if="canBanUser(row)"
+                  @click="$emit(row.status === 'banned' ? 'unban' : 'ban', row)"
+                />
+              </el-tooltip>
+
+              <el-tooltip content="删除" placement="top">
+                <el-button
+                  size="small"
+                  text
+                  type="danger"
+                  :icon="Delete"
+                  v-if="canDeleteUser(row)"
+                  @click="$emit('delete', row)"
+                />
+              </el-tooltip>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <el-card
+        v-else
+        shadow="never"
+        class="empty-card"
+        :body-style="{ textAlign: 'center', padding: '32px' }"
+      >
+        <el-icon :size="48" color="var(--el-color-info-light-5)"><User /></el-icon>
+        <div class="empty-text mt-2">
           {{ searchQuery ? '未找到匹配的用户' : '暂无用户数据' }}
         </div>
-      </v-card-text>
-    </v-card>
+      </el-card>
+    </el-card>
   </div>
 </template>
 
 <script>
 import UserAvatar from '../../components/UserAvatar.vue'
+import {
+  Search,
+  Refresh,
+  Edit,
+  Lock,
+  Unlock,
+  Delete,
+  User
+} from '@element-plus/icons-vue'
 
 export default {
   name: 'UsersPanel',
@@ -94,7 +150,7 @@ export default {
     filteredUsers() {
       if (!this.searchQuery) return this.users
       const query = this.searchQuery.toLowerCase()
-      return this.users.filter(user => 
+      return this.users.filter(user =>
         user.display_name.toLowerCase().includes(query) ||
         user.qq_number?.toLowerCase().includes(query) ||
         user.id.toString().includes(query)
@@ -102,8 +158,8 @@ export default {
     }
   },
   methods: {
-    getRoleColor(role) {
-      return { admin: 'error', system: 'warning', user: 'primary' }[role] || 'grey'
+    getRoleType(role) {
+      return { admin: 'danger', system: 'warning', user: 'primary' }[role] || 'info'
     },
     getRoleText(role) {
       return { admin: '管理员', system: '系统管理员', user: '普通用户' }[role] || '用户'
@@ -133,3 +189,40 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.search-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.user-cell {
+  padding: 4px 0;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.action-btns {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.empty-text {
+  color: var(--el-text-color-secondary);
+}
+
+.mt-2 {
+  margin-top: 8px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+</style>

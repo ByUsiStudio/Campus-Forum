@@ -1,143 +1,144 @@
 <template>
-  <v-container fluid class="pa-4 pa-md-6">
+  <div class="pa-4 pa-md-6">
     <!-- SMTP配置表单 -->
-    <v-card variant="flat" rounded="lg">
-      <v-card-title class="pb-2">
-        <v-icon start size="20">mdi-email-settings</v-icon>
-        SMTP 配置
-      </v-card-title>
+    <el-card shadow="never" class="page-container">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="20" class="card-header-icon"><Message /></el-icon>
+          <span>SMTP 配置</span>
+        </div>
+      </template>
 
-      <v-card-text>
-        <v-form ref="smtpForm" v-model="formValid">
-          <v-row dense>
-            <v-col cols="12" sm="6">
-              <v-text-field
+      <el-form ref="smtpForm" :model="smtpConfigForm" :rules="rules" label-position="top">
+        <el-row :gutter="16">
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="SMTP 主机" prop="host">
+              <el-input
                 v-model="smtpConfigForm.host"
-                label="SMTP 主机"
                 placeholder="smtp.example.com"
-                variant="outlined"
-                density="compact"
-                :rules="[rules.required]"
-                prepend-inner-icon="mdi-server"
                 clearable
+                :prefix-icon="Server"
               />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model.number="smtpConfigForm.port"
-                label="SMTP 端口"
-                placeholder="587"
-                variant="outlined"
-                density="compact"
-                :rules="[rules.required, rules.number]"
-                prepend-inner-icon="mdi-numeric"
-                type="number"
-                clearable
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="SMTP 端口" prop="port">
+              <el-input-number
+                v-model="smtpConfigForm.port"
+                :min="1"
+                :max="65535"
+                :prefix-icon="Numeric"
+                controls-position="right"
+                style="width: 100%"
               />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-text-field
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="用户名 / 邮箱" prop="username">
+              <el-input
                 v-model="smtpConfigForm.username"
-                label="用户名 / 邮箱"
                 placeholder="your-email@example.com"
-                variant="outlined"
-                density="compact"
-                :rules="[rules.required, rules.email]"
-                prepend-inner-icon="mdi-account"
                 clearable
+                :prefix-icon="User"
               />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-text-field
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="密码 / 授权码" prop="password">
+              <el-input
                 v-model="smtpConfigForm.password"
-                label="密码 / 授权码"
-                variant="outlined"
-                density="compact"
-                :rules="passwordSet && !passwordChanged ? [] : [rules.required]"
                 :type="showPassword ? 'text' : 'password'"
-                prepend-inner-icon="mdi-lock"
-                :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
-                @click:append-inner="showPassword = !showPassword"
-                @update:model-value="onPasswordChange"
-                :hint="passwordSet && !passwordChanged ? '密码已设置（不可见），输入新密码以更新' : ''"
-                persistent-hint
-              />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-text-field
+                clearable
+                :prefix-icon="Lock"
+                @input="onPasswordChange"
+              >
+                <template #suffix>
+                  <el-icon
+                    class="cursor-pointer"
+                    @click="showPassword = !showPassword"
+                  >
+                    <View v-if="!showPassword" />
+                    <Hide v-else />
+                  </el-icon>
+                </template>
+              </el-input>
+              <div v-if="passwordSet && !passwordChanged" class="form-item-hint">
+                密码已设置（不可见），输入新密码以更新
+              </div>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="发件人邮箱" prop="from">
+              <el-input
                 v-model="smtpConfigForm.from"
-                label="发件人邮箱"
                 placeholder="noreply@example.com"
-                variant="outlined"
-                density="compact"
-                :rules="[rules.required, rules.email]"
-                prepend-inner-icon="mdi-email"
                 clearable
+                :prefix-icon="Message"
               />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-text-field
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="发件人名称" prop="fromName">
+              <el-input
                 v-model="smtpConfigForm.fromName"
-                label="发件人名称"
                 placeholder="校园论坛"
-                variant="outlined"
-                density="compact"
-                :rules="[rules.required]"
-                prepend-inner-icon="mdi-account-circle"
                 clearable
+                :prefix-icon="UserFilled"
               />
-            </v-col>
-          </v-row>
+            </el-form-item>
+          </el-col>
+        </el-row>
 
-          <v-alert
-            v-if="smtpConfigForm.host && smtpConfigForm.port"
-            type="info"
-            variant="tonal"
-            density="compact"
-            class="mt-4"
-            icon="mdi-information"
+        <el-alert
+          v-if="smtpConfigForm.host && smtpConfigForm.port"
+          type="info"
+          :closable="false"
+          class="mt-4"
+          show-icon
+        >
+          <template v-if="passwordSet && !passwordChanged">
+            密码已设置但不可见。如需测试或更新密码，请先输入新密码。
+          </template>
+          <template v-else>
+            测试配置前请确保所有参数填写正确，测试邮件将发送到您的发件人邮箱。
+          </template>
+        </el-alert>
+      </el-form>
+
+      <template #footer>
+        <div class="form-actions">
+          <el-button
+            type="warning"
+            plain
+            @click="testSmtpConfig"
+            :loading="testing"
           >
-            <template v-if="passwordSet && !passwordChanged">
-              密码已设置但不可见。如需测试或更新密码，请先输入新密码。
-            </template>
-            <template v-else>
-              测试配置前请确保所有参数填写正确，测试邮件将发送到您的发件人邮箱。
-            </template>
-          </v-alert>
-        </v-form>
-      </v-card-text>
-
-      <v-card-actions class="pa-4">
-        <v-spacer />
-        <v-btn
-          color="secondary"
-          variant="tonal"
-          @click="testSmtpConfig"
-          :loading="testing"
-          class="mr-2"
-        >
-          <v-icon start>mdi-test-tube</v-icon>
-          测试配置
-        </v-btn>
-        <v-btn
-          color="primary"
-          variant="flat"
-          @click="saveSmtpConfig"
-          :loading="saving"
-          :disabled="!formValid"
-        >
-          <v-icon start>mdi-content-save</v-icon>
-          保存配置
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-container>
+            <el-icon class="mr-1"><Memo /></el-icon>
+            测试配置
+          </el-button>
+          <el-button
+            type="primary"
+            @click="saveSmtpConfig"
+            :loading="saving"
+            :disabled="!formValid"
+          >
+            <el-icon class="mr-1"><Check /></el-icon>
+            保存配置
+          </el-button>
+        </div>
+      </template>
+    </el-card>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { Server, Numeric, User, Lock, UserFilled, Message, View, Hide, Memo, Check } from '@element-plus/icons-vue'
 import { adminSiteConfigApi } from '../../api/admin'
-import { success, error } from '../../utils/modal'
+import { success, error } from '@/utils/message'
 
 // 密码占位符，表示密码已设置但不可见
 const PASSWORD_PLACEHOLDER = '••••••••••••••••'
@@ -153,7 +154,6 @@ const smtpConfigForm = ref({
 })
 
 const smtpForm = ref(null)
-const formValid = ref(false) // 表单整体校验结果
 const showPassword = ref(false) // 是否明文显示密码
 const saving = ref(false) // 是否正在保存
 const testing = ref(false) // 是否正在测试
@@ -162,10 +162,80 @@ const passwordChanged = ref(false) // 用户是否修改了密码字段
 
 /** 表单校验规则 */
 const rules = {
-  required: v => !!v || '此字段为必填项',
-  email: v => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址',
-  number: v => !isNaN(parseFloat(v)) && isFinite(v) || '请输入有效的数字'
+  host: [{ required: true, message: '此字段为必填项', trigger: 'blur' }],
+  port: [
+    { required: true, message: '此字段为必填项', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value === null || value === undefined || value === '') {
+          callback('此字段为必填项')
+        } else if (isNaN(parseFloat(value)) || !isFinite(value)) {
+          callback('请输入有效的数字')
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  username: [
+    { required: true, message: '此字段为必填项', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value === null || value === undefined || value === '') {
+          callback('此字段为必填项')
+        } else if (!/.+@.+\..+/.test(value)) {
+          callback('请输入有效的邮箱地址')
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  password: [
+    {
+      validator: (rule, value, callback) => {
+        if (passwordSet.value && !passwordChanged.value) {
+          callback()
+        } else if (!value || value === '') {
+          callback('此字段为必填项')
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  from: [
+    { required: true, message: '此字段为必填项', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value === null || value === undefined || value === '') {
+          callback('此字段为必填项')
+        } else if (!/.+@.+\..+/.test(value)) {
+          callback('请输入有效的邮箱地址')
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ],
+  fromName: [{ required: true, message: '此字段为必填项', trigger: 'blur' }]
 }
+
+/** 表单整体校验结果，用于控制保存按钮 */
+const formValid = computed(() => {
+  const f = smtpConfigForm.value
+  const hostOk = !!f.host && f.host.trim() !== ''
+  const portOk = f.port !== null && f.port !== undefined && f.port !== ''
+  const usernameOk = !!f.username && f.username.trim() !== '' && /.+@.+\..+/.test(f.username)
+  const passwordOk = (passwordSet.value && !passwordChanged.value) || (!!f.password && f.password !== '')
+  const fromOk = !!f.from && f.from.trim() !== '' && /.+@.+\..+/.test(f.from)
+  const fromNameOk = !!f.fromName && f.fromName.trim() !== ''
+  return hostOk && portOk && usernameOk && passwordOk && fromOk && fromNameOk
+})
 
 /** 加载当前 SMTP 配置 */
 const loadSmtpConfig = async () => {
@@ -194,6 +264,10 @@ const onPasswordChange = () => {
 
 /** 保存 SMTP 配置 */
 const saveSmtpConfig = async () => {
+  if (smtpForm.value) {
+    const valid = await smtpForm.value.validate().catch(() => false)
+    if (!valid) return
+  }
   saving.value = true
   try {
     const updateData = {
@@ -251,3 +325,57 @@ onMounted(() => {
   loadSmtpConfig()
 })
 </script>
+
+<style scoped>
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.card-header-icon {
+  color: var(--el-color-primary);
+}
+
+.form-item-hint {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.mr-1 {
+  margin-right: 4px;
+}
+
+.mt-4 {
+  margin-top: 16px;
+}
+
+.pa-4 {
+  padding: 16px;
+}
+
+.pa-md-6 {
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .pa-md-6 {
+    padding: 16px;
+  }
+}
+</style>

@@ -1,54 +1,61 @@
 <template>
-  <v-container fluid class="pa-6">
-    <ArticlesPanel
-      :articles="articles"
-      :loading="loading"
-      :page="articlePage"
-      :total-pages="articleTotalPages"
-      :filter="articleFilter"
-      :status-options="articleStatusOptions"
-      :current-user-role="currentUserRole"
-      @change-status="showStatusDialog"
-      @delete="handleDeleteArticle"
-      @restore="handleRestoreArticle"
-      @refresh="loadArticles"
-      @update:page="articlePage = $event; loadArticles()"
-      @update:filter="articleFilter = $event; articlePage = 1; loadArticles()"
-    />
-  </v-container>
+  <div>
+    <el-card class="page-container" shadow="never">
+      <ArticlesPanel
+        :articles="articles"
+        :loading="loading"
+        :page="articlePage"
+        :total-pages="articleTotalPages"
+        :filter="articleFilter"
+        :status-options="articleStatusOptions"
+        :current-user-role="currentUserRole"
+        @change-status="showStatusDialog"
+        @delete="handleDeleteArticle"
+        @restore="handleRestoreArticle"
+        @refresh="loadArticles"
+        @update:page="articlePage = $event; loadArticles()"
+        @update:filter="articleFilter = $event; articlePage = 1; loadArticles()"
+      />
+    </el-card>
 
-  <v-dialog v-model="statusDialog.show" max-width="480">
-    <v-card class="dialog-card">
-      <v-card-title class="dialog-title">
-        <v-icon class="title-icon">mdi-file-edit</v-icon>
-        修改文章状态
-      </v-card-title>
-      <v-card-text class="dialog-body">
+    <el-dialog v-model="statusDialog.show" width="480px" class="status-dialog">
+      <template #header>
+        <div class="dialog-title">
+          <el-icon class="title-icon"><Edit /></el-icon>
+          <span>修改文章状态</span>
+        </div>
+      </template>
+
+      <div class="dialog-body">
         <div class="article-preview">
           <div class="preview-label">文章预览</div>
           <div class="preview-title">{{ statusDialog.article?.title }}</div>
         </div>
-        <v-radio-group v-model="statusDialog.status" class="mt-4">
-          <v-radio label="待审核" value="pending" color="warning"></v-radio>
-          <v-radio label="已发布" value="published" color="success"></v-radio>
-          <v-radio label="已拒绝" value="rejected" color="error"></v-radio>
-        </v-radio-group>
-      </v-card-text>
-      <v-card-actions class="dialog-actions">
-        <v-btn variant="text" @click="statusDialog.show = false">取消</v-btn>
-        <v-btn color="primary" variant="flat" @click="handleEditStatus">确认修改</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        <el-radio-group v-model="statusDialog.status" class="mt-4">
+          <el-radio value="pending">待审核</el-radio>
+          <el-radio value="published">已发布</el-radio>
+          <el-radio value="rejected">已拒绝</el-radio>
+        </el-radio-group>
+      </div>
+
+      <template #footer>
+        <div class="dialog-actions">
+          <el-button @click="statusDialog.show = false">取消</el-button>
+          <el-button type="primary" @click="handleEditStatus">确认修改</el-button>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { Edit } from '@element-plus/icons-vue'
 import ArticlesPanel from './ArticlesPanel.vue'
-import api from '../../api'
-import { adminArticleApi } from '../../api/admin'
-import { confirm, success, error } from '../../utils/modal'
+import api from '@/api'
+import { adminArticleApi } from '@/api/admin'
+import { confirm, success, error } from '@/utils/message'
 
 const router = useRouter()
 const articles = ref([])
@@ -119,7 +126,7 @@ const handleEditStatus = async () => {
 }
 
 const handleDeleteArticle = async (article) => {
-  const confirmed = await confirm(`确定要删除文章 "${article.title}" 吗？`)
+  const confirmed = await confirm(`确定要删除文章 "${article.title}" 吗？`).catch(() => null)
   if (!confirmed) return
   try {
     await api.delete(`/articles/${article.id}`)
@@ -132,7 +139,7 @@ const handleDeleteArticle = async (article) => {
 }
 
 const handleRestoreArticle = async (article) => {
-  const confirmed = await confirm(`确定要恢复文章 "${article.title}" 吗？`)
+  const confirmed = await confirm(`确定要恢复文章 "${article.title}" 吗？`).catch(() => null)
   if (!confirmed) return
   try {
     await api.post(`/articles/${article.id}/restore`)
@@ -151,35 +158,31 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.dialog-card {
-  border-radius: 20px !important;
-  overflow: hidden;
-}
-
 .dialog-title {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 24px 24px 16px;
   font-size: 1.2rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
 }
 
 .title-icon {
   width: 40px;
   height: 40px;
+  font-size: 20px;
   padding: 8px;
   border-radius: 10px;
   background: rgba(103, 80, 164, 0.1);
+  color: #6750a4;
 }
 
 .dialog-body {
-  padding: 24px !important;
+  padding: 8px 4px;
 }
 
 .dialog-actions {
-  padding: 16px 24px 24px;
+  display: flex;
+  justify-content: flex-end;
   gap: 12px;
 }
 

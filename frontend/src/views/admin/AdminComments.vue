@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="pa-6">
+  <el-card class="page-container" shadow="never">
     <CommentsPanel
       :comments="allComments"
       :loading="loading"
@@ -8,14 +8,14 @@
       @refresh="loadComments"
       @page-change="handlePageChange"
     />
-  </v-container>
+  </el-card>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import CommentsPanel from './CommentsPanel.vue'
 import { adminCommentApi } from '../../api/admin'
-import { confirm, success, error } from '../../utils/modal'
+import { confirm, success, error } from '@/utils/message'
 
 const allComments = ref([])
 const loading = ref(true)
@@ -53,7 +53,7 @@ const handlePageChange = (newPage) => {
 }
 
 const handleDeleteComment = async (commentId) => {
-  const confirmed = await confirm('确定要删除此评论吗？')
+  const confirmed = await confirm('确定要删除此评论吗？').catch(() => null)
   if (!confirmed) return
   try {
     await adminCommentApi.deleteComment(commentId)

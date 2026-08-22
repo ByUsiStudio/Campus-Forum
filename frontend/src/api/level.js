@@ -1,4 +1,4 @@
-import api from './index'
+import api from './http'
 
 // 用户等级与成就系统API
 export const levelApi = {

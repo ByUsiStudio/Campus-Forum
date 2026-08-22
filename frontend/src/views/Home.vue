@@ -1,108 +1,110 @@
 <template>
-  <v-row>
-    <!-- 侧边栏 - 桌面端显示 -->
-    <v-col cols="12" md="3" class="d-none d-md-block">
-      <Sidebar />
-    </v-col>
-    
-    <!-- 主内容 -->
-    <v-col cols="12" md="9">
-      <!-- 公告 -->
-      <v-alert
-        v-if="announcement.content"
-        type="info"
-        variant="tonal"
-        class="mb-4"
-        prominent
-        icon="mdi-bullhorn"
-      >
-        <div class="announcement-title font-weight-bold mb-2 d-flex align-center">
-          <v-icon class="mr-2" size="small">mdi-bullhorn</v-icon>
-          公告
+  <div class="page-container home-page">
+    <el-row :gutter="16">
+      <!-- 侧边栏 - 桌面端显示 -->
+      <el-col :xs="0" :sm="0" :md="6" :lg="6" class="sidebar-col">
+        <Sidebar />
+      </el-col>
+
+      <!-- 主内容 -->
+      <el-col :xs="24" :sm="24" :md="18" :lg="18">
+        <!-- 公告 -->
+        <el-alert
+          v-if="announcement.content"
+          type="info"
+          :closable="false"
+          show-icon
+          class="mb-4 announcement-alert"
+        >
+          <template #title>
+            <div class="announcement-title d-flex align-center">
+              <el-icon class="mr-1"><Bell /></el-icon>
+              <span>公告</span>
+            </div>
+          </template>
+          <div class="markdown-body" v-html="announcement.content_html"></div>
+        </el-alert>
+
+        <!-- 分区和操作栏 -->
+        <div class="card-surface mb-4 filter-bar">
+          <div class="d-flex align-center flex-wrap gap-3">
+            <el-select
+              v-model="selectedCategory"
+              placeholder="选择分区"
+              clearable
+              class="category-select"
+              @change="loadArticles"
+            >
+              <el-option
+                v-for="option in categoryOptions"
+                :key="String(option.value)"
+                :label="option.title"
+                :value="option.value"
+              />
+            </el-select>
+
+            <div class="filter-spacer"></div>
+
+            <span class="text-secondary total-pages">
+              共 {{ totalPages }} 页
+            </span>
+          </div>
         </div>
-        <div class="markdown-body" v-html="announcement.content_html"></div>
-      </v-alert>
-      
-      <!-- 分区和操作栏 -->
-      <v-card class="mb-4 pa-3" variant="flat">
-        <div class="d-flex align-center flex-wrap gap-3">
-          <v-select
-            v-model="selectedCategory"
-            :items="categoryOptions"
-            label="选择分区"
-            variant="outlined"
-            density="compact"
-            hide-details
-            clearable
-            @update:model-value="loadArticles"
-            style="max-width: 200px;"
-            prepend-inner-icon="mdi-folder"
-          ></v-select>
-          
-          <v-spacer></v-spacer>
-          
-          <span class="text-caption text-medium-emphasis">
-            共 {{ totalPages }} 页
-          </span>
+
+        <!-- 文章列表 -->
+        <ArticleList :articles="articles" :loading="loading" />
+
+        <!-- 分页 -->
+        <div v-if="totalPages > 1" class="card-surface mt-4 pagination-bar">
+          <div class="d-flex justify-center align-center flex-wrap gap-2">
+            <el-button
+              @click="prevPage"
+              :disabled="page === 1"
+              type="primary"
+              plain
+              size="small"
+            >
+              <el-icon class="mr-1"><ArrowLeft /></el-icon>
+              上一页
+            </el-button>
+
+            <el-pagination
+              v-model:current-page="page"
+              :page-count="totalPages"
+              :pager-count="5"
+              layout="pager"
+              :hide-on-single-page="false"
+              @current-change="loadArticles"
+              background
+            />
+
+            <el-button
+              @click="nextPage"
+              :disabled="page === totalPages"
+              type="primary"
+              plain
+              size="small"
+            >
+              下一页
+              <el-icon class="ml-1"><ArrowRight /></el-icon>
+            </el-button>
+          </div>
         </div>
-      </v-card>
-      
-      <!-- 文章列表 -->
-      <ArticleList :articles="articles" :loading="loading" />
-      
-      <!-- 分页 -->
-      <v-card v-if="totalPages > 1" class="mt-4 pa-3" variant="flat">
-        <div class="d-flex justify-center align-center flex-wrap gap-2">
-          <v-btn 
-            @click="prevPage" 
-            :disabled="page === 1" 
-            variant="outlined"
-            color="primary"
-            size="small"
-            prepend-icon="mdi-chevron-left"
-          >
-            上一页
-          </v-btn>
-          
-          <v-pagination
-            v-model="page"
-            :length="totalPages"
-            :total-visible="5"
-            @update:model-value="loadArticles"
-            rounded="circle"
-            density="compact"
-          ></v-pagination>
-          
-          <v-btn 
-            @click="nextPage" 
-            :disabled="page === totalPages" 
-            variant="outlined"
-            color="primary"
-            size="small"
-            append-icon="mdi-chevron-right"
-          >
-            下一页
-          </v-btn>
-        </div>
-      </v-card>
-    </v-col>
-    
+      </el-col>
+    </el-row>
+
     <!-- 移动端快捷操作 -->
-    <v-col cols="12" class="d-md-none mt-4">
-      <v-card variant="flat" class="pa-3">
+    <div class="mobile-quick mt-4">
+      <div class="card-surface pa-3">
         <div class="d-flex justify-center gap-2">
-          <v-btn
-            color="primary"
-            to="/create"
-            prepend-icon="mdi-pencil"
-            size="small"
-          >
+          <el-button type="primary" size="small" @click="$router.push('/create')">
+            <el-icon class="mr-1"><EditPen /></el-icon>
             写文章
-          </v-btn>
+          </el-button>
         </div>
-      </v-card>
-    </v-col>
-  </v-row>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -210,19 +212,74 @@ export default {
 </script>
 
 <style scoped>
-.markdown-body {
-  font-size: 0.95rem;
-  line-height: 1.6;
+.home-page {
+  padding-top: 16px;
 }
 
-.markdown-body :deep(h1),
-.markdown-body :deep(h2),
-.markdown-body :deep(h3) {
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
+.sidebar-col {
+  display: block;
 }
 
-.markdown-body :deep(p) {
-  margin: 0.5rem 0;
+.mobile-quick {
+  display: none;
+}
+
+.filter-bar {
+  padding: 12px;
+}
+
+.category-select {
+  width: 200px;
+  max-width: 200px;
+}
+
+.filter-spacer {
+  flex: 1;
+}
+
+.total-pages {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.pagination-bar {
+  padding: 12px;
+}
+
+.pagination-bar .el-pagination {
+  white-space: nowrap;
+}
+
+.announcement-title {
+  font-weight: 600;
+}
+
+.announcement-title .mr-1 {
+  margin-right: 4px;
+}
+
+.mr-1 {
+  margin-right: 4px;
+}
+
+.ml-1 {
+  margin-left: 4px;
+}
+
+/* Element Plus el-alert body uses padding for description, keep markdown margin clean */
+.announcement-alert :deep(.markdown-body) {
+  margin-top: 4px;
+}
+
+@media (max-width: 991px) {
+  .sidebar-col {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .mobile-quick {
+    display: block;
+  }
 }
 </style>

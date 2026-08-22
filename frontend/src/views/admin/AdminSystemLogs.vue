@@ -1,126 +1,120 @@
 <template>
-  <div class="admin-system-logs">
+  <div class="admin-system-logs page-container">
     <!-- 页面标题 -->
-    <div class="page-header mb-6">
-      <div class="d-flex align-center justify-space-between flex-wrap ga-4">
+    <div class="page-header">
+      <div class="header-row">
         <div>
-          <h1 class="text-h5 font-weight-bold mb-1">系统操作日志</h1>
-          <p class="text-body-2 text-medium-emphasis">查看用户和管理员的所有操作记录</p>
+          <h1 class="page-title">系统操作日志</h1>
+          <p class="page-desc">查看用户和管理员的所有操作记录</p>
         </div>
-        <div class="d-flex ga-3">
-          <v-btn
-            color="error"
-            variant="tonal"
-            @click="deleteOldLogs"
+        <div class="header-actions">
+          <el-button
+            type="danger"
+            plain
             :loading="deleting"
             :disabled="deleting"
+            @click="deleteOldLogs"
           >
-            <v-icon start>mdi-delete-sweep</v-icon>
+            <el-icon><Delete /></el-icon>
             删除90天前日志
-          </v-btn>
-          <v-btn
-            color="primary"
-            @click="refreshData"
+          </el-button>
+          <el-button
+            type="primary"
             :loading="loading"
+            @click="refreshData"
           >
-            <v-icon start>mdi-refresh</v-icon>
+            <el-icon><Refresh /></el-icon>
             刷新
-          </v-btn>
+          </el-button>
         </div>
       </div>
     </div>
 
     <!-- 筛选器 -->
-    <v-card class="mb-6">
-      <v-card-text>
-        <v-row>
-          <v-col cols="12" sm="6" md="4" lg="3">
-            <v-select
-              v-model="filter.module"
-              :items="modules"
-              label="筛选模块"
-              variant="outlined"
-              clearable
-              hint="按模块筛选"
-            >
-              <template v-slot:prepend-item>
-                <v-list-item
-                  @click="filter.module = ''"
-                  :title="'全部模块'"
-                ></v-list-item>
-              </template>
-            </v-select>
-          </v-col>
-          <v-col cols="12" sm="6" md="4" lg="3">
-            <v-text-field
-              v-model="filter.user_id"
-              label="用户ID筛选"
-              type="number"
-              variant="outlined"
-              clearable
-            ></v-text-field>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
+    <el-card class="mb-6" shadow="never">
+      <div class="filter-row">
+        <el-select
+          v-model="filter.module"
+          clearable
+          placeholder="筛选模块"
+          class="filter-module"
+        >
+          <el-option
+            v-for="m in allModules"
+            :key="m"
+            :label="m"
+            :value="m"
+          />
+        </el-select>
+        <el-input
+          v-model="filter.user_id"
+          type="number"
+          clearable
+          placeholder="用户ID筛选"
+          class="filter-user"
+        />
+      </div>
+    </el-card>
 
     <!-- 日志列表 -->
-    <v-card>
-      <v-progress-linear
-        v-if="loading"
-        indeterminate
-        color="primary"
-      ></v-progress-linear>
-
-      <v-data-table
-        :headers="headers"
-        :items="logs"
-        :loading="loading"
-        :items-per-page="20"
-        :options.sync="pagination"
-        :server-items-length="total"
+    <el-card shadow="never">
+      <el-table
+        v-loading="loading"
+        :data="logs"
         class="logs-table"
       >
-        <template v-slot:item.user="{ item }">
-          <div v-if="item.user">
-            <div class="font-weight-bold text-primary">{{ item.user.username || item.user.nickname || '用户' }}</div>
-            <div class="text-caption text-medium-emphasis">ID: {{ item.user_id }}</div>
-          </div>
-          <div v-else>
-            <div class="text-caption text-medium-emphasis">用户ID: {{ item.user_id }}</div>
-          </div>
-        </template>
+        <el-table-column prop="created_at" label="时间" sortable>
+          <template #default="{ row }">
+            {{ formatDate(row.created_at) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="用户" width="180">
+          <template #default="{ row }">
+            <div v-if="row.user">
+              <div class="user-name">{{ row.user.username || row.user.nickname || '用户' }}</div>
+              <div class="user-id">ID: {{ row.user_id }}</div>
+            </div>
+            <div v-else class="user-id">用户ID: {{ row.user_id }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="120">
+          <template #default="{ row }">
+            <el-tag :type="getActionType(row.action)" size="small">
+              {{ getActionText(row.action) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="模块" width="120">
+          <template #default="{ row }">
+            <el-tag type="info" size="small">
+              {{ getModuleText(row.module) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="details" label="详情" />
+        <el-table-column prop="ip" label="IP地址" width="140" />
+      </el-table>
 
-        <template v-slot:item.action="{ item }">
-          <v-chip
-            :color="getActionColor(item.action)"
-            size="small"
-          >
-            {{ getActionText(item.action) }}
-          </v-chip>
-        </template>
-
-        <template v-slot:item.module="{ item }">
-          <v-chip
-            color="blue-lighten-5"
-            text-color="blue-darken-2"
-            size="small"
-          >
-            {{ getModuleText(item.module) }}
-          </v-chip>
-        </template>
-
-        <template v-slot:item.created_at="{ item }">
-          {{ formatDate(item.created_at) }}
-        </template>
-      </v-data-table>
-    </v-card>
+      <div class="pagination-row">
+        <el-pagination
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.itemsPerPage"
+          :page-sizes="[10, 20, 50]"
+          :total="total"
+          layout="total, sizes, prev, pager, next, jumper"
+          @current-change="loadLogs"
+          @size-change="handleSizeChange"
+        />
+      </div>
+    </el-card>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
-import api from '../../api'
+import { ref, computed, onMounted } from 'vue'
+import { Delete, Refresh } from '@element-plus/icons-vue'
+import api from '@/api'
+import { success, error, confirm } from '@/utils/message'
 
 export default {
   name: 'AdminSystemLogs',
@@ -131,11 +125,6 @@ export default {
     const modules = ref([])
     const total = ref(0)
 
-    // FIXME-TEMPLATE: the template binds `:options.sync="pagination"` on v-data-table.
-    // This is a Vue2/Vuetify2 legacy pattern with no effect in Vuetify 3. Keep the
-    // pagination state here because `loadLogs` reads page/itemsPerPage from it, but the
-    // binding itself does not sync back. To wire real paging, update the template to
-    // use `v-model:options` (or `@update:options`) instead. Template kept unchanged.
     const pagination = ref({
       page: 1,
       itemsPerPage: 20,
@@ -148,14 +137,12 @@ export default {
       user_id: ''
     })
 
-    const headers = ref([
-      { title: '时间', key: 'created_at', sortable: true },
-      { title: '用户', key: 'user', sortable: false, width: 180 },
-      { title: '操作', key: 'action', sortable: false, width: 120 },
-      { title: '模块', key: 'module', sortable: false, width: 120 },
-      { title: '详情', key: 'details', sortable: false },
-      { title: 'IP地址', key: 'ip', sortable: false, width: 140 }
-    ])
+    const allModules = computed(() => {
+      if (modules.value.length > 0) {
+        return modules.value.map((m) => getModuleText(m))
+      }
+      return Object.values(moduleMap)
+    })
 
     const moduleMap = {
       'user': '用户',
@@ -188,21 +175,21 @@ export default {
       'reject': '拒绝'
     }
 
-    const actionColorMap = {
-      'create': 'green',
-      'update': 'blue',
-      'delete': 'red',
-      'login': 'purple',
-      'logout': 'grey',
-      'send': 'cyan',
-      'grant': 'green-darken-2',
-      'revoke': 'orange',
-      'ban': 'red-darken-2',
-      'unban': 'green-lighten-2',
-      'pin': 'amber',
-      'unpin': 'grey',
-      'approve': 'green-lighten-2',
-      'reject': 'red-lighten-2'
+    const actionTypeMap = {
+      'create': 'success',
+      'update': 'primary',
+      'delete': 'danger',
+      'login': 'warning',
+      'logout': 'info',
+      'send': 'primary',
+      'grant': 'success',
+      'revoke': 'warning',
+      'ban': 'danger',
+      'unban': 'success',
+      'pin': 'warning',
+      'unpin': 'info',
+      'approve': 'success',
+      'reject': 'danger'
     }
 
     const formatDate = (dateString) => {
@@ -226,8 +213,8 @@ export default {
       return actionMap[action] || action
     }
 
-    const getActionColor = (action) => {
-      return actionColorMap[action] || 'grey'
+    const getActionType = (action) => {
+      return actionTypeMap[action] || 'info'
     }
 
     const loadLogs = async () => {
@@ -246,34 +233,44 @@ export default {
         const response = await api.get('/system-logs', { params })
         logs.value = response.data.logs
         total.value = response.data.total
-      } catch (error) {
-        console.error('加载日志失败:', error)
+      } catch (err) {
+        console.error('加载日志失败:', err)
       } finally {
         loading.value = false
       }
+    }
+
+    const handleSizeChange = () => {
+      pagination.value.page = 1
+      loadLogs()
     }
 
     const loadModules = async () => {
       try {
         const response = await api.get('/system-logs/modules')
         modules.value = response.data.modules
-      } catch (error) {
-        console.error('加载模块列表失败:', error)
+      } catch (err) {
+        console.error('加载模块列表失败:', err)
       }
     }
 
     const deleteOldLogs = async () => {
-      if (!confirm('确定要删除90天前的所有日志吗？此操作不可恢复。')) {
-        return
+      let confirmed
+      try {
+        confirmed = await confirm('确定要删除90天前的所有日志吗？此操作不可恢复。')
+      } catch (err) {
+        confirmed = null
       }
+      if (!confirmed) return
+
       deleting.value = true
       try {
         await api.delete('/system-logs/old', { params: { days: 90 } })
-        alert('旧日志删除成功')
+        success('旧日志删除成功')
         await loadLogs()
-      } catch (error) {
-        console.error('删除旧日志失败:', error)
-        alert('删除旧日志失败')
+      } catch (err) {
+        console.error('删除旧日志失败:', err)
+        error('删除旧日志失败')
       } finally {
         deleting.value = false
       }
@@ -298,13 +295,14 @@ export default {
       total,
       pagination,
       filter,
-      headers,
+      allModules,
       formatDate,
       getModuleText,
       getActionText,
-      getActionColor,
+      getActionType,
       deleteOldLogs,
-      refreshData
+      refreshData,
+      handleSizeChange
     }
   }
 }
@@ -319,13 +317,67 @@ export default {
   margin-bottom: 24px;
 }
 
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #303133;
+}
+
+.page-desc {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #909399;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.filter-module {
+  width: 200px;
+}
+
+.filter-user {
+  width: 200px;
+}
+
 .logs-table {
   width: 100%;
 }
 
-.text-ellipsis {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.user-name {
+  font-weight: 600;
+  color: #409eff;
+}
+
+.user-id {
+  font-size: 12px;
+  color: #909399;
+}
+
+.pagination-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.mb-6 {
+  margin-bottom: 24px;
 }
 </style>

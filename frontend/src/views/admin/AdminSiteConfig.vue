@@ -1,122 +1,116 @@
 <template>
-  <v-container fluid class="pa-4 pa-md-6">
+  <div class="pa-4 pa-md-6">
     <!-- 网站配置表单 -->
-    <v-card variant="flat" rounded="lg">
-      <v-card-title class="pb-2">
-        <v-icon start size="20">mdi-globe</v-icon>
-        网站配置
-      </v-card-title>
+    <el-card shadow="never" class="page-container">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="20" class="card-header-icon"><Globe /></el-icon>
+          <span>网站配置</span>
+        </div>
+      </template>
 
-      <v-card-text>
-        <v-form ref="siteForm" v-model="formValid">
-          <!-- 网站基本配置 -->
-          <div class="text-subtitle-2 font-weight-bold mb-3">基本配置</div>
-          <v-text-field
+      <el-form ref="siteForm" :model="siteConfigForm" :rules="rules" label-position="top">
+        <!-- 网站基本配置 -->
+        <div class="form-section-title">基本配置</div>
+        <el-form-item label="网站标题" prop="siteTitle" class="mb-4">
+          <el-input
             v-model="siteConfigForm.siteTitle"
-            label="网站标题"
             placeholder="校园论坛 - 分享与交流"
-            variant="outlined"
-            density="compact"
-            :rules="[rules.required]"
-            prepend-inner-icon="mdi-web"
+            :prefix-icon="Web"
             clearable
-            counter="100"
+            show-word-limit
             maxlength="100"
-            class="mb-4"
           />
+        </el-form-item>
 
-          <v-divider class="my-4" />
+        <el-divider class="my-4" />
 
-          <!-- 备案信息配置 -->
-          <div class="text-subtitle-2 font-weight-bold mb-2">备案信息</div>
-          <div class="text-caption text-medium-emphasis mb-3">
-            以下字段可选，不填写则不在页面底部显示
-          </div>
-          <v-row dense>
-            <v-col cols="12" sm="6">
-              <v-text-field
+        <!-- 备案信息配置 -->
+        <div class="form-section-title">备案信息</div>
+        <div class="form-section-desc mb-3">以下字段可选，不填写则不在页面底部显示</div>
+        <el-row :gutter="16">
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="ICP备案号" prop="icpNumber">
+              <el-input
                 v-model="siteConfigForm.icpNumber"
-                label="ICP备案号"
                 placeholder="京ICP备12345678号"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-shield-check"
+                :prefix-icon="CircleCheck"
                 clearable
-                counter="50"
+                show-word-limit
                 maxlength="50"
               />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-text-field
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12">
+            <el-form-item label="公安联网备案号" prop="publicSecurityNumber">
+              <el-input
                 v-model="siteConfigForm.publicSecurityNumber"
-                label="公安联网备案号"
                 placeholder="京公网安备 12345678901234567890号"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-police-badge"
+                :prefix-icon="UserFilled"
                 clearable
-                counter="50"
+                show-word-limit
                 maxlength="50"
               />
-            </v-col>
-          </v-row>
+            </el-form-item>
+          </el-col>
+        </el-row>
 
-          <v-alert
-            v-if="siteConfigForm.siteTitle"
-            type="success"
-            variant="tonal"
-            density="compact"
-            class="mt-4"
-            icon="mdi-check-circle"
+        <el-alert
+          v-if="siteConfigForm.siteTitle"
+          type="success"
+          :closable="false"
+          class="mt-4"
+          :icon="CircleCheck"
+        >
+          当前网站标题：<strong>{{ siteConfigForm.siteTitle }}</strong>
+        </el-alert>
+      </el-form>
+
+      <template #footer>
+        <div class="form-actions">
+          <el-button
+            type="warning"
+            plain
+            @click="resetForm"
+            :disabled="saving"
           >
-            当前网站标题：<strong>{{ siteConfigForm.siteTitle }}</strong>
-          </v-alert>
-        </v-form>
-      </v-card-text>
-
-      <v-card-actions class="pa-4">
-        <v-btn
-          color="warning"
-          variant="outlined"
-          @click="resetForm"
-          :disabled="saving"
-        >
-          <v-icon start>mdi-refresh</v-icon>
-          重置
-        </v-btn>
-        <v-spacer />
-        <v-btn
-          color="primary"
-          variant="flat"
-          @click="saveSiteConfig"
-          :loading="saving"
-          :disabled="!formValid"
-        >
-          <v-icon start>mdi-content-save</v-icon>
-          保存配置
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-container>
+            <el-icon class="mr-1"><Refresh /></el-icon>
+            重置
+          </el-button>
+          <el-button
+            type="primary"
+            @click="saveSiteConfig"
+            :loading="saving"
+            :disabled="!formValid"
+          >
+            <el-icon class="mr-1"><Check /></el-icon>
+            保存配置
+          </el-button>
+        </div>
+      </template>
+    </el-card>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { Globe, Web, CircleCheck, UserFilled, Refresh, Check } from '@element-plus/icons-vue'
 import { adminSiteConfigApi } from '../../api/admin'
-import { success, error } from '../../utils/modal'
+import { success, error } from '@/utils/message'
 
-const siteConfigForm = ref({
+const siteConfigForm = reactive({
   siteTitle: '',
   icpNumber: '',
   publicSecurityNumber: ''
 })
 
 const siteForm = ref(null)
-const formValid = ref(false)
 const saving = ref(false)
 
 const rules = {
-  required: v => !!v || '此字段为必填项'
+  siteTitle: [
+    { required: true, message: '此字段为必填项', trigger: 'blur' }
+  ]
 }
 
 const originalConfig = ref({
@@ -125,14 +119,17 @@ const originalConfig = ref({
   publicSecurityNumber: ''
 })
 
+// 表单整体校验结果，用于控制保存按钮
+const formValid = computed(() => !!(siteConfigForm.siteTitle && siteConfigForm.siteTitle.trim()))
+
 const loadSiteConfig = async () => {
   try {
     const response = await adminSiteConfigApi.getConfig()
-    siteConfigForm.value.siteTitle = response.data.site_title || ''
-    siteConfigForm.value.icpNumber = response.data.icp_number || ''
-    siteConfigForm.value.publicSecurityNumber = response.data.public_security_number || ''
+    siteConfigForm.siteTitle = response.data.site_title || ''
+    siteConfigForm.icpNumber = response.data.icp_number || ''
+    siteConfigForm.publicSecurityNumber = response.data.public_security_number || ''
     // 保存原始配置用于重置
-    originalConfig.value = { ...siteConfigForm.value }
+    originalConfig.value = { ...siteConfigForm }
   } catch (err) {
     console.error('加载网站配置失败', err)
     error('加载网站配置失败')
@@ -140,22 +137,28 @@ const loadSiteConfig = async () => {
 }
 
 const resetForm = () => {
-  siteConfigForm.value = { ...originalConfig.value }
+  siteConfigForm.siteTitle = originalConfig.value.siteTitle
+  siteConfigForm.icpNumber = originalConfig.value.icpNumber
+  siteConfigForm.publicSecurityNumber = originalConfig.value.publicSecurityNumber
 }
 
 const saveSiteConfig = async () => {
+  if (siteForm.value) {
+    const valid = await siteForm.value.validate().catch(() => false)
+    if (!valid) return
+  }
   saving.value = true
   try {
     await adminSiteConfigApi.updateConfig({
-      site_title: siteConfigForm.value.siteTitle,
-      icp_number: siteConfigForm.value.icpNumber,
-      public_security_number: siteConfigForm.value.publicSecurityNumber
+      site_title: siteConfigForm.siteTitle,
+      icp_number: siteConfigForm.icpNumber,
+      public_security_number: siteConfigForm.publicSecurityNumber
     })
     success('网站配置保存成功')
-    if (siteConfigForm.value.siteTitle) {
-      document.title = siteConfigForm.value.siteTitle
+    if (siteConfigForm.siteTitle) {
+      document.title = siteConfigForm.siteTitle
       window.dispatchEvent(new CustomEvent('site-title-updated', {
-        detail: siteConfigForm.value.siteTitle
+        detail: siteConfigForm.siteTitle
       }))
     }
   } catch (err) {
@@ -170,3 +173,51 @@ onMounted(() => {
   loadSiteConfig()
 })
 </script>
+
+<style scoped>
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.card-header-icon {
+  color: var(--el-color-primary);
+}
+
+.form-section-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.form-section-desc {
+  font-size: 0.8rem;
+  color: var(--el-text-color-secondary);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.mr-1 {
+  margin-right: 4px;
+}
+
+.mb-3 {
+  margin-bottom: 12px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.mt-4 {
+  margin-top: 16px;
+}
+</style>

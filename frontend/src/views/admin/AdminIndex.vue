@@ -9,7 +9,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import OverviewPanel from './OverviewPanel.vue'
-import { adminStatsApi } from '../../api/admin'
+import { adminStatsApi } from '@/api/admin'
 
 const statistics = ref({
   user_count: 0,

@@ -1,201 +1,272 @@
 <template>
-  <v-app v-if="isInitialized && isAdmin">
-    <!-- 侧边栏导航 -->
-    <v-navigation-drawer
-      v-model="drawerOpen"
-      :rail="sidebarCollapsed && !isMobile"
-      :permanent="!isMobile"
-      :temporary="isMobile"
-      :width="260"
-      color="primary"
-      class="admin-drawer"
+  <!-- 管理后台外壳 -->
+  <el-container v-if="isInitialized && isAdmin" class="admin-shell">
+    <!-- 侧边栏 -->
+    <el-aside
+      :width="(sidebarCollapsed && !isMobile ? 64 : 260) + 'px'"
+      class="admin-aside"
     >
-      <!-- Logo 区域 -->
-      <div class="drawer-header pa-4">
-        <div class="d-flex align-center">
-          <v-icon size="32" color="white">mdi-shield-crown</v-icon>
-          <transition name="fade">
-            <span v-if="!sidebarCollapsed" class="ml-3 text-h6 font-weight-bold text-white">
-              校园论坛
+      <div class="aside-inner">
+        <!-- Logo 区域 -->
+        <div class="drawer-header">
+          <div class="d-flex align-center">
+            <el-icon :size="30" class="logo-icon" color="#fff">
+              <Medal />
+            </el-icon>
+            <span
+              v-if="!sidebarCollapsed"
+              class="logo-title"
+            >校园论坛</span>
+          </div>
+          <el-button
+            v-if="!isMobile"
+            text
+            circle
+            class="collapse-btn"
+            :aria-label="sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'"
+            @click="sidebarCollapsed = !sidebarCollapsed"
+          >
+            <el-icon :size="16" color="#fff">
+              <ArrowLeft v-if="!sidebarCollapsed" />
+              <ArrowRight v-else />
+            </el-icon>
+          </el-button>
+        </div>
+
+        <el-divider class="aside-divider" />
+
+        <!-- 导航菜单 -->
+        <el-menu
+          :collapse="sidebarCollapsed && !isMobile"
+          :default-active="activeMenu"
+          background-color="transparent"
+          text-color="#fff"
+          active-text-color="#fff"
+          class="admin-menu"
+          :collapse-transition="false"
+          router
+        >
+          <el-menu-item
+            v-for="item in adminItems"
+            :key="item.route"
+            :index="'/' + item.path"
+          >
+            <el-icon>
+              <component :is="item.icon" />
+            </el-icon>
+            <template #title>
+              <span class="menu-title">{{ item.title }}</span>
+              <el-badge
+                v-if="item.badge && item.badge() > 0"
+                :value="item.badge()"
+                :max="99"
+                type="danger"
+                class="menu-badge"
+              />
+            </template>
+          </el-menu-item>
+        </el-menu>
+
+        <!-- 底部：版本信息 + 返回首页 -->
+        <div class="aside-footer">
+          <el-divider class="aside-divider" />
+          <div v-if="!sidebarCollapsed || isMobile" class="version-info">
+            <div class="d-flex align-center mb-1">
+              <el-icon :size="14" class="mr-1"><InfoFilled /></el-icon>
+              <span class="version-label">版本信息</span>
+            </div>
+            <div class="version-text">前端: {{ frontendVersion }}</div>
+            <div class="version-text">后端: {{ backendVersion }}</div>
+          </div>
+          <el-menu
+            :collapse="sidebarCollapsed && !isMobile"
+            background-color="transparent"
+            text-color="#fff"
+            active-text-color="#fff"
+            class="admin-menu footer-menu"
+            :collapse-transition="false"
+            router
+          >
+            <el-menu-item index="/">
+              <el-icon>
+                <HomeFilled />
+              </el-icon>
+              <template #title>
+                <span class="menu-title">返回首页</span>
+              </template>
+            </el-menu-item>
+          </el-menu>
+        </div>
+      </div>
+    </el-aside>
+
+    <el-container class="admin-body">
+      <!-- 顶部栏 -->
+      <el-header height="64px" class="admin-header">
+        <el-button
+          class="d-lg-none menu-toggle"
+          text
+          @click="drawerOpen = !drawerOpen"
+        >
+          <el-icon :size="20"><Expand /></el-icon>
+        </el-button>
+
+        <el-breadcrumb separator="/" class="admin-breadcrumb">
+          <el-breadcrumb-item
+            v-for="(crumb, index) in breadcrumbs"
+            :key="index"
+            :to="crumb.to"
+          >
+            {{ crumb.title }}
+          </el-breadcrumb-item>
+        </el-breadcrumb>
+
+        <div class="flex-spacer" />
+
+        <!-- 搜索框 -->
+        <el-input
+          v-model="searchQuery"
+          placeholder="搜索..."
+          clearable
+          class="admin-search d-none d-sm-block"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+
+        <!-- 通知按钮 -->
+        <el-badge
+          :value="notificationCount"
+          :max="99"
+          type="danger"
+          class="notification-badge"
+        >
+          <el-button text circle class="icon-btn">
+            <el-icon :size="18"><Bell /></el-icon>
+          </el-button>
+        </el-badge>
+
+        <!-- 用户菜单 -->
+        <el-dropdown trigger="click" class="admin-user-dropdown">
+          <div class="user-trigger">
+            <el-avatar :size="32" class="user-avatar">
+              <el-image
+                v-if="currentUser?.avatar"
+                :src="currentUser.avatar"
+                fit="cover"
+              />
+              <template v-else>
+                {{ currentUser?.display_name?.[0] || currentUser?.username?.[0] || 'A' }}
+              </template>
+            </el-avatar>
+            <span class="user-name d-none d-sm-inline">
+              {{ currentUser?.display_name || currentUser?.username }}
             </span>
+            <el-icon :size="14" class="user-caret">
+              <ArrowDown />
+            </el-icon>
+          </div>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="router.push('/profile')">
+                <el-icon><User /></el-icon>个人资料
+              </el-dropdown-item>
+              <el-dropdown-item divided @click="handleLogout">
+                <el-icon><SwitchButton /></el-icon>退出登录
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </el-header>
+
+      <!-- 主要内容区域 -->
+      <el-main class="admin-main">
+        <div class="admin-container">
+          <transition name="fade-slide" mode="out-in">
+            <router-view />
           </transition>
         </div>
-        <v-btn
-          icon
-          size="small"
-          variant="text"
-          @click="sidebarCollapsed = !sidebarCollapsed"
-          color="white"
-          class="collapse-btn"
-        >
-          <v-icon>{{ sidebarCollapsed ? 'mdi-chevron-right' : 'mdi-chevron-left' }}</v-icon>
-        </v-btn>
-      </div>
-
-      <v-divider color="white" opacity="0.2" />
-
-      <!-- 导航菜单 -->
-      <v-list nav density="compact" class="pa-2">
-        <v-list-item
-          v-for="item in adminItems"
-          :key="item.route"
-          :to="{ name: item.route }"
-          color="white"
-          rounded="lg"
-          class="mb-1 nav-item"
-          active-class="nav-item-active"
-        >
-          <template v-slot:prepend>
-            <v-icon :size="24">{{ item.icon }}</v-icon>
-          </template>
-          <v-list-item-title class="font-weight-medium">{{ item.title }}</v-list-item-title>
-          
-          <template v-slot:append v-if="item.badge && item.badge() > 0">
-            <v-badge
-              :content="item.badge()"
-              color="error"
-              inline
-            />
-          </template>
-        </v-list-item>
-      </v-list>
-
-      <template v-slot:append>
-        <v-divider color="white" opacity="0.2" />
-        <!-- 版本信息 -->
-        <div class="version-info pa-3">
-          <div class="d-flex align-center mb-1">
-            <v-icon size="14" color="white" class="mr-1">mdi-information</v-icon>
-            <span class="text-caption text-white text-truncate">版本信息</span>
-          </div>
-          <div class="text-caption text-white opacity-70">前端: {{ frontendVersion }}</div>
-          <div class="text-caption text-white opacity-70">后端: {{ backendVersion }}</div>
-        </div>
-        <v-list nav density="compact" class="pa-2">
-          <v-list-item
-            to="/"
-            color="white"
-            rounded="lg"
-            class="nav-item"
-          >
-            <template v-slot:prepend>
-              <v-icon size="24">mdi-home</v-icon>
-            </template>
-            <v-list-item-title class="font-weight-medium">返回首页</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </template>
-    </v-navigation-drawer>
-
-    <!-- 顶部栏 -->
-    <v-app-bar flat color="white" border="b" height="64" class="admin-header">
-      <v-app-bar-nav-icon @click="drawerOpen = !drawerOpen" class="d-lg-none" />
-      
-      <v-breadcrumbs :items="breadcrumbs" class="pa-0">
-        <template v-slot:divider>
-          <v-icon size="small">mdi-chevron-right</v-icon>
-        </template>
-      </v-breadcrumbs>
-
-      <v-spacer />
-
-      <!-- 搜索框 -->
-      <v-text-field
-        v-model="searchQuery"
-        placeholder="搜索..."
-        variant="outlined"
-        density="compact"
-        prepend-inner-icon="mdi-magnify"
-        hide-details
-        style="max-width: 300px;"
-        class="mx-4 d-none d-sm-block"
-      />
-
-      <!-- 通知按钮 -->
-      <v-btn icon variant="text" size="small" class="mx-1">
-        <v-badge :content="notificationCount" color="error" floating>
-          <v-icon>mdi-bell-outline</v-icon>
-        </v-badge>
-      </v-btn>
-
-      <!-- 用户菜单 -->
-      <v-menu offset-y>
-        <template v-slot:activator="{ props }">
-          <v-btn
-            v-bind="props"
-            variant="text"
-            class="ml-2"
-          >
-            <v-avatar size="32" color="primary">
-              <v-img v-if="currentUser?.avatar" :src="currentUser.avatar" />
-              <span v-else class="text-white text-body-2">
-                {{ currentUser?.display_name?.[0] || currentUser?.username?.[0] || 'A' }}
-              </span>
-            </v-avatar>
-            <span class="ml-2 d-none d-sm-inline">{{ currentUser?.display_name || currentUser?.username }}</span>
-            <v-icon size="small" class="ml-1">mdi-chevron-down</v-icon>
-          </v-btn>
-        </template>
-        <v-list density="compact" min-width="200">
-          <v-list-item to="/profile" prepend-icon="mdi-account">
-            <v-list-item-title>个人资料</v-list-item-title>
-          </v-list-item>
-          <v-divider />
-          <v-list-item @click="handleLogout" prepend-icon="mdi-logout">
-            <v-list-item-title>退出登录</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-menu>
-    </v-app-bar>
-
-    <!-- 主要内容区域 -->
-    <v-main class="admin-main">
-      <v-container fluid class="pa-6">
-        <transition name="fade-slide" mode="out-in">
-          <router-view />
-        </transition>
-      </v-container>
-    </v-main>
+      </el-main>
+    </el-container>
 
     <!-- 移动端底部导航 -->
-    <v-bottom-navigation grow color="primary" class="d-lg-none admin-bottom-nav">
-      <v-btn
+    <div class="bottom-navigation d-lg-none">
+      <el-button
         v-for="item in bottomNavItems"
         :key="item.route"
-        :to="{ name: item.route }"
+        text
+        class="bottom-nav-item"
+        @click="router.push({ name: item.route })"
       >
-        <v-icon>{{ item.icon }}</v-icon>
-        <span class="text-caption">{{ item.title }}</span>
-      </v-btn>
-    </v-bottom-navigation>
-  </v-app>
+        <el-icon :size="20">
+          <component :is="item.icon" />
+        </el-icon>
+        <span class="bottom-nav-title">{{ item.title }}</span>
+      </el-button>
+    </div>
+  </el-container>
 
   <!-- 权限不足 -->
-  <v-container v-else-if="isInitialized && !isAdmin" fluid class="fill-height">
-    <v-row justify="center" align="center">
-      <v-col cols="12" sm="8" md="6" lg="4">
-        <v-card class="text-center pa-8" elevation="2">
-          <v-icon size="80" color="error" class="mb-4">mdi-shield-alert</v-icon>
-          <div class="text-h5 font-weight-bold mb-2">权限不足</div>
-          <div class="text-body-2 text-medium-emphasis mb-6">您没有访问管理后台的权限</div>
-          <v-btn color="primary" to="/" prepend-icon="mdi-home">返回首页</v-btn>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
+  <el-container v-else-if="isInitialized && !isAdmin" class="fill-height">
+    <el-row justify="center" align="middle" class="fill-height">
+      <el-col :xs="22" :sm="16" :md="12" :lg="8">
+        <el-card class="text-center">
+          <el-icon :size="80" color="#f56c6c" class="mb-4">
+            <WarningFilled />
+          </el-icon>
+          <div class="forbidden-title">权限不足</div>
+          <div class="forbidden-desc">您没有访问管理后台的权限</div>
+          <el-button type="primary" @click="router.push('/')">
+            <el-icon class="mr-1"><HomeFilled /></el-icon>返回首页
+          </el-button>
+        </el-card>
+      </el-col>
+    </el-row>
+  </el-container>
 
   <!-- 加载状态 -->
-  <v-container v-else fluid class="fill-height">
-    <v-row justify="center" align="center">
-      <v-progress-circular indeterminate color="primary" size="48" />
-    </v-row>
-  </v-container>
+  <el-container v-else class="fill-height">
+    <el-row justify="center" align="middle" class="fill-height">
+      <el-icon class="is-loading" :size="40" color="#409eff">
+        <Loading />
+      </el-icon>
+    </el-row>
+  </el-container>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  Bell,
+  Box,
+  ChatLineRound,
+  Delete,
+  Document,
+  DocumentCopy,
+  Expand,
+  Flag,
+  Grid,
+  HomeFilled,
+  InfoFilled,
+  Loading,
+  Medal,
+  Message,
+  Monitor,
+  Promotion,
+  Search,
+  Setting,
+  SwitchButton,
+  TrendCharts,
+  User,
+  UserFilled,
+  WarningFilled
+} from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -213,29 +284,34 @@ const backendVersion = ref('加载中...')
 const frontendVersion = ref(typeof __FRONTEND_VERSION__ !== 'undefined' ? __FRONTEND_VERSION__ : 'unknown')
 
 const adminItems = [
-  { route: 'AdminIndex', title: '数据概览', icon: 'mdi-view-dashboard' },
-  { route: 'AdminStatistics', title: '数据统计', icon: 'mdi-chart-box' },
-  { route: 'AdminUsers', title: '用户管理', icon: 'mdi-account-group', badge: null },
-  { route: 'AdminArticles', title: '文章管理', icon: 'mdi-file-document' },
-  { route: 'AdminComments', title: '评论管理', icon: 'mdi-comment-text' },
-  { route: 'AdminCategories', title: '分区管理', icon: 'mdi-shape' },
-  { route: 'AdminTitles', title: '头衔管理', icon: 'mdi-medal' },
-  { route: 'AdminSidebar', title: '侧边栏', icon: 'mdi-web' },
-  { route: 'AdminDeletions', title: '删除申请', icon: 'mdi-delete', badge: () => deletionCount.value },
-  { route: 'AdminReports', title: '举报管理', icon: 'mdi-flag' },
-  { route: 'AdminAnnouncement', title: '公告管理', icon: 'mdi-bullhorn' },
-  { route: 'AdminUserNotifications', title: '用户通知', icon: 'mdi-bell' },
-  { route: 'AdminSystemLogs', title: '系统日志', icon: 'mdi-text-box-multiple' },
-  { route: 'AdminSiteConfig', title: '网站配置', icon: 'mdi-cog' },
-  { route: 'AdminSMTPConfig', title: '邮件配置', icon: 'mdi-email' },
+  { route: 'AdminIndex', path: 'index', title: '数据概览', icon: 'Grid' },
+  { route: 'AdminStatistics', path: 'statistics', title: '数据统计', icon: 'TrendCharts' },
+  { route: 'AdminUsers', path: 'users', title: '用户管理', icon: 'UserFilled', badge: null },
+  { route: 'AdminArticles', path: 'articles', title: '文章管理', icon: 'Document' },
+  { route: 'AdminComments', path: 'comments', title: '评论管理', icon: 'ChatLineRound' },
+  { route: 'AdminCategories', path: 'categories', title: '分区管理', icon: 'Box' },
+  { route: 'AdminTitles', path: 'titles', title: '头衔管理', icon: 'Medal' },
+  { route: 'AdminSidebar', path: 'sidebar', title: '侧边栏', icon: 'Monitor' },
+  { route: 'AdminDeletions', path: 'deletions', title: '删除申请', icon: 'Delete', badge: () => deletionCount.value },
+  { route: 'AdminReports', path: 'reports', title: '举报管理', icon: 'Flag' },
+  { route: 'AdminAnnouncement', path: 'announcement', title: '公告管理', icon: 'Promotion' },
+  { route: 'AdminUserNotifications', path: 'notifications', title: '用户通知', icon: 'Bell' },
+  { route: 'AdminSystemLogs', path: 'system-logs', title: '系统日志', icon: 'DocumentCopy' },
+  { route: 'AdminSiteConfig', path: 'siteconfig', title: '网站配置', icon: 'Setting' },
+  { route: 'AdminSMTPConfig', path: 'smtpconfig', title: '邮件配置', icon: 'Message' },
 ]
 
 const bottomNavItems = [
-  { route: 'AdminIndex', title: '概览', icon: 'mdi-view-dashboard' },
-  { route: 'AdminUsers', title: '用户', icon: 'mdi-account-group' },
-  { route: 'AdminArticles', title: '文章', icon: 'mdi-file-document' },
-  { route: 'AdminDeletions', title: '删除', icon: 'mdi-delete' },
+  { route: 'AdminIndex', title: '概览', icon: 'Grid' },
+  { route: 'AdminUsers', title: '用户', icon: 'UserFilled' },
+  { route: 'AdminArticles', title: '文章', icon: 'Document' },
+  { route: 'AdminDeletions', title: '删除', icon: 'Delete' },
 ]
+
+const activeMenu = computed(() => {
+  const item = adminItems.find(i => i.route === route.name)
+  return item ? '/' + item.path : ''
+})
 
 const breadcrumbs = computed(() => {
   const crumbs = [{ title: '首页', to: { name: 'AdminIndex' }, disabled: false }]
@@ -267,7 +343,7 @@ const pageTitles = {
 const checkMobile = () => {
   const wasMobile = isMobile.value
   isMobile.value = window.innerWidth < 1024
-  
+
   if (isMobile.value) {
     // 移动端：默认关闭侧边栏
     drawerOpen.value = false
@@ -344,9 +420,20 @@ watch(() => route.path, loadDeletionCount)
 </script>
 
 <style scoped>
-.admin-drawer {
-  border: none;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+.admin-shell {
+  min-height: 100vh;
+}
+
+.admin-aside {
+  background: #409eff;
+  transition: width 0.2s;
+  overflow: hidden;
+}
+
+.aside-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 
 .drawer-header {
@@ -354,6 +441,18 @@ watch(() => route.path, loadDeletionCount)
   align-items: center;
   justify-content: space-between;
   min-height: 64px;
+  padding: 0 16px;
+}
+
+.logo-icon {
+  margin-right: 6px;
+}
+
+.logo-title {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .collapse-btn {
@@ -365,26 +464,41 @@ watch(() => route.path, loadDeletionCount)
   opacity: 1;
 }
 
-.nav-item {
-  transition: all 0.2s;
-  margin-bottom: 4px;
+.aside-divider {
+  border-color: rgba(255, 255, 255, 0.2);
+  margin: 8px 0;
 }
 
-.nav-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+.admin-menu {
+  border-right: none;
+  flex: 1;
+  overflow-y: auto;
 }
 
-.nav-item-active {
+.admin-menu .el-menu-item {
+  border-radius: 8px;
+  margin: 0 8px 4px;
+}
+
+.admin-menu .el-menu-item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.admin-menu .el-menu-item.is-active {
   background: rgba(255, 255, 255, 0.2) !important;
 }
 
-.admin-header {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+.menu-title {
+  font-weight: 500;
 }
 
-.admin-main {
-  background: #f5f5f5;
-  min-height: 100vh;
+.menu-badge {
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.aside-footer {
+  flex-shrink: 0;
 }
 
 .version-info {
@@ -393,13 +507,157 @@ watch(() => route.path, loadDeletionCount)
   background: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   margin: 8px;
+  padding: 10px 12px;
 }
 
-.admin-bottom-nav {
+.version-label {
+  color: #fff;
+  font-size: 0.75rem;
+}
+
+.version-text {
+  color: #fff;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footer-menu {
+  flex: none;
+}
+
+.admin-body {
+  min-width: 0;
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-bottom: 1px solid #ebeef5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 0 20px;
+}
+
+.menu-toggle {
+  margin-right: 12px;
+}
+
+.admin-breadcrumb {
+  font-size: 14px;
+}
+
+.flex-spacer {
+  flex: 1;
+}
+
+.admin-search {
+  max-width: 300px;
+  margin: 0 16px;
+}
+
+.notification-badge {
+  margin-right: 8px;
+}
+
+.icon-btn {
+  color: #606266;
+}
+
+.admin-user-dropdown {
+  cursor: pointer;
+}
+
+.user-trigger {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.user-trigger:hover {
+  background: #f5f7fa;
+}
+
+.user-avatar {
+  background: #409eff;
+}
+
+.user-name {
+  margin-left: 8px;
+  color: #303133;
+  font-size: 14px;
+}
+
+.user-caret {
+  margin-left: 4px;
+  color: #909399;
+}
+
+.admin-main {
+  background: #f5f5f5;
+  min-height: calc(100vh - 64px);
+  padding: 24px;
+}
+
+/* 移动端底部导航 */
+.bottom-navigation {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-around;
+  background: #fff;
+  border-top: 1px solid #ebeef5;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  height: 56px;
+  color: #606266;
+}
+
+.bottom-nav-title {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.fill-height {
+  min-height: 100vh;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.forbidden-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #303133;
+}
+
+.forbidden-desc {
+  font-size: 14px;
+  color: #909399;
+  margin-bottom: 24px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.mr-1 {
+  margin-right: 4px;
+}
+
+.mb-1 {
+  margin-bottom: 4px;
 }
 
 /* 过渡动画 */
@@ -418,19 +676,12 @@ watch(() => route.path, loadDeletionCount)
   transform: translateX(-20px);
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-@media (max-width: 1024px) {
+@media (max-width: 991px) {
+  .bottom-navigation {
+    display: flex;
+  }
   .admin-main {
-    padding-bottom: 56px !important;
+    padding-bottom: 72px !important;
   }
 }
 </style>

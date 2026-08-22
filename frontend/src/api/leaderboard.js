@@ -1,4 +1,4 @@
-import api from './index'
+import api from './http'
 
 // 排行榜与徽章API
 export const leaderboardApi = {

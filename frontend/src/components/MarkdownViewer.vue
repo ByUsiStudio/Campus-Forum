@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, nextTick, ref } from 'vue'
+import { computed } from 'vue'
 import MarkdownIt from 'markdown-it'
 import anchor from 'markdown-it-anchor'
 import container from 'markdown-it-container'
@@ -69,17 +69,17 @@ const defaultLinkRenderer = md.renderer.rules.link_open || function(tokens, idx,
 md.renderer.rules.link_open = function(tokens, idx, options, env, self) {
   const token = tokens[idx]
   const hrefIndex = token.attrIndex('href')
-  
+
   if (hrefIndex >= 0) {
     const href = token.attrs[hrefIndex][1]
-    
+
     // 判断是否为外链
     const isExternal = href && (
       href.startsWith('http://') ||
       href.startsWith('https://') ||
       href.startsWith('ftp://')
     )
-    
+
     // 判断是否为本站链接
     const isInternal = href && (
       href.startsWith('/') ||
@@ -88,14 +88,14 @@ md.renderer.rules.link_open = function(tokens, idx, options, env, self) {
       href.startsWith('./') ||
       href.startsWith('../')
     )
-    
+
     // 如果是外链且没有 target 属性，添加 target="_blank"
     if (isExternal && !isInternal) {
       const targetIndex = token.attrIndex('target')
       if (targetIndex < 0) {
         token.attrPush(['target', '_blank'])
       }
-      
+
       // 添加 rel 属性以提高安全性
       const relIndex = token.attrIndex('rel')
       if (relIndex < 0) {
@@ -103,7 +103,7 @@ md.renderer.rules.link_open = function(tokens, idx, options, env, self) {
       }
     }
   }
-  
+
   return defaultLinkRenderer(tokens, idx, options, env, self)
 }
 
@@ -166,15 +166,15 @@ md.use(taskLists, { enabled: true, label: true })
 
 const renderMath = (content) => {
   let result = content
-  
+
   result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
     return katexBlock(formula.trim())
   })
-  
+
   result = result.replace(/\$(.+?)\$/g, (match, formula) => {
     return katexInline(formula.trim())
   })
-  
+
   return result
 }
 
@@ -190,7 +190,7 @@ const renderedContent = computed(() => {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 16px;
   line-height: 1.9;
-  color: #2d2d2d;
+  color: var(--campus-text, #2d2d2d);
   word-wrap: break-word;
   white-space: pre-wrap;
 }
@@ -249,14 +249,14 @@ const renderedContent = computed(() => {
 }
 
 .markdown-viewer :deep(a) {
-  color: #6750A4;
+  color: var(--campus-primary, #6750A4);
   text-decoration: none;
   border-bottom: 1px solid transparent;
   transition: border-color 0.2s;
 }
 
 .markdown-viewer :deep(a:hover) {
-  border-bottom-color: #6750A4;
+  border-bottom-color: var(--campus-primary, #6750A4);
 }
 
 .markdown-viewer :deep(audio) {
@@ -295,7 +295,7 @@ const renderedContent = computed(() => {
 .markdown-viewer :deep(blockquote) {
   margin: 20px 0;
   padding: 12px 20px;
-  border-left: 4px solid #6750A4;
+  border-left: 4px solid var(--campus-primary, #6750A4);
   background: linear-gradient(135deg, #f8f7ff 0%, #f0effe 100%);
   border-radius: 0 8px 8px 0;
   color: #555;
@@ -346,7 +346,7 @@ const renderedContent = computed(() => {
 }
 
 .markdown-viewer :deep(thead) {
-  background: linear-gradient(135deg, #6750A4 0%, #7E67C8 100%);
+  background: linear-gradient(135deg, var(--campus-primary, #6750A4) 0%, #7E67C8 100%);
   color: #fff;
 }
 
@@ -383,6 +383,7 @@ const renderedContent = computed(() => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
   object-fit: contain;
+  cursor: pointer;
 }
 
 .markdown-viewer :deep(img:hover) {
@@ -430,7 +431,7 @@ const renderedContent = computed(() => {
 }
 
 .markdown-viewer :deep(.footnote-ref) {
-  color: #6750A4;
+  color: var(--campus-primary, #6750A4);
   font-weight: bold;
   text-decoration: none;
 }
@@ -476,7 +477,7 @@ const renderedContent = computed(() => {
   margin-right: 8px;
   width: 16px;
   height: 16px;
-  accent-color: #6750A4;
+  accent-color: var(--campus-primary, #6750A4);
 }
 
 .markdown-viewer :deep(.emoji) {
@@ -496,7 +497,7 @@ const renderedContent = computed(() => {
 }
 
 .markdown-viewer :deep(.empty-hint) {
-  color: #999;
+  color: var(--campus-text-secondary, #999);
   text-align: center;
   padding: 40px;
 }

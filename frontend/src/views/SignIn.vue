@@ -1,281 +1,247 @@
 <template>
-  <v-container class="pa-4">
+  <div class="page-container">
     <!-- 页面标题 -->
-    <div class="d-flex align-center mb-4">
-      <v-btn icon variant="text" @click="$router.back()" class="mr-2">
-        <v-icon>mdi-arrow-left</v-icon>
-      </v-btn>
-      <h2 class="text-h5 font-weight-bold">每日签到</h2>
+    <div class="header-row mb-4">
+      <el-button circle :icon="ArrowLeft" class="back-btn" @click="$router.back()" />
+      <h2 class="page-title">每日签到</h2>
     </div>
 
     <!-- 加载状态 -->
-    <div v-if="loading" class="d-flex justify-center align-center py-10">
-      <v-progress-circular indeterminate color="primary"></v-progress-circular>
+    <div v-if="loading" class="loading-wrap">
+      <div class="loading"></div>
     </div>
 
     <template v-else>
       <!-- 签到卡片 -->
-      <v-card class="mb-4" elevation="2">
-        <v-card-text class="text-center pa-6">
+      <el-card class="mb-4 card-surface" shadow="never">
+        <div class="text-center card-body-pad">
           <!-- 签到状态显示 -->
-          <div v-if="status.has_signed_in" class="signed-in-section">
-            <v-avatar size="80" color="success" class="mb-4">
-              <v-icon size="48" color="white">mdi-check-circle</v-icon>
-            </v-avatar>
-            <h3 class="text-h5 mb-2">今日已签到</h3>
-            <p class="text-body-2 text-grey">明天再来领取更多积分吧~</p>
+          <div v-if="status.has_signed_in" class="text-center pad-16">
+            <el-avatar :size="80" class="signed-avatar mb-4">
+              <el-icon :size="48"><CircleCheckFilled /></el-icon>
+            </el-avatar>
+            <h3 class="stat-title mb-2">今日已签到</h3>
+            <p class="text-secondary sub-hint">明天再来领取更多积分吧~</p>
           </div>
 
           <!-- 未签到状态 -->
           <div v-else class="unsigned-section">
-          <v-avatar size="80" color="primary" class="mb-4">
-            <v-icon size="48" color="white">mdi-calendar-check</v-icon>
-          </v-avatar>
-          <h3 class="text-h5 mb-2">今日可签到</h3>
-          <p class="text-body-2 text-grey mb-4">
-            连续签到 <span class="text-primary font-weight-bold">{{ status.sign_in_days }}</span> 天，获得 <span class="text-primary font-weight-bold">{{ status.total_coins || status.total_points || 0 }}</span> 币
-          </p>
-            <v-btn
-              color="primary"
+            <el-avatar :size="80" class="unsigned-avatar mb-4">
+              <el-icon :size="48"><Calendar /></el-icon>
+            </el-avatar>
+            <h3 class="stat-title mb-2">今日可签到</h3>
+            <p class="text-secondary mb-4">
+              连续签到 <span class="text-primary stat-strong">{{ status.sign_in_days }}</span> 天，获得 <span class="text-primary stat-strong">{{ status.total_coins || status.total_points || 0 }}</span> 币
+            </p>
+            <el-button
+              type="primary"
               size="large"
               :loading="signing"
               @click="handleSignIn"
             >
-              <v-icon start>mdi-pencil</v-icon>
+              <el-icon class="btn-icon"><EditPen /></el-icon>
               立即签到
-            </v-btn>
+            </el-button>
           </div>
 
           <!-- 签到统计 -->
-          <v-row class="mt-6" dense>
-            <v-col cols="4">
+          <el-row :gutter="16" class="mt-4 stats-row">
+            <el-col :span="8">
               <div class="stat-item">
-                <div class="stat-value text-h6 font-weight-bold text-primary">
-                  {{ status.total_coins || status.total_points || 0 }}
-                </div>
-                <div class="stat-label text-caption text-grey">累计币</div>
+                <div class="stat-value text-primary">{{ status.total_coins || status.total_points || 0 }}</div>
+                <div class="stat-label text-secondary">累计币</div>
               </div>
-            </v-col>
-            <v-col cols="4">
+            </el-col>
+            <el-col :span="8">
               <div class="stat-item">
-                <div class="stat-value text-h6 font-weight-bold text-primary">
-                  {{ status.sign_in_days || 0 }}
-                </div>
-                <div class="stat-label text-caption text-grey">连续天数</div>
+                <div class="stat-value text-primary">{{ status.sign_in_days || 0 }}</div>
+                <div class="stat-label text-secondary">连续天数</div>
               </div>
-            </v-col>
-            <v-col cols="4">
+            </el-col>
+            <el-col :span="8">
               <div class="stat-item">
-                <div class="stat-value text-h6 font-weight-bold text-primary">
-                  {{ status.total_sign_ins || 0 }}
-                </div>
-                <div class="stat-label text-caption text-grey">累计次数</div>
+                <div class="stat-value text-primary">{{ status.total_sign_ins || 0 }}</div>
+                <div class="stat-label text-secondary">累计次数</div>
               </div>
-            </v-col>
-          </v-row>
-        </v-card-text>
-      </v-card>
+            </el-col>
+          </el-row>
+        </div>
+      </el-card>
 
       <!-- 本周本月统计 -->
-      <v-row dense class="mb-4">
-        <v-col cols="6">
-          <v-card elevation="1">
-            <v-card-text class="text-center pa-3">
-              <v-icon color="orange" class="mb-1">mdi-calendar-week</v-icon>
-              <div class="text-h6 font-weight-bold">{{ status.week_sign_in_count || 0 }}</div>
-              <div class="text-caption text-grey">本周签到</div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col cols="6">
-          <v-card elevation="1">
-            <v-card-text class="text-center pa-3">
-              <v-icon color="blue" class="mb-1">mdi-calendar-month</v-icon>
-              <div class="text-h6 font-weight-bold">{{ status.month_sign_in_count || 0 }}</div>
-              <div class="text-caption text-grey">本月签到</div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+      <el-row :gutter="16" class="mb-4">
+        <el-col :span="12">
+          <el-card class="card-surface" shadow="never">
+            <div class="text-center small-card-pad">
+              <div class="week-icon mb-4"><el-icon :size="20"><Calendar /></el-icon></div>
+              <div class="mini-value text-primary">{{ status.week_sign_in_count || 0 }}</div>
+              <div class="text-secondary mini-label">本周签到</div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :span="12">
+          <el-card class="card-surface" shadow="never">
+            <div class="text-center small-card-pad">
+              <div class="month-icon mb-4"><el-icon :size="20"><Calendar /></el-icon></div>
+              <div class="mini-value text-primary">{{ status.month_sign_in_count || 0 }}</div>
+              <div class="text-secondary mini-label">本月签到</div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
 
       <!-- 连续签到奖励说明 -->
-      <v-card class="mb-4" elevation="1">
-        <v-card-title class="text-subtitle-1 pb-0">
-          <v-icon start size="20">mdi-gift</v-icon>
-          连续签到奖励
-        </v-card-title>
-        <v-card-text>
-          <v-list density="compact" class="py-0">
-            <v-list-item class="px-0">
-              <template v-slot:prepend>
-                <v-icon color="amber" size="20">mdi-circle</v-icon>
-              </template>
-              <v-list-item-title class="text-body-2">
-                连续 <span class="text-primary font-weight-bold">7</span> 天
-              </v-list-item-title>
-              <template v-slot:append>
-                <span class="text-success text-body-2">+5 币</span>
-              </template>
-            </v-list-item>
-            <v-list-item class="px-0">
-              <template v-slot:prepend>
-                <v-icon color="amber" size="20">mdi-circle</v-icon>
-              </template>
-              <v-list-item-title class="text-body-2">
-                连续 <span class="text-primary font-weight-bold">30</span> 天
-              </v-list-item-title>
-              <template v-slot:append>
-                <span class="text-success text-body-2">+15 币</span>
-              </template>
-            </v-list-item>
-            <v-list-item class="px-0">
-              <template v-slot:prepend>
-                <v-icon color="amber" size="20">mdi-circle</v-icon>
-              </template>
-              <v-list-item-title class="text-body-2">
-                连续 <span class="text-primary font-weight-bold">365</span> 天
-              </v-list-item-title>
-              <template v-slot:append>
-                <span class="text-success text-body-2">+50 币</span>
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-card-text>
-      </v-card>
+      <el-card class="mb-4 card-surface" shadow="never">
+        <template #header>
+          <div class="card-title">
+            <el-icon :size="20" class="card-title-icon"><Present /></el-icon>
+            连续签到奖励
+          </div>
+        </template>
+        <div class="reward-item">
+          <el-tag type="warning" effect="plain" class="reward-tag">7</el-tag>
+          <span class="reward-text">
+            连续 <span class="text-primary stat-strong">7</span> 天
+          </span>
+          <span class="reward-coin success-text">+5 币</span>
+        </div>
+        <div class="reward-item">
+          <el-tag type="warning" effect="plain" class="reward-tag">30</el-tag>
+          <span class="reward-text">
+            连续 <span class="text-primary stat-strong">30</span> 天
+          </span>
+          <span class="reward-coin success-text">+15 币</span>
+        </div>
+        <div class="reward-item">
+          <el-tag type="warning" effect="plain" class="reward-tag">365</el-tag>
+          <span class="reward-text">
+            连续 <span class="text-primary stat-strong">365</span> 天
+          </span>
+          <span class="reward-coin success-text">+50 币</span>
+        </div>
+      </el-card>
 
       <!-- 排行榜 -->
-      <v-card class="mb-4" elevation="1">
-        <v-card-title class="d-flex justify-space-between align-center">
-          <span class="text-subtitle-1">
-            <v-icon start size="20">mdi-trophy</v-icon>
-            签到排行榜
-          </span>
-          <v-btn-toggle v-model="rankType" mandatory density="compact" variant="outlined" divided>
-          <v-btn value="continuous" size="small">连续</v-btn>
-          <v-btn value="points" size="small">币</v-btn>
-        </v-btn-toggle>
-        </v-card-title>
-        <v-card-text class="pa-0">
-          <v-list density="compact" v-if="rankType === 'continuous'">
-            <v-list-item
+      <el-card class="mb-4 card-surface" shadow="never">
+        <template #header>
+          <div class="rank-header">
+            <span class="card-title">
+              <el-icon :size="20" class="card-title-icon"><Trophy /></el-icon>
+              签到排行榜
+            </span>
+            <el-radio-group v-model="rankType" size="small">
+              <el-radio-button value="continuous">连续</el-radio-button>
+              <el-radio-button value="points">币</el-radio-button>
+            </el-radio-group>
+          </div>
+        </template>
+        <div v-if="rankType === 'continuous'" class="list-pad">
+          <el-list v-if="rankings.continuous_rankings?.length">
+            <el-list-item
               v-for="(user, index) in rankings.continuous_rankings"
               :key="user.id"
               class="ranking-item"
             >
-              <template v-slot:prepend>
-                <v-avatar
-                  size="32"
-                  :color="index < 3 ? ['amber', 'grey', 'brown'][index] : 'grey-lighten-2'"
-                >
-                  <span class="text-body-2 font-weight-bold">{{ index + 1 }}</span>
-                </v-avatar>
-              </template>
-              <v-list-item-title class="text-body-2">
-                {{ user.display_name || user.username }}
-              </v-list-item-title>
-              <template v-slot:append>
-                <span class="text-primary text-body-2 font-weight-bold">
-                  {{ user.sign_in_days }} 天
-                </span>
-              </template>
-            </v-list-item>
-            <v-list-item v-if="!rankings.continuous_rankings?.length">
-              <v-list-item-title class="text-center text-grey">暂无数据</v-list-item-title>
-            </v-list-item>
-          </v-list>
+              <el-avatar
+                :size="32"
+                class="rank-avatar"
+                :class="rankAvatarClass(index)"
+              >
+                <span class="rank-number">{{ index + 1 }}</span>
+              </el-avatar>
+              <span class="rank-name">{{ user.display_name || user.username }}</span>
+              <span class="rank-value text-primary">
+                {{ user.sign_in_days }} 天
+              </span>
+            </el-list-item>
+          </el-list>
+          <div v-else class="empty-text">暂无数据</div>
+        </div>
 
-          <v-list density="compact" v-else>
-            <v-list-item
+        <div v-else class="list-pad">
+          <el-list v-if="rankings.points_rankings?.length">
+            <el-list-item
               v-for="(user, index) in rankings.points_rankings"
               :key="user.id"
               class="ranking-item"
             >
-              <template v-slot:prepend>
-                <v-avatar
-                  size="32"
-                  :color="index < 3 ? ['amber', 'grey', 'brown'][index] : 'grey-lighten-2'"
-                >
-                  <span class="text-body-2 font-weight-bold">{{ index + 1 }}</span>
-                </v-avatar>
-              </template>
-              <v-list-item-title class="text-body-2">
-                {{ user.display_name || user.username }}
-              </v-list-item-title>
-              <template v-slot:append>
-                <span class="text-primary text-body-2 font-weight-bold">
-                  {{ user.total_coins || user.total_points }} 币
-                </span>
-              </template>
-            </v-list-item>
-            <v-list-item v-if="!rankings.points_rankings?.length">
-              <v-list-item-title class="text-center text-grey">暂无数据</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-card-text>
-      </v-card>
+              <el-avatar
+                :size="32"
+                class="rank-avatar"
+                :class="rankAvatarClass(index)"
+              >
+                <span class="rank-number">{{ index + 1 }}</span>
+              </el-avatar>
+              <span class="rank-name">{{ user.display_name || user.username }}</span>
+              <span class="rank-value text-primary">
+                {{ user.total_coins || user.total_points }} 币
+              </span>
+            </el-list-item>
+          </el-list>
+          <div v-else class="empty-text">暂无数据</div>
+        </div>
+      </el-card>
 
       <!-- 签到历史 -->
-      <v-card elevation="1">
-        <v-card-title class="text-subtitle-1">
-          <v-icon start size="20">mdi-history</v-icon>
-          签到记录
-        </v-card-title>
-        <v-card-text class="pa-0">
-          <v-list density="compact">
-            <v-list-item
+      <el-card class="card-surface" shadow="never">
+        <template #header>
+          <div class="card-title">
+            <el-icon :size="20" class="card-title-icon"><Clock /></el-icon>
+            签到记录
+          </div>
+        </template>
+        <div class="list-pad">
+          <el-list v-if="history.records?.length">
+            <el-list-item
               v-for="record in history.records"
               :key="record.id"
               class="history-item"
             >
-              <template v-slot:prepend>
-                <v-avatar size="36" color="success" class="mr-2">
-                  <v-icon size="20" color="white">mdi-check</v-icon>
-                </v-avatar>
-              </template>
-              <v-list-item-title class="text-body-2">
-                {{ record.sign_in_date }}
-              </v-list-item-title>
-              <v-list-item-subtitle class="text-caption">
-                连续 {{ record.continuous_day }} 天
-              </v-list-item-subtitle>
-              <template v-slot:append>
-                <span class="text-success text-body-2">
-                  +{{ record.reward_points }} 币
-                </span>
-              </template>
-            </v-list-item>
-            <v-list-item v-if="!history.records?.length">
-              <v-list-item-title class="text-center text-grey">暂无签到记录</v-list-item-title>
-            </v-list-item>
-          </v-list>
+              <el-avatar :size="36" class="history-avatar">
+                <el-icon :size="20"><Check /></el-icon>
+              </el-avatar>
+              <div class="history-info">
+                <span class="history-date">{{ record.sign_in_date }}</span>
+                <span class="text-secondary history-sub">连续 {{ record.continuous_day }} 天</span>
+              </div>
+              <span class="success-text history-coin">
+                +{{ record.reward_points }} 币
+              </span>
+            </el-list-item>
+          </el-list>
+          <div v-else class="empty-text">暂无签到记录</div>
 
           <!-- 分页 -->
-          <v-pagination
+          <el-pagination
             v-if="history.total_pages > 1"
-            v-model="page"
-            :length="history.total_pages"
-            :total-visible="5"
-            density="compact"
-            class="my-2"
-            @update:model-value="fetchHistory"
-          ></v-pagination>
-        </v-card-text>
-      </v-card>
+            v-model:current-page="page"
+            :page-size="history.page_size || 30"
+            :total="history.total"
+            layout="prev, pager, next"
+            :pager-count="5"
+            class="my-4 pagination"
+            @current-change="fetchHistory"
+          ></el-pagination>
+        </div>
+      </el-card>
     </template>
-
-    <!-- 签到成功提示 -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="top">
-      {{ snackbar.text }}
-      <template v-slot:actions>
-        <v-btn variant="text" @click="snackbar.show = false">关闭</v-btn>
-      </template>
-    </v-snackbar>
-  </v-container>
+  </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import {
+  ArrowLeft,
+  Calendar,
+  Check,
+  CircleCheckFilled,
+  Clock,
+  EditPen,
+  Present,
+  Trophy
+} from '@element-plus/icons-vue'
 import { signinApi } from '@/api'
+import { success, error } from '@/utils/message'
 
 const loading = ref(true)
 const signing = ref(false)
@@ -306,11 +272,12 @@ const history = ref({
 
 const page = ref(1)
 
-const snackbar = reactive({
-  show: false,
-  text: '',
-  color: 'success'
-})
+const rankAvatarClass = (index) => {
+  if (index === 0) return 'rank-first'
+  if (index === 1) return 'rank-second'
+  if (index === 2) return 'rank-third'
+  return 'rank-default'
+}
 
 // 获取签到状态
 const fetchStatus = async () => {
@@ -356,18 +323,14 @@ const handleSignIn = async () => {
   signing.value = true
   try {
     const res = await signinApi.signIn()
-    snackbar.text = res.data?.message || '签到成功'
-    snackbar.color = 'success'
-    snackbar.show = true
+    success(res.data?.message || '签到成功')
 
     // 更新状态
     await fetchStatus()
     await fetchRankings()
     await fetchHistory()
-  } catch (error) {
-    snackbar.text = error.response?.data?.error || '签到失败'
-    snackbar.color = 'error'
-    snackbar.show = true
+  } catch (err) {
+    error(err.response?.data?.error || '签到失败')
   } finally {
     signing.value = false
   }
@@ -384,17 +347,265 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-btn {
+  flex-shrink: 0;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 0;
+}
+
+.card-body-pad {
+  padding: 24px;
+}
+
+.pad-16 {
+  padding: 16px;
+}
+
+.stat-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--campus-text);
+}
+
+.sub-hint {
+  margin: 0;
+  font-size: 14px;
+}
+
+.signed-avatar {
+  background: #67c23a;
+}
+
+.unsigned-avatar {
+  background: var(--campus-primary);
+}
+
+.stat-strong {
+  font-weight: 700;
+}
+
 .stat-item {
   text-align: center;
 }
 
-.ranking-item,
-.history-item {
+.stat-value {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.stat-label {
+  font-size: 12px;
+}
+
+.stats-row {
+  row-gap: 16px;
+}
+
+.small-card-pad {
+  padding: 12px;
+}
+
+.week-icon,
+.month-icon {
+  color: #ff9800;
+  display: flex;
+  justify-content: center;
+}
+
+.month-icon {
+  color: #409eff;
+}
+
+.mini-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.mini-label {
+  font-size: 12px;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--campus-text);
+}
+
+.card-title-icon {
+  color: var(--campus-primary);
+}
+
+.rank-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.reward-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
   border-bottom: 1px solid #f0f0f0;
 }
 
-.ranking-item:last-child,
+.reward-item:last-child {
+  border-bottom: none;
+}
+
+.reward-tag {
+  width: 48px;
+  text-align: center;
+}
+
+.reward-text {
+  flex: 1;
+  font-size: 14px;
+}
+
+.reward-coin {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.success-text {
+  color: #67c23a;
+  font-weight: 600;
+}
+
+.list-pad {
+  padding: 8px 0;
+  width: 100%;
+}
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.ranking-item:last-child {
+  border-bottom: none;
+}
+
+.rank-avatar {
+  flex-shrink: 0;
+}
+
+.rank-first {
+  background: #ffb300;
+}
+
+.rank-second {
+  background: #9e9e9e;
+}
+
+.rank-third {
+  background: #8d6e63;
+}
+
+.rank-default {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.rank-number {
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+}
+
+.rank-default .rank-number {
+  color: #666;
+}
+
+.rank-name {
+  flex: 1;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rank-value {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.empty-text {
+  text-align: center;
+  color: var(--campus-text-secondary);
+  padding: 24px 0;
+  font-size: 14px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
 .history-item:last-child {
   border-bottom: none;
+}
+
+.history-avatar {
+  background: #67c23a;
+  flex-shrink: 0;
+}
+
+.history-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-date {
+  font-size: 14px;
+}
+
+.history-sub {
+  font-size: 12px;
+}
+
+.history-coin {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.pagination {
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .card-body-pad {
+    padding: 16px;
+  }
 }
 </style>

@@ -1,208 +1,261 @@
 <template>
-  <v-container fluid>
-    <v-row>
+  <div>
+    <el-card class="page-container" shadow="never">
       <!-- 系统概览 -->
-      <v-col cols="12">
-        <v-card>
-          <v-card-title>
-            <v-icon left>mdi-chart-box</v-icon>
-            系统概览
-          </v-card-title>
-          <v-card-text>
-            <v-row>
-              <v-col cols="12" sm="6" md="3">
-                <v-card outlined>
-                  <v-card-text class="text-center">
-                    <v-icon color="primary" size="40">mdi-account-group</v-icon>
-                    <div class="headline mt-2">{{ overview.total_users }}</div>
-                    <div class="subtitle-2">总用户数</div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-card outlined>
-                  <v-card-text class="text-center">
-                    <v-icon color="success" size="40">mdi-file-document</v-icon>
-                    <div class="headline mt-2">{{ overview.total_articles }}</div>
-                    <div class="subtitle-2">总文章数</div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-card outlined>
-                  <v-card-text class="text-center">
-                    <v-icon color="info" size="40">mdi-comment</v-icon>
-                    <div class="headline mt-2">{{ overview.total_comments }}</div>
-                    <div class="subtitle-2">总评论数</div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-card outlined>
-                  <v-card-text class="text-center">
-                    <v-icon color="warning" size="40">mdi-account-circle</v-icon>
-                    <div class="headline mt-2">{{ overview.online_users }}</div>
-                    <div class="subtitle-2">在线用户</div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="18"><DataAnalysis /></el-icon>
+          <span>系统概览</span>
+        </div>
+      </template>
 
+      <el-row :gutter="16">
+        <el-col :xs="24" :sm="12" :md="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-card-inner">
+              <el-icon :size="40" color="#409EFF"><UserFilled /></el-icon>
+              <div class="stat-value mt-2">{{ overview.total_users }}</div>
+              <div class="stat-label">总用户数</div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-card-inner">
+              <el-icon :size="40" color="#67C23A"><Document /></el-icon>
+              <div class="stat-value mt-2">{{ overview.total_articles }}</div>
+              <div class="stat-label">总文章数</div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-card-inner">
+              <el-icon :size="40" color="#909399"><ChatDotRound /></el-icon>
+              <div class="stat-value mt-2">{{ overview.total_comments }}</div>
+              <div class="stat-label">总评论数</div>
+            </div>
+          </el-card>
+        </el-col>
+        <el-col :xs="24" :sm="12" :md="6">
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-card-inner">
+              <el-icon :size="40" color="#E6A23C"><CircleCheck /></el-icon>
+              <div class="stat-value mt-2">{{ overview.online_users }}</div>
+              <div class="stat-label">在线用户</div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+    </el-card>
+
+    <el-row :gutter="16" class="mt-4">
       <!-- 最近7天统计 -->
-      <v-col cols="12" md="6">
-        <v-card>
-          <v-card-title>
-            <v-icon left>mdi-chart-line</v-icon>
-            最近7天活跃度
-          </v-card-title>
-          <v-card-text>
-            <v-simple-table>
-              <template v-slot:default>
-                <thead>
-                  <tr>
-                    <th>日期</th>
-                    <th>新增用户</th>
-                    <th>活跃用户</th>
-                    <th>新增文章</th>
-                    <th>新增评论</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="stat in recentStats" :key="stat.date">
-                    <td>{{ stat.date }}</td>
-                    <td>{{ stat.new_users }}</td>
-                    <td>{{ stat.active_users }}</td>
-                    <td>{{ stat.new_articles }}</td>
-                    <td>{{ stat.new_comments }}</td>
-                  </tr>
-                </tbody>
-              </template>
-            </v-simple-table>
-          </v-card-text>
-        </v-card>
-      </v-col>
+      <el-col :xs="24" :md="12">
+        <el-card class="page-container" shadow="never">
+          <template #header>
+            <div class="card-header">
+              <el-icon :size="18"><TrendCharts /></el-icon>
+              <span>最近7天活跃度</span>
+            </div>
+          </template>
+          <el-table :data="recentStats" stripe>
+            <el-table-column prop="date" label="日期" />
+            <el-table-column prop="new_users" label="新增用户" />
+            <el-table-column prop="active_users" label="活跃用户" />
+            <el-table-column prop="new_articles" label="新增文章" />
+            <el-table-column prop="new_comments" label="新增评论" />
+          </el-table>
+        </el-card>
+      </el-col>
 
       <!-- 热门文章 -->
-      <v-col cols="12" md="6">
-        <v-card>
-          <v-card-title>
-            <v-icon left>mdi-fire</v-icon>
-            热门文章
-          </v-card-title>
-          <v-card-text>
-            <v-list>
-              <v-list-item v-for="article in hotArticles" :key="article.id">
-                <v-list-item-content>
-                  <v-list-item-title>{{ article.title }}</v-list-item-title>
-                  <v-list-item-subtitle>
-                    <v-icon small>mdi-eye</v-icon> {{ article.view_count }}
-                    <v-icon small class="ml-2">mdi-heart</v-icon> {{ article.like_count }}
-                    <v-icon small class="ml-2">mdi-comment</v-icon> {{ article.comment_count }}
-                  </v-list-item-subtitle>
-                </v-list-item-content>
-                <v-list-item-action>
-                  <v-btn text small color="primary" :to="`/article/${article.id}`">
-                    查看
-                  </v-btn>
-                </v-list-item-action>
-              </v-list-item>
-            </v-list>
-          </v-card-text>
-        </v-card>
-      </v-col>
+      <el-col :xs="24" :md="12">
+        <el-card class="page-container" shadow="never">
+          <template #header>
+            <div class="card-header">
+              <el-icon :size="18"><HotWater /></el-icon>
+              <span>热门文章</span>
+            </div>
+          </template>
+          <el-empty v-if="!hotArticles.length" description="暂无热门文章" />
+          <div v-for="article in hotArticles" :key="article.id" class="hot-article">
+            <div class="hot-article-info">
+              <div class="hot-article-title">{{ article.title }}</div>
+              <div class="hot-article-meta">
+                <el-icon :size="14"><View /></el-icon> {{ article.view_count }}
+                <el-icon :size="14" class="ml-3"><Star /></el-icon> {{ article.like_count }}
+                <el-icon :size="14" class="ml-3"><ChatDotSquare /></el-icon> {{ article.comment_count }}
+              </div>
+            </div>
+            <el-button type="primary" text size="small" @click="goArticle(article.id)">查看</el-button>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
 
-      <!-- 活跃用户 -->
-      <v-col cols="12">
-        <v-card>
-          <v-card-title>
-            <v-icon left>mdi-account-star</v-icon>
-            活跃用户
-          </v-card-title>
-          <v-card-text>
-            <v-row>
-              <v-col cols="12" sm="6" md="4" lg="3" v-for="user in activeUsers" :key="user.id">
-                <v-card outlined>
-                  <v-card-text class="text-center">
-                    <v-avatar size="60">
-                      <img :src="user.avatar || '/default-avatar.png'" alt="avatar">
-                    </v-avatar>
-                    <div class="mt-2">{{ user.display_name || user.username }}</div>
-                    <v-chip small color="success" class="mt-1">
-                      <v-icon small left>mdi-circle</v-icon>
-                      在线
-                    </v-chip>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
+    <!-- 活跃用户 -->
+    <el-card class="page-container mt-4" shadow="never">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="18"><User /></el-icon>
+          <span>活跃用户</span>
+        </div>
+      </template>
+      <el-row :gutter="16">
+        <el-col
+          v-for="user in activeUsers"
+          :key="user.id"
+          :xs="24"
+          :sm="12"
+          :md="8"
+          :lg="6"
+        >
+          <el-card shadow="hover" class="stat-card">
+            <div class="stat-card-inner">
+              <el-avatar :size="60" :src="user.avatar || '/default-avatar.png'" />
+              <div class="mt-2">{{ user.display_name || user.username }}</div>
+              <el-tag size="small" type="success" class="mt-1">
+                <el-icon :size="12" class="mr-1"><CircleFilled /></el-icon>
+                在线
+              </el-tag>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+    </el-card>
+  </div>
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import {
+  DataAnalysis,
+  UserFilled,
+  Document,
+  ChatDotRound,
+  CircleCheck,
+  TrendCharts,
+  HotWater,
+  View,
+  Star,
+  ChatDotSquare,
+  User,
+  CircleFilled
+} from '@element-plus/icons-vue'
 import { statisticsApi } from '@/api'
 
-export default {
-  name: 'StatisticsDashboard',
-  setup() {
-    const overview = ref({
-      total_users: 0,
-      total_articles: 0,
-      total_comments: 0,
-      online_users: 0
-    })
-    const recentStats = ref([])
-    const hotArticles = ref([])
-    const activeUsers = ref([])
+const router = useRouter()
 
-    const loadDashboard = async () => {
-      try {
-        const res = await statisticsApi.getStatisticsDashboard()
-        if (res.data.success) {
-          overview.value = res.data.data.overview
-          recentStats.value = res.data.data.recent_stats
-          hotArticles.value = res.data.data.hot_articles
-          activeUsers.value = res.data.data.active_users
-        }
-      } catch (error) {
-        console.error('加载仪表板数据失败:', error)
-      }
+const overview = ref({
+  total_users: 0,
+  total_articles: 0,
+  total_comments: 0,
+  online_users: 0
+})
+const recentStats = ref([])
+const hotArticles = ref([])
+const activeUsers = ref([])
+
+const loadDashboard = async () => {
+  try {
+    const res = await statisticsApi.getStatisticsDashboard()
+    if (res.data.success) {
+      overview.value = res.data.data.overview
+      recentStats.value = res.data.data.recent_stats
+      hotArticles.value = res.data.data.hot_articles
+      activeUsers.value = res.data.data.active_users
     }
-
-    onMounted(() => {
-      loadDashboard()
-    })
-
-    return {
-      overview,
-      recentStats,
-      hotArticles,
-      activeUsers
-    }
+  } catch (err) {
+    console.error('加载仪表板数据失败:', err)
   }
 }
 
-// FIXME-TEMPLATE: The markup block uses Vuetify-2-only props that cannot be switched from the
-// script alone. Update the markup accordingly before changing the UI; do not rely on script fixes:
-//   - v-icon prop "left" (L8, L58, L91, L121) -> use "start" in Vuetify 3
-//   - v-icon prop "small" (L101, L102, L103) -> use "size" in Vuetify 3
-//   - v-icon props "small left" (L134) -> "start" + "size" in Vuetify 3
-//   - v-card prop "outlined" (L14, L23, L32, L41, L127) -> "variant=outlined" in Vuetify 3
-//   - v-chip prop "small" (L133) -> use "size" in Vuetify 3
-//   - v-btn prop "text small" (L107) -> use "size" in Vuetify 3
-//   - typography classes "headline" / "subtitle-2" -> Vuetify 3 typography
-//   - v-simple-table (L62) -> use v-table in Vuetify 3
+const goArticle = (id) => {
+  router.push(`/article/${id}`)
+}
+
+onMounted(() => {
+  loadDashboard()
+})
 </script>
 
 <style scoped>
-.v-card {
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-card {
   margin-bottom: 16px;
+}
+
+.stat-card-inner {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.stat-label {
+  color: #909399;
+  font-size: 13px;
+}
+
+.hot-article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 4px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.hot-article:last-child {
+  border-bottom: none;
+}
+
+.hot-article-title {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 320px;
+}
+
+.hot-article-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #909399;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ml-3 {
+  margin-left: 12px;
+}
+
+.mr-1 {
+  margin-right: 4px;
+}
+
+.mt-1 {
+  margin-top: 4px;
+}
+
+.mt-2 {
+  margin-top: 8px;
+}
+
+.mt-4 {
+  margin-top: 16px;
 }
 </style>

@@ -1,67 +1,85 @@
 <template>
-  <v-card class="user-level-card">
-    <v-card-title class="d-flex align-center">
-      <v-icon class="mr-2">mdi-star</v-icon>
-      用户等级
-    </v-card-title>
-    <v-card-text>
-      <div class="level-info">
-        <div class="level-badge">
-          <v-avatar size="80" color="primary">
-            <span class="text-white text-h4">{{ level.level }}</span>
-          </v-avatar>
-          <div class="level-title mt-2">{{ level.title }}</div>
+  <el-card class="user-level-card" shadow="never">
+    <template #header>
+      <div class="level-header">
+        <el-icon :size="20"><Star /></el-icon>
+        <span>用户等级</span>
+      </div>
+    </template>
+
+    <div class="level-info">
+      <div class="level-badge">
+        <el-avatar :size="80" class="level-avatar">
+          <span class="level-avatar-text">{{ level.level }}</span>
+        </el-avatar>
+        <div class="level-title mt-2">{{ level.title }}</div>
+      </div>
+
+      <div class="experience-bar mt-4">
+        <div class="experience-progress">
+          <el-progress
+            :percentage="experiencePercent"
+            :show-text="false"
+            :stroke-width="10"
+          />
         </div>
-        
-        <div class="experience-bar mt-4">
-          <v-progress-linear
-            :model-value="experiencePercent"
-            color="primary"
-            height="10"
-            rounded
-          ></v-progress-linear>
-          <div class="experience-text mt-2">
-            <span>{{ level.experience }} / {{ level.next_level }}</span>
-            <span class="ml-2">经验值</span>
+        <div class="experience-text mt-2">
+          <span>{{ level.experience }} / {{ level.next_level }}</span>
+          <span class="ml-2">经验值</span>
+        </div>
+      </div>
+    </div>
+
+    <el-divider />
+
+    <div class="achievements-section">
+      <div class="achievements-header mb-3">
+        <el-icon :size="18"><Trophy /></el-icon>
+        <span class="achievements-title">成就徽章</span>
+        <el-tag size="small" type="primary" class="ml-2">{{ unlockedCount }} / {{ totalCount }}</el-tag>
+      </div>
+
+      <div class="achievements-grid">
+        <div
+          v-for="achievement in achievements"
+          :key="achievement.id"
+          class="achievement-card card-surface"
+        >
+          <div class="achievement-card-body text-center">
+            <div class="achievement-icon" :style="{ color: getRarityColor(achievement.achievement.rarity) }">
+              <el-icon :size="40" v-if="!achievement.achievement.icon || !achievement.achievement.icon.startsWith('http')">
+                <Medal />
+              </el-icon>
+              <img
+                v-else
+                :src="achievement.achievement.icon"
+                class="achievement-icon-img"
+                alt=""
+              />
+            </div>
+            <div class="achievement-name mt-2">{{ achievement.achievement.name }}</div>
+            <div class="achievement-desc mt-1">{{ achievement.achievement.description }}</div>
+            <el-tag
+              size="small"
+              effect="plain"
+              class="mt-2"
+              :style="getTagStyle(achievement.achievement.rarity)"
+            >
+              {{ getRarityText(achievement.achievement.rarity) }}
+            </el-tag>
+            <div v-if="achievement.unlocked_at" class="mt-2 text-secondary achievement-unlock">
+              解锁于: {{ formatDate(achievement.unlocked_at) }}
+            </div>
           </div>
         </div>
       </div>
-
-      <v-divider class="my-4"></v-divider>
-
-      <div class="achievements-section">
-        <div class="d-flex align-center mb-3">
-          <v-icon class="mr-2">mdi-trophy</v-icon>
-          <span class="text-subtitle-1">成就徽章</span>
-          <v-chip size="small" color="primary" class="ml-2">{{ unlockedCount }} / {{ totalCount }}</v-chip>
-        </div>
-
-        <v-row density="compact">
-          <v-col cols="12" sm="6" md="4" v-for="achievement in achievements" :key="achievement.id">
-            <v-card variant="outlined" class="achievement-card">
-              <v-card-text class="text-center">
-                <v-icon :color="getRarityColor(achievement.achievement.rarity)" size="40">
-                  {{ achievement.achievement.icon || 'mdi-medal' }}
-                </v-icon>
-                <div class="achievement-name mt-2">{{ achievement.achievement.name }}</div>
-                <div class="achievement-desc mt-1">{{ achievement.achievement.description }}</div>
-                <v-chip size="small" :color="getRarityColor(achievement.achievement.rarity)" class="mt-2">
-                  {{ getRarityText(achievement.achievement.rarity) }}
-                </v-chip>
-                <div v-if="achievement.unlocked_at" class="mt-2 text-caption">
-                  解锁于: {{ formatDate(achievement.unlocked_at) }}
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-      </div>
-    </v-card-text>
-  </v-card>
+    </div>
+  </el-card>
 </template>
 
 <script>
 import { ref, computed, onMounted } from 'vue'
+import { Star, Trophy, Medal } from '@element-plus/icons-vue'
 import { levelApi } from '@/api'
 
 export default {
@@ -108,6 +126,16 @@ export default {
       return texts[rarity] || '普通'
     }
 
+    const getTagStyle = (rarity) => {
+      const styles = {
+        common: { color: '#909399', borderColor: '#909399', backgroundColor: 'rgba(144,147,153,0.1)' },
+        rare: { color: '#409eff', borderColor: '#409eff', backgroundColor: 'rgba(64,158,255,0.1)' },
+        epic: { color: '#9c27b0', borderColor: '#9c27b0', backgroundColor: 'rgba(156,39,176,0.1)' },
+        legendary: { color: '#ff9800', borderColor: '#ff9800', backgroundColor: 'rgba(255,152,0,0.1)' }
+      }
+      return styles[rarity] || styles.common
+    }
+
     const formatDate = (date) => {
       return new Date(date).toLocaleDateString('zh-CN')
     }
@@ -145,7 +173,11 @@ export default {
       totalCount,
       getRarityColor,
       getRarityText,
-      formatDate
+      getTagStyle,
+      formatDate,
+      Star,
+      Trophy,
+      Medal
     }
   }
 }
@@ -156,19 +188,78 @@ export default {
   max-width: 800px;
 }
 
+.level-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--campus-text);
+}
+
 .level-badge {
   text-align: center;
+}
+
+.level-avatar {
+  background-color: var(--campus-primary);
+  color: #fff;
+  font-weight: 700;
+}
+
+.level-avatar-text {
+  font-size: 28px;
 }
 
 .level-title {
   font-size: 18px;
   font-weight: bold;
+  color: var(--campus-text);
+}
+
+.experience-bar {
+  width: 100%;
+}
+
+.experience-progress {
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.experience-progress :deep(.el-progress-bar__outer) {
+  border-radius: 5px;
+}
+
+.experience-progress :deep(.el-progress-bar__inner) {
+  background-color: var(--campus-primary);
 }
 
 .experience-text {
   display: flex;
   justify-content: space-between;
   font-size: 14px;
+}
+
+.achievements-section {
+  min-height: 60px;
+}
+
+.achievements-header {
+  display: flex;
+  align-items: center;
+  color: var(--campus-text);
+}
+
+.achievements-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
 }
 
 .achievement-card {
@@ -179,12 +270,36 @@ export default {
   transform: translateY(-2px);
 }
 
+.achievement-card-body {
+  padding: 14px;
+  background: transparent;
+}
+
+.achievement-icon {
+  line-height: 0;
+}
+
+.achievement-icon-img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+}
+
 .achievement-name {
   font-weight: bold;
+  color: var(--campus-text);
 }
 
 .achievement-desc {
   font-size: 12px;
   color: #666;
+}
+
+.achievement-unlock {
+  font-size: 12px;
+}
+
+.ml-2 {
+  margin-left: 8px;
 }
 </style>

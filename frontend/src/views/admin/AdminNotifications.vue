@@ -1,151 +1,164 @@
 <template>
-  <v-container fluid class="pa-4 pa-md-6">
-    <v-row>
+  <div class="page-container">
+    <el-row :gutter="16">
       <!-- 发送通知表单 -->
-      <v-col cols="12" lg="5">
-        <v-card variant="flat" rounded="lg">
-          <v-card-title class="pb-2">
-            <v-icon start size="20">mdi-bell</v-icon>
-            发送通知
-          </v-card-title>
+      <el-col :xs="24" :lg="9">
+        <el-card shadow="never" class="mb-4">
+          <template #header>
+            <div class="card-header">
+              <el-icon class="mr-1"><Bell /></el-icon>
+              <span>发送通知</span>
+            </div>
+          </template>
 
-          <v-card-text>
-            <v-form ref="notificationFormRef" v-model="formValid">
-              <v-select
-                v-model="notificationForm.type"
-                :items="notificationTypes"
-                item-title="label"
-                item-value="value"
-                label="通知类型"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-alert"
-                class="mb-3"
-              />
+          <el-form
+            ref="notificationFormRef"
+            :model="notificationForm"
+            :rules="formRules"
+            label-position="top"
+          >
+            <el-form-item label="通知类型" prop="type">
+              <el-select v-model="notificationForm.type" class="w-full">
+                <el-option
+                  v-for="item in notificationTypes"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
 
-              <v-select
-                v-model="notificationForm.target"
-                :items="notificationTargets"
-                item-title="label"
-                item-value="value"
-                label="发送对象"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-account-group"
-                class="mb-3"
-              />
+            <el-form-item label="发送对象" prop="target">
+              <el-select v-model="notificationForm.target" class="w-full">
+                <el-option
+                  v-for="item in notificationTargets"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
 
-              <v-text-field
+            <el-form-item label="通知标题" prop="title">
+              <el-input
                 v-model="notificationForm.title"
-                label="通知标题"
                 placeholder="请输入通知标题"
-                variant="outlined"
-                density="compact"
-                :rules="[rules.required]"
-                prepend-inner-icon="mdi-format-title"
                 clearable
-                class="mb-3"
               />
+            </el-form-item>
 
-              <v-textarea
+            <el-form-item label="通知内容" prop="content">
+              <el-input
                 v-model="notificationForm.content"
-                label="通知内容"
+                type="textarea"
                 placeholder="请输入通知内容..."
-                variant="outlined"
-                density="compact"
-                :rules="[rules.required]"
-                prepend-inner-icon="mdi-text"
-                rows="4"
-                counter
+                :rows="4"
                 :maxlength="500"
+                show-word-limit
               />
-            </v-form>
-          </v-card-text>
+            </el-form-item>
 
-          <v-card-actions class="pa-4">
-            <v-spacer />
-            <v-btn
-              color="primary"
-              variant="flat"
-              @click="handleSendNotification"
-              :loading="sending"
-              :disabled="!formValid"
-            >
-              <v-icon start>mdi-send</v-icon>
-              发送通知
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
+            <el-form-item>
+              <div class="w-full flex justify-end">
+                <el-button
+                  type="primary"
+                  :loading="sending"
+                  @click="handleSendNotification"
+                >
+                  <el-icon class="mr-1"><Promotion /></el-icon>
+                  发送通知
+                </el-button>
+              </div>
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </el-col>
 
       <!-- 通知历史列表 -->
-      <v-col cols="12" lg="7">
-        <v-card variant="flat" rounded="lg">
-          <v-card-title class="pb-2">
-            <v-icon start size="20">mdi-history</v-icon>
-            通知历史
-          </v-card-title>
+      <el-col :xs="24" :lg="15">
+        <el-card shadow="never">
+          <template #header>
+            <div class="card-header">
+              <el-icon class="mr-1"><Clock /></el-icon>
+              <span>通知历史</span>
+            </div>
+          </template>
 
-          <v-list lines="two" v-if="notifications.length > 0">
-            <v-list-item v-for="notification in notifications" :key="notification.id" class="py-3">
-              <template v-slot:prepend>
-                <v-avatar size="48" :color="getTypeColor(notification.type)" variant="tonal">
-                  <v-icon>{{ getTypeIcon(notification.type) }}</v-icon>
-                </v-avatar>
-              </template>
-
-              <v-list-item-title class="font-weight-medium mb-1">
-                {{ notification.title }}
-                <v-chip size="x-small" :color="getTypeColor(notification.type)" variant="tonal" class="ml-2">
-                  {{ notification.type }}
-                </v-chip>
-              </v-list-item-title>
-
-              <v-list-item-subtitle>
-                <div class="mb-1">{{ notification.content }}</div>
-                <div class="d-flex flex-wrap align-center ga-2">
-                  <v-chip size="x-small" variant="outlined">
-                    {{ notification.target }}
-                  </v-chip>
-                  <span class="text-caption text-medium-emphasis">
-                    {{ formatTime(notification.created_at) }}
-                  </span>
+          <template v-if="notifications.length > 0">
+            <div
+              v-for="notification in notifications"
+              :key="notification.id"
+              class="notification-item"
+            >
+              <div class="flex items-start gap-3">
+                <div class="flex-shrink-0">
+                  <el-avatar :size="48" :style="{ backgroundColor: getTypeColor(notification.type), color: '#fff' }">
+                    <el-icon><component :is="getTypeIcon(notification.type)" /></el-icon>
+                  </el-avatar>
                 </div>
-              </v-list-item-subtitle>
 
-              <template v-slot:append>
-                <v-btn size="small" color="error" variant="text" @click="deleteNotification(notification.id)">
-                  <v-icon>mdi-delete</v-icon>
-                  <v-tooltip activator="parent">删除</v-tooltip>
-                </v-btn>
-              </template>
-            </v-list-item>
-          </v-list>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="font-medium">{{ notification.title }}</span>
+                    <el-tag
+                      type="info"
+                      size="small"
+                      :style="{ color: getTypeColor(notification.type), borderColor: getTypeColor(notification.type), backgroundColor: 'transparent' }"
+                    >
+                      {{ notification.type }}
+                    </el-tag>
+                  </div>
+                  <div class="mb-1 text-body">{{ notification.content }}</div>
+                  <div class="flex items-center gap-2">
+                    <el-tag size="small" effect="plain">{{ notification.target }}</el-tag>
+                    <span class="text-caption">{{ formatTime(notification.created_at) }}</span>
+                  </div>
+                </div>
 
-          <v-card-text v-else class="text-center py-8">
-            <v-icon size="48" color="grey-lighten-1">mdi-inbox-outline</v-icon>
-            <div class="text-body-1 text-medium-emphasis mt-2">
-              暂无通知记录
+                <el-tooltip content="删除" placement="top">
+                  <el-button
+                    type="danger"
+                    text
+                    size="small"
+                    @click="deleteNotification(notification.id)"
+                  >
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </el-tooltip>
+              </div>
             </div>
-            <div class="text-caption text-medium-emphasis mt-1">
-              发送的通知将显示在这里
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
+          </template>
+
+          <el-empty
+            v-else
+            description="暂无通知记录"
+            :image-size="80"
+          >
+            <p class="empty-hint">发送的通知将显示在这里</p>
+          </el-empty>
+        </el-card>
+      </el-col>
+    </el-row>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { adminNotificationApi } from '../../api/admin'
-import { confirm, success, error } from '../../utils/modal'
+import {
+  Bell,
+  Promotion,
+  Clock,
+  InfoFilled,
+  Calendar,
+  Warning,
+  Delete
+} from '@element-plus/icons-vue'
+import { adminNotificationApi } from '@/api'
+import { confirm, success, error } from '@/utils/message'
 
 // ---- 通知历史 ----
 const notifications = ref([])
 const notificationFormRef = ref(null)
-const formValid = ref(false)
 const sending = ref(false)
 
 // ---- 发送表单 ----
@@ -167,8 +180,16 @@ const notificationTargets = [
   { value: 'admin', label: '管理员' }
 ]
 
-const rules = {
-  required: v => !!v || '此字段为必填项'
+const formRules = {
+  title: [{ required: true, message: '请输入通知标题', trigger: 'blur' }],
+  content: [{ required: true, message: '请输入通知内容', trigger: 'blur' }]
+}
+
+const typeStyles = {
+  primary: '#409eff',
+  success: '#67c23a',
+  warning: '#e6a23c',
+  grey: '#909399'
 }
 
 const getTypeColor = (type) => {
@@ -177,16 +198,17 @@ const getTypeColor = (type) => {
     activity: 'success',
     warning: 'warning'
   }
-  return colors[type] || 'grey'
+  const name = colors[type] || 'grey'
+  return typeStyles[name]
 }
 
 const getTypeIcon = (type) => {
   const icons = {
-    system: 'mdi-information',
-    activity: 'mdi-calendar',
-    warning: 'mdi-alert'
+    system: InfoFilled,
+    activity: Calendar,
+    warning: Warning
   }
-  return icons[type] || 'mdi-bell'
+  return icons[type] || Bell
 }
 
 const formatTime = (timeString) => {
@@ -212,7 +234,13 @@ const loadNotifications = async () => {
 }
 
 const handleSendNotification = async () => {
-  if (!notificationForm.value.title || !notificationForm.value.content) {
+  let valid = false
+  if (notificationFormRef.value) {
+    valid = await notificationFormRef.value.validate().then(() => true).catch(() => false)
+  } else {
+    valid = !!(notificationForm.value.title && notificationForm.value.content)
+  }
+  if (!valid) {
     error('请填写通知标题和内容')
     return
   }
@@ -222,6 +250,7 @@ const handleSendNotification = async () => {
     await adminNotificationApi.createNotification(notificationForm.value)
     success('发送成功')
     notificationForm.value = { type: 'system', target: 'all', title: '', content: '' }
+    if (notificationFormRef.value) notificationFormRef.value.clearValidate()
     await loadNotifications()
   } catch (err) {
     console.error('发送通知失败', err)
@@ -249,3 +278,44 @@ onMounted(() => {
   loadNotifications()
 })
 </script>
+
+<style scoped>
+.card-header {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+.notification-item {
+  display: flex;
+  padding: 16px 4px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+.notification-item:last-child {
+  border-bottom: none;
+}
+.font-medium {
+  font-weight: 500;
+}
+.text-body {
+  font-size: 14px;
+  color: var(--el-text-color-primary);
+}
+.text-caption {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.empty-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.w-full {
+  width: 100%;
+}
+.mb-1 {
+  margin-bottom: 4px;
+}
+.mb-4 {
+  margin-bottom: 16px;
+}
+</style>

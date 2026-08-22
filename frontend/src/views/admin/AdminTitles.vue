@@ -1,91 +1,84 @@
 <template>
-  <v-container fluid class="pa-4 pa-md-6">
-    <TitlesPanel
-      :titles="titles"
-      :users="users"
-      :loading="loading"
-      @add-title="addTitle"
-      @grant="grantTitle"
-      @revoke="revokeTitle"
-      @delete-title="handleDeleteTitle"
-      @refresh="loadTitles"
-    />
-  </v-container>
+  <div>
+    <el-card class="page-container" shadow="never">
+      <TitlesPanel
+        :titles="titles"
+        :users="users"
+        :loading="loading"
+        @add-title="addTitle"
+        @grant="grantTitle"
+        @revoke="revokeTitle"
+        @delete-title="handleDeleteTitle"
+        @refresh="loadTitles"
+      />
+    </el-card>
 
-  <v-dialog v-model="grantDialog.show" :max-width="isMobile ? '100%' : '500'" :fullscreen="isMobile" transition="dialog-bottom-transition">
-    <v-card class="dialog-card">
-      <v-card-title class="dialog-title">
-        <v-avatar color="primary" size="40" class="mr-3">
-          <v-icon color="white" size="20">mdi-medal</v-icon>
-        </v-avatar>
-        <span>授予头衔</span>
-        <v-spacer />
-        <v-btn v-if="isMobile" icon variant="text" @click="grantDialog.show = false">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-      </v-card-title>
-      <v-card-text class="dialog-body">
-        <v-form ref="grantForm" v-model="formValid">
-          <v-select
+    <el-dialog
+      v-model="grantDialog.show"
+      :width="isMobile ? '100%' : '500px'"
+      :fullscreen="isMobile"
+      class="dialog-card"
+      :title="null"
+    >
+      <template #header>
+        <div class="dialog-header">
+          <el-icon :size="20" class="dialog-header-icon">
+            <Medal />
+          </el-icon>
+          <span>授予头衔</span>
+        </div>
+      </template>
+
+      <el-form ref="grantForm" :model="grantDialog" label-position="top">
+        <el-form-item label="选择用户" prop="selectedUserId">
+          <el-select
             v-model="grantDialog.selectedUserId"
-            :items="usersForSelect"
-            item-title="display_name"
-            item-value="id"
-            label="选择用户"
-            variant="outlined"
-            density="comfortable"
-            :rules="[rules.required]"
-            prepend-inner-icon="mdi-account"
+            :placeholder="'请选择用户'"
+            clearable
+            filterable
+            style="width: 100%"
             class="mb-2"
           >
-            <template #label>
-              <span class="text-body-2">选择用户</span>
-            </template>
-            <template #item="{ props, item }">
-              <v-list-item v-bind="props" :title="item.raw.display_name">
-                <template #prepend>
-                  <v-avatar size="32" class="mr-3">
-                    <v-img :src="item.raw.avatar || '/default-avatar.png'"></v-img>
-                  </v-avatar>
-                </template>
-                <template #subtitle>
-                  <span class="text-caption">@{{ item.raw.username }}</span>
-                </template>
-              </v-list-item>
-            </template>
-          </v-select>
-        </v-form>
-      </v-card-text>
-      <v-card-actions class="dialog-actions" :class="{ 'flex-column': isMobile }">
-        <v-btn variant="text" @click="grantDialog.show = false" :block="isMobile" class="mb-2 mb-md-0">
-          取消
-        </v-btn>
-        <v-btn
-          color="primary"
-          variant="flat"
-          @click="handleGrant"
-          :disabled="!formValid"
-          :block="isMobile"
-        >
-          <v-icon class="mr-1">mdi-check</v-icon>
+            <el-option
+              v-for="u in usersForSelect"
+              :key="u.id"
+              :label="u.display_name"
+              :value="u.id"
+            >
+              <div class="d-flex align-center">
+                <el-avatar :size="28" :src="u.avatar || '/default-avatar.png'" class="mr-2" />
+                <div>
+                  <div>{{ u.display_name }}</div>
+                  <div class="text-body-2 text-medium-emphasis">@{{ u.username }}</div>
+                </div>
+              </div>
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="grantDialog.show = false" class="mr-2">取消</el-button>
+        <el-button type="primary" :disabled="!grantDialog.selectedUserId" @click="handleGrant">
+          <el-icon class="mr-1"><Check /></el-icon>
           确认授予
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        </el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { Medal, Check } from '@element-plus/icons-vue'
 import TitlesPanel from './TitlesPanel.vue'
 import { adminTitleApi, adminUserApi } from '../../api/admin'
-import { confirm, success, error } from '../../utils/modal'
+import { confirm, success, error } from '@/utils/message'
 
 const titles = ref([])
 const users = ref([])
 const loading = ref(true)
 const grantForm = ref(null)
-const formValid = ref(false)
 const isMobile = ref(false)
 
 const grantDialog = ref({
@@ -102,10 +95,6 @@ const usersForSelect = computed(() => {
     avatar: u.avatar
   }))
 })
-
-const rules = {
-  required: v => !!v || '此字段为必填项'
-}
 
 const checkMobile = () => {
   isMobile.value = window.innerWidth < 600
@@ -188,7 +177,7 @@ const handleGrant = async () => {
 
 // 子组件通过 @revoke 传入 (userId, titleId)
 const revokeTitle = async (userId, titleId) => {
-  const confirmed = await confirm('确定要撤销此头衔吗？')
+  const confirmed = await confirm('确定要撤销此头衔吗？').catch(() => null)
   if (!confirmed) return
 
   try {
@@ -202,7 +191,7 @@ const revokeTitle = async (userId, titleId) => {
 }
 
 const handleDeleteTitle = async (title) => {
-  const confirmed = await confirm(`确定要删除头衔 "${title.name}" 吗？此操作不可恢复。`)
+  const confirmed = await confirm(`确定要删除头衔 "${title.name}" 吗？此操作不可恢复。`).catch(() => null)
   if (!confirmed) return
 
   try {
@@ -228,49 +217,26 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.page-container {
+  border-radius: 12px;
+}
+
 .dialog-card {
-  border-radius: 20px !important;
+  border-radius: 12px;
   overflow: hidden;
 }
 
-@media (max-width: 599px) {
-  .dialog-card {
-    border-radius: 0 !important;
-  }
-}
-
-.dialog-title {
+.dialog-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 24px 24px 16px;
   font-size: 1.2rem;
   font-weight: 700;
   background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
+  padding: 8px 4px;
 }
 
-.dialog-body {
-  padding: 24px !important;
-}
-
-.dialog-actions {
-  padding: 16px 24px 24px;
-  gap: 12px;
-}
-
-:deep(.v-field) {
-  border-radius: 12px;
-}
-
-:deep(.v-field--outlined .v-field__outline) {
-  border-color: rgba(148, 163, 184, 0.3);
-}
-
-:deep(.v-field--focused .v-field__outline) {
-  border-color: rgb(var(--v-theme-primary));
-}
-
-:deep(.v-select .v-field) {
-  border-radius: 12px;
+.dialog-header-icon {
+  color: var(--el-color-primary);
 }
 </style>

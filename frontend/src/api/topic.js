@@ -1,4 +1,4 @@
-import api from './index'
+import api from './http'
 
 // 话题管理API
 export const topicApi = {

@@ -1,96 +1,103 @@
 <template>
-  <v-container fluid class="pa-4">
-    <v-row justify="center">
-      <v-col cols="12" lg="10" xl="8">
-        <v-card elevation="2">
-          <v-card-item class="pa-4">
-            <div class="d-flex align-center justify-space-between flex-wrap gap-2">
-              <div class="d-flex align-center">
-                <v-btn icon="mdi-arrow-left" variant="text" @click="router.back()" class="mr-2"></v-btn>
-                <v-card-title class="text-h5">我的通知</v-card-title>
-              </div>
-              <v-btn
-                v-if="unreadCount > 0"
-                variant="tonal"
-                color="primary"
-                @click="markAllRead"
-                prepend-icon="mdi-check-all"
-              >
-                全部标记已读
-              </v-btn>
-            </div>
-          </v-card-item>
+  <div class="page-container">
+    <el-card shadow="never" class="card-surface">
+      <template #header>
+        <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+          <div class="d-flex align-center">
+            <el-button text circle @click="router.back()" aria-label="返回">
+              <el-icon><ArrowLeft /></el-icon>
+            </el-button>
+            <span class="title">我的通知</span>
+          </div>
+          <el-button
+            v-if="unreadCount > 0"
+            type="primary"
+            plain
+            size="small"
+            @click="markAllRead"
+          >
+            <el-icon class="mr-1"><Select /></el-icon>
+            全部标记已读
+          </el-button>
+        </div>
+      </template>
 
-          <v-divider></v-divider>
+      <template v-if="notifications.length > 0">
+        <el-list class="notification-list">
+          <el-list-item
+            v-for="notification in notifications"
+            :key="notification.id"
+            class="notification-item"
+            :class="{ 'notification-item-unread': !notification.is_read }"
+          >
+            <template #default>
+              <div class="notification-row">
+                <el-avatar
+                  :size="48"
+                  :style="{ backgroundColor: getTypeColor(notification.type) }"
+                  class="notification-avatar"
+                >
+                  <el-icon :size="22" color="white">
+                    <component :is="getTypeIcon(notification.type)" />
+                  </el-icon>
+                </el-avatar>
 
-          <v-list lines="three" v-if="notifications.length > 0" class="pa-2">
-            <v-list-item
-              v-for="notification in notifications"
-              :key="notification.id"
-              :class="{ 'bg-blue-lighten-5': !notification.is_read }"
-              class="mb-2 rounded-lg"
-            >
-              <template v-slot:prepend>
-                <v-avatar :color="getTypeColor(notification.type)" size="48">
-                  <v-icon color="white">{{ getTypeIcon(notification.type) }}</v-icon>
-                </v-avatar>
-              </template>
+                <div class="notification-body">
+                  <div class="notification-title-row">
+                    <el-tag
+                      size="small"
+                      :style="tagStyle(getTypeColor(notification.type))"
+                      class="notification-tag"
+                    >
+                      {{ getTypeText(notification.type) }}
+                    </el-tag>
+                    <span class="notification-title">{{ notification.title }}</span>
+                  </div>
+                  <div class="notification-content">{{ notification.content }}</div>
+                  <div class="notification-time">
+                    <el-icon class="mr-1"><Clock /></el-icon>
+                    {{ formatDate(notification.created_at) }}
+                  </div>
+                </div>
 
-              <v-list-item-title class="font-weight-bold mb-2">
-                <v-chip size="small" :color="getTypeColor(notification.type)" class="mr-2">
-                  {{ getTypeText(notification.type) }}
-                </v-chip>
-                {{ notification.title }}
-              </v-list-item-title>
-
-              <v-list-item-subtitle class="text-body-2 mt-1">
-                {{ notification.content }}
-              </v-list-item-subtitle>
-
-              <v-list-item-subtitle class="text-caption text-medium-emphasis mt-2">
-                <v-icon size="small" class="mr-1">mdi-clock</v-icon>
-                {{ formatDate(notification.created_at) }}
-              </v-list-item-subtitle>
-
-              <template v-slot:append>
-                <v-btn
+                <el-button
                   v-if="!notification.is_read"
-                  variant="tonal"
+                  type="primary"
+                  plain
                   size="small"
-                  color="primary"
                   @click="markRead(notification)"
                 >
                   标记已读
-                </v-btn>
-              </template>
-            </v-list-item>
-          </v-list>
+                </el-button>
+              </div>
+            </template>
+          </el-list-item>
+        </el-list>
+      </template>
 
-          <v-card-text v-else class="text-center py-12">
-            <v-icon size="80" color="grey-lighten-2">mdi-bell-off-outline</v-icon>
-            <div class="text-h6 text-medium-emphasis mt-4">暂无通知</div>
-            <div class="text-body-2 text-medium-emphasis mt-2">
-              暂无新的通知消息
-            </div>
-          </v-card-text>
+      <div v-else class="notification-empty text-center">
+        <el-icon :size="80" color="#e4e7ed"><Bell /></el-icon>
+        <div class="empty-title">暂无通知</div>
+        <div class="text-secondary empty-desc">暂无新的通知消息</div>
+      </div>
 
-          <v-card-actions v-if="totalPages > 1" class="justify-center pb-4">
-            <v-pagination
-              v-model="page"
-              :length="totalPages"
-              :total-visible="5"
-              rounded="circle"
-            ></v-pagination>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
+      <div v-if="totalPages > 1" class="pagination-wrap">
+        <el-pagination
+          v-model:current-page="page"
+          :page-count="totalPages"
+          :page-size="pageSize"
+          layout="prev, pager, next"
+          background
+        />
+      </div>
+    </el-card>
+  </div>
 </template>
 
 <script>
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { ArrowLeft, Bell, Clock, InfoFilled, Calendar, Refresh, Warning, Select } from '@element-plus/icons-vue'
 import { notificationApi } from '../api'
 
 export default {
@@ -149,22 +156,30 @@ export default {
 
     const getTypeColor = (type) => {
       const colors = {
-        system: 'primary',
-        activity: 'success',
-        update: 'info',
-        warning: 'warning'
+        system: '#6750a4',
+        activity: '#67c23a',
+        update: '#409eff',
+        warning: '#e6a23c'
       }
-      return colors[type] || 'default'
+      return colors[type] || '#6b7280'
+    }
+
+    const tagStyle = (color) => {
+      return {
+        color,
+        backgroundColor: `${color}1a`,
+        borderColor: `${color}33`
+      }
     }
 
     const getTypeIcon = (type) => {
       const icons = {
-        system: 'mdi-information',
-        activity: 'mdi-calendar-star',
-        update: 'mdi-update',
-        warning: 'mdi-alert'
+        system: InfoFilled,
+        activity: Calendar,
+        update: Refresh,
+        warning: Warning
       }
-      return icons[type] || 'mdi-bell'
+      return icons[type] || Bell
     }
 
     const getTypeText = (type) => {
@@ -196,13 +211,119 @@ export default {
       unreadCount,
       page,
       totalPages,
+      pageSize,
       markRead,
       markAllRead,
       getTypeColor,
       getTypeIcon,
       getTypeText,
+      tagStyle,
       formatDate
     }
   }
 }
 </script>
+
+<style scoped>
+.d-flex {
+  display: flex;
+}
+.align-center {
+  align-items: center;
+}
+.justify-space-between {
+  justify-content: space-between;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.gap-2 {
+  gap: 8px;
+}
+.mr-1 {
+  margin-right: 4px;
+}
+.text-center {
+  text-align: center;
+}
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--campus-text);
+}
+.notification-list {
+  padding: 0;
+}
+.notification-item {
+  border-bottom: 1px solid var(--campus-border);
+  padding: 12px 8px;
+}
+.notification-item:last-child {
+  border-bottom: none;
+}
+.notification-item-unread {
+  background: #f5f5fa;
+}
+.notification-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+.notification-avatar {
+  flex-shrink: 0;
+}
+.notification-body {
+  flex: 1;
+  min-width: 0;
+}
+.notification-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.notification-tag {
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+.notification-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--campus-text);
+}
+.notification-content {
+  font-size: 13px;
+  color: var(--campus-text);
+  margin-top: 4px;
+  word-break: break-word;
+}
+.notification-time {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--campus-text-secondary);
+  margin-top: 6px;
+}
+.notification-empty {
+  padding: 48px 0;
+}
+.empty-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--campus-text-secondary);
+  margin-top: 16px;
+}
+.empty-desc {
+  margin-top: 8px;
+  font-size: 13px;
+}
+.pagination-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 8px;
+  border-top: 1px solid var(--campus-border);
+  margin-top: 8px;
+}
+</style>

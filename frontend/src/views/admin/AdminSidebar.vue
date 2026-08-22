@@ -1,95 +1,100 @@
 <template>
-  <v-container fluid class="pa-4 pa-md-6">
+  <div class="page-container">
     <!-- 添加新侧边栏项表单 -->
-    <v-card class="mb-4" variant="flat" rounded="lg">
-      <v-card-title class="pb-2">
-        <v-icon start size="20">mdi-plus-circle</v-icon>
-        添加新侧边栏项
-      </v-card-title>
-      <v-card-text>
-        <v-row dense>
-          <v-col cols="12" sm="5">
-            <v-text-field
-              v-model="newItem.title"
-              label="标题"
-              placeholder="例如：联系我们"
-              variant="outlined"
-              density="compact"
-              hide-details
-            />
-          </v-col>
-          <v-col cols="12" sm="5">
-            <v-text-field
-              v-model="newItem.url"
-              label="链接地址"
-              placeholder="例如：https://example.com"
-              variant="outlined"
-              density="compact"
-              hide-details
-            />
-          </v-col>
-          <v-col cols="12" sm="2">
-            <v-btn color="primary" block height="40" @click="addSidebarItem">
-              <v-icon start>mdi-plus</v-icon>
-              添加
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
+    <el-card class="mb-4" shadow="never">
+      <template #header>
+        <span class="card-title">
+          <el-icon :size="20" class="mr-1"><Plus /></el-icon>
+          添加新侧边栏项
+        </span>
+      </template>
+      <el-row :gutter="16">
+        <el-col :xs="24" :sm="10">
+          <el-input
+            v-model="newItem.title"
+            placeholder="例如：联系我们"
+            clearable
+          />
+        </el-col>
+        <el-col :xs="24" :sm="10">
+          <el-input
+            v-model="newItem.url"
+            placeholder="例如：https://example.com"
+            clearable
+          />
+        </el-col>
+        <el-col :xs="24" :sm="4">
+          <el-button type="primary" style="width: 100%" @click="addSidebarItem">
+            <el-icon class="mr-1"><Plus /></el-icon>
+            添加
+          </el-button>
+        </el-col>
+      </el-row>
+    </el-card>
 
     <!-- 侧边栏项列表 -->
-    <v-card variant="flat" rounded="lg">
-      <v-card-title class="pb-2">
-        <v-icon start size="20">mdi-web</v-icon>
-        侧边栏配置
-      </v-card-title>
-      <v-list lines="two" v-if="sidebarItems.length > 0">
-        <v-list-item v-for="(item, index) in sidebarItems" :key="item.id || index" class="py-3">
-          <template v-slot:prepend>
-            <v-avatar size="48" color="primary" variant="tonal">
-              <v-icon>mdi-link</v-icon>
-            </v-avatar>
+    <el-card shadow="never">
+      <template #header>
+        <span class="card-title">
+          <el-icon :size="20" class="mr-1"><Monitor /></el-icon>
+          侧边栏配置
+        </span>
+      </template>
+
+      <el-empty
+        v-if="sidebarItems.length === 0"
+        description="暂无侧边栏项"
+        :image-size="64"
+      />
+
+      <el-table
+        v-else
+        :data="sidebarItems"
+        row-key="id"
+        style="width: 100%"
+      >
+        <el-table-column label="标题" min-width="160">
+          <template #default="{ row }">
+            <span class="font-weight-medium">{{ row.title }}</span>
           </template>
-
-          <v-list-item-title class="font-weight-medium mb-1">
-            {{ item.title }}
-          </v-list-item-title>
-
-          <v-list-item-subtitle>
-            {{ item.url }}
-          </v-list-item-subtitle>
-
-          <template v-slot:append>
-            <v-btn size="small" color="error" variant="text" @click="removeSidebarItem(index)">
-              <v-icon>mdi-delete</v-icon>
-              <v-tooltip activator="parent">删除</v-tooltip>
-            </v-btn>
+        </el-table-column>
+        <el-table-column prop="url" label="链接地址" min-width="220" show-overflow-tooltip />
+        <el-table-column label="操作" width="100" align="center">
+          <template #default="{ row, $index }">
+            <el-button
+              type="danger"
+              size="small"
+              link
+              @click="removeSidebarItem($index)"
+            >
+              <el-icon><Delete /></el-icon>
+              删除
+            </el-button>
           </template>
-        </v-list-item>
-      </v-list>
+        </el-table-column>
+      </el-table>
 
-      <v-card-text v-else class="text-center py-8">
-        <v-icon size="48" color="grey-lighten-1">mdi-inbox</v-icon>
-        <div class="text-body-1 text-medium-emphasis mt-2">
-          暂无侧边栏项
+      <template v-if="sidebarItems.length > 0" #footer>
+        <div class="card-footer">
+          <el-button
+            type="primary"
+            :loading="saving"
+            @click="saveSidebarConfig"
+          >
+            <el-icon class="mr-1"><Check /></el-icon>
+            保存配置
+          </el-button>
         </div>
-      </v-card-text>
-
-      <v-card-actions class="pa-4" v-if="sidebarItems.length > 0">
-        <v-btn color="primary" variant="flat" @click="saveSidebarConfig" :loading="saving">
-          <v-icon start>mdi-check</v-icon>
-          保存配置
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-container>
+      </template>
+    </el-card>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { Plus, Monitor, Delete, Check } from '@element-plus/icons-vue'
 import { adminSidebarApi } from '../../api/admin'
-import { success, error } from '../../utils/modal'
+import { success, error } from '@/utils/message'
 
 const sidebarItems = ref([])
 const newItem = ref({
@@ -113,13 +118,13 @@ const addSidebarItem = () => {
     error('请填写标题和链接地址')
     return
   }
-  
+
   sidebarItems.value.push({
     id: Date.now(),
     title: newItem.value.title,
     url: newItem.value.url
   })
-  
+
   newItem.value = {
     title: '',
     url: ''
@@ -147,3 +152,29 @@ onMounted(() => {
   loadSidebarConfig()
 })
 </script>
+
+<style scoped>
+.mb-4 {
+  margin-bottom: 16px;
+}
+.mr-1 {
+  margin-right: 4px;
+}
+.page-container {
+  padding: 16px;
+}
+.card-title {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+}
+.font-weight-medium {
+  font-weight: 500;
+}
+.card-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+</style>

@@ -1,63 +1,84 @@
 <template>
-  <div class="d-flex justify-center align-center" style="min-height: 80vh;">
-    <v-card width="100%" max-width="400" class="pa-6">
-      <v-card-title class="text-h5 text-center pb-4" style="color: rgb(var(--v-theme-primary));">
-        登录论坛
-      </v-card-title>
-      
-      <v-card-text>
-        <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
-        
-        <v-form @submit.prevent="handleLogin">
-          <v-text-field
-            v-model="form.username"
-            label="用户名"
-            variant="outlined"
-            required
-            prepend-inner-icon="mdi-account"
-            class="mb-4"
-          ></v-text-field>
-          
-          <v-text-field
-            v-model="form.password"
-            label="密码"
-            variant="outlined"
-            type="password"
-            required
-            prepend-inner-icon="mdi-lock"
-            class="mb-4"
-          ></v-text-field>
-          
-          <v-btn
-            type="submit"
-            color="primary"
-            block
-            size="large"
-            :loading="loading"
-          >
-            {{ loading ? '登录中...' : '登录' }}
-          </v-btn>
-        </v-form>
-        
-        <div class="text-center mt-4 text-body-2">
-          <router-link to="/forgot-password" class="text-secondary mr-4">忘记密码？</router-link>
-          还没有账号？ <router-link to="/register" class="text-primary">立即注册</router-link>
+  <div class="auth-page-center">
+    <el-card class="auth-card card-surface">
+      <template #header>
+        <div class="auth-header">
+          <el-icon class="auth-logo"><User /></el-icon>
+          <span class="auth-title">登录论坛</span>
         </div>
-      </v-card-text>
-    </v-card>
+      </template>
+
+      <el-alert
+        v-if="error"
+        :title="error"
+        type="error"
+        show-icon
+        :closable="false"
+        class="mb-4"
+      />
+
+      <el-form
+        :model="form"
+        :rules="rules"
+        ref="formRef"
+        label-position="top"
+        @submit.prevent="handleLogin"
+      >
+        <el-form-item label="用户名" prop="username">
+          <el-input
+            v-model="form.username"
+            placeholder="请输入用户名"
+            :prefix-icon="User"
+          />
+        </el-form-item>
+
+        <el-form-item label="密码" prop="password">
+          <el-input
+            v-model="form.password"
+            type="password"
+            placeholder="请输入密码"
+            show-password
+            :prefix-icon="Lock"
+            @keyup.enter="handleLogin"
+          />
+        </el-form-item>
+
+        <el-button
+          type="primary"
+          size="large"
+          class="w-full"
+          :loading="loading"
+          @click="handleLogin"
+        >
+          {{ loading ? '登录中...' : '登录' }}
+        </el-button>
+      </el-form>
+
+      <div class="auth-footer text-secondary">
+        <router-link to="/forgot-password" class="mr-4">忘记密码？</router-link>
+        还没有账号？
+        <router-link to="/register" class="auth-link">立即注册</router-link>
+      </div>
+    </el-card>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import api from '../api'
+import { User, Lock } from '@element-plus/icons-vue'
+import { authApi } from '@/api'
+import { useUserStore } from '@/stores/user'
+import { success, error } from '@/utils/message'
 
 export default {
   name: 'Login',
   setup() {
     const router = useRouter()
     const route = useRoute()
+    const userStore = useUserStore()
+
+    const formRef = ref(null)
     const form = ref({
       username: '',
       password: ''
@@ -65,9 +86,14 @@ export default {
     const error = ref('')
     const loading = ref(false)
 
+    const rules = {
+      username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+      password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+    }
+
     const checkInit = async () => {
       try {
-        const response = await api.get('/auth/check-init')
+        const response = await authApi.checkInit()
         if (!response.data.initialized) {
           router.push('/register')
         }
@@ -77,20 +103,22 @@ export default {
     }
 
     const handleLogin = async () => {
+      try {
+        await formRef.value?.validate()
+      } catch (e) {
+        return
+      }
+
       error.value = ''
       loading.value = true
 
       try {
-        const response = await api.post('/auth/login', form.value)
-        const { token, refresh_token, expires_in, user } = response.data
+        const response = await authApi.login(form.value)
+        const loginRes = response.data
 
-        localStorage.setItem('token', token)
-        localStorage.setItem('refresh_token', refresh_token)
-        localStorage.setItem('token_expires_at', Date.now() + expires_in * 1000)
-        localStorage.setItem('user', JSON.stringify(user))
+        userStore.persist(loginRes)
 
-        // 通知 App.vue 更新状态
-        window.dispatchEvent(new Event('user-updated'))
+        success('登录成功')
 
         // 登录成功后跳转：优先回到被拦截的目标页，否则回首页
         const redirect = route.query.redirect
@@ -101,6 +129,7 @@ export default {
         }
       } catch (err) {
         error.value = err.response?.data?.error || '登录失败'
+        error(error.value)
       } finally {
         loading.value = false
       }
@@ -112,10 +141,68 @@ export default {
 
     return {
       form,
+      rules,
+      formRef,
       error,
       loading,
+      User,
+      Lock,
       handleLogin
     }
   }
 }
 </script>
+
+<style scoped>
+.auth-page-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 8px 8px 16px;
+}
+
+.auth-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 0 4px;
+}
+
+.auth-logo {
+  font-size: 26px;
+  color: var(--campus-primary);
+}
+
+.auth-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--campus-primary);
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.auth-link {
+  color: var(--campus-primary);
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+.mr-4 {
+  margin-right: 16px;
+}
+.w-full {
+  width: 100%;
+}
+</style>

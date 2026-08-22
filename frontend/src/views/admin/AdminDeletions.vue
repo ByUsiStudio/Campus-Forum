@@ -1,68 +1,99 @@
 <template>
-  <v-container fluid class="pa-4 pa-md-6">
-    <v-card variant="flat" rounded="lg">
-      <v-card-title class="pb-2">
-        <v-icon start size="20">mdi-delete-forever</v-icon>
-        删除申请
-        <v-chip v-if="deletionRequests.length" size="small" color="error" class="ml-2">
-          {{ deletionRequests.length }}
-        </v-chip>
-      </v-card-title>
-
-      <v-list lines="two" v-if="deletionRequests.length > 0">
-        <v-list-item v-for="request in deletionRequests" :key="request.id" class="py-3">
-          <template v-slot:prepend>
-            <v-avatar size="48" color="error" variant="tonal">
-              <v-icon>mdi-file-document</v-icon>
-            </v-avatar>
-          </template>
-
-          <v-list-item-title class="font-weight-medium mb-1">
-            {{ request.Article?.title || '未知文章' }}
-          </v-list-item-title>
-
-          <v-list-item-subtitle>
-            <div class="d-flex flex-wrap align-center ga-2">
-              <span class="d-flex align-center text-caption">
-                <v-icon size="14" color="primary" class="mr-1">mdi-account</v-icon>
-                用户 ID: {{ request.user_id }}
-              </span>
-              <span class="d-flex align-center text-caption">
-                <v-icon size="14" color="grey" class="mr-1">mdi-clock-outline</v-icon>
-                {{ formatTime(request.created_at) }}
-              </span>
-            </div>
-          </v-list-item-subtitle>
-
-          <template v-slot:append>
-            <v-btn-group variant="text" density="compact" divided>
-              <v-btn size="small" color="success" @click="approveDeletion(request.id)">
-                <v-icon>mdi-check</v-icon>
-                <v-tooltip activator="parent">批准</v-tooltip>
-              </v-btn>
-              <v-btn size="small" color="error" @click="rejectDeletion(request.id)">
-                <v-icon>mdi-close</v-icon>
-                <v-tooltip activator="parent">拒绝</v-tooltip>
-              </v-btn>
-            </v-btn-group>
-          </template>
-        </v-list-item>
-      </v-list>
-
-      <v-card-text v-else class="text-center py-8">
-        <v-icon size="48" color="grey-lighten-1">mdi-inbox</v-icon>
-        <div class="text-body-1 text-medium-emphasis mt-2">
-          暂无删除申请
+  <div class="page-container">
+    <el-card shadow="never" class="deletions-card">
+      <template #header>
+        <div class="card-title">
+          <el-icon :size="20" class="mr-1"><DeleteFilled /></el-icon>
+          <span>删除申请</span>
+          <el-tag
+            v-if="deletionRequests.length"
+            type="danger"
+            size="small"
+            class="ml-2"
+          >
+            {{ deletionRequests.length }}
+          </el-tag>
         </div>
-      </v-card-text>
-    </v-card>
-  </v-container>
+      </template>
+
+      <el-empty
+        v-if="deletionRequests.length === 0"
+        description="暂无删除申请"
+        :image-size="80"
+      />
+
+      <el-list
+        v-else
+        :data="deletionRequests"
+        class="deletion-list"
+      >
+        <el-list-item
+          v-for="request in deletionRequests"
+          :key="request.id"
+          class="deletion-item"
+        >
+          <div class="deletion-item-inner">
+            <el-avatar :size="48" class="doc-avatar">
+              <el-icon><Document /></el-icon>
+            </el-avatar>
+
+            <div class="deletion-info">
+              <div class="deletion-title">
+                {{ request.Article?.title || '未知文章' }}
+              </div>
+              <div class="deletion-meta">
+                <span class="meta-item">
+                  <el-icon :size="14"><User /></el-icon>
+                  用户 ID: {{ request.user_id }}
+                </span>
+                <span class="meta-item">
+                  <el-icon :size="14"><Clock /></el-icon>
+                  {{ formatTime(request.created_at) }}
+                </span>
+              </div>
+            </div>
+
+            <div class="deletion-actions">
+              <el-tooltip content="批准">
+                <el-button
+                  type="success"
+                  size="small"
+                  circle
+                  @click="approveDeletion(request.id)"
+                >
+                  <el-icon><Check /></el-icon>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip content="拒绝">
+                <el-button
+                  type="danger"
+                  size="small"
+                  circle
+                  @click="rejectDeletion(request.id)"
+                >
+                  <el-icon><Close /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </div>
+          </div>
+        </el-list-item>
+      </el-list>
+    </el-card>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import {
+  Check,
+  Close,
+  Clock,
+  DeleteFilled,
+  Document,
+  User
+} from '@element-plus/icons-vue'
 import { adminDeletionApi } from '../../api/admin'
-import { confirm, success, error } from '../../utils/modal'
+import { confirm, success, error } from '@/utils/message'
 
 const deletionRequests = ref([])
 
@@ -89,7 +120,7 @@ const formatTime = (timeString) => {
 }
 
 const approveDeletion = async (id) => {
-  const confirmed = await confirm('确定要批准此删除申请吗？')
+  const confirmed = await confirm('确定要批准此删除申请吗？').catch(() => null)
   if (!confirmed) return
 
   try {
@@ -103,7 +134,7 @@ const approveDeletion = async (id) => {
 }
 
 const rejectDeletion = async (id) => {
-  const confirmed = await confirm('确定要拒绝此删除申请吗？')
+  const confirmed = await confirm('确定要拒绝此删除申请吗？').catch(() => null)
   if (!confirmed) return
 
   try {
@@ -118,3 +149,71 @@ const rejectDeletion = async (id) => {
 
 onMounted(loadDeletionRequests)
 </script>
+
+<style scoped>
+.page-container {
+  padding: 16px;
+}
+.card-title {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+}
+.mr-1 {
+  margin-right: 4px;
+}
+.ml-2 {
+  margin-left: 8px;
+}
+.deletion-list {
+  --el-list-item-padding: 0;
+}
+.deletion-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+.deletion-item:last-child {
+  border-bottom: none;
+}
+.deletion-item-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+.doc-avatar {
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
+  flex-shrink: 0;
+}
+.deletion-info {
+  flex: 1;
+  min-width: 0;
+}
+.deletion-title {
+  font-weight: 500;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.deletion-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.deletion-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+</style>

@@ -1,167 +1,170 @@
 <template>
-  <v-container>
-    <v-card>
-      <v-card-title class="d-flex align-center">
-        <v-icon left>mdi-folder-star</v-icon>
-        我的收藏夹
-        <v-btn color="primary" class="ml-auto" @click="createDialog = true">
-          <v-icon left>mdi-plus</v-icon>
-          新建收藏夹
-        </v-btn>
-      </v-card-title>
+  <div class="page-container">
+    <el-card class="card-surface">
+      <template #header>
+        <div class="collection-card-title">
+          <el-icon class="mr-2"><Folder /></el-icon>
+          <span class="font-medium">我的收藏夹</span>
+          <el-button type="primary" class="ml-auto" @click="createDialog = true">
+            <el-icon class="mr-1"><Plus /></el-icon>
+            新建收藏夹
+          </el-button>
+        </div>
+      </template>
 
-      <v-card-text>
-        <v-row>
-          <v-col cols="12" sm="6" md="4" v-for="collection in collections" :key="collection.id">
-            <v-card outlined hover>
-              <v-card-text>
-                <div class="d-flex align-center">
-                  <v-avatar size="40" color="primary">
-                    <v-icon dark>mdi-folder</v-icon>
-                  </v-avatar>
-                  <div class="ml-3">
-                    <div class="title">{{ collection.name }}</div>
-                    <div class="caption">{{ collection.description }}</div>
-                  </div>
-                </div>
-                
-                <v-row class="mt-2">
-                  <v-col cols="6">
-                    <v-chip small>
-                      <v-icon small left>mdi-file-document</v-icon>
-                      {{ collection.article_count }} 文章
-                    </v-chip>
-                  </v-col>
-                  <v-col cols="6">
-                    <v-chip small :color="collection.is_public ? 'success' : 'grey'">
-                      {{ collection.is_public ? '公开' : '私密' }}
-                    </v-chip>
-                  </v-col>
-                </v-row>
-              </v-card-text>
+      <div v-if="loading" class="loading"></div>
+      <el-alert
+        v-else-if="errorMsg"
+        :title="errorMsg"
+        type="error"
+        :closable="false"
+        show-icon
+      ></el-alert>
 
-              <v-card-actions>
-                <v-btn text small color="primary" @click="viewCollection(collection.id)">
-                  查看
-                </v-btn>
-                <v-btn text small color="warning" @click="editCollection(collection)">
-                  编辑
-                </v-btn>
-                <v-btn text small color="error" @click="deleteCollection(collection.id)">
-                  删除
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
+      <div v-else class="collection-grid">
+        <el-card
+          v-for="collection in collections"
+          :key="collection.id"
+          shadow="hover"
+          class="collection-item"
+        >
+          <div class="d-flex align-center">
+            <el-avatar :size="40" class="collection-avatar">
+              <el-icon><Folder /></el-icon>
+            </el-avatar>
+            <div class="ml-3 collection-info">
+              <div class="collection-name">{{ collection.name }}</div>
+              <div class="collection-desc text-secondary">{{ collection.description }}</div>
+            </div>
+          </div>
+
+          <div class="collection-chips mt-2">
+            <el-tag size="small" type="info" effect="plain">
+              <el-icon class="mr-1"><Document /></el-icon>
+              {{ collection.article_count }} 文章
+            </el-tag>
+            <el-tag size="small" :type="collection.is_public ? 'success' : 'info'" effect="plain">
+              {{ collection.is_public ? '公开' : '私密' }}
+            </el-tag>
+          </div>
+
+          <div class="collection-actions">
+            <el-button type="primary" link size="small" @click="viewCollection(collection.id)">
+              查看
+            </el-button>
+            <el-button type="warning" link size="small" @click="editCollection(collection)">
+              编辑
+            </el-button>
+            <el-button type="danger" link size="small" @click="deleteCollection(collection.id)">
+              删除
+            </el-button>
+          </div>
+        </el-card>
+      </div>
+    </el-card>
 
     <!-- 创建收藏夹对话框 -->
-    <v-dialog v-model="createDialog" max-width="500">
-      <v-card>
-        <v-card-title>新建收藏夹</v-card-title>
-        <v-card-text>
-          <v-form ref="createForm">
-            <v-text-field
-              v-model="newCollection.name"
-              label="收藏夹名称"
-              outlined
-              :rules="[v => !!v || '请输入名称']"
-            ></v-text-field>
-            <v-textarea
-              v-model="newCollection.description"
-              label="描述"
-              outlined
-              rows="3"
-            ></v-textarea>
-            <v-switch
-              v-model="newCollection.is_public"
-              label="公开收藏夹"
-            ></v-switch>
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn text @click="createDialog = false">取消</v-btn>
-          <v-btn color="primary" @click="createCollection">创建</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <el-dialog v-model="createDialog" title="新建收藏夹" width="500px">
+      <el-form ref="createForm" :model="newCollection">
+        <el-form-item
+          label="收藏夹名称"
+          prop="name"
+          :rules="[{ required: true, message: '请输入名称', trigger: 'blur' }]"
+        >
+          <el-input v-model="newCollection.name" placeholder="请输入收藏夹名称"></el-input>
+        </el-form-item>
+        <el-form-item label="描述" prop="description">
+          <el-input
+            v-model="newCollection.description"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入描述"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="公开收藏夹" prop="is_public">
+          <el-switch v-model="newCollection.is_public"></el-switch>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createDialog = false">取消</el-button>
+        <el-button type="primary" @click="createCollection">创建</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 编辑收藏夹对话框 -->
-    <v-dialog v-model="editDialog" max-width="500">
-      <v-card>
-        <v-card-title>编辑收藏夹</v-card-title>
-        <v-card-text>
-          <v-form ref="editForm">
-            <v-text-field
-              v-model="editCollectionData.name"
-              label="收藏夹名称"
-              outlined
-              :rules="[v => !!v || '请输入名称']"
-            ></v-text-field>
-            <v-textarea
-              v-model="editCollectionData.description"
-              label="描述"
-              outlined
-              rows="3"
-            ></v-textarea>
-            <v-switch
-              v-model="editCollectionData.is_public"
-              label="公开收藏夹"
-            ></v-switch>
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn text @click="editDialog = false">取消</v-btn>
-          <v-btn color="primary" @click="updateCollection">保存</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <el-dialog v-model="editDialog" title="编辑收藏夹" width="500px">
+      <el-form ref="editForm" :model="editCollectionData">
+        <el-form-item
+          label="收藏夹名称"
+          prop="name"
+          :rules="[{ required: true, message: '请输入名称', trigger: 'blur' }]"
+        >
+          <el-input v-model="editCollectionData.name" placeholder="请输入收藏夹名称"></el-input>
+        </el-form-item>
+        <el-form-item label="描述" prop="description">
+          <el-input
+            v-model="editCollectionData.description"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入描述"
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="公开收藏夹" prop="is_public">
+          <el-switch v-model="editCollectionData.is_public"></el-switch>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDialog = false">取消</el-button>
+        <el-button type="primary" @click="updateCollection">保存</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 收藏夹详情对话框 -->
-    <v-dialog v-model="viewDialog" max-width="800">
-      <v-card>
-        <v-card-title>{{ currentCollection.name }}</v-card-title>
-        <v-card-text>
-          <v-list three-line>
-            <v-list-item v-for="item in collectionArticles" :key="item.id">
-              <v-list-item-content>
-                <v-list-item-title>{{ item.article.title }}</v-list-item-title>
-                <v-list-item-subtitle>
-                  {{ item.note || '无备注' }}
-                </v-list-item-subtitle>
-              </v-list-item-content>
-              <v-list-item-action>
-                <v-btn text small color="primary" :to="`/article/${item.article.id}`">
-                  查看
-                </v-btn>
-                <v-btn text small color="error" @click="removeArticle(item.article.id)">
-                  移除
-                </v-btn>
-              </v-list-item-action>
-            </v-list-item>
-          </v-list>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn text @click="viewDialog = false">关闭</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </v-container>
+    <el-dialog v-model="viewDialog" :title="currentCollection.name || '收藏夹详情'" width="800px">
+      <el-empty v-if="!collectionArticles.length" description="暂无收藏文章"></el-empty>
+      <el-list v-else>
+        <el-list-item v-for="item in collectionArticles" :key="item.id">
+          <div class="article-row">
+            <div>
+              <div class="article-title">{{ item.article.title }}</div>
+              <div class="text-secondary article-note">{{ item.note || '无备注' }}</div>
+            </div>
+            <div class="article-actions">
+              <el-button type="primary" link size="small" @click="$router.push(`/article/${item.article.id}`)">
+                查看
+              </el-button>
+              <el-button type="danger" link size="small" @click="removeArticle(item.article.id)">
+                移除
+              </el-button>
+            </div>
+          </div>
+        </el-list-item>
+      </el-list>
+      <template #footer>
+        <el-button @click="viewDialog = false">关闭</el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue'
-import { collectionApi } from '../api'
+import { ElMessage } from 'element-plus'
+import { Folder, Plus, Document } from '@element-plus/icons-vue'
+import { collectionApi } from '@/api'
+import { success, error, confirm } from '@/utils/message'
 
 export default {
   name: 'CollectionList',
   setup() {
+    const loading = ref(true)
+    const errorMsg = ref('')
     const collections = ref([])
     const createDialog = ref(false)
     const editDialog = ref(false)
     const viewDialog = ref(false)
+    const createForm = ref(null)
+    const editForm = ref(null)
     const newCollection = ref({
       name: '',
       description: '',
@@ -172,26 +175,38 @@ export default {
     const collectionArticles = ref([])
 
     const loadCollections = async () => {
+      loading.value = true
+      errorMsg.value = ''
       try {
         const res = await collectionApi.getCollections()
         if (res.data.success) {
           collections.value = res.data.data
+        } else {
+          errorMsg.value = res.data.message || '加载收藏夹失败'
         }
-      } catch (error) {
-        console.error('加载收藏夹失败:', error)
+      } catch (err) {
+        errorMsg.value = '加载收藏夹失败'
+        console.error('加载收藏夹失败:', err)
+      } finally {
+        loading.value = false
       }
     }
 
     const createCollection = async () => {
+      const valid = await createForm.value?.validate().catch(() => false)
+      if (!valid) return
       try {
         const res = await collectionApi.createCollection(newCollection.value)
         if (res.data.success) {
           collections.value.push(res.data.data)
           createDialog.value = false
           newCollection.value = { name: '', description: '', is_public: false }
+          createForm.value?.resetFields()
+          success('创建成功')
         }
-      } catch (error) {
-        console.error('创建收藏夹失败:', error)
+      } catch (err) {
+        error('创建收藏夹失败')
+        console.error('创建收藏夹失败:', err)
       }
     }
 
@@ -201,6 +216,8 @@ export default {
     }
 
     const updateCollection = async () => {
+      const valid = await editForm.value?.validate().catch(() => false)
+      if (!valid) return
       try {
         const res = await collectionApi.updateCollection(editCollectionData.value.id, editCollectionData.value)
         if (res.data.success) {
@@ -209,18 +226,27 @@ export default {
             collections.value[index] = res.data.data
           }
           editDialog.value = false
+          success('保存成功')
         }
-      } catch (error) {
-        console.error('更新收藏夹失败:', error)
+      } catch (err) {
+        error('更新收藏夹失败')
+        console.error('更新收藏夹失败:', err)
       }
     }
 
     const deleteCollection = async (collectionId) => {
       try {
+        await confirm('确定要删除该收藏夹吗？', { type: 'warning' })
+      } catch {
+        return
+      }
+      try {
         await collectionApi.deleteCollection(collectionId)
         collections.value = collections.value.filter(c => c.id !== collectionId)
-      } catch (error) {
-        console.error('删除收藏夹失败:', error)
+        success('删除成功')
+      } catch (err) {
+        error('删除收藏夹失败')
+        console.error('删除收藏夹失败:', err)
       }
     }
 
@@ -232,8 +258,9 @@ export default {
           collectionArticles.value = res.data.data.articles
           viewDialog.value = true
         }
-      } catch (error) {
-        console.error('加载收藏夹详情失败:', error)
+      } catch (err) {
+        error('加载收藏夹详情失败')
+        console.error('加载收藏夹详情失败:', err)
       }
     }
 
@@ -241,8 +268,10 @@ export default {
       try {
         await collectionApi.removeArticleFromCollection(currentCollection.value.id, articleId)
         collectionArticles.value = collectionArticles.value.filter(a => a.article.id !== articleId)
-      } catch (error) {
-        console.error('移除文章失败:', error)
+        success('移除成功')
+      } catch (err) {
+        error('移除文章失败')
+        console.error('移除文章失败:', err)
       }
     }
 
@@ -251,10 +280,14 @@ export default {
     })
 
     return {
+      loading,
+      errorMsg,
       collections,
       createDialog,
       editDialog,
       viewDialog,
+      createForm,
+      editForm,
       newCollection,
       editCollectionData,
       currentCollection,
@@ -265,8 +298,132 @@ export default {
       updateCollection,
       deleteCollection,
       viewCollection,
-      removeArticle
+      removeArticle,
+      Folder,
+      Plus,
+      Document
     }
   }
 }
 </script>
+
+<style scoped>
+.collection-card-title {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+.ml-auto {
+  margin-left: auto;
+}
+
+.ml-3 {
+  margin-left: 12px;
+}
+
+.mr-1 {
+  margin-right: 4px;
+}
+
+.mr-2 {
+  margin-right: 8px;
+}
+
+.mt-2 {
+  margin-top: 8px;
+}
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.collection-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.collection-avatar {
+  background-color: var(--campus-primary);
+  color: #fff;
+}
+
+.collection-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.collection-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collection-desc {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collection-chips {
+  display: flex;
+  gap: 8px;
+}
+
+.collection-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.article-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.article-title {
+  font-weight: 500;
+}
+
+.article-note {
+  font-size: 12px;
+}
+
+.article-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: 16px;
+  flex-shrink: 0;
+}
+
+.loading {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--campus-primary);
+}
+
+.loading::after {
+  content: '';
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--campus-primary);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: loading-spin 0.8s linear infinite;
+}
+
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>
