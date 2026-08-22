@@ -66,7 +66,7 @@
             置顶
           </div>
           <h3 class="article-title" v-html="highlightText(article.title)"></h3>
-          <p class="article-excerpt article-excerpt-multiline" v-html="DOMPurify.sanitize(highlightText(getExcerpt(article.content)))"></p>
+          <p class="article-excerpt article-excerpt-multiline" v-html="highlightText(getExcerpt(article.content))"></p>
         </div>
 
         <div class="card-footer">
@@ -94,7 +94,6 @@
 <script>
 import { Document, Promotion, SemiSelect, View, ChatDotRound } from '@element-plus/icons-vue'
 import UserAvatar from './UserAvatar.vue'
-import DOMPurify from 'dompurify'
 
 export default {
   name: 'ArticleList',
