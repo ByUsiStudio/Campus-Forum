@@ -6,6 +6,48 @@
 
 ---
 
+## [3.0.1] - 2026-08-22
+
+在 3.0.0（Element Plus 重构）基础上完成的移动端适配、前后端对接修复与安全加固。
+
+### 新增
+
+- **手机端全局适配**：所有 `el-dialog` 在 `≤575px` 屏自动收窄为 `92vw`，消除 15+ 处固定宽度弹窗在手机端横向溢出（App 公告、文章分享/举报、写文章语音、收藏夹/话题详情、后台各面板、编辑器、上传弹窗等）
+- 补齐项目中使用但此前缺失定义的响应式显示工具类 `d-none / d-sm-* / d-md-* / d-lg-* / d-xl-*`（修复后台外壳 `d-lg-none`、搜索框 `d-none d-sm-block` 等无效类）
+- **App 顶部导航**手机端新增汉堡入口与下拉导航面板（登录/注册/写文章/收藏/签到/话题/个人中心/排行榜/通知/管理后台），此前导航在手机上被隐藏后不可达；路由切换自动收起
+- **管理后台外壳**移动端侧边栏改为离屏抽屉（遮罩 + 平移过渡），汉堡按钮真正控制开合，路由切换自动关闭
+- Markdown 正文中的表格包裹进可横向滚动容器，避免窄屏截断/溢出
+
+### 修复
+
+- **对接（D1–D6 / M1–M4）**：
+  - 删除文章审核流：普通用户删除文章改为提交带 `reason` 的待审核 `DeletionRequest`，不再被静默丢弃；管理员仍直接软删
+  - 个人中心好友/粉丝计数读取正确字段（`mutual_friends`），不再恒为 0
+  - 举报管理（AdminReports）状态统计卡片改为读取后端返回的 `pending_count/resolved_count/rejected_count`；`GET /reports` 后端支持 `search`/`target_type` 过滤
+  - 侧边栏配置字段统一 `url → link`，与后端模型一致
+  - 修复 `adminUserNotificationApi` 重复具名导出：统一从 `admin.js`（完整转发 `priority`/`link`）导出一处，避免发送通知信息丢失
+  - `/my/articles` 仅返回已发布文章，与草稿接口互斥
+- **安全**：`UpdateSiteConfig` 不再返回 SMTP 明文密码，改为返回 `smtp_password_set` 标记（此前明文密码随响应泄露）
+- 修复登录失败时 `error` 被同名 ref 遮蔽导致的运行时 TypeError；登录后自动拉取 `/profile` 补全用户资料字段
+- 修复管理后台点击菜单切换到设置项（网站配置 `siteconfig` / 邮件配置 `smtpconfig`）命中前端通配路由导致 **404** 的问题（导航目标 `/<path>` → `/admin/<path>`）
+- 修复 `GetTopics` 分页 `total` 未跟随 `is_hot` 过滤导致热门话题页总页数不准
+- 修复 `frontend/src/api/` 下 7 个文件（`article / user / common / comment / auth / notification / upload`）共 77 处中文注释编码乱码（含多行注释吞并方法名已拆分），不改变任何逻辑
+
+### 移动端适配（其余视图）
+
+- `Category` 页改用 `el-row` 响应式栅格并在移动端隐藏侧栏（此前无样式栅格 + 侧栏不隐藏）
+- `Home` 分区选择器、`SignIn` 周/月统计卡、`Leaderboard` 分段选择器、`CollectionList` 标题区、`NotificationBell` 弹层宽度、`AdminSystemLogs` 分页/筛选在窄屏的适配
+
+### 文档
+
+- 同步 `docs/api/`：`report.md`、`deletion.md`、`articles.md`、`system.md`、`topic.md` 至实际响应结构
+
+### 注意
+
+- 沙箱环境无法执行真实 `vite build` / `go build`（esbuild 子进程、Go 模块缓存写入被拦截），本次以逐文件 `node --check` 语法校验、图标具名导入校验、后端改动大括号配平作为静态验证依据；请在本地 `cd frontend && yarn build`、`cd backend && go build ./...` 做最终构建确认
+
+---
+
 ## [3.0.0] - 2026-08-22
 
 ### 重大重构
