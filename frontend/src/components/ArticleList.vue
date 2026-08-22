@@ -194,7 +194,7 @@ export default {
 .article-link {
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding: 10px 12px;
   text-decoration: none;
   color: inherit;
   height: 100%;
@@ -204,8 +204,8 @@ export default {
 .article-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 6px;
 }
 
 .article-meta {
@@ -245,16 +245,16 @@ export default {
 
 .article-date {
   font-size: 0.75rem;
-  line-height: 1.4;
-  margin-top: 2px;
+  line-height: 1.3;
+  margin-top: 1px;
 }
 
 .article-title {
   font-size: 1rem;
   font-weight: 600;
   color: var(--campus-primary);
-  line-height: 1.4;
-  margin-bottom: 8px;
+  line-height: 1.35;
+  margin-bottom: 4px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -269,19 +269,19 @@ export default {
 .article-excerpt {
   flex: 1;
   font-size: 0.875rem;
-  line-height: 1.6;
+  line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .article-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 12px;
+  padding-top: 8px;
   border-top: 1px solid var(--campus-border);
 }
 

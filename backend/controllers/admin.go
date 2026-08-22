@@ -179,19 +179,10 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// 获取当前用户角色
-	currentRole := c.GetString("role")
-
 	// 获取目标用户信息
 	var targetUser models.User
 	if result := database.DB.First(&targetUser, userID); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
-		return
-	}
-
-	// 权限检查：只有 system 用户可以修改 system 用户
-	if targetUser.Role == "system" && currentRole != "system" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "需要系统管理员权限"})
 		return
 	}
 
@@ -229,7 +220,7 @@ func UpdateUserRole(c *gin.Context) {
 		return
 	}
 
-	if input.Role != "admin" && input.Role != "user" && input.Role != "system" {
+	if input.Role != "admin" && input.Role != "user" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的角色"})
 		return
 	}
@@ -244,15 +235,9 @@ func UpdateUserRole(c *gin.Context) {
 		return
 	}
 
-	// 权限检查：只有 system 用户可以修改其他用户为 system 角色或修改 system 用户
-	if input.Role == "system" && currentRole != "system" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "需要系统管理员权限"})
-		return
-	}
-
-	// 权限检查：只有 system 用户可以修改 system 用户的角色
-	if targetUser.Role == "system" && currentRole != "system" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "需要系统管理员权限"})
+	// 权限检查：只有管理员可以修改其他用户的角色
+	if currentRole != "admin" && currentRole != "system" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "需要管理员权限"})
 		return
 	}
 
@@ -275,19 +260,10 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	// 获取当前用户角色
-	currentRole := c.GetString("role")
-
 	// 获取目标用户信息
 	var targetUser models.User
 	if result := database.DB.First(&targetUser, userID); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
-		return
-	}
-
-	// 权限检查：只有 system 用户可以删除 system 用户
-	if targetUser.Role == "system" && currentRole != "system" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "需要系统管理员权限"})
 		return
 	}
 
@@ -310,19 +286,10 @@ func BanUser(c *gin.Context) {
 		return
 	}
 
-	// 获取当前用户角色
-	currentRole := c.GetString("role")
-
 	// 获取目标用户信息
 	var targetUser models.User
 	if result := database.DB.First(&targetUser, userID); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
-		return
-	}
-
-	// 权限检查：只有 system 用户可以封禁 system 用户
-	if targetUser.Role == "system" && currentRole != "system" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "需要系统管理员权限"})
 		return
 	}
 

@@ -19,13 +19,8 @@ func GetUserPermissionLevel(userID uint) int {
 		return 0
 	}
 
-	// system 角色级别为 100
-	if user.Role == "system" {
-		return 100
-	}
-
-	// admin 角色级别为 80
-	if user.Role == "admin" {
+	// admin 角色级别为 80（system 角色已并入 admin）
+	if user.Role == "admin" || user.Role == "system" {
 		return 80
 	}
 
@@ -43,13 +38,13 @@ func GetUserPermissionLevel(userID uint) int {
 	return maxLevel
 }
 
-// IsSystemAdmin 检查用户是否是系统管理员
+// IsSystemAdmin 检查用户是否是系统管理员（保留兼容：system 并入 admin）
 func IsSystemAdmin(userID uint) bool {
 	var user models.User
 	if err := database.DB.First(&user, userID).Error; err != nil {
 		return false
 	}
-	return user.Role == "system"
+	return user.Role == "system" || user.Role == "admin"
 }
 
 // IsAdmin 检查用户是否是管理员（admin 或 system）
@@ -108,11 +103,11 @@ func RequirePermission(permission string) gin.HandlerFunc {
 			return
 		}
 
-		// 检查用户是否是超级管理员（system 角色拥有所有权限）
+		// 检查用户是否是管理员（admin / system 拥有所有权限）
 		var user models.User
 		err := database.DB.First(&user, userID).Error
-		if err == nil && user.Role == "system" {
-			utils.Info("系统管理员 %s 跳过权限检查", user.Username)
+		if err == nil && (user.Role == "admin" || user.Role == "system") {
+			utils.Info("管理员 %s 跳过权限检查", user.Username)
 			c.Next()
 			return
 		}
@@ -166,9 +161,9 @@ func RequireAnyPermission(permissions ...string) gin.HandlerFunc {
 			return
 		}
 
-		// system 角色拥有所有权限
+		// admin / system 角色拥有所有权限
 		var user models.User
-		if err := database.DB.First(&user, userID).Error; err == nil && user.Role == "system" {
+		if err := database.DB.First(&user, userID).Error; err == nil && (user.Role == "admin" || user.Role == "system") {
 			c.Next()
 			return
 		}

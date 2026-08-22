@@ -269,7 +269,7 @@ export default {
     }
 
     const canDeleteArticle = () => {
-      return props.currentUserRole === 'system' || props.currentUserRole === 'admin'
+      return props.currentUserRole === 'admin'
     }
 
     return {

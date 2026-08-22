@@ -159,10 +159,10 @@ export default {
   },
   methods: {
     getRoleType(role) {
-      return { admin: 'danger', system: 'warning', user: 'primary' }[role] || 'info'
+      return { admin: 'danger', user: 'primary' }[role] || 'info'
     },
     getRoleText(role) {
-      return { admin: '管理员', system: '系统管理员', user: '普通用户' }[role] || '用户'
+      return { admin: '管理员', user: '普通用户' }[role] || '用户'
     },
     formatDate(dateString) {
       if (!dateString) return '-'
@@ -170,21 +170,15 @@ export default {
     },
     canEditRole(user) {
       if (!this.currentUserId || user.id === this.currentUserId) return false
-      if (this.currentUserRole === 'system') return true
-      if (this.currentUserRole === 'admin' && user.role !== 'system') return true
-      return false
+      return this.currentUserRole === 'admin'
     },
     canBanUser(user) {
       if (!this.currentUserId || user.id === this.currentUserId) return false
-      if (this.currentUserRole === 'system') return true
-      if (this.currentUserRole === 'admin' && user.role !== 'system') return true
-      return false
+      return this.currentUserRole === 'admin'
     },
     canDeleteUser(user) {
       if (!this.currentUserId || user.id === this.currentUserId) return false
-      if (this.currentUserRole === 'system') return true
-      if (this.currentUserRole === 'admin' && user.role !== 'system') return true
-      return false
+      return this.currentUserRole === 'admin'
     }
   }
 }

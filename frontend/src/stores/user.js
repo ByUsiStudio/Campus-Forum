@@ -13,7 +13,7 @@ export const useUserStore = defineStore('user', () => {
   const isLoggedIn = computed(() => !!token.value)
   const isAdmin = computed(() => {
     const role = user.value?.role || ''
-    return ['admin', 'system', 'Admin', 'System'].includes(role)
+    return role === 'admin' || role === 'Admin'
   })
 
   function persist(data) {

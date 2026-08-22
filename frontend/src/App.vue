@@ -1,6 +1,5 @@
 <template>
   <div class="app-shell">
-    <!-- 顶部导航 -->
     <header class="app-header">
       <div class="app-header-inner">
         <div class="app-brand">
@@ -10,7 +9,6 @@
           </router-link>
         </div>
 
-        <!-- 桌面端导航 -->
         <nav class="app-nav" v-if="!isAdminPage">
           <el-button v-if="!userStore.isLoggedIn" text @click="go('/login')">登录</el-button>
           <el-button v-if="!userStore.isLoggedIn" text @click="go('/register')">注册</el-button>
@@ -25,7 +23,6 @@
           </el-button>
         </nav>
 
-        <!-- 移动端导航触发 -->
         <el-button v-if="!isAdminPage" class="mobile-menu-toggle d-lg-none" text circle @click="mobileMenuOpen = !mobileMenuOpen" :aria-label="mobileMenuOpen ? '收起菜单' : '打开菜单'">
           <el-icon :size="20"><Menu v-if="!mobileMenuOpen" /><Close v-else /></el-icon>
         </el-button>
@@ -35,11 +32,21 @@
             v-model="searchQuery"
             placeholder="搜索…"
             clearable
-            class="search-input"
+            class="search-input-desktop"
             @keyup.enter="handleSearch"
           >
             <template #prefix><el-icon><Search /></el-icon></template>
           </el-input>
+
+          <el-button
+            class="search-input-mobile"
+            circle
+            text
+            aria-label="搜索"
+            @click="go('/search')"
+          >
+            <el-icon :size="20"><Search /></el-icon>
+          </el-button>
 
           <el-badge v-if="userStore.isLoggedIn" :value="notificationStore.unreadCount" :hidden="notificationStore.unreadCount === 0" :offset="[-4,4]">
             <el-button circle text @click="go('/notifications')">
@@ -73,7 +80,6 @@
       </div>
     </header>
 
-    <!-- 移动端下拉导航 -->
     <transition name="slide-down">
       <div class="mobile-menu-panel" v-if="mobileMenuOpen && !isAdminPage" @click="mobileMenuOpen = false">
         <div class="mobile-menu-links">
@@ -95,12 +101,10 @@
       </div>
     </transition>
 
-    <!-- 内容区 -->
     <main class="app-main">
       <router-view />
     </main>
 
-    <!-- 页脚 -->
     <footer class="app-footer">
       <div class="app-footer-inner">
         <span class="text-secondary">{{ appStore.siteTitle }}</span>
@@ -114,7 +118,6 @@
       </div>
     </footer>
 
-    <!-- 公告弹窗 -->
     <el-dialog
       v-model="announcementVisible"
       title="公告"
@@ -164,7 +167,6 @@ const handleSearch = () => {
   if (q) router.push({ path: '/search', query: { q } })
 }
 
-// 路由变化时关闭移动端菜单
 watch(() => route.path, () => {
   mobileMenuOpen.value = false
 })
@@ -257,8 +259,14 @@ onUnmounted(() => {
   gap: 10px;
   flex-shrink: 0;
 }
-.search-input {
+.search-input-desktop {
   width: 220px;
+}
+
+/* 移动端搜索按钮默认隐藏，仅在窄屏显示 */
+.search-input-mobile {
+  display: none;
+  color: var(--campus-text);
 }
 .user-trigger {
   display: flex;
@@ -336,7 +344,8 @@ onUnmounted(() => {
 @media (max-width: 768px) {
   .app-nav { display: none !important; }
   .mobile-menu-toggle { display: flex !important; }
-  .search-input { width: 140px; }
+  .search-input-desktop { display: none !important; }
+  .search-input-mobile { display: flex !important; }
   .app-header-inner { gap: 8px; }
 }
 </style>
