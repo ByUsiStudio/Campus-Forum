@@ -53,7 +53,7 @@
           <el-menu-item
             v-for="item in adminItems"
             :key="item.route"
-            :index="'/' + item.path"
+            :index="'/admin/' + item.path"
           >
             <el-icon>
               <component :is="item.icon" />
@@ -314,7 +314,7 @@ const bottomNavItems = [
 
 const activeMenu = computed(() => {
   const item = adminItems.find(i => i.route === route.name)
-  return item ? '/' + item.path : ''
+  return item ? '/admin/' + item.path : ''
 })
 
 const breadcrumbs = computed(() => {
