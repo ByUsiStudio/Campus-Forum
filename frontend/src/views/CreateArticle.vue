@@ -163,7 +163,7 @@
                   继续
                 </el-button>
                 <el-button type="danger" size="large" @click="stopRecording">
-                  <el-icon><VideoStop /></el-icon>
+                  <el-icon><VideoCameraFilled /></el-icon>
                   结束
                 </el-button>
               </template>
@@ -235,7 +235,7 @@ import {
   Upload,
   VideoPause,
   VideoPlay,
-  VideoStop
+  VideoCameraFilled
 } from '@element-plus/icons-vue'
 import { success as showSuccess, error as showError, warning as showWarning } from '@/utils/message'
 

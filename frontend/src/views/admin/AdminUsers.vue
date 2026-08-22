@@ -78,7 +78,7 @@
         <template #header>
           <div class="online-users-header">
             <div class="online-users-title">
-              <el-icon color="var(--el-color-success)" class="mr-2"><CircleDot /></el-icon>
+              <el-icon color="var(--el-color-success)" class="mr-2"><CircleCheckFilled /></el-icon>
               在线用户 ({{ onlineUsers.length }})
             </div>
             <div class="flex-1"></div>
@@ -232,7 +232,7 @@
                   size="12"
                   class="mr-1"
                 >
-                  <CircleDot />
+                  <CircleCheckFilled />
                 </el-icon>
                 <span class="online-text">
                   {{ row.online_status === 'online' ? '在线' : '离线' }}
@@ -369,7 +369,6 @@ import {
   User,
   UserFilled,
   Key,
-  CircleDot,
   CircleCheckFilled,
   CircleCloseFilled,
   Edit,

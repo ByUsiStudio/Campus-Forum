@@ -35,7 +35,7 @@
             class="reply-action-btn"
             @click="$emit('toggleLike', reply)"
           >
-            <el-icon class="action-icon"><ThumbUp /></el-icon>
+            <el-icon class="action-icon"><Goods /></el-icon>
             <span :class="commentLiked[reply.id] ? 'liked-text' : ''">
               {{ reply.like_count }}
             </span>
@@ -104,7 +104,7 @@
 
 <script>
 import { ref, watch } from 'vue'
-import { ThumbUp, ChatDotRound, Delete } from '@element-plus/icons-vue'
+import { Goods, ChatDotRound, Delete } from '@element-plus/icons-vue'
 import UserAvatar from './UserAvatar.vue'
 
 export default {

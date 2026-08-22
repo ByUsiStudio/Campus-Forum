@@ -32,7 +32,7 @@
             v-model="editCategoryDialog.name"
             placeholder="例如：表白墙"
             clearable
-            :prefix-icon="Tag"
+            :prefix-icon="CollectionTag"
           />
         </el-form-item>
 
@@ -61,7 +61,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Edit, Plus, Tag, Check } from '@element-plus/icons-vue'
+import { Edit, Plus, CollectionTag, Check } from '@element-plus/icons-vue'
 import CategoriesPanel from './CategoriesPanel.vue'
 import { adminCategoryApi } from '../../api/admin'
 import { confirm, success, error } from '@/utils/message'

@@ -6,7 +6,7 @@
           <p class="text-secondary mb-4">该页面可能已被删除或URL地址有误</p>
           <div class="action-row">
             <el-button type="primary" @click="goHome">
-              <el-icon class="mr-1"><Home /></el-icon>
+              <el-icon class="mr-1"><HomeFilled /></el-icon>
               返回首页
             </el-button>
             <el-button @click="goBack">
@@ -22,7 +22,7 @@
 
 <script>
 import { useRouter } from 'vue-router'
-import { Home, ArrowLeft } from '@element-plus/icons-vue'
+import { HomeFilled, ArrowLeft } from '@element-plus/icons-vue'
 
 export default {
   name: 'NotFound',
@@ -44,7 +44,7 @@ export default {
     return {
       goHome,
       goBack,
-      Home,
+      HomeFilled,
       ArrowLeft
     }
   }

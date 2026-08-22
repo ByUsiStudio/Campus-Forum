@@ -3,7 +3,7 @@
     <el-card class="mb-4 leaderboard-card">
       <template #header>
         <div class="d-flex align-center leaderboard-header">
-          <el-icon :size="24" class="leaderboard-header-icon"><Podium /></el-icon>
+          <el-icon :size="24" class="leaderboard-header-icon"><Trophy /></el-icon>
           <span class="leaderboard-title">排行榜</span>
         </div>
       </template>
@@ -92,7 +92,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Podium, User, Medal } from '@element-plus/icons-vue'
+import { Trophy, User, Medal } from '@element-plus/icons-vue'
 import { leaderboardApi } from '@/api'
 
 export default {

@@ -3,7 +3,7 @@
     <el-result icon="warning" title="403 - 禁止访问" sub-title="您没有权限访问此页面">
       <template #extra>
         <div class="error-actions">
-          <el-button type="primary" :icon="Home" @click="goHome">
+          <el-button type="primary" :icon="HomeFilled" @click="goHome">
             返回首页
           </el-button>
           <el-button :icon="ArrowLeft" @click="goBack">
@@ -18,7 +18,7 @@
 
 <script>
 import { useRouter } from 'vue-router'
-import { Home, ArrowLeft } from '@element-plus/icons-vue'
+import { HomeFilled, ArrowLeft } from '@element-plus/icons-vue'
 
 export default {
   name: 'Forbidden',
@@ -40,7 +40,7 @@ export default {
     return {
       goHome,
       goBack,
-      Home,
+      HomeFilled,
       ArrowLeft
     }
   }

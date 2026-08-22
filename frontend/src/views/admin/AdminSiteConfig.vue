@@ -4,7 +4,7 @@
     <el-card shadow="never" class="page-container">
       <template #header>
         <div class="card-header">
-          <el-icon :size="20" class="card-header-icon"><Globe /></el-icon>
+          <el-icon :size="20" class="card-header-icon"><OfficeBuilding /></el-icon>
           <span>网站配置</span>
         </div>
       </template>
@@ -16,7 +16,7 @@
           <el-input
             v-model="siteConfigForm.siteTitle"
             placeholder="校园论坛 - 分享与交流"
-            :prefix-icon="Web"
+            :prefix-icon="Document"
             clearable
             show-word-limit
             maxlength="100"
@@ -94,7 +94,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Globe, Web, CircleCheck, UserFilled, Refresh, Check } from '@element-plus/icons-vue'
+import { OfficeBuilding, Document, CircleCheck, UserFilled, Refresh, Check } from '@element-plus/icons-vue'
 import { adminSiteConfigApi } from '../../api/admin'
 import { success, error } from '@/utils/message'
 

@@ -17,7 +17,7 @@
                 v-model="smtpConfigForm.host"
                 placeholder="smtp.example.com"
                 clearable
-                :prefix-icon="Server"
+                :prefix-icon="Cpu"
               />
             </el-form-item>
           </el-col>
@@ -27,7 +27,7 @@
                 v-model="smtpConfigForm.port"
                 :min="1"
                 :max="65535"
-                :prefix-icon="Numeric"
+                :prefix-icon="Operation"
                 controls-position="right"
                 style="width: 100%"
               />
@@ -136,7 +136,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Server, Numeric, User, Lock, UserFilled, Message, View, Hide, Memo, Check } from '@element-plus/icons-vue'
+import { Cpu, Operation, User, Lock, UserFilled, Message, View, Hide, Memo, Check } from '@element-plus/icons-vue'
 import { adminSiteConfigApi } from '../../api/admin'
 import { success, error } from '@/utils/message'
 

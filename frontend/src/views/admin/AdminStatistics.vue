@@ -116,7 +116,7 @@
               <el-avatar :size="60" :src="user.avatar || '/default-avatar.png'" />
               <div class="mt-2">{{ user.display_name || user.username }}</div>
               <el-tag size="small" type="success" class="mt-1">
-                <el-icon :size="12" class="mr-1"><CircleFilled /></el-icon>
+                <el-icon :size="12" class="mr-1"><CircleCheckFilled /></el-icon>
                 在线
               </el-tag>
             </div>
@@ -142,7 +142,7 @@ import {
   Star,
   ChatDotSquare,
   User,
-  CircleFilled
+  CircleCheckFilled
 } from '@element-plus/icons-vue'
 import { statisticsApi } from '@/api'
 

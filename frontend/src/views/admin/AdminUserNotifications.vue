@@ -27,7 +27,7 @@
                 <div class="stat-label">权限组数量</div>
               </div>
               <el-avatar :size="48" class="stat-avatar avatar-primary">
-                <el-icon><Shield /></el-icon>
+                <el-icon><Lock /></el-icon>
               </el-avatar>
             </div>
           </el-card>
@@ -290,7 +290,7 @@
 import { ref, onMounted } from 'vue'
 import { adminUserNotificationApi, permissionGroupApi, adminUserApi } from '../../api'
 import { confirm, success, error, warning } from '../../utils/message'
-import { Refresh, Shield, CircleCheck, Star, BellFilled, Promotion, Plus, Edit, Delete } from '@element-plus/icons-vue'
+import { Refresh, Lock, CircleCheck, Star, BellFilled, Promotion, Plus, Edit, Delete } from '@element-plus/icons-vue'
 
 const activeTab = ref('send-notification')
 const loading = ref(false)

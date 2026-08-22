@@ -73,7 +73,7 @@
         <el-card shadow="never" class="interact-card">
           <div class="interact-row">
             <el-button :type="liked ? 'primary' : 'default'" @click="toggleLike">
-              <el-icon><component :is="liked ? 'ThumbUp' : 'ThumbUp'"/></el-icon>&nbsp;{{ article.like_count }} 点赞
+              <el-icon><component :is="liked ? 'GoodsFilled' : 'Goods'"/></el-icon>&nbsp;{{ article.like_count }} 点赞
             </el-button>
             <el-button :type="coined ? 'warning' : 'default'" :disabled="!token" @click="coinArticle">
               <el-icon><Coin /></el-icon>&nbsp;{{ article.coin_count || 0 }} 投币
@@ -148,7 +148,7 @@
                 <div class="comment-content">{{ comment.content }}</div>
                 <div class="comment-actions">
                   <el-button text size="small" :type="commentLiked[comment.id] ? 'primary' : 'default'" @click="toggleCommentLike(comment)">
-                    <el-icon><ThumbUp /></el-icon>&nbsp;{{ comment.like_count }}
+                    <el-icon><Goods /></el-icon>&nbsp;{{ comment.like_count }}
                   </el-button>
                   <el-button v-if="token" text size="small" @click="showReplyForm(comment.id)">
                     <el-icon><ChatLineRound /></el-icon>&nbsp;回复
@@ -246,7 +246,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, View, Headset, Coin, Star, Share, Warning, ThumbUp, Delete, EditPen, ChatDotRound, ChatLineRound, Loading, VideoPause, VideoPlay } from '@element-plus/icons-vue'
+import { ArrowLeft, View, Headset, Coin, Star, Share, Warning, Goods, GoodsFilled, Delete, EditPen, ChatDotRound, ChatLineRound, Loading, VideoPause, VideoPlay } from '@element-plus/icons-vue'
 import http from '@/api/http'
 import ImageViewer from '../components/ImageViewer.vue'
 import UserAvatar from '../components/UserAvatar.vue'
