@@ -105,11 +105,14 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { marked } from 'marked'
+import MarkdownIt from 'markdown-it'
 import { useAppStore } from '@/stores/app'
 import { useUserStore } from '@/stores/user'
 import { useNotificationStore } from '@/stores/notification'
 import http from '@/api/http'
+
+// 公告使用 markdown-it 渲染
+const renderMd = new MarkdownIt({ html: true, linkify: true, breaks: true })
 
 const route = useRoute()
 const router = useRouter()
@@ -149,7 +152,7 @@ const loadAnnouncement = async () => {
   try {
     const { data } = await http.get('/announcement')
     if (data.content) {
-      announcementContent.value = marked(data.content)
+      announcementContent.value = renderMd.render(data.content)
       if (!localStorage.getItem('hideAnnouncement')) {
         announcementVisible.value = true
       }

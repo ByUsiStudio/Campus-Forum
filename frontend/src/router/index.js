@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// 无需登录即可访问的浏览类页面 / 认证类页面（列表前缀匹配：文章、分类）
 const publicPrefixes = [
   '/login', '/register', '/forgot-password', '/search',
   '/leaderboard', '/topics', '/category/', '/article/', '/video', '/403'
@@ -55,7 +54,7 @@ const routes = [
   },
   {
     path: '/admin',
-    component: () => import('@/views/admin/Admin.vue'),
+    component: () => import('@/views/Admin.vue'),
     meta: { requiresAdmin: true, title: '管理后台' },
     children: [
       { path: '', redirect: { name: 'AdminIndex' } },
@@ -101,14 +100,12 @@ const router = createRouter({
 router.beforeEach((to) => {
   const loggedIn = !!localStorage.getItem('token')
 
-  // 已登录访问认证页 → 回首页
   if (loggedIn && (to.path === '/login' || to.path === '/register')) {
     return { path: '/' }
   }
 
   const publicish = to.meta.public || isPublic(to.path)
 
-  // 受限页面：未登录跳登录页，并携带目标以便登录后回跳
   if (!publicish && !loggedIn) {
     return { path: '/login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : {} }
   }

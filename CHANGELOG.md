@@ -28,7 +28,7 @@
 ### 修复
 
 - 修复 7 个 API 模块（`admin / collection / friend / leaderboard / level / statistics / topic`）因编码损坏导致注释吞并方法名、产生 `Unexpected token` 语法错误的问题（重写为正确的 UTF-8 内容）
-- 清理依赖与死代码：移除 `vuetify`、`@mdi/font`、`vue3-markdown-it`、`marked` 等旧依赖；删除 `src/utils/modal.js` 与 `src/styles/style.css`
+- 清理依赖与死代码：移除 `vuetify`、`@mdi/font`、`vue3-markdown-it`、`marked` 等旧依赖（公告/编辑器统一改用 `markdown-it` 渲染）；删除 `src/utils/modal.js` 与 `src/styles/style.css`
 
 ### 注意
 
