@@ -184,7 +184,8 @@
               </div>
             </template>
 
-            <el-table :data="permissionGroups" v-loading="loading" stripe>
+            <div class="table-responsive">
+              <el-table :data="permissionGroups" v-loading="loading" stripe>
               <el-table-column prop="name" label="名称" min-width="120" />
               <el-table-column prop="description" label="描述" min-width="180" show-overflow-tooltip />
               <el-table-column label="级别" width="100">
@@ -220,68 +221,11 @@
                   <el-button link type="danger" :icon="Delete" @click="deleteGroup(row)" />
                 </template>
               </el-table-column>
-            </el-table>
+              </el-table>
+            </div>
           </el-card>
         </el-tab-pane>
       </el-tabs>
-
-      <!-- 创建/编辑权限组对话框 -->
-      <el-dialog
-        v-model="showCreateGroupDialog"
-        :title="editingGroup ? '编辑权限组' : '创建权限组'"
-        width="700px"
-      >
-        <el-form ref="groupFormRef" :model="groupForm" label-position="top">
-          <el-form-item label="权限组名称" required>
-            <el-input v-model="groupForm.name" placeholder="请输入权限组名称" class="mb-3" />
-          </el-form-item>
-          <el-form-item label="描述">
-            <el-input
-              v-model="groupForm.description"
-              type="textarea"
-              :rows="2"
-              placeholder="请输入描述"
-              class="mb-3"
-            />
-          </el-form-item>
-          <el-form-item label="权限级别">
-            <el-input-number
-              v-model="groupForm.level"
-              :min="1"
-              class="mb-3"
-            />
-            <span class="text-empty ml-2">数字越大权限越高</span>
-          </el-form-item>
-          <el-form-item label="设为默认权限组">
-            <el-switch v-model="groupForm.is_default" class="mb-3" />
-          </el-form-item>
-          <el-form-item label="权限列表">
-            <el-select
-              v-model="groupForm.permissions"
-              multiple
-              filterable
-              class="w-full mb-3"
-              placeholder="选择该权限组包含的权限"
-            >
-              <el-option
-                v-for="perm in availablePermissions"
-                :key="perm"
-                :value="perm"
-                :label="perm"
-              />
-            </el-select>
-            <div class="text-empty">选择该权限组包含的权限</div>
-          </el-form-item>
-        </el-form>
-        <template #footer>
-          <span class="dialog-footer">
-            <el-button @click="closeGroupDialog">取消</el-button>
-            <el-button type="primary" :loading="saving" @click="saveGroup">
-              {{ editingGroup ? '保存' : '创建' }}
-            </el-button>
-          </span>
-        </template>
-      </el-dialog>
     </div>
   </div>
 </template>
@@ -291,6 +235,7 @@ import { ref, onMounted } from 'vue'
 import { adminUserNotificationApi, permissionGroupApi, adminUserApi } from '../../api'
 import { confirm, success, error, warning } from '../../utils/message'
 import { Refresh, Lock, CircleCheck, Star, BellFilled, Promotion, Plus, Edit, Delete } from '@element-plus/icons-vue'
+import { jcCloseAll, jcOpenHtml } from '@/utils/jcu'
 
 const activeTab = ref('send-notification')
 const loading = ref(false)
@@ -316,16 +261,7 @@ const notificationForm = ref({
   link: ''
 })
 
-const groupForm = ref({
-  name: '',
-  description: '',
-  level: 1,
-  is_default: false,
-  permissions: []
-})
-
 const editingGroup = ref(null)
-const showCreateGroupDialog = ref(false)
 
 const notificationTypes = [
   { title: '系统通知', value: 'system' },
@@ -446,43 +382,89 @@ const initDefaultGroups = async () => {
 
 const openCreateGroup = () => {
   editingGroup.value = null
-  groupForm.value = {
+  openGroupDialog({
     name: '',
     description: '',
     level: 1,
     is_default: false,
     permissions: []
-  }
-  showCreateGroupDialog.value = true
+  })
 }
 
 const editGroup = (group) => {
   editingGroup.value = group
-  groupForm.value = {
+  openGroupDialog({
     name: group.name,
     description: group.description,
     level: group.level,
     is_default: group.is_default,
     permissions: parsePermissions(group.permissions)
-  }
-  showCreateGroupDialog.value = true
+  })
 }
 
-const saveGroup = async () => {
-  if (!groupForm.value.name) {
-    warning('请输入权限组名称')
-    return
-  }
+const openGroupDialog = (form) => {
+  const isEdit = !!editingGroup.value
+  const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  const field = (label, inner, hint) =>
+    `<div style="margin-bottom:14px;"><div style="margin:0 0 4px;font-weight:600;font-size:13px;color:var(--jc-text,#333);">${label}</div>${inner}${hint ? `<div style="margin-top:4px;font-size:12px;color:var(--jc-text-2,#64748b);">${hint}</div>` : ''}</div>`
 
+  const permChips = availablePermissions
+    .map((p) => {
+      const checked = form.permissions.includes(p) ? ' checked' : ''
+      return `<label style="display:inline-flex;align-items:center;gap:4px;margin:0 8px 8px 0;padding:6px 10px;border:1px solid var(--jc-border,#e6e9f2);border-radius:8px;cursor:pointer;font-size:13px;color:var(--jc-text,#0f172a);background:var(--jc-surface,#fff);"><input type="checkbox" class="jf-perm" value="${esc(p)}"${checked} /> ${esc(p)}</label>`
+    })
+    .join('')
+
+  const content =
+    field('权限组名称', `<input data-group="name" class="jc-modal__input" type="text" value="${esc(form.name)}" placeholder="请输入权限组名称" required />`) +
+    field('描述', `<textarea data-group="description" class="jc-modal__input" rows="2" style="resize:vertical;">${esc(form.description)}</textarea>`) +
+    field('权限级别', `<input data-group="level" class="jc-modal__input" type="number" min="1" value="${form.level}" /><span style="margin-left:8px;font-size:12px;color:var(--jc-text-2,#64748b);">数字越大权限越高</span>`) +
+    field('设为默认权限组', `<label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:14px;color:var(--jc-text,#0f172a);"><input type="checkbox" data-group="is_default" ${form.is_default ? 'checked' : ''} /> 设为默认</label>`) +
+    field('权限列表', `<div>${permChips}</div>`, '选择该权限组包含的权限')
+
+  jcOpenHtml({
+    title: isEdit ? '编辑权限组' : '创建权限组',
+    content,
+    width: 700,
+    size: 'md',
+    buttons: [
+      { text: '取消', type: 'default', action: () => jcCloseAll() },
+      {
+        text: isEdit ? '保存' : '创建',
+        type: 'primary',
+        action: (inst) => {
+          const root = inst.modalContent
+          const name = (root.querySelector('[data-group="name"]')?.value || '').trim()
+          if (!name) {
+            warning('请输入权限组名称')
+            return
+          }
+          const level = Number(root.querySelector('[data-group="level"]')?.value || 1)
+          const perms = Array.from(root.querySelectorAll('.jf-perm:checked')).map((el) => el.value)
+          saveGroup({
+            name,
+            description: root.querySelector('[data-group="description"]')?.value || '',
+            level,
+            is_default: root.querySelector('[data-group="is_default"]')?.checked || false,
+            permissions: perms
+          })
+        }
+      }
+    ]
+  })
+}
+
+const saveGroup = async (form) => {
   saving.value = true
   try {
     if (editingGroup.value) {
-      await permissionGroupApi.updateGroup(editingGroup.value.id, groupForm.value)
+      await permissionGroupApi.updateGroup(editingGroup.value.id, form)
     } else {
-      await permissionGroupApi.createGroup(groupForm.value)
+      await permissionGroupApi.createGroup(form)
     }
     success('保存成功')
-    closeGroupDialog()
+    jcCloseAll()
+    editingGroup.value = null
     loadPermissionGroups()
   } catch (err) {
     console.error('保存失败:', err)
@@ -503,18 +485,6 @@ const deleteGroup = async (group) => {
   } catch (err) {
     console.error('删除失败:', err)
     error(err.response?.data?.error || '删除失败')
-  }
-}
-
-const closeGroupDialog = () => {
-  showCreateGroupDialog.value = false
-  editingGroup.value = null
-  groupForm.value = {
-    name: '',
-    description: '',
-    level: 1,
-    is_default: false,
-    permissions: []
   }
 }
 
@@ -628,12 +598,6 @@ onMounted(() => {
   align-items: center;
 }
 
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
 .page-title {
   font-size: 20px;
   font-weight: 700;
@@ -644,5 +608,9 @@ onMounted(() => {
   margin: 0;
   color: var(--el-text-color-secondary);
   font-size: 13px;
+}
+
+.table-responsive {
+  overflow-x: auto;
 }
 </style>

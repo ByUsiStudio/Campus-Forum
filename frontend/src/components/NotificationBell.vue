@@ -25,7 +25,7 @@
       </el-badge>
     </template>
 
-    <div class="card-surface notification-card">
+    <div class="notification-card">
       <div class="notification-header">
         <span class="notification-title">通知</span>
         <el-button
@@ -33,15 +33,15 @@
           text
           type="primary"
           size="small"
+          class="mark-all-btn"
           @click="markAllRead"
         >
+          <el-icon class="mark-icon"><Select /></el-icon>
           全部已读
         </el-button>
       </div>
 
-      <el-divider class="notification-divider" />
-
-      <el-scrollbar max-height="400px">
+      <el-scrollbar max-height="400px" class="notification-scroll">
         <ul v-if="notifications.length > 0" class="notification-list">
           <li
             v-for="notification in notifications"
@@ -51,31 +51,34 @@
             @click="handleClick(notification)"
           >
             <el-avatar
-              :size="32"
+              :size="36"
               :style="{ backgroundColor: getTypeColor(notification.type) }"
               class="notification-avatar"
             >
-              <el-icon :size="16" color="white">
+              <el-icon :size="17" color="white">
                 <component :is="getTypeIcon(notification.type)" />
               </el-icon>
             </el-avatar>
             <div class="notification-body">
-              <div class="notification-item-title">{{ notification.title }}</div>
-              <div class="notification-item-content"> {{ notification.content }} </div>
-              <div class="notification-item-time text-secondary">{{ formatDate(notification.created_at) }}</div>
+              <div class="notification-item-top">
+                <span class="notification-item-title">{{ notification.title }}</span>
+                <i v-if="!notification.is_read" class="unread-dot" aria-hidden="true"></i>
+              </div>
+              <div class="notification-item-content">{{ notification.content }}</div>
+              <div class="notification-item-time">{{ formatDate(notification.created_at) }}</div>
             </div>
           </li>
         </ul>
-        <div v-else class="notification-empty text-secondary">
-          暂无通知
+        <div v-else class="notification-empty">
+          <el-icon :size="40" class="empty-icon"><Bell /></el-icon>
+          <div class="empty-text">暂无通知</div>
         </div>
       </el-scrollbar>
 
-      <el-divider v-if="notifications.length > 0" class="notification-divider" />
-
       <div v-if="notifications.length > 0" class="notification-footer">
-        <el-button text type="primary" size="small" @click="goToNotifications">
-          查看全部
+        <el-button text type="primary" size="small" class="view-all-btn" @click="goToNotifications">
+          查看全部通知
+          <el-icon class="arrow-icon"><ArrowRight /></el-icon>
         </el-button>
       </div>
     </div>
@@ -85,8 +88,9 @@
 <script>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Bell, InfoFilled, Calendar, Refresh, Warning } from '@element-plus/icons-vue'
+import { Bell, InfoFilled, Calendar, Refresh, Warning, Select, ArrowRight } from '@element-plus/icons-vue'
 import api from '../api'
+import { success } from '../utils/message'
 
 export default {
   name: 'NotificationBell',
@@ -137,6 +141,7 @@ export default {
         await api.post('/notifications/read-all')
         notifications.value.forEach(n => n.is_read = true)
         unreadCount.value = 0
+        success('已全部标记为已读')
       } catch (error) {
         console.error('标记全部已读失败', error)
       }
@@ -150,9 +155,9 @@ export default {
     const getTypeColor = (type) => {
       const colors = {
         system: 'var(--campus-primary)',
-        activity: '#67c23a',
+        activity: '#22c55e',
         update: '#409eff',
-        warning: '#e6a23c'
+        warning: '#f59e0b'
       }
       return colors[type] || 'var(--campus-text-secondary)'
     }
@@ -228,24 +233,33 @@ export default {
 }
 
 .notification-card {
-  padding: 0;
+  padding: 8px;
 }
 
 .notification-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px;
+  padding: 6px 8px 10px;
 }
 
 .notification-title {
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--campus-text);
+  letter-spacing: -0.01em;
 }
 
-.notification-divider {
-  margin: 0;
+.mark-all-btn {
+  gap: 4px;
+}
+
+.mark-icon {
+  font-size: 14px;
+}
+
+.notification-scroll {
+  border-radius: var(--campus-radius-sm);
 }
 
 .notification-list {
@@ -259,19 +273,22 @@ export default {
   align-items: flex-start;
   gap: 12px;
   padding: 12px;
+  border-radius: 10px;
+  transition: background-color 0.2s ease;
 }
 
 .notification-item-unread {
-  background: #f5f5fa;
+  background: var(--campus-primary-soft);
 }
 
 .notification-item:hover {
-  background: #f5f6fa;
+  background: var(--campus-surface-2);
 }
 
 .notification-avatar {
   flex-shrink: 0;
   margin-top: 2px;
+  border-radius: 10px;
 }
 
 .notification-body {
@@ -279,33 +296,88 @@ export default {
   min-width: 0;
 }
 
+.notification-item-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .notification-item-title {
-  font-weight: 500;
+  font-weight: 600;
   font-size: 14px;
   color: var(--campus-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unread-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--campus-primary);
+  box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.15);
 }
 
 .notification-item-content {
   font-size: 13px;
-  color: var(--campus-text);
+  color: var(--campus-text-secondary);
   margin-top: 2px;
   word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .notification-item-time {
   font-size: 12px;
+  color: var(--campus-text-muted);
   margin-top: 4px;
 }
 
 .notification-empty {
-  padding: 32px 0;
+  padding: 36px 0;
   text-align: center;
-  margin: 0;
+}
+
+.empty-icon {
+  color: var(--campus-text-muted);
+}
+
+.empty-text {
+  margin-top: 10px;
+  color: var(--campus-text-secondary);
+  font-size: 14px;
 }
 
 .notification-footer {
   display: flex;
-  justify-content: flex-end;
-  padding: 8px 12px;
+  justify-content: center;
+  padding: 10px 8px 4px;
+  border-top: 1px solid var(--campus-border);
+  margin-top: 4px;
+}
+
+.view-all-btn {
+  gap: 4px;
+  width: 100%;
+  justify-content: center;
+}
+
+.arrow-icon {
+  font-size: 14px;
+}
+</style>
+
+<style>
+/* 控制弹层自身圆角与阴影 */
+.notification-popover {
+  border-radius: var(--campus-radius) !important;
+  box-shadow: var(--campus-shadow-lg) !important;
+  border: 1px solid var(--campus-border) !important;
+  padding: 8px !important;
+  overflow: hidden;
 }
 </style>

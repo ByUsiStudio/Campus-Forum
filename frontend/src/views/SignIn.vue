@@ -1,8 +1,10 @@
 <template>
-  <div class="page-container">
+  <div class="page-container signin-page">
     <!-- 页面标题 -->
-    <div class="header-row mb-4">
-      <el-button circle :icon="ArrowLeft" class="back-btn" @click="$router.back()" />
+    <div class="header-row">
+      <button class="back-btn" @click="$router.back()" aria-label="返回">
+        <el-icon :size="20"><ArrowLeft /></el-icon>
+      </button>
       <h2 class="page-title">每日签到</h2>
     </div>
 
@@ -12,224 +14,179 @@
     </div>
 
     <template v-else>
-      <!-- 签到卡片 -->
-      <el-card class="mb-4 card-surface" shadow="never">
-        <div class="text-center card-body-pad">
-          <!-- 签到状态显示 -->
-          <div v-if="status.has_signed_in" class="text-center pad-16">
-            <el-avatar :size="80" class="signed-avatar mb-4">
-              <el-icon :size="48"><CircleCheckFilled /></el-icon>
-            </el-avatar>
-            <h3 class="stat-title mb-2">今日已签到</h3>
-            <p class="text-secondary sub-hint">明天再来领取更多积分吧~</p>
-          </div>
+      <div class="signin-layout">
+        <!-- 左侧：签到主卡片 -->
+        <div class="signin-main">
+          <div class="card-surface signin-card">
+            <!-- 状态图 -->
+            <div v-if="status.has_signed_in" class="visual">
+              <div class="streak-ring done">
+                <el-icon :size="56"><CircleCheckFilled /></el-icon>
+              </div>
+              <h3 class="visual-title">今日已签到</h3>
+              <p class="visual-sub">明天再来领取更多积分吧~</p>
+            </div>
+            <div v-else class="visual">
+              <div class="streak-ring">
+                <span class="streak-day">{{ status.sign_in_days || 0 }}</span>
+                <span class="streak-unit">天</span>
+              </div>
+              <h3 class="visual-title">连续签到</h3>
+              <p class="visual-sub">
+                已连续签到
+                <span class="text-primary stat-strong">{{ status.sign_in_days || 0 }}</span> 天
+              </p>
+              <button class="btn btn-primary signin-btn" :disabled="signing" @click="handleSignIn">
+                <el-icon v-if="!signing" style="margin-right:6px"><EditPen /></el-icon>
+                {{ signing ? '签到中…' : '立即签到' }}
+              </button>
+            </div>
 
-          <!-- 未签到状态 -->
-          <div v-else class="unsigned-section">
-            <el-avatar :size="80" class="unsigned-avatar mb-4">
-              <el-icon :size="48"><Calendar /></el-icon>
-            </el-avatar>
-            <h3 class="stat-title mb-2">今日可签到</h3>
-            <p class="text-secondary mb-4">
-              连续签到 <span class="text-primary stat-strong">{{ status.sign_in_days }}</span> 天，获得 <span class="text-primary stat-strong">{{ status.total_coins || status.total_points || 0 }}</span> 币
-            </p>
-            <el-button
-              type="primary"
-              size="large"
-              :loading="signing"
-              @click="handleSignIn"
-            >
-              <el-icon class="btn-icon"><EditPen /></el-icon>
-              立即签到
-            </el-button>
-          </div>
-
-          <!-- 签到统计 -->
-          <el-row :gutter="16" class="mt-4 stats-row">
-            <el-col :xs="8" :sm="8" :md="8" :lg="8">
-              <div class="stat-item">
+            <!-- 签到统计 -->
+            <div class="stats-row">
+              <div class="stat-cell">
                 <div class="stat-value text-primary">{{ status.total_coins || status.total_points || 0 }}</div>
-                <div class="stat-label text-secondary">累计币</div>
+                <div class="stat-label">累计币</div>
               </div>
-            </el-col>
-            <el-col :xs="8" :sm="8" :md="8" :lg="8">
-              <div class="stat-item">
+              <div class="stat-cell">
                 <div class="stat-value text-primary">{{ status.sign_in_days || 0 }}</div>
-                <div class="stat-label text-secondary">连续天数</div>
+                <div class="stat-label">连续天数</div>
               </div>
-            </el-col>
-            <el-col :xs="8" :sm="8" :md="8" :lg="8">
-              <div class="stat-item">
+              <div class="stat-cell">
                 <div class="stat-value text-primary">{{ status.total_sign_ins || 0 }}</div>
-                <div class="stat-label text-secondary">累计次数</div>
+                <div class="stat-label">累计次数</div>
               </div>
-            </el-col>
-          </el-row>
-        </div>
-      </el-card>
-
-      <!-- 本周本月统计 -->
-      <el-row :gutter="16" class="mb-4">
-        <el-col :xs="24" :sm="12" :md="12" :lg="12">
-          <el-card class="card-surface" shadow="never">
-            <div class="text-center small-card-pad">
-              <div class="week-icon mb-4"><el-icon :size="20"><Calendar /></el-icon></div>
-              <div class="mini-value text-primary">{{ status.week_sign_in_count || 0 }}</div>
-              <div class="text-secondary mini-label">本周签到</div>
             </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="12" :lg="12">
-          <el-card class="card-surface" shadow="never">
-            <div class="text-center small-card-pad">
-              <div class="month-icon mb-4"><el-icon :size="20"><Calendar /></el-icon></div>
-              <div class="mini-value text-primary">{{ status.month_sign_in_count || 0 }}</div>
-              <div class="text-secondary mini-label">本月签到</div>
+
+            <!-- 本周 / 本月 -->
+            <div class="period-row">
+              <div class="period-cell">
+                <div class="period-icon week"><el-icon :size="18"><Calendar /></el-icon></div>
+                <div class="period-value">{{ status.week_sign_in_count || 0 }}</div>
+                <div class="period-label">本周签到</div>
+              </div>
+              <div class="period-cell">
+                <div class="period-icon month"><el-icon :size="18"><Calendar /></el-icon></div>
+                <div class="period-value">{{ status.month_sign_in_count || 0 }}</div>
+                <div class="period-label">本月签到</div>
+              </div>
             </div>
-          </el-card>
-        </el-col>
-      </el-row>
-
-      <!-- 连续签到奖励说明 -->
-      <el-card class="mb-4 card-surface" shadow="never">
-        <template #header>
-          <div class="card-title">
-            <el-icon :size="20" class="card-title-icon"><Present /></el-icon>
-            连续签到奖励
           </div>
-        </template>
-        <div class="reward-item">
-          <el-tag type="warning" effect="plain" class="reward-tag">7</el-tag>
-          <span class="reward-text">
-            连续 <span class="text-primary stat-strong">7</span> 天
-          </span>
-          <span class="reward-coin success-text">+5 币</span>
-        </div>
-        <div class="reward-item">
-          <el-tag type="warning" effect="plain" class="reward-tag">30</el-tag>
-          <span class="reward-text">
-            连续 <span class="text-primary stat-strong">30</span> 天
-          </span>
-          <span class="reward-coin success-text">+15 币</span>
-        </div>
-        <div class="reward-item">
-          <el-tag type="warning" effect="plain" class="reward-tag">365</el-tag>
-          <span class="reward-text">
-            连续 <span class="text-primary stat-strong">365</span> 天
-          </span>
-          <span class="reward-coin success-text">+50 币</span>
-        </div>
-      </el-card>
 
-      <!-- 排行榜 -->
-      <el-card class="mb-4 card-surface" shadow="never">
-        <template #header>
-          <div class="rank-header">
-            <span class="card-title">
-              <el-icon :size="20" class="card-title-icon"><Trophy /></el-icon>
-              签到排行榜
-            </span>
-            <el-radio-group v-model="rankType" size="small">
-              <el-radio-button value="continuous">连续</el-radio-button>
-              <el-radio-button value="points">币</el-radio-button>
-            </el-radio-group>
+          <!-- 连续签到奖励说明 -->
+          <div class="card-surface reward-card">
+            <div class="section-title">
+              <el-icon :size="18" class="title-icon"><Present /></el-icon>
+              连续签到奖励
+            </div>
+            <div class="reward-item">
+              <span class="reward-days">7 天</span>
+              <span class="reward-bar"><i style="width:25%"></i></span>
+              <span class="reward-coin">+5 币</span>
+            </div>
+            <div class="reward-item">
+              <span class="reward-days">30 天</span>
+              <span class="reward-bar"><i style="width:70%"></i></span>
+              <span class="reward-coin">+15 币</span>
+            </div>
+            <div class="reward-item">
+              <span class="reward-days">365 天</span>
+              <span class="reward-bar"><i style="width:100%"></i></span>
+              <span class="reward-coin">+50 币</span>
+            </div>
           </div>
-        </template>
-        <div v-if="rankType === 'continuous'" class="list-pad">
-          <el-list v-if="rankings.continuous_rankings?.length">
-            <el-list-item
-              v-for="(user, index) in rankings.continuous_rankings"
-              :key="user.id"
-              class="ranking-item"
-            >
-              <el-avatar
-                :size="32"
-                class="rank-avatar"
-                :class="rankAvatarClass(index)"
-              >
-                <span class="rank-number">{{ index + 1 }}</span>
-              </el-avatar>
-              <span class="rank-name">{{ user.display_name || user.username }}</span>
-              <span class="rank-value text-primary">
-                {{ user.sign_in_days }} 天
-              </span>
-            </el-list-item>
-          </el-list>
-          <div v-else class="empty-text">暂无数据</div>
         </div>
 
-        <div v-else class="list-pad">
-          <el-list v-if="rankings.points_rankings?.length">
-            <el-list-item
-              v-for="(user, index) in rankings.points_rankings"
-              :key="user.id"
-              class="ranking-item"
-            >
-              <el-avatar
-                :size="32"
-                class="rank-avatar"
-                :class="rankAvatarClass(index)"
-              >
-                <span class="rank-number">{{ index + 1 }}</span>
-              </el-avatar>
-              <span class="rank-name">{{ user.display_name || user.username }}</span>
-              <span class="rank-value text-primary">
-                {{ user.total_coins || user.total_points }} 币
+        <!-- 右侧：排行榜 -->
+        <div class="signin-side">
+          <!-- 排行榜 -->
+          <div class="card-surface rank-card">
+            <div class="rank-head">
+              <span class="section-title">
+                <el-icon :size="18" class="title-icon"><Trophy /></el-icon>
+                签到排行榜
               </span>
-            </el-list-item>
-          </el-list>
-          <div v-else class="empty-text">暂无数据</div>
+              <div class="rank-switch">
+                <button
+                  class="rank-switch-btn"
+                  :class="{ active: rankType === 'continuous' }"
+                  @click="rankType = 'continuous'"
+                >连续</button>
+                <button
+                  class="rank-switch-btn"
+                  :class="{ active: rankType === 'points' }"
+                  @click="rankType = 'points'"
+                >币</button>
+              </div>
+            </div>
+
+            <template v-if="rankType === 'continuous'">
+              <div v-if="rankings.continuous_rankings?.length" class="rank-list">
+                <div
+                  v-for="(user, index) in rankings.continuous_rankings"
+                  :key="user.id"
+                  class="rank-row"
+                >
+                  <span class="rank-no" :class="'rank-no-' + (index + 1)">{{ index + 1 }}</span>
+                  <span class="rank-name">{{ user.display_name || user.username }}</span>
+                  <span class="rank-value text-primary">{{ user.sign_in_days }} 天</span>
+                </div>
+              </div>
+              <div v-else class="empty-text">暂无数据</div>
+            </template>
+            <template v-else>
+              <div v-if="rankings.points_rankings?.length" class="rank-list">
+                <div
+                  v-for="(user, index) in rankings.points_rankings"
+                  :key="user.id"
+                  class="rank-row"
+                >
+                  <span class="rank-no" :class="'rank-no-' + (index + 1)">{{ index + 1 }}</span>
+                  <span class="rank-name">{{ user.display_name || user.username }}</span>
+                  <span class="rank-value text-primary">{{ user.total_coins || user.total_points }} 币</span>
+                </div>
+              </div>
+              <div v-else class="empty-text">暂无数据</div>
+            </template>
+          </div>
         </div>
-      </el-card>
+      </div>
 
       <!-- 签到历史 -->
-      <el-card class="card-surface" shadow="never">
-        <template #header>
-          <div class="card-title">
-            <el-icon :size="20" class="card-title-icon"><Clock /></el-icon>
-            签到记录
-          </div>
-        </template>
-        <div class="list-pad">
-          <el-list v-if="history.records?.length">
-            <el-list-item
-              v-for="record in history.records"
-              :key="record.id"
-              class="history-item"
-            >
-              <el-avatar :size="36" class="history-avatar">
-                <el-icon :size="20"><Check /></el-icon>
-              </el-avatar>
-              <div class="history-info">
-                <span class="history-date">{{ record.sign_in_date }}</span>
-                <span class="text-secondary history-sub">连续 {{ record.continuous_day }} 天</span>
-              </div>
-              <span class="success-text history-coin">
-                +{{ record.reward_points }} 币
-              </span>
-            </el-list-item>
-          </el-list>
-          <div v-else class="empty-text">暂无签到记录</div>
-
-          <!-- 分页 -->
-          <el-pagination
-            v-if="history.total_pages > 1"
-            v-model:current-page="page"
-            :page-size="history.page_size || 30"
-            :total="history.total"
-            layout="prev, pager, next"
-            :pager-count="5"
-            class="my-4 pagination"
-            @current-change="fetchHistory"
-          ></el-pagination>
+      <div class="card-surface history-card">
+        <div class="section-title history-title">
+          <el-icon :size="18" class="title-icon"><Clock /></el-icon>
+          签到记录
         </div>
-      </el-card>
+        <div v-if="history.records?.length" class="history-list">
+          <div v-for="record in history.records" :key="record.id" class="history-item">
+            <div class="history-check"><el-icon :size="16"><Check /></el-icon></div>
+            <div class="history-info">
+              <span class="history-date">{{ record.sign_in_date }}</span>
+              <span class="history-sub">连续 {{ record.continuous_day }} 天</span>
+            </div>
+            <span class="history-coin">+{{ record.reward_points }} 币</span>
+          </div>
+        </div>
+        <div v-else class="empty-text">暂无签到记录</div>
+
+        <el-pagination
+          v-if="history.total_pages > 1"
+          v-model:current-page="page"
+          :page-size="history.page_size || 30"
+          :total="history.total"
+          layout="prev, pager, next"
+          :pager-count="5"
+          class="pagination"
+          @current-change="fetchHistory"
+        ></el-pagination>
+      </div>
     </template>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import {
   ArrowLeft,
   Calendar,
@@ -270,13 +227,6 @@ const history = ref({
 })
 
 const page = ref(1)
-
-const rankAvatarClass = (index) => {
-  if (index === 0) return 'rank-first'
-  if (index === 1) return 'rank-second'
-  if (index === 2) return 'rank-third'
-  return 'rank-default'
-}
 
 // 获取签到状态
 const fetchStatus = async () => {
@@ -346,204 +296,387 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.signin-page {
+  padding-bottom: 40px;
+}
+
 .header-row {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-bottom: 20px;
 }
 
 .back-btn {
-  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 12px;
+  background: var(--campus-surface);
+  color: var(--campus-text);
+  cursor: pointer;
+  box-shadow: var(--campus-shadow-sm);
+  transition: var(--campus-transition);
+}
+
+.back-btn:hover {
+  background: var(--campus-primary-soft);
+  color: var(--campus-primary);
 }
 
 .page-title {
   margin: 0;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--campus-text);
 }
 
 .loading-wrap {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 48px 0;
+  padding: 56px 0;
 }
 
-.card-body-pad {
-  padding: 24px;
+.loading {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--campus-primary-light);
+  border-top-color: var(--campus-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-.pad-16 {
-  padding: 16px;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-.stat-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
+/* ---------------- 布局 ---------------- */
+.signin-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+  align-items: start;
+}
+
+.signin-main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.signin-side {
+  min-width: 0;
+}
+
+/* ---------------- 签到主卡片 ---------------- */
+.signin-card {
+  padding: 32px;
+  border-radius: var(--campus-radius-lg);
+  box-shadow: var(--campus-shadow);
+  text-align: center;
+  background: linear-gradient(160deg, var(--campus-surface) 0%, var(--campus-surface-2) 100%);
+}
+
+.visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.visual-title {
+  margin: 16px 0 4px;
+  font-size: 22px;
+  font-weight: 800;
   color: var(--campus-text);
 }
 
-.sub-hint {
-  margin: 0;
+.visual-sub {
+  margin: 0 0 4px;
   font-size: 14px;
+  color: var(--campus-text-secondary);
 }
 
-.signed-avatar {
-  background: #67c23a;
+.streak-ring {
+  width: 120px;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #4f6ef7, #9db4ff);
+  color: #fff;
+  box-shadow: 0 0 0 8px var(--campus-primary-soft);
 }
 
-.unsigned-avatar {
-  background: var(--campus-primary);
+.streak-ring.done {
+  background: conic-gradient(from 0deg, #22c55e, #4ade80);
+}
+
+.streak-day {
+  font-size: 44px;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.streak-unit {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+.signed-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .stat-strong {
-  font-weight: 700;
+  font-weight: 800;
 }
 
-.stat-item {
+.signin-btn {
+  margin-top: 18px;
+  min-width: 160px;
+  padding: 12px 32px;
+  font-size: 16px;
+  border-radius: 14px;
+}
+
+.signin-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ---------------- 统计 ---------------- */
+.stats-row {
+  display: flex;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--campus-border);
+}
+
+.stat-cell {
+  flex: 1;
   text-align: center;
 }
 
 .stat-value {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
 }
 
 .stat-label {
   font-size: 12px;
+  color: var(--campus-text-secondary);
+  margin-top: 2px;
 }
 
-.stats-row {
-  row-gap: 16px;
-}
-
-.small-card-pad {
-  padding: 12px;
-}
-
-.week-icon,
-.month-icon {
-  color: #ff9800;
-  display: flex;
-  justify-content: center;
-}
-
-.month-icon {
-  color: #409eff;
-}
-
-.mini-value {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.mini-label {
-  font-size: 12px;
-}
-
-.card-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  color: var(--campus-text);
-}
-
-.card-title-icon {
-  color: var(--campus-primary);
-}
-
-.rank-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.reward-item {
-  display: flex;
-  align-items: center;
+/* ---------------- 本周本月 ---------------- */
+.period-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid #f0f0f0;
+  margin-top: 20px;
 }
 
-.reward-item:last-child {
-  border-bottom: none;
-}
-
-.reward-tag {
-  width: 48px;
+.period-cell {
+  background: var(--campus-surface);
+  border: 1px solid var(--campus-border);
+  border-radius: 14px;
+  padding: 16px;
   text-align: center;
 }
 
-.reward-text {
-  flex: 1;
+.period-icon {
+  width: 34px;
+  height: 34px;
+  margin: 0 auto 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+.period-icon.week {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
+.period-icon.month {
+  background: rgba(79, 110, 247, 0.12);
+  color: var(--campus-primary);
+}
+
+.period-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--campus-primary);
+}
+
+.period-label {
+  font-size: 12px;
+  color: var(--campus-text-secondary);
+  margin-top: 2px;
+}
+
+/* ---------------- 通用卡片 ---------------- */
+.reward-card,
+.rank-card,
+.history-card {
+  border-radius: var(--campus-radius-lg);
+  box-shadow: var(--campus-shadow-sm);
+}
+
+.reward-card,
+.rank-card {
+  padding: 20px;
+}
+
+.history-card {
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--campus-text);
+  margin-bottom: 16px;
+}
+
+.title-icon {
+  color: var(--campus-primary);
+}
+
+/* ---------------- 奖励 ---------------- */
+.reward-item {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.reward-days {
   font-size: 14px;
+  font-weight: 600;
+  color: var(--campus-warning);
+}
+
+.reward-bar {
+  height: 8px;
+  background: var(--campus-surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.reward-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--campus-warning), #f59e0b);
 }
 
 .reward-coin {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--campus-success);
+  white-space: nowrap;
 }
 
-.success-text {
-  color: #67c23a;
-  font-weight: 600;
-}
-
-.list-pad {
-  padding: 8px 0;
-  width: 100%;
-}
-
-.ranking-item {
+/* ---------------- 排行榜 ---------------- */
+.rank-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 10px 4px;
-  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 8px;
 }
 
-.ranking-item:last-child {
+.rank-switch {
+  display: inline-flex;
+  background: var(--campus-surface-2);
+  border: 1px solid var(--campus-border);
+  border-radius: 10px;
+  padding: 2px;
+}
+
+.rank-switch-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--campus-text-secondary);
+  cursor: pointer;
+  transition: var(--campus-transition);
+}
+
+.rank-switch-btn.active {
+  background: var(--campus-surface);
+  color: var(--campus-primary);
+  box-shadow: var(--campus-shadow-sm);
+}
+
+.rank-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--campus-border);
+}
+
+.rank-row:last-child {
   border-bottom: none;
 }
 
-.rank-avatar {
+.rank-no {
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  background: var(--campus-surface-2);
+  color: var(--campus-text-secondary);
 }
 
-.rank-first {
+.rank-no-1 {
   background: #ffb300;
-}
-
-.rank-second {
-  background: #9e9e9e;
-}
-
-.rank-third {
-  background: #8d6e63;
-}
-
-.rank-default {
-  background: #e0e0e0;
-  color: #666;
-}
-
-.rank-number {
-  font-weight: 700;
-  font-size: 13px;
   color: #fff;
 }
 
-.rank-default .rank-number {
-  color: #666;
+.rank-no-2 {
+  background: #9e9e9e;
+  color: #fff;
+}
+
+.rank-no-3 {
+  background: #8d6e63;
+  color: #fff;
 }
 
 .rank-name {
   flex: 1;
   font-size: 14px;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -555,11 +688,10 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
-.empty-text {
-  text-align: center;
-  color: var(--campus-text-secondary);
-  padding: 24px 0;
-  font-size: 14px;
+/* ---------------- 历史记录 ---------------- */
+.history-list {
+  display: flex;
+  flex-direction: column;
 }
 
 .history-item {
@@ -567,44 +699,116 @@ onMounted(async () => {
   align-items: center;
   gap: 12px;
   padding: 10px 4px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--campus-border);
 }
 
 .history-item:last-child {
   border-bottom: none;
 }
 
-.history-avatar {
-  background: #67c23a;
+.history-check {
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--campus-success);
 }
 
 .history-info {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .history-date {
   font-size: 14px;
+  font-weight: 600;
+  color: var(--campus-text);
 }
 
 .history-sub {
   font-size: 12px;
+  color: var(--campus-text-secondary);
 }
 
 .history-coin {
   font-size: 14px;
+  font-weight: 700;
+  color: var(--campus-success);
   white-space: nowrap;
+}
+
+.empty-text {
+  text-align: center;
+  color: var(--campus-text-secondary);
+  padding: 24px 0;
+  font-size: 14px;
 }
 
 .pagination {
   justify-content: center;
+  margin-top: 16px;
+  border-top: 1px solid var(--campus-border);
+  padding-top: 16px;
 }
 
-@media (max-width: 768px) {
-  .card-body-pad {
-    padding: 16px;
+/* ---------------- 按钮 ---------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 18px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--campus-transition);
+}
+
+.btn-primary {
+  background: var(--campus-primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--campus-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--campus-shadow);
+}
+
+/* ---------------- 响应式 ---------------- */
+@media (max-width: 820px) {
+  .signin-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .signin-side {
+    order: -1;
+  }
+
+  .signin-card {
+    padding: 24px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .streak-ring {
+    width: 100px;
+    height: 100px;
+  }
+
+  .streak-day {
+    font-size: 36px;
+  }
+
+  .period-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>

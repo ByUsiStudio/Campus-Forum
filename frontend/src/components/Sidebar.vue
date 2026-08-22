@@ -1,39 +1,36 @@
 <template>
   <div class="sidebar-component">
     <!-- 用户信息卡片 -->
-    <el-card class="mb-4 sidebar-card" shadow="never">
-      <div v-if="user" class="text-center pa-4 user-panel">
-        <UserAvatar :user="user" :size="80" class="mb-3 avatar-wrap" />
-        <div class="user-name-title mb-1">{{ user.display_name }}</div>
-        <div class="user-name-sub mb-2">@{{ user.username }}</div>
-        <el-button type="primary" size="small" plain class="profile-btn" @click="goTo('/profile')">
+    <div class="sb-card sb-user">
+      <div v-if="user" class="user-panel">
+        <UserAvatar :user="user" :size="72" class="avatar-wrap" />
+        <div class="user-name-title">{{ user.display_name }}</div>
+        <div class="user-name-sub">@{{ user.username }}</div>
+        <el-button type="primary" round size="small" class="profile-btn" @click="goTo('/profile')">
           <el-icon class="btn-icon"><User /></el-icon>
           个人中心
         </el-button>
       </div>
-      <div v-else class="text-center pa-4 user-panel">
+      <div v-else class="user-panel">
+        <div class="user-guest-icon">
+          <el-icon :size="28"><Avatar /></el-icon>
+        </div>
         <div class="user-name-sub mb-3">登录后享受更多功能</div>
         <div class="auth-actions">
-          <el-button type="primary" size="small" @click="goTo('/login')">
-            登录
-          </el-button>
-          <el-button size="small" plain type="primary" @click="goTo('/register')">
-            注册
-          </el-button>
+          <el-button type="primary" round size="small" @click="goTo('/login')">登录</el-button>
+          <el-button round size="small" plain @click="goTo('/register')">注册</el-button>
         </div>
       </div>
-    </el-card>
+    </div>
 
     <!-- 导航菜单 -->
-    <el-card class="mb-4 sidebar-card" shadow="never">
-      <template #header>
-        <div class="card-header">
-          <el-icon class="header-icon"><Compass /></el-icon>
-          <span>快捷导航</span>
-        </div>
-      </template>
-      <el-list class="nav-list">
-        <el-list-item
+    <div class="sb-card">
+      <div class="card-header">
+        <el-icon class="header-icon"><Compass /></el-icon>
+        <span>快捷导航</span>
+      </div>
+      <div class="nav-list">
+        <div
           v-for="item in sidebarItems"
           :key="item.link"
           class="nav-item cursor-pointer"
@@ -46,46 +43,40 @@
             <span v-else class="nav-emoji">{{ item.icon }}</span>
             <span class="nav-title">{{ item.title }}</span>
           </div>
-        </el-list-item>
-      </el-list>
-    </el-card>
+        </div>
+      </div>
+    </div>
 
     <!-- 统计信息 -->
-    <el-card class="sidebar-card" shadow="never">
-      <template #header>
-        <div class="card-header">
-          <el-icon class="header-icon"><DataAnalysis /></el-icon>
-          <span>论坛统计</span>
+    <div class="sb-card">
+      <div class="card-header">
+        <el-icon class="header-icon"><DataAnalysis /></el-icon>
+        <span>论坛统计</span>
+      </div>
+      <div class="stat-list">
+        <div class="stat-row">
+          <div class="stat-label">
+            <el-icon class="nav-icon primary"><Document /></el-icon>
+            <span>文章总数</span>
+          </div>
+          <el-tag size="small" type="primary" effect="light" round>{{ stats.totalArticles }}</el-tag>
         </div>
-      </template>
-      <el-list class="nav-list">
-        <el-list-item>
-          <div class="stat-item">
-            <div class="nav-item-inner">
-              <el-icon class="nav-icon primary"><Document /></el-icon>
-              <span class="nav-title">文章总数</span>
-            </div>
-            <el-tag size="small" type="primary" effect="plain">{{ stats.totalArticles }}</el-tag>
+        <div class="stat-row">
+          <div class="stat-label">
+            <el-icon class="nav-icon success"><User /></el-icon>
+            <span>用户总数</span>
           </div>
-        </el-list-item>
-        <el-list-item>
-          <div class="stat-item">
-            <div class="nav-item-inner">
-              <el-icon class="nav-icon success"><User /></el-icon>
-              <span class="nav-title">用户总数</span>
-            </div>
-            <el-tag size="small" type="success" effect="plain">{{ stats.totalUsers }}</el-tag>
-          </div>
-        </el-list-item>
-      </el-list>
-    </el-card>
+          <el-tag size="small" type="success" effect="light" round>{{ stats.totalUsers }}</el-tag>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, Compass, Document, DataAnalysis } from '@element-plus/icons-vue'
+import { User, Compass, Document, DataAnalysis, Avatar } from '@element-plus/icons-vue'
 import api from '../api'
 import UserAvatar from './UserAvatar.vue'
 
@@ -198,7 +189,8 @@ export default {
       User,
       Compass,
       Document,
-      DataAnalysis
+      DataAnalysis,
+      Avatar
     }
   }
 }
@@ -208,33 +200,52 @@ export default {
 .sidebar-component {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 14px;
 }
 
-.sidebar-card {
+.sb-card {
+  background: var(--campus-surface);
+  border: 1px solid var(--campus-border);
   border-radius: var(--campus-radius);
-  border-color: var(--campus-border);
-  box-shadow: var(--campus-shadow);
+  box-shadow: var(--campus-shadow-sm);
+  padding: 16px;
+}
+
+.sb-user {
+  background: linear-gradient(160deg, var(--campus-surface), var(--campus-surface-2));
 }
 
 .user-panel {
-  background: var(--campus-surface);
-  border-radius: var(--campus-radius);
-}
-
-.avatar-wrap {
-  display: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
 .user-name-title {
   font-size: 16px;
   font-weight: 700;
+  color: var(--campus-text);
   line-height: 1.3;
+  margin-top: 10px;
 }
 
 .user-name-sub {
   font-size: 13px;
   color: var(--campus-text-secondary);
+  margin: 2px 0 10px;
+}
+
+.user-guest-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--campus-primary-soft);
+  color: var(--campus-primary);
+  margin-bottom: 8px;
 }
 
 .profile-btn {
@@ -248,15 +259,21 @@ export default {
 
 .auth-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
+  width: 100%;
+}
+.auth-actions .el-button {
+  flex: 1;
 }
 
 .card-header {
   display: flex;
   align-items: center;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--campus-text);
+  margin-bottom: 8px;
 }
 
 .header-icon {
@@ -265,23 +282,25 @@ export default {
 }
 
 .nav-list {
-  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .nav-item {
-  margin-bottom: 4px;
-  border-radius: 8px;
-  transition: background-color 0.2s;
+  padding: 9px 10px;
+  border-radius: 10px;
+  transition: var(--campus-transition);
 }
 
 .nav-item:hover {
-  background-color: rgba(103, 80, 164, 0.08);
+  background: var(--campus-primary-soft);
 }
 
 .nav-item-inner {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -289,13 +308,11 @@ export default {
   font-size: 16px;
   flex-shrink: 0;
 }
-
 .nav-icon.primary {
   color: var(--campus-primary);
 }
-
 .nav-icon.success {
-  color: #67c23a;
+  color: var(--campus-success);
 }
 
 .nav-emoji {
@@ -311,10 +328,25 @@ export default {
   text-overflow: ellipsis;
 }
 
-.stat-item {
+.stat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  padding: 6px 2px;
+}
+
+.stat-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--campus-text-secondary);
 }
 </style>

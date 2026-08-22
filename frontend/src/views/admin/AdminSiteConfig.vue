@@ -1,18 +1,28 @@
 <template>
-  <div class="pa-4 pa-md-6">
-    <!-- 网站配置表单 -->
-    <el-card shadow="never" class="page-container">
-      <template #header>
-        <div class="card-header">
-          <el-icon :size="20" class="card-header-icon"><OfficeBuilding /></el-icon>
-          <span>网站配置</span>
-        </div>
-      </template>
+  <div class="site-config-page">
+    <!-- 页面标题 -->
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">网站配置</h1>
+        <p class="page-desc">管理站点基本信息与备案信息</p>
+      </div>
+    </div>
 
-      <el-form ref="siteForm" :model="siteConfigForm" :rules="rules" label-position="top">
+    <!-- 网站配置表单 -->
+    <div class="card-surface config-card">
+      <div class="card-head">
+        <div class="card-head-icon">
+          <el-icon :size="20"><OfficeBuilding /></el-icon>
+        </div>
+        <div class="card-head-text">
+          <div class="card-head-title">基本配置</div>
+          <div class="card-head-desc">以下设置将影响前台展示</div>
+        </div>
+      </div>
+
+      <el-form ref="siteForm" :model="siteConfigForm" :rules="rules" label-position="top" class="config-form">
         <!-- 网站基本配置 -->
-        <div class="form-section-title">基本配置</div>
-        <el-form-item label="网站标题" prop="siteTitle" class="mb-4">
+        <el-form-item label="网站标题" prop="siteTitle">
           <el-input
             v-model="siteConfigForm.siteTitle"
             placeholder="校园论坛 - 分享与交流"
@@ -23,7 +33,7 @@
           />
         </el-form-item>
 
-        <el-divider class="my-4" />
+        <el-divider class="section-divider" />
 
         <!-- 备案信息配置 -->
         <div class="form-section-title">备案信息</div>
@@ -61,34 +71,35 @@
           :closable="false"
           class="mt-4"
           :icon="CircleCheck"
+          show-icon
         >
           当前网站标题：<strong>{{ siteConfigForm.siteTitle }}</strong>
         </el-alert>
       </el-form>
 
-      <template #footer>
-        <div class="form-actions">
-          <el-button
-            type="warning"
-            plain
-            @click="resetForm"
-            :disabled="saving"
-          >
-            <el-icon class="mr-1"><Refresh /></el-icon>
-            重置
-          </el-button>
-          <el-button
-            type="primary"
-            @click="saveSiteConfig"
-            :loading="saving"
-            :disabled="!formValid"
-          >
-            <el-icon class="mr-1"><Check /></el-icon>
-            保存配置
-          </el-button>
-        </div>
-      </template>
-    </el-card>
+      <div class="form-actions">
+        <el-button
+          type="warning"
+          plain
+          round
+          @click="resetForm"
+          :disabled="saving"
+        >
+          <el-icon class="mr-1"><Refresh /></el-icon>
+          重置
+        </el-button>
+        <el-button
+          type="primary"
+          round
+          @click="saveSiteConfig"
+          :loading="saving"
+          :disabled="!formValid"
+        >
+          <el-icon class="mr-1"><Check /></el-icon>
+          保存配置
+        </el-button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -175,27 +186,85 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.card-header {
+.site-config-page {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 1.1rem;
-  font-weight: 700;
+  flex-direction: column;
 }
 
-.card-header-icon {
-  color: var(--el-color-primary);
+.page-head {
+  margin-bottom: 20px;
+}
+
+.page-title {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--campus-text);
+}
+
+.page-desc {
+  margin: 0;
+  font-size: 14px;
+  color: var(--campus-text-secondary);
+}
+
+/* ---------------- 配置卡片 ---------------- */
+.config-card {
+  padding: 24px;
+  max-width: 860px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--campus-border);
+}
+
+.card-head-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--campus-primary-soft);
+  color: var(--campus-primary);
+}
+
+.card-head-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--campus-text);
+}
+
+.card-head-desc {
+  font-size: 13px;
+  color: var(--campus-text-muted);
+  margin-top: 2px;
+}
+
+.config-form {
+  max-width: 720px;
+}
+
+.section-divider {
+  margin: 20px 0;
 }
 
 .form-section-title {
-  font-size: 0.9rem;
+  font-size: 15px;
   font-weight: 700;
-  margin-bottom: 12px;
+  color: var(--campus-text);
+  margin-bottom: 8px;
 }
 
 .form-section-desc {
-  font-size: 0.8rem;
-  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  color: var(--campus-text-muted);
 }
 
 .form-actions {
@@ -203,6 +272,13 @@ onMounted(() => {
   justify-content: flex-end;
   align-items: center;
   gap: 12px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--campus-border);
+}
+
+.mt-4 {
+  margin-top: 16px;
 }
 
 .mr-1 {
@@ -213,11 +289,15 @@ onMounted(() => {
   margin-bottom: 12px;
 }
 
-.mb-4 {
-  margin-bottom: 16px;
-}
-
-.mt-4 {
-  margin-top: 16px;
+@media (max-width: 575px) {
+  .config-card {
+    padding: 16px;
+  }
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+  .form-actions .el-button {
+    width: 100%;
+  }
 }
 </style>

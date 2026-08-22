@@ -146,15 +146,14 @@ defineExpose({
 <style scoped>
 .video-player-wrapper {
   width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-  border-radius: 8px;
+  border-radius: var(--campus-radius);
   overflow: hidden;
   background: #000;
+  box-shadow: var(--campus-shadow);
 }
 
 :deep(.plyr) {
-  border-radius: 8px;
+  border-radius: var(--campus-radius);
 }
 
 :deep(.plyr--video) {
@@ -162,21 +161,28 @@ defineExpose({
 }
 
 :deep(.plyr__control--overlaid) {
-  background: rgba(var(--v-theme-primary), 0.9);
+  background: var(--campus-primary);
   border-radius: 50%;
+  box-shadow: 0 6px 16px rgba(79, 110, 247, 0.4);
+  transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
 :deep(.plyr__control--overlaid:hover) {
-  background: rgba(var(--v-theme-primary), 1);
+  background: var(--campus-primary-dark);
+  transform: scale(1.06);
 }
 
 :deep(.plyr__controls) {
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-  padding: 10px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.78));
+  padding: 12px;
+}
+
+:deep(.plyr--video .plyr__control) {
+  color: #fff;
 }
 
 :deep(.plyr__control) {
-  opacity: 0.9;
+  opacity: 0.92;
   transition: opacity 0.2s;
 }
 
@@ -184,20 +190,29 @@ defineExpose({
   opacity: 1;
 }
 
+:deep(.plyr__controls .plyr__control--pressed) {
+  color: var(--campus-primary-light);
+}
+
 :deep(.plyr__progress__container) {
   flex: 1;
 }
 
 :deep(.plyr__progress) {
-  height: 4px;
+  height: 5px;
 }
 
-:deep(.plyr__progress--played) {
-  background: rgb(var(--v-theme-primary));
+:deep(.plyr__progress input[type='range']::-webkit-slider-runnable-track) {
+  border-radius: 999px;
 }
 
 :deep(.plyr__progress__buffer) {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+}
+
+:deep(.plyr__progress__played) {
+  background: var(--campus-primary-light);
 }
 
 :deep(.plyr__volume) {
@@ -209,8 +224,9 @@ defineExpose({
 }
 
 :deep(.plyr__menu) {
-  background: rgba(0, 0, 0, 0.9);
-  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.95);
+  border-radius: var(--campus-radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 :deep(.plyr__menu__item) {
@@ -218,7 +234,11 @@ defineExpose({
 }
 
 :deep(.plyr__menu__item:hover) {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+:deep(.plyr__menu__item--selected) {
+  color: var(--campus-primary-light);
 }
 
 :deep(.plyr--full-ui.plyr--fullscreen) {
@@ -233,21 +253,21 @@ defineExpose({
 }
 
 :deep(.plyr--fullscreen .plyr__control--overlaid) {
-  background: rgba(var(--v-theme-primary), 0.9);
+  background: var(--campus-primary);
 }
 
 :deep(.plyr--fullscreen .plyr__controls) {
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
 }
 
 @media (max-width: 768px) {
   .video-player-wrapper {
     max-width: 100%;
-    border-radius: 0;
+    border-radius: var(--campus-radius-sm);
   }
 
   :deep(.plyr) {
-    border-radius: 0;
+    border-radius: var(--campus-radius-sm);
   }
 }
 

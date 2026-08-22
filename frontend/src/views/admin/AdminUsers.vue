@@ -182,6 +182,7 @@
           </div>
         </template>
 
+        <div class="table-responsive">
         <el-table :data="users" v-loading="loading">
           <el-table-column label="用户" min-width="220">
             <template #default="{ row }">
@@ -281,77 +282,8 @@
             </template>
           </el-table-column>
         </el-table>
+        </div>
       </el-card>
-
-      <!-- 编辑用户对话框 -->
-      <el-dialog v-model="editDialog" title="编辑用户" width="600px">
-        <template #header>
-          <div class="dialog-header">
-            <el-icon class="mr-2"><Edit /></el-icon>
-            编辑用户
-          </div>
-        </template>
-        <el-form label-position="top">
-          <el-form-item label="显示名称">
-            <el-input
-              v-model="editForm.display_name"
-              placeholder="显示名称"
-              class="mb-3"
-            />
-          </el-form-item>
-          <el-form-item label="签名">
-            <el-input
-              v-model="editForm.signature"
-              type="textarea"
-              :rows="2"
-              placeholder="签名"
-              class="mb-3"
-            />
-          </el-form-item>
-          <el-form-item label="角色">
-            <el-select v-model="editForm.role" class="w-full mb-3">
-              <el-option
-                v-for="opt in roleOptions.slice(1)"
-                :key="opt.value"
-                :label="opt.title"
-                :value="opt.value"
-              />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="用户名">
-            <el-input :model-value="editForm.username" disabled />
-          </el-form-item>
-        </el-form>
-        <template #footer>
-          <div class="dialog-footer">
-            <el-button @click="editDialog = false">取消</el-button>
-            <el-button type="primary" :loading="saving" @click="saveUser">保存</el-button>
-          </div>
-        </template>
-      </el-dialog>
-
-      <!-- 封禁用户对话框 -->
-      <el-dialog v-model="banDialog" width="500px">
-        <template #header>
-          <div class="dialog-header">
-            <el-icon class="mr-2"><CircleCloseFilled /></el-icon>
-            封禁用户
-          </div>
-        </template>
-        <p class="mb-4">确定要封禁用户 <strong>{{ selectedUser?.display_name || selectedUser?.username }}</strong> 吗？</p>
-        <el-input
-          v-model="banReason"
-          type="textarea"
-          :rows="3"
-          placeholder="请输入封禁原因..."
-        />
-        <template #footer>
-          <div class="dialog-footer">
-            <el-button @click="banDialog = false">取消</el-button>
-            <el-button type="warning" :loading="actionLoading" @click="confirmBan">确认封禁</el-button>
-          </div>
-        </template>
-      </el-dialog>
     </div>
   </div>
 </template>
@@ -362,6 +294,7 @@ import { useRouter } from 'vue-router'
 import api from '../../api'
 import { adminUserApi } from '../../api/admin'
 import { confirm, success, error } from '../../utils/message'
+import { jcCloseAll, jcOpenHtml } from '@/utils/jcu'
 import {
   Refresh,
   Search,
@@ -393,8 +326,6 @@ const page = ref(1)
 const pageSize = ref(20)
 const totalUsers = ref(0)
 const totalPages = computed(() => Math.ceil(totalUsers.value / pageSize.value))
-const editDialog = ref(false)
-const banDialog = ref(false)
 const selectedUser = ref(null)
 const editForm = ref({
   id: null,
@@ -403,7 +334,6 @@ const editForm = ref({
   signature: '',
   role: ''
 })
-const banReason = ref('')
 
 const filters = ref({
   search: '',
@@ -532,18 +462,62 @@ const editUser = (user) => {
     signature: user.signature || '',
     role: user.role
   }
-  editDialog.value = true
+  openEditDialog()
 }
 
-const saveUser = async () => {
+const openEditDialog = () => {
+  const roleOptions = [
+    { title: '管理员', value: 'admin' },
+    { title: '普通用户', value: 'user' }
+  ]
+  const roleHint =
+    `<select data-user-role class="jc-modal__input" style="width:100%;margin-top:4px;">` +
+    roleOptions.map((r) => `<option value="${r.value}" ${r.value === editForm.value.role ? 'selected' : ''}>${r.title}</option>`).join('') +
+    `</select>`
+
+  const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  const field = (label, inner) =>
+    `<div style="margin-bottom:12px;"><div style="margin:0 0 4px;font-weight:600;font-size:13px;color:var(--jc-text,#333);">${label}</div>${inner}</div>`
+
+  const content =
+    field('显示名称', `<input data-user-input="display_name" class="jc-modal__input" type="text" value="${esc(editForm.value.display_name)}" placeholder="显示名称" />`) +
+    field('签名', `<textarea data-user-input="signature" class="jc-modal__input" rows="2" style="resize:vertical;">${esc(editForm.value.signature)}</textarea>`) +
+    field('角色', roleHint) +
+    field('用户名', `<div style="padding:10px 12px;background:var(--jc-bg,#f3f5fb);border-radius:8px;font-size:13px;color:var(--jc-text-2,#64748b);">${esc(editForm.value.username || '')}</div>`)
+
+  jcOpenHtml({
+    title: '编辑用户',
+    content,
+    width: 600,
+    size: 'md',
+    buttons: [
+      { text: '取消', type: 'default', action: () => jcCloseAll() },
+      {
+        text: '保存',
+        type: 'primary',
+        action: (inst) => {
+          const root = inst.modalContent
+          const display_name = (root.querySelector('[data-user-input="display_name"]')?.value || '').trim()
+          if (!display_name) {
+            error('请输入显示名称')
+            return
+          }
+          saveUser({
+            display_name,
+            signature: root.querySelector('[data-user-input="signature"]')?.value || '',
+            role: root.querySelector('[data-user-role]')?.value || ''
+          })
+        }
+      }
+    ]
+  })
+}
+
+const saveUser = async (data) => {
   saving.value = true
   try {
-    await adminUserApi.updateUser(editForm.value.id, {
-      display_name: editForm.value.display_name,
-      signature: editForm.value.signature,
-      role: editForm.value.role
-    })
-    editDialog.value = false
+    await adminUserApi.updateUser(editForm.value.id, data)
+    jcCloseAll()
     success('保存成功')
     loadUsers()
   } catch (error) {
@@ -556,15 +530,44 @@ const saveUser = async () => {
 
 const banUser = (user) => {
   selectedUser.value = user
-  banReason.value = ''
-  banDialog.value = true
+  openBanDialog()
 }
 
-const confirmBan = async () => {
+const openBanDialog = () => {
+  const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  const name = selectedUser.value?.display_name || selectedUser.value?.username || ''
+  const content = `
+    <div style="margin-bottom:12px;font-size:14px;color:var(--jc-text,#0f172a);">
+      确定要封禁用户 <strong>${esc(name)}</strong> 吗？
+    </div>
+    <div><div style="margin:0 0 4px;font-weight:600;font-size:13px;color:var(--jc-text,#333);">封禁原因</div>
+      <textarea data-ban-reason class="jc-modal__input" rows="3" style="resize:vertical;" placeholder="请输入封禁原因..."></textarea>
+    </div>
+  `
+  jcOpenHtml({
+    title: '封禁用户',
+    content,
+    width: 500,
+    size: 'md',
+    buttons: [
+      { text: '取消', type: 'default', action: () => jcCloseAll() },
+      {
+        text: '确认封禁',
+        type: 'danger',
+        action: (inst) => {
+          const reason = inst.modalContent.querySelector('[data-ban-reason]')?.value || ''
+          confirmBan(reason)
+        }
+      }
+    ]
+  })
+}
+
+const confirmBan = async (reason) => {
   actionLoading.value = true
   try {
-    await adminUserApi.banUser(selectedUser.value.id, banReason.value)
-    banDialog.value = false
+    await adminUserApi.banUser(selectedUser.value.id, reason)
+    jcCloseAll()
     success('封禁成功')
     loadUsers()
   } catch (error) {
@@ -892,17 +895,8 @@ onMounted(() => {
   background: var(--el-color-danger-light-9);
 }
 
-.dialog-header {
-  display: flex;
-  align-items: center;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+.table-responsive {
+  overflow-x: auto;
 }
 
 @media (max-width: 600px) {

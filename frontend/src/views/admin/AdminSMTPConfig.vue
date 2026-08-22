@@ -1,15 +1,26 @@
 <template>
-  <div class="pa-4 pa-md-6">
-    <!-- SMTP配置表单 -->
-    <el-card shadow="never" class="page-container">
-      <template #header>
-        <div class="card-header">
-          <el-icon :size="20" class="card-header-icon"><Message /></el-icon>
-          <span>SMTP 配置</span>
-        </div>
-      </template>
+  <div class="smtp-config-page">
+    <!-- 页面标题 -->
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">邮件配置</h1>
+        <p class="page-desc">配置 SMTP 服务，用于发送系统邮件通知</p>
+      </div>
+    </div>
 
-      <el-form ref="smtpForm" :model="smtpConfigForm" :rules="rules" label-position="top">
+    <!-- SMTP配置表单 -->
+    <div class="card-surface config-card">
+      <div class="card-head">
+        <div class="card-head-icon">
+          <el-icon :size="20"><Message /></el-icon>
+        </div>
+        <div class="card-head-text">
+          <div class="card-head-title">SMTP 配置</div>
+          <div class="card-head-desc">测试配置前请确保所有参数填写正确</div>
+        </div>
+      </div>
+
+      <el-form ref="smtpForm" :model="smtpConfigForm" :rules="rules" label-position="top" class="config-form">
         <el-row :gutter="16">
           <el-col :xs="24" :sm="12">
             <el-form-item label="SMTP 主机" prop="host">
@@ -108,29 +119,29 @@
         </el-alert>
       </el-form>
 
-      <template #footer>
-        <div class="form-actions">
-          <el-button
-            type="warning"
-            plain
-            @click="testSmtpConfig"
-            :loading="testing"
-          >
-            <el-icon class="mr-1"><Memo /></el-icon>
-            测试配置
-          </el-button>
-          <el-button
-            type="primary"
-            @click="saveSmtpConfig"
-            :loading="saving"
-            :disabled="!formValid"
-          >
-            <el-icon class="mr-1"><Check /></el-icon>
-            保存配置
-          </el-button>
-        </div>
-      </template>
-    </el-card>
+      <div class="form-actions">
+        <el-button
+          type="warning"
+          plain
+          round
+          @click="testSmtpConfig"
+          :loading="testing"
+        >
+          <el-icon class="mr-1"><Memo /></el-icon>
+          测试配置
+        </el-button>
+        <el-button
+          type="primary"
+          round
+          @click="saveSmtpConfig"
+          :loading="saving"
+          :disabled="!formValid"
+        >
+          <el-icon class="mr-1"><Check /></el-icon>
+          保存配置
+        </el-button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -327,23 +338,80 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.card-header {
+.smtp-config-page {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 1.1rem;
-  font-weight: 700;
+  flex-direction: column;
 }
 
-.card-header-icon {
-  color: var(--el-color-primary);
+.page-head {
+  margin-bottom: 20px;
+}
+
+.page-title {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--campus-text);
+}
+
+.page-desc {
+  margin: 0;
+  font-size: 14px;
+  color: var(--campus-text-secondary);
+}
+
+/* ---------------- 配置卡片 ---------------- */
+.config-card {
+  padding: 24px;
+  max-width: 860px;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--campus-border);
+}
+
+.card-head-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--campus-primary-soft);
+  color: var(--campus-primary);
+}
+
+.card-head-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--campus-text);
+}
+
+.card-head-desc {
+  font-size: 13px;
+  color: var(--campus-text-muted);
+  margin-top: 2px;
+}
+
+.config-form {
+  max-width: 720px;
 }
 
 .form-item-hint {
-  font-size: 0.78rem;
+  font-size: 12px;
   line-height: 1.5;
-  color: var(--el-text-color-secondary);
+  color: var(--campus-text-muted);
   margin-top: 4px;
+}
+
+.mt-4 {
+  margin-top: 16px;
 }
 
 .form-actions {
@@ -351,6 +419,9 @@ onMounted(() => {
   justify-content: flex-end;
   align-items: center;
   gap: 12px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--campus-border);
 }
 
 .cursor-pointer {
@@ -361,21 +432,15 @@ onMounted(() => {
   margin-right: 4px;
 }
 
-.mt-4 {
-  margin-top: 16px;
-}
-
-.pa-4 {
-  padding: 16px;
-}
-
-.pa-md-6 {
-  padding: 24px;
-}
-
-@media (max-width: 768px) {
-  .pa-md-6 {
+@media (max-width: 575px) {
+  .config-card {
     padding: 16px;
+  }
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+  .form-actions .el-button {
+    width: 100%;
   }
 }
 </style>

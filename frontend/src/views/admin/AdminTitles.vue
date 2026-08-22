@@ -12,88 +12,24 @@
         @refresh="loadTitles"
       />
     </el-card>
-
-    <el-dialog
-      v-model="grantDialog.show"
-      :width="isMobile ? '100%' : '500px'"
-      :fullscreen="isMobile"
-      class="dialog-card"
-      :title="null"
-    >
-      <template #header>
-        <div class="dialog-header">
-          <el-icon :size="20" class="dialog-header-icon">
-            <Medal />
-          </el-icon>
-          <span>授予头衔</span>
-        </div>
-      </template>
-
-      <el-form ref="grantForm" :model="grantDialog" label-position="top">
-        <el-form-item label="选择用户" prop="selectedUserId">
-          <el-select
-            v-model="grantDialog.selectedUserId"
-            :placeholder="'请选择用户'"
-            clearable
-            filterable
-            style="width: 100%"
-            class="mb-2"
-          >
-            <el-option
-              v-for="u in usersForSelect"
-              :key="u.id"
-              :label="u.display_name"
-              :value="u.id"
-            >
-              <div class="d-flex align-center">
-                <el-avatar :size="28" :src="u.avatar || '/default-avatar.png'" class="mr-2" />
-                <div>
-                  <div>{{ u.display_name }}</div>
-                  <div class="text-body-2 text-medium-emphasis">@{{ u.username }}</div>
-                </div>
-              </div>
-            </el-option>
-          </el-select>
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <el-button @click="grantDialog.show = false" class="mr-2">取消</el-button>
-        <el-button type="primary" :disabled="!grantDialog.selectedUserId" @click="handleGrant">
-          <el-icon class="mr-1"><Check /></el-icon>
-          确认授予
-        </el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Medal, Check } from '@element-plus/icons-vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import TitlesPanel from './TitlesPanel.vue'
 import { adminTitleApi, adminUserApi } from '../../api/admin'
 import { confirm, success, error } from '@/utils/message'
+import { jcCloseAll, jcOpenHtml } from '@/utils/jcu'
 
 const titles = ref([])
 const users = ref([])
 const loading = ref(true)
-const grantForm = ref(null)
 const isMobile = ref(false)
 
 const grantDialog = ref({
-  show: false,
   titleId: null,
   selectedUserId: null
-})
-
-const usersForSelect = computed(() => {
-  return users.value.map(u => ({
-    id: u.id,
-    display_name: u.display_name,
-    username: u.username,
-    avatar: u.avatar
-  }))
 })
 
 const checkMobile = () => {
@@ -148,15 +84,52 @@ const grantTitle = (payload) => {
   const isObject = payload && typeof payload === 'object'
   const titleId = isObject ? payload.title_id : payload
   grantDialog.value = {
-    show: true,
     titleId,
-    // 面板传入了 user_id 时预选用户
     selectedUserId: isObject && payload.user_id ? payload.user_id : null
   }
+  openGrantDialog()
 }
 
-const handleGrant = async () => {
-  if (!grantDialog.value.selectedUserId) {
+const openGrantDialog = () => {
+  const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  const options = users.value
+    .map((u) => {
+      const selected = grantDialog.value.selectedUserId && String(u.id) === String(grantDialog.value.selectedUserId) ? ' selected' : ''
+      return `<option value="${u.id}"${selected}>${esc(u.display_name)}（@${esc(u.username)}）</option>`
+    })
+    .join('')
+
+  const content = `
+    <div style="margin-bottom:12px;"><div style="margin:0 0 4px;font-weight:600;font-size:13px;color:var(--jc-text,#333);">选择用户</div>
+      ${options ? `<select data-grant-user class="jc-modal__input" style="width:100%;">${options}</select>` : '<div style="font-size:13px;color:#64748b;">暂无可用用户</div>'}
+    </div>
+  `
+
+  jcOpenHtml({
+    title: '授予头衔',
+    content,
+    width: isMobile.value ? '100%' : 500,
+    size: isMobile.value ? 'sm' : 'md',
+    buttons: [
+      { text: '取消', type: 'default', action: () => jcCloseAll() },
+      {
+        text: '确认授予',
+        type: 'primary',
+        action: (inst) => {
+          const sel = inst.modalContent.querySelector('[data-grant-user]')
+          if (!sel || !sel.value) {
+            error('请选择用户')
+            return
+          }
+          handleGrant(Number(sel.value))
+        }
+      }
+    ]
+  })
+}
+
+const handleGrant = async (userId) => {
+  if (!userId) {
     error('请选择用户')
     return
   }
@@ -164,10 +137,10 @@ const handleGrant = async () => {
   try {
     await adminTitleApi.grantTitle({
       title_id: grantDialog.value.titleId,
-      user_id: grantDialog.value.selectedUserId
+      user_id: userId
     })
     success('授予成功')
-    grantDialog.value.show = false
+    jcCloseAll()
     loadTitles()
   } catch (err) {
     console.error('授予头衔失败', err)
@@ -219,24 +192,5 @@ onUnmounted(() => {
 <style scoped>
 .page-container {
   border-radius: 12px;
-}
-
-.dialog-card {
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.dialog-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 1.2rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #f8f9ff 0%, #fff 100%);
-  padding: 8px 4px;
-}
-
-.dialog-header-icon {
-  color: var(--el-color-primary);
 }
 </style>

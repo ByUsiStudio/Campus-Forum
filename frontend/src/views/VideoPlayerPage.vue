@@ -1,37 +1,47 @@
 <template>
-  <div class="video-page-container page-container">
-    <el-card class="video-card card-surface" shadow="always">
-      <template #header>
-        <div class="card-header">
-          <span class="video-title">视频播放</span>
-        </div>
-      </template>
-
-      <div class="video-body">
+  <div class="page-container">
+    <div class="video-card card-surface">
+      <div class="video-player-wrap">
         <VideoPlayer :src="videoUrl" :poster="posterUrl" />
       </div>
 
-      <div class="video-actions">
-        <el-button type="primary" @click="goBack">
-          <el-icon class="mr-8"><ArrowLeft /></el-icon>
-          返回文章
-        </el-button>
+      <div class="video-info">
+        <h1 class="video-title">视频播放</h1>
+        <div class="video-meta">
+          <span class="meta-item">
+            <el-icon :size="14"><VideoPlay /></el-icon>
+            高清在线播放
+          </span>
+          <span class="meta-item">
+            <el-icon :size="14"><InfoFilled /></el-icon>
+            建议全屏观看以获得最佳体验
+          </span>
+        </div>
+
+        <div class="video-actions">
+          <el-button type="primary" @click="goBack">
+            <el-icon class="mr-8"><ArrowLeft /></el-icon>
+            返回文章
+          </el-button>
+        </div>
       </div>
-    </el-card>
+    </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import { ArrowLeft, VideoPlay, InfoFilled } from '@element-plus/icons-vue'
 import VideoPlayer from '../components/VideoPlayer.vue'
 
 export default {
   name: 'VideoPlayerPage',
   components: {
     VideoPlayer,
-    ArrowLeft
+    ArrowLeft,
+    VideoPlay,
+    InfoFilled
   },
   setup() {
     const route = useRoute()
@@ -65,44 +75,57 @@ export default {
 </script>
 
 <style scoped>
-.video-page-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
 .video-card {
-  max-width: 950px;
-  width: 100%;
-  border-radius: 16px;
+  max-width: 960px;
+  margin: 0 auto;
+  border-radius: var(--campus-radius);
+  overflow: hidden;
 }
 
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.video-player-wrap {
+  background: #000;
+}
+
+.video-info {
+  padding: 20px 24px 24px;
 }
 
 .video-title {
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--campus-text);
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
 }
 
-.video-body {
+.video-meta {
   display: flex;
-  justify-content: center;
-  padding: 0 0 12px;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--campus-text-secondary);
 }
 
 .video-actions {
   display: flex;
-  justify-content: center;
-  padding-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--campus-border);
 }
 
 .mr-8 {
   margin-right: 8px;
+}
+
+@media (max-width: 768px) {
+  .video-info {
+    padding: 16px;
+  }
 }
 </style>

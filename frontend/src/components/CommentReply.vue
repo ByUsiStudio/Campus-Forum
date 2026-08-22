@@ -1,16 +1,16 @@
 <template>
-  <el-list class="reply-list">
-    <el-list-item
+  <div class="reply-list">
+    <div
       v-for="reply in replies"
       :key="reply.id"
-      class="py-2 reply-item"
+      class="reply-item"
     >
       <div class="reply-body">
         <div class="reply-header">
           <UserAvatar
             :user="reply.user"
-            :size="32"
-            :showUsername="false"
+            :size="30"
+            :show-username="false"
             class="cursor-pointer reply-avatar"
             @click="$emit('goToUserProfile', reply.user.id)"
           />
@@ -29,39 +29,32 @@
         </div>
 
         <div class="reply-actions">
-          <el-button
-            text
-            size="small"
+          <button
             class="reply-action-btn"
+            :class="{ 'is-liked': commentLiked[reply.id] }"
             @click="$emit('toggleLike', reply)"
           >
             <el-icon class="action-icon"><Goods /></el-icon>
-            <span :class="commentLiked[reply.id] ? 'liked-text' : ''">
-              {{ reply.like_count }}
-            </span>
-          </el-button>
-          <el-button
+            <span>{{ reply.like_count }}</span>
+          </button>
+          <button
             v-if="token"
-            text
-            size="small"
             class="reply-action-btn"
             @click="$emit('showReplyForm', reply.id)"
           >
             <el-icon class="action-icon"><ChatDotRound /></el-icon>
             回复
-          </el-button>
-          <el-button
+          </button>
+          <button
             v-if="canDeleteComment(reply)"
-            text
-            size="small"
             class="reply-action-btn danger"
             @click="$emit('deleteComment', reply.id, reply)"
           >
             <el-icon class="action-icon"><Delete /></el-icon>
-          </el-button>
+          </button>
         </div>
 
-        <div v-if="replyingTo === reply.id" class="reply-form mt-2">
+        <div v-if="replyingTo === reply.id" class="reply-form">
           <el-textarea
             v-model="localReplyContent"
             :placeholder="'回复 ' + (reply.user.display_name || reply.user.username || '匿名用户')"
@@ -69,7 +62,7 @@
             resize="none"
             class="reply-textarea"
           />
-          <div class="d-flex align-center gap-2 mt-2 form-footer">
+          <div class="form-footer">
             <el-checkbox v-model="localReplyIsAnonymous" size="small">
               匿名
             </el-checkbox>
@@ -98,8 +91,8 @@
         @submitReply="$emit('submitReply', $event)"
         @cancelReply="$emit('cancelReply')"
       />
-    </el-list-item>
-  </el-list>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -187,10 +180,11 @@ export default {
 
 <style scoped>
 .reply-list {
-  padding-left: 16px;
-  background: rgba(103, 80, 164, 0.04);
-  border-radius: 8px;
+  margin-top: 6px;
+  padding-left: 14px;
   border-left: 2px solid var(--campus-border);
+  display: flex;
+  flex-direction: column;
 }
 
 .reply-item {
@@ -219,14 +213,14 @@ export default {
 
 .reply-meta {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
   min-width: 0;
 }
 
 .reply-username {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--campus-text);
   white-space: nowrap;
   overflow: hidden;
@@ -238,21 +232,39 @@ export default {
 }
 
 .reply-content {
-  font-size: 13px;
+  font-size: 13.5px;
+  line-height: 1.6;
   color: var(--campus-text);
   margin-bottom: 6px;
 }
 
 .reply-actions {
   display: flex;
-  gap: 4px;
+  gap: 12px;
 }
 
 .reply-action-btn {
-  padding: 4px 6px;
-  height: auto;
-  min-height: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
   font-size: 12px;
+  color: var(--campus-text-secondary);
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.reply-action-btn:hover {
+  color: var(--campus-primary);
+  background: var(--campus-primary-soft);
+}
+
+.reply-action-btn.is-liked {
+  color: var(--campus-primary);
+  font-weight: 600;
 }
 
 .reply-action-btn.danger {
@@ -260,17 +272,11 @@ export default {
 }
 
 .reply-action-btn.danger:hover {
-  background-color: rgba(245, 108, 108, 0.1);
+  background: rgba(245, 108, 108, 0.1);
 }
 
 .action-icon {
-  margin-right: 2px;
-  font-size: 14px;
-}
-
-.liked-text {
-  color: var(--campus-primary);
-  font-weight: 500;
+  font-size: 15px;
 }
 
 .reply-form {
@@ -282,22 +288,9 @@ export default {
 }
 
 .form-footer {
-  margin-top: 8px;
-}
-
-.d-flex {
   display: flex;
-}
-
-.align-center {
   align-items: center;
-}
-
-.gap-2 {
   gap: 8px;
-}
-
-.mt-2 {
   margin-top: 8px;
 }
 

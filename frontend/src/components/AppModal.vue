@@ -1,220 +1,136 @@
 <template>
-  <el-dialog
-    :model-value="show"
-    :width="'500px'"
-    :close-on-click-modal="false"
-    append-to-body
-    @update:model-value="$emit('update:show', $event)"
-    @closed="resetInternal"
-  >
-    <template #header>
-      <div class="modal-title">
-        <el-icon :color="iconColor" :size="iconSize" class="title-icon">
-          <WarningFilled v-if="icon === 'mdi-alert-circle' || icon === 'warning'" />
-          <InfoFilled v-else-if="icon === 'mdi-information' || icon === 'info'" />
-          <CircleCheckFilled v-else-if="icon === 'mdi-check-circle' || icon === 'success'" />
-          <EditPen v-else-if="icon === 'mdi-edit' || icon === 'edit'" />
-          <WarningFilled v-else />
-        </el-icon>
-        <span>{{ title }}</span>
-      </div>
-    </template>
-
-    <!-- 内容 -->
-    <div class="modal-body">
-      <div v-if="type === 'prompt'" class="prompt-content">
-        <span class="prompt-message">{{ message }}</span>
-        <el-input
-          v-model="internalValue"
-          :label="inputLabel || '输入内容'"
-          :type="inputType === 'textarea' ? 'textarea' : 'text'"
-          :placeholder="inputPlaceholder"
-          :rows="inputRows || 1"
-          ref="inputRef"
-          class="mt-4"
-          @keydown.enter="handleConfirm"
-        ></el-input>
-      </div>
-      <div v-else>
-        <span>{{ message }}</span>
-      </div>
-    </div>
-
-    <!-- 底部按钮 -->
-    <template #footer>
-      <div class="modal-actions">
-        <el-button v-if="showCancel" @click="handleCancel">
-          {{ cancelText || '取消' }}
-        </el-button>
-        <el-button :type="confirmButtonType" @click="handleConfirm">
-          {{ confirmText || '确定' }}
-        </el-button>
-      </div>
-    </template>
-  </el-dialog>
+  <!--
+    AppModal 已基于 JCuPupw 实现。
+    保持与原 Element Plus 版完全一致的 props/emits 契约：
+    props: show/type/title/message/icon/iconColor/confirmText/cancelText/confirmColor
+           inputValue/inputLabel/inputType/inputPlaceholder/inputRows
+    emits: update:show/confirm/cancel
+  -->
+  <div class="app-modal-slot"></div>
 </template>
 
 <script>
-import { ref, computed, watch, nextTick } from 'vue'
-import {
-  WarningFilled,
-  InfoFilled,
-  CircleCheckFilled,
-  EditPen
-} from '@element-plus/icons-vue'
+import { ref, computed, watch } from 'vue'
+import { jcOpenHtml, jcCloseAll } from '@/utils/jcu'
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+const ICON_GLYPH = {
+  'mdi-alert-circle': '⚠️', 'warning': '⚠️', 'alert': '⚠️',
+  'mdi-information': 'ℹ️', 'info': 'ℹ️',
+  'mdi-check-circle': '✅', 'success': '✅',
+  'mdi-edit': '✏️', 'edit': '✏️'
+}
 
 export default {
   name: 'AppModal',
-  components: {
-    WarningFilled,
-    InfoFilled,
-    CircleCheckFilled,
-    EditPen
-  },
   props: {
-    show: {
-      type: Boolean,
-      default: false
-    },
-    type: {
-      type: String,
-      default: 'alert', // alert, confirm, prompt
-      validator: (value) => ['alert', 'confirm', 'prompt'].includes(value)
-    },
-    title: {
-      type: String,
-      default: ''
-    },
-    message: {
-      type: String,
-      default: ''
-    },
-    icon: {
-      type: String,
-      default: 'mdi-alert-circle'
-    },
-    iconColor: {
-      type: String,
-      default: 'warning'
-    },
-    confirmText: {
-      type: String,
-      default: '确定'
-    },
-    cancelText: {
-      type: String,
-      default: '取消'
-    },
-    confirmColor: {
-      type: String,
-      default: 'primary'
-    },
-    inputValue: {
-      type: String,
-      default: ''
-    },
-    inputLabel: {
-      type: String,
-      default: ''
-    },
-    inputType: {
-      type: String,
-      default: 'text'
-    },
-    inputPlaceholder: {
-      type: String,
-      default: ''
-    },
-    inputRows: {
-      type: Number,
-      default: 1
-    }
+    show: { type: Boolean, default: false },
+    type: { type: String, default: 'alert', validator: (v) => ['alert', 'confirm', 'prompt'].includes(v) },
+    title: { type: String, default: '' },
+    message: { type: String, default: '' },
+    icon: { type: String, default: 'mdi-alert-circle' },
+    iconColor: { type: String, default: 'warning' },
+    confirmText: { type: String, default: '确定' },
+    cancelText: { type: String, default: '取消' },
+    confirmColor: { type: String, default: 'primary' },
+    inputValue: { type: String, default: '' },
+    inputLabel: { type: String, default: '' },
+    inputType: { type: String, default: 'text' },
+    inputPlaceholder: { type: String, default: '' },
+    inputRows: { type: Number, default: 1 }
   },
   emits: ['update:show', 'confirm', 'cancel'],
   setup(props, { emit }) {
-    const inputRef = ref(null)
     const internalValue = ref(props.inputValue)
+    let contentEl = null
 
-    const showCancel = computed(() => {
-      return props.type === 'confirm' || props.type === 'prompt'
-    })
+    const showCancel = computed(() => props.type === 'confirm' || props.type === 'prompt')
 
-    const confirmButtonType = computed(() => {
-      const color = props.confirmColor
-      if (color === 'error' || color === 'danger') return 'danger'
-      if (color === 'success') return 'success'
-      if (color === 'warning') return 'warning'
-      if (color === 'secondary') return 'info'
+    const confirmBtnType = computed(() => {
+      const c = props.confirmColor
+      if (c === 'error' || c === 'danger') return 'danger'
+      if (c === 'success') return 'primary'
+      if (c === 'warning') return 'danger'
+      if (c === 'secondary') return 'default'
       return 'primary'
     })
 
-    watch(() => props.inputValue, (val) => {
-      internalValue.value = val
-    })
+    watch(() => props.show, (val) => { if (val) open() })
+    watch(() => props.inputValue, (val) => { internalValue.value = val })
 
-    watch(() => props.show, (val) => {
-      if (val && props.type === 'prompt') {
-        nextTick(() => {
-          inputRef.value?.focus()
+    const resetInternal = () => { internalValue.value = props.inputValue }
+
+    const open = () => {
+      contentEl = null
+      const glyph = ICON_GLYPH[props.icon] || (props.iconColor === 'success' ? '✅' : '⚠️')
+      let content = ''
+
+      if (props.type === 'prompt') {
+        const labelHtml = props.inputLabel
+          ? `<div style="margin-bottom:6px;font-weight:600;font-size:13px;color:var(--jc-text,#333);">${esc(props.inputLabel)}</div>`
+          : ''
+        const isArea = props.inputType === 'textarea'
+        content = `
+          <div style="margin-bottom:14px;">${glyph} <span>${esc(props.message)}</span></div>
+          ${labelHtml}
+          ${isArea
+            ? `<textarea data-app-input class="jc-modal__input" rows="${props.inputRows || 1}" style="resize:vertical;" placeholder="${esc(props.inputPlaceholder || '')}">${esc(props.inputValue)}</textarea>`
+            : `<input data-app-input class="jc-modal__input" type="text" value="${esc(props.inputValue)}" placeholder="${esc(props.inputPlaceholder || '')}" />`}
+        `
+      } else {
+        content = `<div style="display:flex;align-items:flex-start;gap:10px;"><span style="font-size:22px;line-height:1.4;">${glyph}</span><span>${esc(props.message)}</span></div>`
+      }
+
+      const buttons = []
+      if (showCancel.value) {
+        buttons.push({
+          text: props.cancelText,
+          type: 'default',
+          action: () => {
+            emit('cancel')
+            emit('update:show', false)
+            jcCloseAll()
+          }
         })
       }
-    })
+      buttons.push({
+        text: props.confirmText,
+        type: confirmBtnType.value,
+        action: () => {
+          let val = props.inputValue
+          if (props.type === 'prompt' && contentEl) {
+            const input = contentEl.querySelector('[data-app-input]')
+            if (input) val = input.value
+          }
+          internalValue.value = val
+          emit('confirm', val)
+          emit('update:show', false)
+          jcCloseAll()
+        }
+      })
 
-    const resetInternal = () => {
-      internalValue.value = props.inputValue
+      jcOpenHtml({
+        title: props.title || '提示',
+        content,
+        width: 500,
+        size: 'sm',
+        closeOnOverlay: false,
+        onMount: (el) => { contentEl = el },
+        onClose: () => { resetInternal() },
+        buttons
+      })
     }
 
-    const handleConfirm = () => {
-      emit('confirm', internalValue.value)
-      emit('update:show', false)
-    }
-
-    const handleCancel = () => {
-      emit('cancel')
-      emit('update:show', false)
-    }
-
-    return {
-      inputRef,
-      internalValue,
-      showCancel,
-      confirmButtonType,
-      resetInternal,
-      handleConfirm,
-      handleCancel
-    }
+    return { open, internalValue, showCancel, confirmBtnType, resetInternal }
   }
 }
 </script>
 
 <style scoped>
-.modal-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-weight: 600;
-  font-size: 16px;
-  color: #1a1a2e;
-}
-
-.title-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.prompt-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.prompt-message {
-  margin-bottom: 12px;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
+.app-modal-slot { display: none; }
 </style>

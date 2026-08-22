@@ -1,99 +1,105 @@
 <template>
-  <div class="admin-system-logs page-container">
+  <div class="admin-system-logs">
     <!-- 页面标题 -->
-    <div class="page-header">
-      <div class="header-row">
-        <div>
-          <h1 class="page-title">系统操作日志</h1>
-          <p class="page-desc">查看用户和管理员的所有操作记录</p>
-        </div>
-        <div class="header-actions">
-          <el-button
-            type="danger"
-            plain
-            :loading="deleting"
-            :disabled="deleting"
-            @click="deleteOldLogs"
-          >
-            <el-icon><Delete /></el-icon>
-            删除90天前日志
-          </el-button>
-          <el-button
-            type="primary"
-            :loading="loading"
-            @click="refreshData"
-          >
-            <el-icon><Refresh /></el-icon>
-            刷新
-          </el-button>
-        </div>
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">系统操作日志</h1>
+        <p class="page-desc">查看用户和管理员的所有操作记录</p>
+      </div>
+      <div class="header-actions">
+        <el-button
+          type="danger"
+          plain
+          :loading="deleting"
+          :disabled="deleting"
+          @click="deleteOldLogs"
+        >
+          <el-icon><Delete /></el-icon>
+          删除90天前日志
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="loading"
+          @click="refreshData"
+        >
+          <el-icon><Refresh /></el-icon>
+          刷新
+        </el-button>
       </div>
     </div>
 
     <!-- 筛选器 -->
-    <el-card class="mb-6" shadow="never">
+    <div class="card-surface filter-card">
       <div class="filter-row">
-        <el-select
-          v-model="filter.module"
-          clearable
-          placeholder="筛选模块"
-          class="filter-module"
-        >
-          <el-option
-            v-for="m in allModules"
-            :key="m"
-            :label="m"
-            :value="m"
+        <div class="filter-field">
+          <span class="filter-label">模块</span>
+          <el-select
+            v-model="filter.module"
+            clearable
+            placeholder="全部模块"
+            class="filter-module"
+          >
+            <el-option
+              v-for="m in allModules"
+              :key="m"
+              :label="m"
+              :value="m"
+            />
+          </el-select>
+        </div>
+        <div class="filter-field">
+          <span class="filter-label">用户</span>
+          <el-input
+            v-model="filter.user_id"
+            type="number"
+            clearable
+            placeholder="用户ID"
+            class="filter-user"
           />
-        </el-select>
-        <el-input
-          v-model="filter.user_id"
-          type="number"
-          clearable
-          placeholder="用户ID筛选"
-          class="filter-user"
-        />
+        </div>
       </div>
-    </el-card>
+    </div>
 
     <!-- 日志列表 -->
-    <el-card shadow="never">
-      <el-table
-        v-loading="loading"
-        :data="logs"
-        class="logs-table"
-      >
-        <el-table-column prop="created_at" label="时间" sortable>
-          <template #default="{ row }">
-            {{ formatDate(row.created_at) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="用户" width="180">
-          <template #default="{ row }">
-            <div v-if="row.user">
-              <div class="user-name">{{ row.user.username || row.user.nickname || '用户' }}</div>
-              <div class="user-id">ID: {{ row.user_id }}</div>
-            </div>
-            <div v-else class="user-id">用户ID: {{ row.user_id }}</div>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="120">
-          <template #default="{ row }">
-            <el-tag :type="getActionType(row.action)" size="small">
-              {{ getActionText(row.action) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="模块" width="120">
-          <template #default="{ row }">
-            <el-tag type="info" size="small">
-              {{ getModuleText(row.module) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="details" label="详情" />
-        <el-table-column prop="ip" label="IP地址" width="140" />
-      </el-table>
+    <div class="card-surface">
+      <div class="table-wrap">
+        <el-table
+          v-loading="loading"
+          :data="logs"
+          class="logs-table campus-table"
+        >
+          <el-table-column prop="created_at" label="时间" min-width="180" sortable>
+            <template #default="{ row }">
+              {{ formatDate(row.created_at) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="用户" min-width="160">
+            <template #default="{ row }">
+              <div v-if="row.user">
+                <div class="user-name">{{ row.user.username || row.user.nickname || '用户' }}</div>
+                <div class="user-id">ID: {{ row.user_id }}</div>
+              </div>
+              <div v-else class="user-id">用户ID: {{ row.user_id }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag :type="getActionType(row.action)" size="small" effect="light">
+                {{ getActionText(row.action) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="模块" width="110" align="center">
+            <template #default="{ row }">
+              <el-tag type="info" size="small" effect="plain">
+                {{ getModuleText(row.module) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="details" label="详情" min-width="200" show-overflow-tooltip />
+          <el-table-column prop="ip" label="IP地址" width="140" />
+        </el-table>
+      </div>
 
       <div class="pagination-row">
         <el-pagination
@@ -106,7 +112,7 @@
           @size-change="handleSizeChange"
         />
       </div>
-    </el-card>
+    </div>
   </div>
 </template>
 
@@ -310,14 +316,12 @@ export default {
 
 <style scoped>
 .admin-system-logs {
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.page-header {
-  margin-bottom: 24px;
-}
-
-.header-row {
+.page-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -325,22 +329,28 @@ export default {
   gap: 16px;
 }
 
+.page-title {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--campus-text);
+}
+
+.page-desc {
+  margin: 0;
+  font-size: 14px;
+  color: var(--campus-text-secondary);
+}
+
 .header-actions {
   display: flex;
   gap: 12px;
 }
 
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #303133;
-}
-
-.page-desc {
-  margin: 4px 0 0;
-  font-size: 14px;
-  color: #909399;
+/* ---------------- 筛选器 ---------------- */
+.filter-card {
+  padding: 16px 20px;
 }
 
 .filter-row {
@@ -349,48 +359,87 @@ export default {
   gap: 16px;
 }
 
+.filter-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--campus-text-secondary);
+  flex-shrink: 0;
+}
+
 .filter-module {
-  width: 200px;
+  width: 180px;
 }
 
 .filter-user {
-  width: 200px;
+  width: 180px;
 }
 
-.logs-table {
+/* ---------------- 日志列表 ---------------- */
+.card-surface {
+  padding: 4px 20px 20px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin: 0 -20px;
+  padding: 0 20px;
+}
+
+.campus-table {
   width: 100%;
+}
+
+.campus-table :deep(.el-table__row) {
+  font-size: 13px;
 }
 
 .user-name {
   font-weight: 600;
-  color: #409eff;
+  color: var(--campus-primary);
 }
 
 .user-id {
   font-size: 12px;
-  color: #909399;
+  color: var(--campus-text-muted);
 }
 
 .pagination-row {
   display: flex;
   justify-content: flex-end;
-  margin-top: 16px;
+  margin-top: 20px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
+/* ---------------- 响应式 ---------------- */
 @media (max-width: 575px) {
+  .filter-field {
+    width: 100%;
+  }
+  .filter-module,
+  .filter-user {
+    flex: 1;
+    width: auto;
+  }
   .pagination-row {
     justify-content: flex-start;
     max-width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
     padding-bottom: 4px;
   }
   .pagination-row :deep(.el-pagination) {
     white-space: nowrap;
   }
-}
-
-.mb-6 {
-  margin-bottom: 24px;
+  .header-actions {
+    width: 100%;
+  }
+  .header-actions .el-button {
+    flex: 1;
+  }
 }
 </style>

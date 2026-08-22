@@ -2,92 +2,91 @@
   <div class="article-list">
     <!-- 加载状态 -->
     <div v-if="loading" class="article-grid">
-      <el-card
+      <div
         v-for="i in 6"
         :key="i"
-        shadow="always"
         class="article-card article-skeleton"
       >
-        <el-skeleton :rows="5" animated />
-      </el-card>
+        <div class="skeleton-cover"></div>
+        <div class="skeleton-body">
+          <div class="skeleton-line w40"></div>
+          <div class="skeleton-line w90"></div>
+          <div class="skeleton-line w70"></div>
+          <div class="skeleton-line w80"></div>
+          <div class="skeleton-foot">
+            <div class="skeleton-dot"></div>
+            <div class="skeleton-dot"></div>
+            <div class="skeleton-dot"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 空状态 -->
     <div v-else-if="articles.length === 0" class="empty-state">
-      <el-icon :size="80" class="text-secondary empty-icon">
-        <Document />
-      </el-icon>
+      <div class="empty-icon">
+        <el-icon :size="56"><Document /></el-icon>
+      </div>
       <div class="empty-title">暂无文章</div>
       <div class="text-secondary empty-subtitle">快来发布第一篇文章吧</div>
     </div>
 
     <!-- 文章列表 -->
     <div v-else class="article-grid">
-      <el-card
+      <router-link
         v-for="article in articles"
         :key="article.id"
-        shadow="hover"
+        :to="'/article/' + article.id"
         class="article-card"
       >
-        <router-link
-          :to="'/article/' + article.id"
-          class="article-link"
-        >
-          <div class="article-header">
-            <UserAvatar :user="article.user" :size="40" />
-            <div class="article-meta">
-              <div class="meta-top">
-                <el-tag
-                  v-if="article.is_pinned"
-                  size="small"
-                  color="rgba(255,165,0,0.12)"
-                  class="pinned-tag"
-                  effect="plain"
-                >
-                  <el-icon class="tag-icon"><Promotion /></el-icon>
-                  置顶
-                </el-tag>
-                <span class="author-name">{{ article.user?.display_name || article.user?.username }}</span>
-              </div>
-              <div class="text-secondary article-date">
-                {{ formatDate(article.created_at) }}
-              </div>
-            </div>
-            <el-tag
-              v-if="article.category?.name"
-              size="small"
-              :color="article.category.color"
-              effect="light"
-              class="category-tag"
-            >
-              {{ article.category.name }}
-            </el-tag>
+        <div class="card-topbar">
+          <div class="author-line">
+            <UserAvatar
+              :user="article.user"
+              :size="34"
+              :show-username="false"
+              class="author-avatar"
+            />
+            <span class="author-name">
+              {{ article.user?.display_name || article.user?.username }}
+            </span>
           </div>
+          <span v-if="article.category?.name" class="category-tag" :style="categoryStyle(article.category)">
+            {{ article.category.name }}
+          </span>
+        </div>
 
-          <div class="article-title">{{ article.title }}</div>
+        <div v-if="coverImage(article)" class="cover-wrap">
+          <img :src="coverImage(article)" :alt="article.title" class="cover-img" loading="lazy" />
+        </div>
 
-          <div class="article-excerpt text-secondary">
-            {{ getExcerpt(article.content) }}
+        <div class="card-body">
+          <div v-if="article.is_pinned" class="pinned-tag">
+            <el-icon class="tag-icon"><Promotion /></el-icon>
+            置顶
           </div>
+          <h3 class="article-title" v-html="highlightText(article.title)"></h3>
+          <p class="article-excerpt" v-html="highlightText(getExcerpt(article.content))"></p>
+        </div>
 
-          <div class="article-footer">
-            <div class="article-stats">
-              <span class="stat-item">
-                <el-icon class="stat-icon stat-like"><SemiSelect /></el-icon>
-                {{ article.like_count || 0 }}
-              </span>
-              <span class="stat-item">
-                <el-icon class="stat-icon"><View /></el-icon>
-                {{ article.view_count || 0 }}
-              </span>
-              <span class="stat-item">
-                <el-icon class="stat-icon"><ChatDotRound /></el-icon>
-                {{ article.comment_count || 0 }}
-              </span>
-            </div>
+        <div class="card-footer">
+          <div class="article-stats">
+            <span class="stat-item">
+              <el-icon class="stat-icon stat-like"><SemiSelect /></el-icon>
+              {{ article.like_count || 0 }}
+            </span>
+            <span class="stat-item">
+              <el-icon class="stat-icon"><View /></el-icon>
+              {{ article.view_count || 0 }}
+            </span>
+            <span class="stat-item">
+              <el-icon class="stat-icon"><ChatDotRound /></el-icon>
+              {{ article.comment_count || 0 }}
+            </span>
           </div>
-        </router-link>
-      </el-card>
+          <span class="article-date">{{ formatDate(article.created_at) }}</span>
+        </div>
+      </router-link>
     </div>
   </div>
 </template>
@@ -114,9 +113,14 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    // 可选搜索关键词；提供时在标题/摘要中高亮匹配文本
+    highlightQuery: {
+      type: String,
+      default: ''
     }
   },
-  setup() {
+  setup(props) {
     const formatDate = (date) => {
       if (!date) return ''
       const d = new Date(date)
@@ -154,9 +158,48 @@ export default {
       return text.length > 120 ? text.substring(0, 120) + '...' : text
     }
 
+    // 封面：优先取文章自带 cover_image，其次提取 markdown 第一张图片（纯展示，不引入接口）
+    const coverImage = (article) => {
+      if (article?.cover_image) return article.cover_image
+      const content = article?.content || ''
+      if (!content) return ''
+      const m = content.match(/!\[.*?\]\((.+?)\)/)
+      return m ? m[1] : ''
+    }
+
+    // 分类标签内联样式（保持原 el-tag 配色的视觉习惯）
+    const categoryStyle = (category) => {
+      const color = category.color || '#4f6ef7'
+      return {
+        backgroundColor: applyAlpha(color, 0.12),
+        color
+      }
+    }
+
+    const applyAlpha = (hex, alpha) => {
+      const clean = String(hex || '').replace('#', '')
+      if (!/^[0-9a-fA-F]{6}$/.test(clean)) return hex
+      const r = parseInt(clean.slice(0, 2), 16)
+      const g = parseInt(clean.slice(2, 4), 16)
+      const b = parseInt(clean.slice(4, 6), 16)
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`
+    }
+
+    // 高亮关键词（转义正则，避免特殊字符破坏模式）
+    const highlightText = (text) => {
+      const raw = String(props.highlightQuery || '').trim()
+      if (!raw || !text) return text
+      const escaped = raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const re = new RegExp(`(${escaped})`, 'gi')
+      return String(text).replace(re, '<mark class="hl">$1</mark>')
+    }
+
     return {
       formatDate,
-      getExcerpt
+      getExcerpt,
+      coverImage,
+      categoryStyle,
+      highlightText
     }
   }
 }
@@ -169,92 +212,116 @@ export default {
 
 .article-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
 }
 
 .article-card {
+  display: flex;
+  flex-direction: column;
   background: var(--campus-surface);
   border: 1px solid var(--campus-border);
   border-radius: var(--campus-radius);
   overflow: hidden;
-  transition: all 0.25s ease;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
 }
 
 .article-card:hover {
-  border-color: var(--campus-primary);
-  box-shadow: 0 4px 20px rgba(103, 80, 164, 0.12);
+  border-color: rgba(79, 110, 247, 0.4);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
   transform: translateY(-4px);
 }
 
-.article-card :deep(.el-card__body) {
-  padding: 0;
-}
-
-.article-link {
-  display: flex;
-  flex-direction: column;
-  padding: 10px 12px;
-  text-decoration: none;
-  color: inherit;
-  height: 100%;
-  box-sizing: border-box;
-}
-
-.article-header {
+/* 顶部：作者 + 分类 */
+.card-topbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  margin-bottom: 6px;
+  padding: 14px 14px 0;
 }
 
-.article-meta {
-  flex: 1;
+.author-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
 }
 
-.meta-top {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.pinned-tag {
-  border: none;
-  color: #e6a23c;
-}
-
-.pinned-tag .tag-icon {
-  margin-right: 2px;
-  vertical-align: -2px;
-}
-
-.category-tag {
+.author-avatar {
   flex-shrink: 0;
 }
 
 .author-name {
+  font-size: 0.85rem;
   font-weight: 600;
-  font-size: 0.875rem;
   color: var(--campus-text);
-  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.article-date {
-  font-size: 0.75rem;
-  line-height: 1.3;
-  margin-top: 1px;
+.category-tag {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+/* 封面 */
+.cover-wrap {
+  margin: 12px 14px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background: var(--campus-bg);
+}
+
+.cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+.article-card:hover .cover-img {
+  transform: scale(1.04);
+}
+
+/* 正文 */
+.card-body {
+  padding: 12px 14px 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pinned-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #e6a23c;
+  background: rgba(255, 165, 0, 0.12);
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.pinned-tag .tag-icon {
+  vertical-align: -2px;
 }
 
 .article-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--campus-primary);
-  line-height: 1.35;
-  margin-bottom: 4px;
+  font-size: 1.02rem;
+  font-weight: 650;
+  color: var(--campus-text);
+  line-height: 1.4;
+  margin: 0 0 6px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -263,26 +330,37 @@ export default {
 }
 
 .article-card:hover .article-title {
-  color: var(--campus-primary-dark);
+  color: var(--campus-primary);
 }
 
 .article-excerpt {
-  flex: 1;
-  font-size: 0.875rem;
-  line-height: 1.45;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--campus-text-secondary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-bottom: 8px;
+  margin: 0;
 }
 
-.article-footer {
+/* 搜索关键词高亮 */
+.hl {
+  background: rgba(79, 110, 247, 0.18);
+  color: var(--campus-primary);
+  border-radius: 4px;
+  padding: 0 3px;
+  font-weight: 600;
+}
+
+/* 底部 */
+.card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 8px;
+  padding: 10px 14px 14px;
   border-top: 1px solid var(--campus-border);
+  margin-top: 4px;
 }
 
 .article-stats {
@@ -295,9 +373,8 @@ export default {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.75rem;
-  color: var(--campus-text);
-  opacity: 0.7;
+  font-size: 0.78rem;
+  color: var(--campus-text-secondary);
 }
 
 .stat-icon {
@@ -308,34 +385,87 @@ export default {
   color: #ec6b8f;
 }
 
+.article-date {
+  font-size: 0.75rem;
+  color: var(--campus-text-secondary);
+  white-space: nowrap;
+}
+
+/* 骨架屏 */
 .article-skeleton {
   cursor: default;
 }
 
 .article-skeleton:hover {
-  border-color: var(--campus-border);
-  box-shadow: var(--campus-shadow);
   transform: none;
+  box-shadow: none;
+  border-color: var(--campus-border);
 }
 
-.article-skeleton :deep(.el-card__body) {
-  padding: 16px;
+.skeleton-cover {
+  margin: 12px 14px 0;
+  height: 150px;
+  border-radius: 12px;
+  background: linear-gradient(100deg, #eef1f7 40%, #f6f8fc 50%, #eef1f7 60%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
 }
 
+.skeleton-body {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(100deg, #eef1f7 40%, #f6f8fc 50%, #eef1f7 60%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.skeleton-line.w40 { width: 40%; }
+.skeleton-line.w70 { width: 70%; }
+.skeleton-line.w80 { width: 80%; }
+.skeleton-line.w90 { width: 90%; }
+
+.skeleton-foot {
+  display: flex;
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.skeleton-dot {
+  width: 54px;
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(100deg, #eef1f7 40%, #f6f8fc 50%, #eef1f7 60%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  to { background-position: -200% 0; }
+}
+
+/* 空状态 */
 .empty-state {
   text-align: center;
-  padding: 48px 16px;
+  padding: 56px 16px;
 }
 
 .empty-icon {
-  margin-bottom: 16px;
-  display: block;
+  margin-bottom: 14px;
+  color: var(--campus-text-secondary);
+  opacity: 0.5;
 }
 
 .empty-title {
-  font-size: 1.125rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: var(--campus-text);
 }
 
@@ -343,13 +473,14 @@ export default {
   font-size: 0.875rem;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .article-grid {
     grid-template-columns: 1fr;
+    gap: 14px;
   }
 
   .article-card {
-    border-radius: 8px;
+    border-radius: 12px;
   }
 }
 </style>

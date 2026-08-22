@@ -1,118 +1,14 @@
 <template>
   <el-container v-if="isInitialized && isAdmin" class="admin-shell">
-  <div v-if="isMobile && drawerOpen" class="drawer-mask" @click="drawerOpen = false"></div>
-
-  <el-aside
-    :width="(isMobile ? 260 : (sidebarCollapsed ? 64 : 260)) + 'px'"
-    class="admin-aside"
-    :class="{ 'is-open': drawerOpen, 'is-mobile': isMobile }"
-  >
-    <div class="aside-inner">
-        <div class="drawer-header">
-          <div class="d-flex align-center">
-            <el-icon :size="30" class="logo-icon" color="#fff">
-              <Medal />
-            </el-icon>
-            <span
-              v-if="!sidebarCollapsed"
-              class="logo-title"
-            >校园论坛</span>
+    <!-- 顶部管理后台 Header -->
+    <header class="admin-header">
+      <div class="admin-header-inner">
+        <div class="brand">
+          <div class="brand-logo">
+            <el-icon :size="22"><Medal /></el-icon>
           </div>
-          <el-button
-            v-if="!isMobile"
-            text
-            circle
-            class="collapse-btn"
-            :aria-label="sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'"
-            @click="sidebarCollapsed = !sidebarCollapsed"
-          >
-            <el-icon :size="16" color="#fff">
-              <ArrowLeft v-if="!sidebarCollapsed" />
-              <ArrowRight v-else />
-            </el-icon>
-          </el-button>
+          <span class="brand-title">管理后台</span>
         </div>
-
-        <el-divider class="aside-divider" />
-
-        <el-menu
-          :collapse="sidebarCollapsed && !isMobile"
-          :default-active="activeMenu"
-          background-color="transparent"
-          text-color="#fff"
-          active-text-color="#fff"
-          class="admin-menu"
-          :collapse-transition="false"
-          router
-        >
-          <el-menu-item
-            v-for="item in adminItems"
-            :key="item.route"
-            :index="'/admin/' + item.path"
-          >
-            <el-icon>
-              <component :is="item.icon" />
-            </el-icon>
-            <template #title>
-              <span class="menu-title">{{ item.title }}</span>
-              <el-badge
-                v-if="item.badge && item.badge() > 0"
-                :value="item.badge()"
-                :max="99"
-                type="danger"
-                class="menu-badge"
-              />
-            </template>
-          </el-menu-item>
-        </el-menu>
-
-        <div class="aside-footer">
-          <el-divider class="aside-divider" />
-          <div v-if="!sidebarCollapsed || isMobile" class="version-info">
-            <div class="d-flex align-center mb-1">
-              <el-icon :size="14" class="mr-1"><InfoFilled /></el-icon>
-              <span class="version-label">版本信息</span>
-            </div>
-            <div class="version-row">
-              <span class="version-key">前端</span>
-              <el-tag size="small" effect="dark" class="version-tag">{{ frontendVersion }}</el-tag>
-            </div>
-            <div class="version-row">
-              <span class="version-key">后端</span>
-              <el-tag size="small" effect="dark" class="version-tag backend">{{ backendVersion }}</el-tag>
-            </div>
-          </div>
-          <el-menu
-            :collapse="sidebarCollapsed && !isMobile"
-            background-color="transparent"
-            text-color="#fff"
-            active-text-color="#fff"
-            class="admin-menu footer-menu"
-            :collapse-transition="false"
-            router
-          >
-            <el-menu-item index="/">
-              <el-icon>
-                <HomeFilled />
-              </el-icon>
-              <template #title>
-                <span class="menu-title">返回首页</span>
-              </template>
-            </el-menu-item>
-          </el-menu>
-        </div>
-      </div>
-    </el-aside>
-
-    <el-container class="admin-body">
-      <el-header height="64px" class="admin-header">
-        <el-button
-          class="d-lg-none menu-toggle"
-          text
-          @click="drawerOpen = !drawerOpen"
-        >
-          <el-icon :size="20"><Expand /></el-icon>
-        </el-button>
 
         <el-breadcrumb separator="/" class="admin-breadcrumb">
           <el-breadcrumb-item
@@ -126,59 +22,115 @@
 
         <div class="flex-spacer" />
 
-        <el-input
-          v-model="searchQuery"
-          placeholder="搜索..."
-          clearable
-          class="admin-search d-none d-sm-block"
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
+        <div class="header-actions">
+          <router-link to="/" class="header-link">
+            <el-icon :size="16"><HomeFilled /></el-icon>
+            <span class="header-link-text">返回站点</span>
+          </router-link>
 
-        <el-badge
-          :value="notificationCount"
-          :max="99"
-          type="danger"
-          class="notification-badge"
-        >
-          <el-button text circle class="icon-btn">
-            <el-icon :size="18"><Bell /></el-icon>
-          </el-button>
-        </el-badge>
+          <el-badge
+            :value="notificationCount"
+            :max="99"
+            type="danger"
+            class="notification-badge"
+          >
+            <el-button text circle class="icon-btn" @click="router.push({ name: 'AdminNotifications' })">
+              <el-icon :size="18"><Bell /></el-icon>
+            </el-button>
+          </el-badge>
 
-        <el-dropdown trigger="click" class="admin-user-dropdown">
-          <div class="user-trigger">
-            <el-avatar :size="32" class="user-avatar">
-              <el-image
-                v-if="currentUser?.avatar"
-                :src="currentUser.avatar"
-                fit="cover"
-              />
-              <template v-else>
-                {{ currentUser?.display_name?.[0] || currentUser?.username?.[0] || 'A' }}
+          <el-dropdown trigger="click" class="admin-user-dropdown">
+            <div class="user-trigger">
+              <el-avatar :size="30" class="user-avatar">
+                <el-image
+                  v-if="currentUser?.avatar"
+                  :src="currentUser.avatar"
+                  fit="cover"
+                />
+                <template v-else>
+                  {{ currentUser?.display_name?.[0] || currentUser?.username?.[0] || 'A' }}
+                </template>
+              </el-avatar>
+              <span class="user-name">
+                {{ currentUser?.display_name || currentUser?.username }}
+              </span>
+              <el-icon :size="14" class="user-caret"><ArrowDown /></el-icon>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="router.push('/profile')">
+                  <el-icon><User /></el-icon>个人资料
+                </el-dropdown-item>
+                <el-dropdown-item divided @click="handleLogout">
+                  <el-icon><SwitchButton /></el-icon>退出登录
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </div>
+    </header>
+
+    <!-- 移动端 / 平板：横向可滚动菜单栏 -->
+    <nav class="mobile-nav">
+      <a
+        v-for="item in adminItems"
+        :key="item.route"
+        class="mobile-nav-item"
+        :class="{ 'is-active': activeMenu === '/admin/' + item.path }"
+        @click.prevent="router.push('/admin/' + item.path)"
+      >
+        <el-icon :size="16"><component :is="item.icon" /></el-icon>
+        <span class="mobile-nav-title">{{ item.title }}</span>
+        <span v-if="item.badge && item.badge() > 0" class="mobile-nav-badge">{{ item.badge() > 99 ? '99+' : item.badge() }}</span>
+      </a>
+    </nav>
+
+    <el-container class="admin-body">
+      <!-- 桌面端左侧导航 -->
+      <aside class="admin-aside">
+        <div class="aside-inner">
+          <div class="menu-label">导航菜单</div>
+          <el-menu
+            :default-active="activeMenu"
+            class="admin-menu"
+            router
+          >
+            <el-menu-item
+              v-for="item in adminItems"
+              :key="item.route"
+              :index="'/admin/' + item.path"
+            >
+              <el-icon>
+                <component :is="item.icon" />
+              </el-icon>
+              <template #title>
+                <span class="menu-title">{{ item.title }}</span>
+                <el-badge
+                  v-if="item.badge && item.badge() > 0"
+                  :value="item.badge()"
+                  :max="99"
+                  type="danger"
+                  class="menu-badge"
+                />
               </template>
-            </el-avatar>
-            <span class="user-name d-none d-sm-inline">
-              {{ currentUser?.display_name || currentUser?.username }}
-            </span>
-            <el-icon :size="14" class="user-caret">
-              <ArrowDown />
-            </el-icon>
+            </el-menu-item>
+          </el-menu>
+
+          <div class="aside-footer">
+            <div class="version-block">
+              <div class="version-row">
+                <span class="version-key">前端版本</span>
+                <span class="version-value">{{ frontendVersion }}</span>
+              </div>
+              <div class="version-row">
+                <span class="version-key">后端版本</span>
+                <span class="version-value">{{ backendVersion }}</span>
+              </div>
+            </div>
           </div>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="router.push('/profile')">
-                <el-icon><User /></el-icon>个人资料
-              </el-dropdown-item>
-              <el-dropdown-item divided @click="handleLogout">
-                <el-icon><SwitchButton /></el-icon>退出登录
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </el-header>
+        </div>
+      </aside>
 
       <!-- 主要内容区域 -->
       <el-main class="admin-main">
@@ -189,35 +141,17 @@
         </div>
       </el-main>
     </el-container>
-
-    <!-- 移动端底部导航 -->
-    <div class="bottom-navigation d-lg-none">
-      <el-button
-        v-for="item in bottomNavItems"
-        :key="item.route"
-        text
-        class="bottom-nav-item"
-        @click="router.push({ name: item.route })"
-      >
-        <el-icon :size="20">
-          <component :is="item.icon" />
-        </el-icon>
-        <span class="bottom-nav-title">{{ item.title }}</span>
-      </el-button>
-    </div>
   </el-container>
 
   <!-- 权限不足 -->
   <el-container v-else-if="isInitialized && !isAdmin" class="fill-height">
     <el-row justify="center" align="middle" class="fill-height">
       <el-col :xs="22" :sm="16" :md="12" :lg="8">
-        <el-card class="text-center">
-          <el-icon :size="80" color="#f56c6c" class="mb-4">
-            <WarningFilled />
-          </el-icon>
+        <el-card class="text-center forbidden-card">
+          <el-icon :size="80" color="#ef4444" class="mb-4"><WarningFilled /></el-icon>
           <div class="forbidden-title">权限不足</div>
           <div class="forbidden-desc">您没有访问管理后台的权限</div>
-          <el-button type="primary" @click="router.push('/')">
+          <el-button type="primary" round @click="router.push('/')">
             <el-icon class="mr-1"><HomeFilled /></el-icon>返回首页
           </el-button>
         </el-card>
@@ -228,9 +162,7 @@
   <!-- 加载状态 -->
   <el-container v-else class="fill-height">
     <el-row justify="center" align="middle" class="fill-height">
-      <el-icon class="is-loading" :size="40" color="#409eff">
-        <Loading />
-      </el-icon>
+      <el-icon class="is-loading" :size="40" color="#4f6ef7"><Loading /></el-icon>
     </el-row>
   </el-container>
 </template>
@@ -241,25 +173,21 @@ import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
 import {
   ArrowDown,
-  ArrowLeft,
-  ArrowRight,
   Bell,
   Box,
   ChatLineRound,
   Delete,
   Document,
   DocumentCopy,
-  Expand,
   Flag,
   Grid,
   HomeFilled,
-  InfoFilled,
   Loading,
   Medal,
   Message,
   Monitor,
+  Notification,
   Promotion,
-  Search,
   Setting,
   SwitchButton,
   TrendCharts,
@@ -276,9 +204,6 @@ const isAdmin = ref(false)
 const isMobile = ref(false)
 const deletionCount = ref(0)
 const notificationCount = ref(3)
-const sidebarCollapsed = ref(false)
-const drawerOpen = ref(true)
-const searchQuery = ref('')
 const currentUser = ref(null)
 const backendVersion = ref('加载中...')
 const frontendVersion = ref(typeof __FRONTEND_VERSION__ !== 'undefined' ? __FRONTEND_VERSION__ : 'unknown')
@@ -295,17 +220,11 @@ const adminItems = [
   { route: 'AdminDeletions', path: 'deletions', title: '删除申请', icon: 'Delete', badge: () => deletionCount.value },
   { route: 'AdminReports', path: 'reports', title: '举报管理', icon: 'Flag' },
   { route: 'AdminAnnouncement', path: 'announcement', title: '公告管理', icon: 'Promotion' },
+  { route: 'AdminNotifications', path: 'admin-notifications', title: '系统通知', icon: 'Notification' },
   { route: 'AdminUserNotifications', path: 'notifications', title: '用户通知', icon: 'Bell' },
   { route: 'AdminSystemLogs', path: 'system-logs', title: '系统日志', icon: 'DocumentCopy' },
   { route: 'AdminSiteConfig', path: 'siteconfig', title: '网站配置', icon: 'Setting' },
   { route: 'AdminSMTPConfig', path: 'smtpconfig', title: '邮件配置', icon: 'Message' },
-]
-
-const bottomNavItems = [
-  { route: 'AdminIndex', title: '概览', icon: 'Grid' },
-  { route: 'AdminUsers', title: '用户', icon: 'UserFilled' },
-  { route: 'AdminArticles', title: '文章', icon: 'Document' },
-  { route: 'AdminDeletions', title: '删除', icon: 'Delete' },
 ]
 
 const activeMenu = computed(() => {
@@ -335,25 +254,14 @@ const pageTitles = {
   AdminReports: '举报管理',
   AdminAnnouncement: '公告管理',
   AdminUserNotifications: '用户通知与权限',
+  AdminNotifications: '系统通知',
   AdminSystemLogs: '系统操作日志',
   AdminSiteConfig: '网站配置',
   AdminSMTPConfig: '邮件配置',
 }
 
 const checkMobile = () => {
-  const wasMobile = isMobile.value
   isMobile.value = window.innerWidth < 1024
-
-  if (isMobile.value) {
-    // 移动端：默认关闭侧边栏
-    drawerOpen.value = false
-    sidebarCollapsed.value = true
-  } else {
-    // 桌面端：恢复侧边栏状态
-    const saved = localStorage.getItem('adminSidebarCollapsed')
-    if (saved !== null) sidebarCollapsed.value = JSON.parse(saved)
-    drawerOpen.value = true
-  }
 }
 
 const handleLogout = () => {
@@ -393,7 +301,6 @@ const loadVersion = async () => {
   try {
     const response = await api.get('/version')
     backendVersion.value = response.data.backend?.version || response.data.backend_version || response.data.version || 'unknown'
-    // 若前端未注入构建版本，则回退使用后端上报的前端版本
     if (frontendVersion.value === 'unknown' || frontendVersion.value === '') {
       frontendVersion.value = response.data.frontend?.version || 'unknown'
     }
@@ -402,10 +309,6 @@ const loadVersion = async () => {
     console.error('加载后端版本失败', error)
   }
 }
-
-watch(sidebarCollapsed, (val) => {
-  localStorage.setItem('adminSidebarCollapsed', val)
-})
 
 onMounted(() => {
   checkMobile()
@@ -421,102 +324,304 @@ onUnmounted(() => {
 })
 
 watch(() => route.path, loadDeletionCount)
-
-// 路由变化时关闭移动端抽屉
-watch(() => route.path, () => {
-  if (isMobile.value) drawerOpen.value = false
-})
 </script>
 
 <style scoped>
 .admin-shell {
   min-height: 100vh;
-}
-
-.admin-aside {
-  background: #409eff;
-  transition: width 0.2s;
-  overflow: hidden;
-}
-
-/* 移动端：侧边栏变为离屏抽屉 */
-.admin-aside.is-mobile {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  z-index: 1000;
-  height: 100vh;
-  transform: translateX(-100%);
-  transition: transform 0.28s ease;
-  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.2);
-}
-.admin-aside.is-mobile.is-open {
-  transform: translateX(0);
-}
-.drawer-mask {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  background: rgba(0, 0, 0, 0.4);
-}
-
-.aside-inner {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  background: var(--campus-bg);
 }
 
-.drawer-header {
+/* ---------------- 顶部 Header ---------------- */
+.admin-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--campus-surface);
+  border-bottom: 1px solid var(--campus-border);
+  box-shadow: var(--campus-shadow-sm);
+}
+
+.admin-header-inner {
+  height: var(--campus-header-h);
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  min-height: 64px;
-  padding: 0 16px;
+  gap: 16px;
 }
 
-.logo-icon {
-  margin-right: 6px;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
-.logo-title {
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
   color: #fff;
+  background: linear-gradient(135deg, var(--campus-primary), var(--campus-primary-light));
+  box-shadow: var(--campus-shadow-sm);
+}
+
+.brand-title {
   font-size: 18px;
   font-weight: 700;
+  color: var(--campus-text);
+  letter-spacing: 0.02em;
+}
+
+.admin-breadcrumb {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 575px) {
+  .admin-breadcrumb {
+    display: none;
+  }
+  .header-link-text {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .user-name {
+    display: none;
+  }
+}
+
+.flex-spacer {
+  flex: 1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: var(--campus-radius-sm);
+  color: var(--campus-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  transition: var(--campus-transition);
+}
+
+.header-link:hover {
+  background: var(--campus-primary-soft);
+  color: var(--campus-primary);
+}
+
+.icon-btn {
+  color: var(--campus-text-secondary);
+}
+
+.admin-user-dropdown {
+  cursor: pointer;
+}
+
+.user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--campus-border);
+  background: var(--campus-surface);
+  transition: var(--campus-transition);
+}
+
+.user-trigger:hover {
+  border-color: var(--campus-primary);
+  background: var(--campus-surface-2);
+}
+
+.user-avatar {
+  background: var(--campus-primary);
+}
+
+.user-name {
+  color: var(--campus-text);
+  font-size: 14px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.collapse-btn {
-  opacity: 0.8;
-  transition: opacity 0.2s;
+.user-caret {
+  color: var(--campus-text-muted);
 }
 
-.collapse-btn:hover {
-  opacity: 1;
+/* ---------------- 移动端横向滚动菜单 ---------------- */
+.mobile-nav {
+  position: sticky;
+  top: var(--campus-header-h);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 8px 12px;
+  background: var(--campus-surface);
+  border-bottom: 1px solid var(--campus-border);
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 
-.aside-divider {
-  border-color: rgba(255, 255, 255, 0.2);
-  margin: 8px 0;
+.mobile-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-nav-item {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: var(--campus-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: var(--campus-transition);
+}
+
+.mobile-nav-item:hover {
+  color: var(--campus-primary);
+  background: var(--campus-surface-2);
+}
+
+.mobile-nav-item.is-active {
+  color: var(--campus-primary);
+  background: var(--campus-primary-soft);
+  border-color: rgba(79, 110, 247, 0.18);
+}
+
+.mobile-nav-badge {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--campus-danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ---------------- 主体布局 ---------------- */
+.admin-body {
+  flex: 1;
+  min-height: 0;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ======== 响应式 ---------------- */
+@media (min-width: 992px) {
+  .mobile-nav {
+    display: none !important;
+  }
+}
+
+@media (max-width: 991px) {
+  .admin-aside {
+    display: none !important;
+  }
+  .mobile-nav {
+    display: flex;
+  }
+  .admin-main {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 575px) {
+  .admin-main {
+    padding: 12px;
+  }
+  .admin-header-inner {
+    padding: 0 12px;
+    gap: 8px;
+  }
+}
+
+.admin-aside {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  border-right: 1px solid var(--campus-border);
+}
+
+.aside-inner {
+  position: sticky;
+  top: calc(var(--campus-header-h) + 1px);
+  height: calc(100vh - var(--campus-header-h) - 1px);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 12px;
+  box-sizing: border-box;
+  background: var(--campus-surface);
+}
+
+.menu-label {
+  padding: 0 12px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--campus-text-muted);
 }
 
 .admin-menu {
-  border-right: none;
   flex: 1;
   overflow-y: auto;
+  border-right: none;
+  background: transparent;
 }
 
 .admin-menu .el-menu-item {
-  border-radius: 8px;
-  margin: 0 8px 4px;
+  height: 44px;
+  line-height: 44px;
+  margin: 2px 0;
+  border-radius: 10px;
+  color: var(--campus-text-secondary);
+  transition: var(--campus-transition);
 }
 
 .admin-menu .el-menu-item:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: var(--campus-surface-2);
+  color: var(--campus-primary);
 }
 
 .admin-menu .el-menu-item.is-active {
-  background: rgba(255, 255, 255, 0.2) !important;
+  background: var(--campus-primary-soft);
+  color: var(--campus-primary);
+  font-weight: 600;
+}
+
+.admin-menu .el-menu-item .el-icon {
+  color: inherit;
 }
 
 .menu-title {
@@ -530,160 +635,58 @@ watch(() => route.path, () => {
 
 .aside-footer {
   flex-shrink: 0;
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid var(--campus-border);
 }
 
-.version-info {
-  font-size: 0.75rem;
-  opacity: 0.9;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  margin: 8px;
-  padding: 10px 12px;
-}
-
-.version-label {
-  color: #fff;
-  font-size: 0.75rem;
-}
-
-.version-text {
-  color: #fff;
-  opacity: 0.7;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.version-block {
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--campus-surface-2);
 }
 
 .version-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-top: 6px;
+  font-size: 12px;
+  padding: 2px 0;
 }
 
 .version-key {
-  color: #fff;
-  opacity: 0.75;
-  font-size: 0.75rem;
+  color: var(--campus-text-muted);
 }
 
-.version-tag {
+.version-value {
+  color: var(--campus-text-secondary);
   font-weight: 600;
-  border: none;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.version-tag.backend {
-  background: #606266;
-  color: #fff;
-}
-
-.footer-menu {
-  flex: none;
-}
-
-.admin-body {
-  min-width: 0;
-}
-
-.admin-header {
-  display: flex;
-  align-items: center;
-  background: #fff;
-  border-bottom: 1px solid #ebeef5;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  padding: 0 20px;
-}
-
-.menu-toggle {
-  margin-right: 12px;
-}
-
-.admin-breadcrumb {
-  font-size: 14px;
-}
-
-.flex-spacer {
-  flex: 1;
-}
-
-.admin-search {
-  max-width: 300px;
-  margin: 0 16px;
-}
-
-.notification-badge {
-  margin-right: 8px;
-}
-
-.icon-btn {
-  color: #606266;
-}
-
-.admin-user-dropdown {
-  cursor: pointer;
-}
-
-.user-trigger {
-  display: flex;
-  align-items: center;
-  padding: 4px 8px;
-  border-radius: 8px;
-}
-
-.user-trigger:hover {
-  background: #f5f7fa;
-}
-
-.user-avatar {
-  background: #409eff;
-}
-
-.user-name {
-  margin-left: 8px;
-  color: #303133;
-  font-size: 14px;
-}
-
-.user-caret {
-  margin-left: 4px;
-  color: #909399;
-}
-
+/* ---------------- 主内容 ---------------- */
 .admin-main {
-  background: #f5f5f5;
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - var(--campus-header-h));
+  background: var(--campus-bg);
   padding: 24px;
 }
 
-/* 移动端底部导航 */
-.bottom-navigation {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  display: flex;
-  justify-content: space-around;
-  background: #fff;
-  border-top: 1px solid #ebeef5;
-  padding-bottom: env(safe-area-inset-bottom);
+.admin-container {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.bottom-nav-item {
-  display: flex;
-  flex-direction: column;
-  height: 56px;
-  color: #606266;
-}
-
-.bottom-nav-title {
-  font-size: 12px;
-  line-height: 1;
-}
-
+/* ---------------- 权限不足 / 加载 ---------------- */
 .fill-height {
   min-height: 100vh;
+}
+
+.forbidden-card {
+  padding: 32px 0;
+  border-radius: var(--campus-radius-lg);
 }
 
 .text-center {
@@ -694,12 +697,12 @@ watch(() => route.path, () => {
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 8px;
-  color: #303133;
+  color: var(--campus-text);
 }
 
 .forbidden-desc {
   font-size: 14px;
-  color: #909399;
+  color: var(--campus-text-secondary);
   margin-bottom: 24px;
 }
 
@@ -711,11 +714,7 @@ watch(() => route.path, () => {
   margin-right: 4px;
 }
 
-.mb-1 {
-  margin-bottom: 4px;
-}
-
-/* 过渡动画 */
+/* ---------------- 过渡动画 ---------------- */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition: all 0.3s ease;
@@ -723,26 +722,11 @@ watch(() => route.path, () => {
 
 .fade-slide-enter-from {
   opacity: 0;
-  transform: translateX(20px);
+  transform: translateY(12px);
 }
 
 .fade-slide-leave-to {
   opacity: 0;
-  transform: translateX(-20px);
-}
-
-@media (max-width: 991px) {
-  .bottom-navigation {
-    display: flex;
-  }
-  .admin-main {
-    padding-bottom: 72px !important;
-  }
-}
-
-@media (max-width: 575px) {
-  .admin-main {
-    padding: 12px;
-  }
+  transform: translateY(-8px);
 }
 </style>

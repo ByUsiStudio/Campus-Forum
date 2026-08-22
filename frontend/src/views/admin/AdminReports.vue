@@ -128,6 +128,7 @@
         </div>
       </template>
 
+      <div class="table-responsive">
       <el-table
         :data="reports"
         v-loading="loading"
@@ -221,91 +222,8 @@
           </template>
         </el-table-column>
       </el-table>
+      </div>
     </el-card>
-
-    <!-- 查看举报详情对话框 -->
-    <el-dialog
-      v-model="viewDialog"
-      title="举报详情"
-      width="700px"
-      :close-on-click-modal="false"
-    >
-      <template v-if="selectedReport">
-        <el-descriptions :column="narrow ? 1 : 2" border>
-          <el-descriptions-item label="举报人">
-            <div class="d-flex align-center">
-              <el-avatar :size="32" class="mr-2">
-                <img v-if="selectedReport.reporter?.avatar" :src="selectedReport.reporter.avatar" alt="" />
-                <span v-else class="avatar-fallback">
-                  {{ selectedReport.reporter?.display_name?.[0] || '?' }}
-                </span>
-              </el-avatar>
-              {{ selectedReport.reporter?.display_name || selectedReport.reporter?.username }}
-            </div>
-          </el-descriptions-item>
-          <el-descriptions-item label="举报类型">
-            <el-tag
-              size="small"
-              :type="getTargetTypeTagType(selectedReport.target_type)"
-              effect="light"
-            >
-              {{ getTargetTypeText(selectedReport.target_type) }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="被举报内容ID" :span="2">
-            {{ selectedReport.target_id }}
-          </el-descriptions-item>
-          <el-descriptions-item label="举报原因" :span="2">
-            {{ selectedReport.reason }}
-          </el-descriptions-item>
-          <el-descriptions-item v-if="selectedReport.description" label="详细描述" :span="2">
-            {{ selectedReport.description }}
-          </el-descriptions-item>
-          <el-descriptions-item label="举报时间" :span="2">
-            {{ formatDateTime(selectedReport.created_at) }}
-          </el-descriptions-item>
-        </el-descriptions>
-
-        <template v-if="selectedReport.status !== 'pending'">
-          <el-divider />
-          <div class="text-caption text-medium-emphasis mb-1">处理信息</div>
-          <div class="d-flex align-center mb-2">
-            <el-tag
-              size="small"
-              :type="getStatusTagType(selectedReport.status)"
-              effect="light"
-              class="mr-2"
-            >
-              {{ getStatusText(selectedReport.status) }}
-            </el-tag>
-            <span v-if="selectedReport.handler">
-              处理人: {{ selectedReport.handler?.display_name || selectedReport.handler?.username }}
-            </span>
-          </div>
-          <div v-if="selectedReport.handle_note" class="text-body-2">
-            <div class="text-caption text-medium-emphasis">处理备注:</div>
-            <div>{{ selectedReport.handle_note }}</div>
-          </div>
-          <div v-if="selectedReport.handled_at" class="text-caption text-medium-emphasis mt-2">
-            处理时间: {{ formatDateTime(selectedReport.handled_at) }}
-          </div>
-        </template>
-      </template>
-
-      <template #footer>
-        <el-button @click="viewDialog = false">关闭</el-button>
-        <template v-if="selectedReport?.status === 'pending'">
-          <el-button
-            type="danger"
-            @click="handleReport(selectedReport, 'rejected')"
-          >驳回</el-button>
-          <el-button
-            type="success"
-            @click="handleReport(selectedReport, 'resolved')"
-          >标记已处理</el-button>
-        </template>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -324,6 +242,7 @@ import {
 } from '@element-plus/icons-vue'
 import { reportApi } from '../../api'
 import { prompt, error, success } from '@/utils/message'
+import { jcCloseAll, jcOpenHtml } from '@/utils/jcu'
 
 export default {
   name: 'AdminReports',
@@ -339,7 +258,6 @@ export default {
     const pageSize = ref(20)
     const totalReports = ref(0)
     const totalPages = computed(() => Math.ceil(totalReports.value / pageSize.value))
-    const viewDialog = ref(false)
     const selectedReport = ref(null)
     const narrow = ref(window.innerWidth < 576)
 
@@ -477,7 +395,48 @@ export default {
 
     const viewReport = (report) => {
       selectedReport.value = report
-      viewDialog.value = true
+      const r = report
+      const pending = r.status === 'pending'
+
+      const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+      const item = (label, value) =>
+        `<div style="margin-bottom:12px;"><div style="font-size:12px;color:var(--jc-text-2,#64748b);font-weight:600;margin-bottom:4px;">${label}</div><div style="font-size:14px;color:var(--jc-text,#0f172a);">${value}</div></div>`
+
+      let html = ''
+      html += item('举报人', esc(r.reporter?.display_name || r.reporter?.username || '未知'))
+      html += `<div style="display:flex;gap:16px;flex-wrap:wrap;">
+        ${item('举报类型', esc(getTargetTypeText(r.target_type)))}
+        ${item('被举报内容 ID', esc(r.target_id))}
+      </div>`
+      html += item('举报原因', esc(r.reason))
+      if (r.description) html += item('详细描述', esc(r.description))
+      html += item('举报时间', esc(formatDateTime(r.created_at)))
+
+      if (r.status !== 'pending') {
+        html += `<div style="border-top:1px solid var(--jc-border,#e6e9f2);padding-top:12px;margin-top:12px;">`
+        html += `<div style="font-size:12px;color:var(--jc-text-2,#64748b);font-weight:600;margin-bottom:8px;">处理信息</div>`
+        html += item('状态', esc(getStatusText(r.status)))
+        if (r.handler) html += item('处理人', esc(r.handler?.display_name || r.handler?.username || ''))
+        if (r.handle_note) html += item('处理备注', esc(r.handle_note))
+        if (r.handled_at) html += item('处理时间', esc(formatDateTime(r.handled_at)))
+        html += `</div>`
+      }
+
+      const buttons = []
+      if (pending) {
+        buttons.push({ text: '驳回', type: 'danger', action: () => handleReport(r, 'rejected') })
+        buttons.push({ text: '标记已处理', type: 'primary', action: () => handleReport(r, 'resolved') })
+      } else {
+        buttons.push({ text: '关闭', type: 'default', action: () => jcCloseAll() })
+      }
+
+      jcOpenHtml({
+        title: '举报详情',
+        content: html,
+        width: 700,
+        size: 'md',
+        buttons
+      })
     }
 
     const handleDropdown = (report, command) => {
@@ -497,7 +456,7 @@ export default {
           handle_note: note
         })
         success('举报已处理')
-        viewDialog.value = false
+        jcCloseAll()
         loadReports()
       } catch (error) {
         console.error('处理举报失败:', error)
@@ -524,7 +483,6 @@ export default {
       filters,
       statusOptions,
       targetTypeOptions,
-      viewDialog,
       selectedReport,
       narrow,
       debounceSearch,
@@ -617,6 +575,10 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.table-responsive {
+  overflow-x: auto;
 }
 
 .text-h4 {

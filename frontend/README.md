@@ -42,9 +42,20 @@ yarn build      # 生产构建
   - 或用具名模块：`import { articleApi } from '@/api'`
   - 默认导出 `import api from '@/api'` 等价于 `http`（axios 实例）。
   - **注意**：`http` 的 baseURL 已是 `/api`，路径不要重复写 `/api/...`。
-- **提示 / 确认框**：统一用 `import { success, error, confirm, prompt, warning } from '@/utils/message'`。
+- **提示 / 确认框（弹窗）**：统一使用 **JCuPupw** 组件库。
+  - 轻提示 / 确认 / 输入框：`import { success, error, warning, confirm, prompt } from '@/utils/message'`（内部已封接 JCuPupw）。
+  - 复杂自定义弹窗（表单 / 富内容）：`import { jcOpenHtml, jcFieldsConfig, jcCloseAll } from '@/utils/jcu'`。
+  - 库本体：`frontend/public/libs/js/jcupupw.umd.js`（在 `index.html` 全局引入，暴露 `window.JCuPupw`）。
+  - **不得使用** `el-dialog` / `el-drawer` / 原生 `alert/confirm/prompt` / `ElMessage` / `ElMessageBox`。
 - **鉴权状态**：用 `useUserStore()`（`isLoggedIn` / `user` / `isAdmin` / `logout`），不再直接依赖 `localStorage` 跨页传状态。
 - **路由**：只读页面（文章/分类/排行榜/话题/搜索）未登录可浏览，登录后自动回跳。
+
+## UI / 响应式
+
+- 全局设计令牌在 `src/styles/index.css`（品牌色 `--campus-primary`、中性色、圆角 `--campus-radius`、阴影、字体）。
+- 布局自适应 PC 与手机：宽屏使用 `.page-container`（max-width:1140px）居中；窄屏（<768px）自动堆叠为单列。
+- 弹窗为 JCuPupw，自带移动端适配（窄屏收窄、圆角）。
+- 校验 SFC：`node scripts/check-sfc.mjs`（仅用 `@vue/compiler-sfc`，无需 esbuild）。
 
 ## 迁移自 Vuetify
 

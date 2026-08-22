@@ -1,94 +1,11 @@
 <template>
-  <el-dialog
-    :model-value="show"
-    :width="'500px'"
-    :close-on-click-modal="false"
-    append-to-body
-    @update:model-value="val => emit('update:show', val)"
-  >
-    <template #header>
-      <div class="modal-title">
-        <el-icon class="title-icon" :size="24">
-          <Picture v-if="uploadType === 'image'" />
-          <VideoCamera v-else />
-        </el-icon>
-        <span>{{ uploadType === 'image' ? '上传图片' : '上传视频' }}</span>
-      </div>
-    </template>
-
-    <div class="modal-body">
-      <div class="upload-area" @click="triggerFileInput" @dragover.prevent @drop.prevent="handleDrop">
-        <input
-          ref="fileInput"
-          type="file"
-          :accept="uploadType === 'image' ? 'image/*' : 'video/*'"
-          style="display: none"
-          @change="handleFileSelect"
-        />
-        <el-icon :size="48" color="#6750a4" class="upload-icon">
-          <PictureFilled v-if="uploadType === 'image'" />
-          <VideoCameraFilled v-else />
-        </el-icon>
-        <div class="upload-text">点击或拖拽文件到此处</div>
-        <div class="upload-hint">
-          {{ uploadType === 'image' ? '支持 JPG、PNG、GIF 格式' : '支持 MP4、WebM 格式' }}
-        </div>
-      </div>
-
-      <div v-if="uploading" class="upload-progress">
-        <el-progress :percentage="progress" :stroke-width="8" />
-        <div class="progress-text">{{ progress }}%</div>
-      </div>
-
-      <div v-if="uploadedFiles.length > 0" class="uploaded-list">
-        <div v-for="(file, index) in uploadedFiles" :key="index" class="uploaded-item">
-          <img v-if="uploadType === 'image'" :src="file.url" class="uploaded-preview" />
-          <div v-else class="video-preview">
-            <el-icon :size="32" color="#6750a4">
-              <VideoPlay />
-            </el-icon>
-          </div>
-          <div class="uploaded-info">
-            <div class="uploaded-name">{{ file.name }}</div>
-            <div class="uploaded-url">{{ file.url }}</div>
-          </div>
-          <el-button
-            text
-            type="danger"
-            size="small"
-            @click="removeFile(index)"
-          >
-            <el-icon><Delete /></el-icon>
-          </el-button>
-        </div>
-      </div>
-    </div>
-
-    <template #footer>
-      <div class="modal-actions">
-        <el-button @click="close">取消</el-button>
-        <el-button
-          type="primary"
-          @click="confirm"
-          :disabled="uploadedFiles.length === 0 || uploading"
-        >
-          确认插入
-        </el-button>
-      </div>
-    </template>
-  </el-dialog>
+  <!-- UploadModal 基于 JCuPupw：展示为自定义 HTML 弹窗 -->
+  <div class="upload-modal-slot"></div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import {
-  Picture,
-  VideoCamera,
-  PictureFilled,
-  VideoCameraFilled,
-  VideoPlay,
-  Delete
-} from '@element-plus/icons-vue'
+import { ref, watch } from 'vue'
+import { jcOpenHtml, jcCloseAll } from '@/utils/jcu'
 
 const props = defineProps({
   show: {
@@ -104,236 +21,190 @@ const props = defineProps({
 
 const emit = defineEmits(['update:show', 'upload-success'])
 
-const fileInput = ref(null)
 const uploading = ref(false)
 const progress = ref(0)
 const uploadedFiles = ref([])
+let contentEl = null
 
-const triggerFileInput = () => {
-  fileInput.value?.click()
+const resetState = () => {
+  uploading.value = false
+  progress.value = 0
+  uploadedFiles.value = []
 }
 
-const handleFileSelect = (event) => {
-  const file = event.target.files[0]
-  if (file) {
-    uploadFile(file)
-  }
-  event.target.value = ''
+const renderProgress = () => {
+  if (!contentEl) return
+  const wrap = contentEl.querySelector('[data-uc-progress]')
+  const bar = contentEl.querySelector('[data-uc-bar]')
+  const pct = contentEl.querySelector('[data-uc-pct]')
+  if (wrap) wrap.style.display = uploading.value ? 'block' : 'none'
+  if (bar) bar.style.width = progress.value + '%'
+  if (pct) pct.textContent = progress.value + '%'
 }
 
-const handleDrop = (event) => {
-  const file = event.dataTransfer.files[0]
-  if (file) {
-    uploadFile(file)
+const renderList = () => {
+  if (!contentEl) return
+  const list = contentEl.querySelector('[data-uc-list]')
+  if (!list) return
+  if (uploadedFiles.value.length) {
+    const isImage = props.uploadType === 'image'
+    list.style.display = 'flex'
+    list.innerHTML = uploadedFiles.value.map((file, index) => `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--campus-primary-soft,rgba(79,110,247,.08));border-radius:10px;">
+        ${isImage
+          ? `<img src="${escAttr(file.url)}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0;" />`
+          : `<div style="width:56px;height:56px;display:flex;align-items:center;justify-content:center;background:var(--campus-border,#eef1f7);border-radius:8px;font-size:24px;flex-shrink:0;">🎬</div>`}
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;color:var(--campus-text,#333);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(file.name)}</div>
+          <div style="font-size:12px;color:var(--campus-text-secondary,#6b7280);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px;">${esc(file.url)}</div>
+        </div>
+        <button type="button" data-uc-remove="${index}" style="border:none;background:transparent;color:var(--campus-danger,#ef4444);cursor:pointer;font-size:13px;flex-shrink:0;">删除</button>
+      </div>
+    `).join('')
+  } else {
+    list.style.display = 'none'
+    list.innerHTML = ''
   }
+}
+
+const escAttr = (s) => String(s ?? '').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+const esc = (s) => String(s ?? '').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+const open = () => {
+  resetState()
+  const isImage = props.uploadType === 'image'
+  const html = `
+    <div data-uc-area style="border:2px dashed var(--campus-primary-soft,rgba(79,110,247,.35));border-radius:12px;padding:30px;text-align:center;cursor:pointer;background:var(--campus-surface-2,#f8f9fc);transition:all .15s;">
+      <input type="file" data-uc-file accept="${isImage ? 'image/*' : 'video/*'}" style="display:none;" />
+      <div style="font-size:40px;margin-bottom:10px;color:var(--campus-primary,#4f6ef7);">${isImage ? '🖼️' : '🎬'}</div>
+      <div style="font-weight:600;font-size:15px;color:var(--campus-text,#333);">点击或拖拽文件到此处</div>
+      <div style="font-size:13px;color:var(--campus-text-secondary,#6b7280);margin-top:8px;">${isImage ? '支持 JPG、PNG、GIF 格式' : '支持 MP4、WebM 格式'}</div>
+    </div>
+    <div data-uc-progress style="display:none;margin-top:16px;">
+      <div style="height:8px;background:var(--campus-border,#e6e9f2);border-radius:99px;overflow:hidden;">
+        <div data-uc-bar style="height:100%;width:0%;background:var(--campus-primary,#4f6ef7);border-radius:99px;transition:width .2s;"></div>
+      </div>
+      <div data-uc-pct style="text-align:center;font-size:13px;color:var(--campus-text-secondary,#6b7280);margin-top:8px;">0%</div>
+    </div>
+    <div data-uc-list style="margin-top:16px;display:none;flex-direction:column;gap:10px;"></div>
+  `
+
+  jcOpenHtml({
+    title: isImage ? '上传图片' : '上传视频',
+    content: html,
+    width: 500,
+    size: 'sm',
+    closeOnOverlay: false,
+    onMount: (root) => {
+      contentEl = root
+      const area = root.querySelector('[data-uc-area]')
+      const file = root.querySelector('[data-uc-file]')
+      const list = root.querySelector('[data-uc-list]')
+
+      area.addEventListener('click', () => file.click())
+      area.addEventListener('dragover', (e) => {
+        e.preventDefault()
+        area.style.borderColor = 'var(--campus-primary,#4f6ef7)'
+      })
+      area.addEventListener('dragleave', () => { area.style.borderColor = '' })
+      area.addEventListener('drop', (e) => {
+        e.preventDefault()
+        area.style.borderColor = ''
+        const f = e.dataTransfer.files[0]
+        if (f) uploadFile(f)
+      })
+      file.addEventListener('change', (e) => {
+        const f = e.target.files[0]
+        e.target.value = ''
+        if (f) uploadFile(f)
+      })
+      list.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-uc-remove]')
+        if (btn) removeFile(Number(btn.getAttribute('data-uc-remove')))
+      })
+    },
+    onClose: () => {
+      resetState()
+      emit('update:show', false)
+      contentEl = null
+    },
+    buttons: [
+      { text: '取消', type: 'default', action: () => jcCloseAll() },
+      { text: '确认插入', type: 'primary', close: false, action: () => confirmInsert() }
+    ]
+  })
+}
+
+watch(() => props.show, (val) => {
+  if (val) open()
+})
+
+const confirmInsert = () => {
+  if (uploadedFiles.value.length === 0 || uploading.value) return
+  emit('upload-success', { type: props.uploadType, files: [...uploadedFiles.value] })
+  jcCloseAll()
+}
+
+const removeFile = (index) => {
+  uploadedFiles.value.splice(index, 1)
+  renderList()
 }
 
 const uploadFile = (file) => {
   uploading.value = true
   progress.value = 0
+  renderProgress()
+  renderList()
 
   const formData = new FormData()
   formData.append(props.uploadType, file)
 
-  return new Promise((resolve) => {
-    const xhr = new XMLHttpRequest()
-    const token = localStorage.getItem('token')
-    xhr.open('POST', `/api/upload/${props.uploadType}`)
+  const xhr = new XMLHttpRequest()
+  const token = localStorage.getItem('token')
+  xhr.open('POST', `/api/upload/${props.uploadType}`)
+  if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
 
-    if (token) {
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+  xhr.upload.onprogress = (event) => {
+    if (event.lengthComputable) {
+      progress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
+      renderProgress()
     }
-
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        progress.value = Math.min(99, Math.round((event.loaded / event.total) * 100))
-      }
-    }
-
-    xhr.onload = () => {
-      try {
-        const data = JSON.parse(xhr.responseText)
-        if (xhr.status >= 200 && xhr.status < 300 && data.url) {
-          progress.value = 100
-          uploadedFiles.value.push({
-            name: file.name,
-            url: data.url
-          })
-        } else {
-          progress.value = 0
-          console.error('Upload failed:', data.error || data.message || `HTTP ${xhr.status}`)
-        }
-      } catch (error) {
-        progress.value = 0
-        console.error('Upload failed:', error)
-      } finally {
-        uploading.value = false
-        resolve()
-      }
-    }
-
-    xhr.onerror = () => {
-      progress.value = 0
-      uploading.value = false
-      console.error('Upload failed: network error')
-      resolve()
-    }
-
-    xhr.onabort = () => {
-      progress.value = 0
-      uploading.value = false
-      resolve()
-    }
-
-    xhr.send(formData)
-  })
-}
-
-const removeFile = (index) => {
-  uploadedFiles.value.splice(index, 1)
-}
-
-const confirm = () => {
-  if (uploadedFiles.value.length > 0) {
-    emit('upload-success', {
-      type: props.uploadType,
-      files: uploadedFiles.value
-    })
-    close()
   }
-}
 
-const close = () => {
-  uploadedFiles.value = []
-  progress.value = 0
-  uploading.value = false
-  emit('update:show', false)
+  const done = () => {
+    uploading.value = false
+    renderProgress()
+    renderList()
+  }
+
+  xhr.onload = () => {
+    try {
+      const data = JSON.parse(xhr.responseText)
+      if (xhr.status >= 200 && xhr.status < 300 && data.url) {
+        progress.value = 100
+        uploadedFiles.value.push({ name: file.name, url: data.url })
+      } else {
+        console.error('Upload failed:', data.error || data.message || `HTTP ${xhr.status}`)
+      }
+    } catch (error) {
+      console.error('Upload failed:', error)
+    }
+    done()
+  }
+
+  xhr.onerror = () => {
+    console.error('Upload failed: network error')
+    done()
+  }
+
+  xhr.onabort = () => {
+    done()
+  }
+
+  xhr.send(formData)
 }
 </script>
 
 <style scoped>
-.modal-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-weight: 600;
-  font-size: 16px;
-  color: #1a1a2e;
-}
-
-.title-icon {
-  width: 36px;
-  height: 36px;
-  padding: 6px;
-  border-radius: 10px;
-  background: rgba(103, 80, 164, 0.1);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-body {
-  padding: 4px 0;
-}
-
-.upload-area {
-  border: 2px dashed rgba(103, 80, 164, 0.3);
-  border-radius: 12px;
-  padding: 32px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.2s, background-color 0.2s;
-  background: #fafbfc;
-}
-
-.upload-area:hover {
-  border-color: rgba(103, 80, 164, 0.6);
-  background: #f5f6ff;
-}
-
-.upload-icon {
-  margin-bottom: 12px;
-}
-
-.upload-text {
-  font-size: 1rem;
-  font-weight: 500;
-  color: #1a1a2e;
-  margin-bottom: 8px;
-}
-
-.upload-hint {
-  font-size: 0.85rem;
-  color: #6b7280;
-}
-
-.upload-progress {
-  margin-top: 20px;
-}
-
-.progress-text {
-  text-align: center;
-  font-size: 0.85rem;
-  color: #6b7280;
-  margin-top: 8px;
-}
-
-.uploaded-list {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.uploaded-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: #f8f9ff;
-  border-radius: 10px;
-}
-
-.uploaded-preview {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-.video-preview {
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #e5e7eb;
-  border-radius: 8px;
-}
-
-.uploaded-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.uploaded-name {
-  font-weight: 500;
-  color: #1a1a2e;
-  font-size: 0.9rem;
-}
-
-.uploaded-url {
-  font-size: 0.75rem;
-  color: #6b7280;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-top: 4px;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
+.upload-modal-slot { display: none; }
 </style>

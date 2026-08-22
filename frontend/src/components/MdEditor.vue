@@ -112,43 +112,6 @@
       <span class="ml-auto text-secondary">Markdown</span>
     </div>
 
-    <!-- 链接对话框 -->
-    <el-dialog v-model="linkModalVisible" title="插入链接" width="440px" append-to-body>
-      <el-form label-width="70px">
-        <el-form-item label="链接文字"><el-input v-model="linkText" /></el-form-item>
-        <el-form-item label="链接地址"><el-input v-model="linkUrl" placeholder="https://" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="linkModalVisible = false">取消</el-button>
-        <el-button type="primary" :disabled="!linkUrl" @click="confirmLink">确认</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 表格对话框 -->
-    <el-dialog v-model="tableModalVisible" title="插入表格" width="360px" append-to-body>
-      <el-form label-width="70px">
-        <el-form-item label="行数"><el-input-number v-model="tableRows" :min="2" :max="20" /></el-form-item>
-        <el-form-item label="列数"><el-input-number v-model="tableCols" :min="1" :max="10" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="tableModalVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmTable">插入</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 上传图片/视频对话框 -->
-    <el-dialog v-model="uploadModalVisible" :title="uploadType === 'image' ? '插入图片' : '插入视频'" width="440px" append-to-body>
-      <el-upload
-        :auto-upload="false"
-        :show-file-list="false"
-        accept="image/*,video/*"
-        :on-change="onFileChosen"
-      >
-        <el-button type="primary" plain><el-icon><Upload /></el-icon>&nbsp;选择文件</el-button>
-      </el-upload>
-      <el-progress v-if="isUploading" :percentage="uploadProgress" :stroke-width="6" class="mt-2" />
-      <el-alert v-if="uploadError" type="error" :closable="false" class="mt-2" :title="uploadError" />
-    </el-dialog>
   </div>
 </template>
 
@@ -164,10 +127,11 @@ import taskLists from 'markdown-it-task-lists'
 import { katex as renderLatex } from 'katex'
 import {
   List, Check, ChatSquare, Link, Picture, VideoCamera, Microphone,
-  Grid, Remove, Operation, Warning, View, Upload, Document
+  Grid, Remove, Operation, Warning, View, Document
 } from '@element-plus/icons-vue'
 import katex from 'katex'
 import http from '@/api/http'
+import { jcOpenHtml, jcFieldsConfig, jcCloseAll, jcToast } from '@/utils/jcu'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -181,17 +145,9 @@ const textareaRef = ref(null)
 const previewRef = ref(null)
 const showPreview = ref(false)
 
-const linkModalVisible = ref(false)
-const linkText = ref('')
-const linkUrl = ref('')
-const tableModalVisible = ref(false)
 const tableRows = ref(3)
 const tableCols = ref(3)
-const uploadModalVisible = ref(false)
 const uploadType = ref('image')
-const isUploading = ref(false)
-const uploadProgress = ref(0)
-const uploadError = ref('')
 
 const suggestions = ref([])
 const selectedSuggestion = ref(0)
@@ -411,43 +367,154 @@ const insertLink = () => {
   const textarea = textareaRef.value
   const start = textarea?.selectionStart ?? 0
   const end = textarea?.selectionEnd ?? 0
-  linkText.value = content.value.substring(start, end) || '链接文字'
-  linkUrl.value = ''
-  linkModalVisible.value = true
+  const cfg = jcFieldsConfig([
+    { name: 'text', label: '链接文字', value: content.value.substring(start, end) || '链接文字' },
+    { name: 'url', label: '链接地址', placeholder: 'https://', required: true }
+  ])
+  jcOpenHtml({
+    title: '插入链接',
+    content: cfg.html,
+    width: 460,
+    size: 'sm',
+    buttons: [
+      { text: '取消', type: 'default', action: () => jcCloseAll() },
+      {
+        text: '确认',
+        type: 'primary',
+        action: () => {
+          if (!cfg.validate(document)) return
+          const v = cfg.collect(document)
+          if (!v.url) return
+          const markdown = `[${v.text}](${v.url})`
+          insertAtCursor(markdown)
+          jcCloseAll()
+        }
+      }
+    ]
+  })
 }
 
-const confirmLink = () => {
-  if (!linkUrl.value) return
-  const textarea = textareaRef.value
-  const start = textarea?.selectionStart ?? content.value.length
-  const markdown = `[${linkText.value}](${linkUrl.value})`
-  insertAtCursor(markdown)
-  linkModalVisible.value = false
+const insertImage = () => { uploadType.value = 'image'; openUploadDialog() }
+const insertVideo = () => { uploadType.value = 'video'; openUploadDialog() }
+
+const openUploadDialog = () => {
+  const isImage = uploadType.value === 'image'
+  const id = 'jc-md-upload'
+  const html = `
+    <div data-jc-upload-area style="border:2px dashed var(--campus-border,#e6e9f2);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:all .15s;">
+      <input type="file" data-jc-file accept="${isImage ? 'image/*' : 'video/*'}" style="display:none;" />
+      <div style="font-size:38px;color:var(--campus-primary,#4f6ef7);margin-bottom:8px;">${isImage ? '🖼️' : '🎬'}</div>
+      <div style="font-weight:600;color:var(--campus-text,#0f172a);">点击选择${isImage ? '图片' : '视频'}</div>
+      <div style="font-size:12px;color:var(--campus-text-secondary,#6b7280);margin-top:6px;">${isImage ? '支持 JPG、PNG、GIF' : '支持 MP4、WebM'}</div>
+    </div>
+    <div data-jc-upload-progress style="display:none;margin-top:16px;">
+      <div style="height:8px;background:var(--campus-border,#e6e9f2);border-radius:99px;overflow:hidden;">
+        <div data-jc-upload-bar style="height:100%;width:0%;background:var(--campus-primary,#4f6ef7);border-radius:99px;transition:width .2s;"></div>
+      </div>
+      <div data-jc-upload-pct style="text-align:center;font-size:12px;color:var(--campus-text-secondary,#6b7280);margin-top:6px;">0%</div>
+    </div>
+    <div data-jc-upload-error style="display:none;color:var(--campus-danger,#ef4444);font-size:13px;margin-top:12px;">上传失败，请重试</div>
+    <div data-jc-upload-status style="display:none;color:var(--campus-success,#22c55e);font-size:13px;margin-top:12px;">上传成功，即将插入…</div>
+  `
+  jcOpenHtml({
+    id,
+    title: isImage ? '插入图片' : '插入视频',
+    content: html,
+    width: 480,
+    size: 'sm',
+    closeOnOverlay: false,
+    onMount: (root) => {
+      const area = root.querySelector('[data-jc-upload-area]')
+      const file = root.querySelector('[data-jc-file]')
+      const progressWrap = root.querySelector('[data-jc-upload-progress]')
+      const bar = root.querySelector('[data-jc-upload-bar]')
+      const pct = root.querySelector('[data-jc-upload-pct]')
+      const err = root.querySelector('[data-jc-upload-error]')
+      const ok = root.querySelector('[data-jc-upload-status]')
+
+      const setProgress = () => {
+        progressWrap.style.display = 'block'
+        bar.style.width = window.__jcUploadProgress + '%'
+        pct.textContent = window.__jcUploadProgress + '%'
+      }
+
+      area.addEventListener('click', () => file.click())
+      area.addEventListener('dragover', (e) => { e.preventDefault(); area.style.borderColor = 'var(--campus-primary)' })
+      area.addEventListener('dragleave', () => { area.style.borderColor = '' })
+      area.addEventListener('drop', (e) => {
+        e.preventDefault()
+        const f = e.dataTransfer.files[0]
+        if (f) doUpload(f, { progressWrap, bar, pct, err, ok })
+      })
+      file.addEventListener('change', (e) => {
+        const f = e.target.files[0]
+        e.target.value = ''
+        if (f) doUpload(f, { progressWrap, bar, pct, err, ok })
+      })
+    },
+    buttons: [{ text: '关闭', type: 'primary', action: () => jcCloseAll() }]
+  })
 }
 
-const insertImage = () => { uploadType.value = 'image'; uploadModalVisible.value = true; uploadError.value = '' }
-const insertVideo = () => { uploadType.value = 'video'; uploadModalVisible.value = true; uploadError.value = '' }
+const doUpload = (file, els) => {
+  const isImage = uploadType.value === 'image'
+  const formData = new FormData()
+  formData.append(uploadType.value, file)
+  window.__jcUploadProgress = 0
+  els.err.style.display = 'none'
+  els.progressWrap.style.display = 'block'
+  els.bar.style.width = '0%'
+  els.pct.textContent = '0%'
 
-const onFileChosen = async (file) => {
-  isUploading.value = true
-  uploadProgress.value = 0
-  try {
-    const formData = new FormData()
-    formData.append(uploadType.value, file.raw)
-    await http.post(`/upload/${uploadType.value}`, formData, {
-      onUploadProgress: (e) => { if (e.total) uploadProgress.value = Math.round((e.loaded / e.total) * 100) }
-    }).then(({ data }) => {
-      const url = data.url
-      if (uploadType.value === 'image') insertAtCursor(`\n![图片](${url})\n`)
-      else insertAtCursor(`\n<video src="${url}" controls></video>\n`)
-      uploadModalVisible.value = false
-    }).catch(() => { uploadError.value = '上传失败，请重试' })
-  } finally {
-    isUploading.value = false
-  }
+  http.post(`/upload/${uploadType.value}`, formData, {
+    onUploadProgress: (e) => {
+      if (e.total) {
+        window.__jcUploadProgress = Math.round((e.loaded / e.total) * 100)
+        els.bar.style.width = window.__jcUploadProgress + '%'
+        els.pct.textContent = window.__jcUploadProgress + '%'
+      }
+    }
+  }).then(({ data }) => {
+    const url = data.url
+    els.progressWrap.style.display = 'none'
+    els.ok.style.display = 'block'
+    if (isImage) insertAtCursor(`\n![图片](${url})\n`)
+    else insertAtCursor(`\n<video src="${url}" controls></video>\n`)
+    setTimeout(() => jcCloseAll(), 500)
+  }).catch(() => {
+    els.progressWrap.style.display = 'none'
+    els.err.style.display = 'block'
+  })
 }
 
-const insertTable = () => { tableModalVisible.value = true }
+const insertTable = () => {
+  const cfg = jcFieldsConfig([
+    { name: 'rows', label: '行数', type: 'number', value: tableRows.value },
+    { name: 'cols', label: '列数', type: 'number', value: tableCols.value }
+  ])
+  jcOpenHtml({
+    title: '插入表格',
+    content: cfg.html,
+    width: 380,
+    size: 'sm',
+    buttons: [
+      { text: '取消', type: 'default', action: () => jcCloseAll() },
+      {
+        text: '插入',
+        type: 'primary',
+        action: () => {
+          const v = cfg.collect(document)
+          const rows = Math.min(20, Math.max(2, Number(v.rows) || 3))
+          const cols = Math.min(10, Math.max(1, Number(v.cols) || 3))
+          tableRows.value = rows
+          tableCols.value = cols
+          confirmTable()
+          jcCloseAll()
+        }
+      }
+    ]
+  })
+}
 
 const confirmTable = () => {
   const header = '| ' + Array(tableCols.value).fill('列').map((h, i) => `${h}${i + 1}`).join(' | ') + ' |'
@@ -455,7 +522,6 @@ const confirmTable = () => {
   const body = Array(Math.max(1, tableRows.value - 1)).fill(null)
     .map(() => '| ' + Array(tableCols.value).fill('').join(' | ') + ' |').join('\n')
   insertAtCursor('\n' + header + '\n' + sep + '\n' + body + '\n')
-  tableModalVisible.value = false
 }
 
 const insertHr = () => insertAtCursor('\n---\n\n')
@@ -515,7 +581,7 @@ const initRecognition = () => {
   }
 }
 const toggleRecording = () => {
-  if (!recognitionSupported.value) { alert('您的浏览器不支持语音识别，请使用 Chrome'); return }
+  if (!recognitionSupported.value) { jcToast('您的浏览器不支持语音识别，请使用 Chrome', 'warning'); return }
   if (isRecording.value) recognition.value?.stop()
   else try { recognition.value?.start() } catch (e) { isRecording.value = false }
 }

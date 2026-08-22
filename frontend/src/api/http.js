@@ -1,11 +1,11 @@
 import axios from 'axios'
-import { ElMessage } from 'element-plus'
+import { toast as jcToast } from '@/utils/message'
 
 /**
  * 统一 HTTP 层
  * - axios 实例，baseURL = /api
  * - 自动携带 / 刷新 token（并发去重）
- * - 统一错误解析与提示（Element Plus Message）
+ * - 统一错误解析与提示（JCuPupw Toast）
  */
 const http = axios.create({
   baseURL: '/api',
@@ -76,7 +76,7 @@ http.interceptors.request.use(
     return config
   },
   error => {
-    ElMessage.error(error?.message || '请求配置错误')
+    jcToast(error?.message || '请求配置错误', { type: 'error' })
     return Promise.reject(error)
   }
 )
@@ -99,12 +99,12 @@ http.interceptors.response.use(
     }
 
     switch (info.code) {
-      case 403: ElMessage.error(info.message || '您没有权限执行此操作'); break
-      case 404: ElMessage.warning(info.message || '请求的资源不存在'); break
-      case 429: ElMessage.warning(info.message || '请求过于频繁，请稍后再试'); break
-      case 409: ElMessage.error(info.message || '资源冲突'); break
+      case 403: jcToast(info.message || '您没有权限执行此操作', { type: 'error' }); break
+      case 404: jcToast(info.message || '请求的资源不存在', { type: 'warning' }); break
+      case 429: jcToast(info.message || '请求过于频繁，请稍后再试', { type: 'warning' }); break
+      case 409: jcToast(info.message || '资源冲突', { type: 'error' }); break
       default:
-        if (info.code !== 401) ElMessage.error(info.message || '操作失败')
+        if (info.code !== 401) jcToast(info.message || '操作失败', { type: 'error' })
     }
 
     return Promise.reject(error)

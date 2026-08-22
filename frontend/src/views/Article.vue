@@ -81,10 +81,10 @@
             <el-button :type="favorited ? 'primary' : 'default'" @click="toggleFavorite">
               <el-icon><Star /></el-icon>&nbsp;{{ article.favorite_count || 0 }} 收藏
             </el-button>
-            <el-button @click="showShareDialog = true">
+            <el-button @click="openShareDialog">
               <el-icon><Share /></el-icon>&nbsp;分享
             </el-button>
-            <el-button v-if="token && currentUser && currentUser.id !== article.user_id" @click="showReportDialog = true">
+            <el-button v-if="token && currentUser && currentUser.id !== article.user_id" @click="openReportDialog">
               <el-icon><Warning /></el-icon>&nbsp;举报
             </el-button>
             <div class="spacer"></div>
@@ -206,40 +206,6 @@
     <div v-else class="loading" style="display:flex;justify-content:center;padding:80px 0">
       <el-icon class="is-loading" :size="32"><Loading /></el-icon>
     </div>
-
-    <!-- 分享对话框 -->
-    <el-dialog v-model="showShareDialog" title="分享文章" width="420px" append-to-body>
-      <el-input v-model="shareUrl" readonly>
-        <template #append>
-          <el-button @click="copyShareUrl">复制</el-button>
-        </template>
-      </el-input>
-      <el-tag v-if="copySuccess" type="success" class="mt-2">已复制</el-tag>
-    </el-dialog>
-
-    <!-- 举报对话框 -->
-    <el-dialog v-model="showReportDialog" title="举报文章" width="520px" append-to-body>
-      <el-alert type="info" :closable="false" class="mb-3">
-        感谢您对平台环境的维护。我们会认真审核每一条举报，并在3个工作日内处理。
-      </el-alert>
-      <div class="report-field">
-        <div class="text-secondary mb-1">请选择举报原因 <span style="color:#f56c6c">*</span></div>
-        <el-radio-group v-model="reportReason">
-          <el-radio v-for="r in reportReasons" :key="r.value" :value="r.value">{{ r.title }}</el-radio>
-        </el-radio-group>
-      </div>
-      <el-input
-        v-model="reportDescription"
-        type="textarea"
-        :rows="4"
-        maxlength="500"
-        placeholder="请详细描述您举报的原因，包括具体内容和违规证据..."
-      />
-      <template #footer>
-        <el-button @click="closeReportDialog">取消</el-button>
-        <el-button type="danger" :loading="submittingReport" @click="submitReport">提交举报</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -254,6 +220,7 @@ import MarkdownViewer from '../components/MarkdownViewer.vue'
 import ErrorPage from '../components/ErrorPage.vue'
 import CommentReply from '../components/CommentReply.vue'
 import { confirm as showConfirm, prompt as showPrompt, success as showSuccess } from '@/utils/message'
+import { jcOpenHtml, jcCloseAll } from '@/utils/jcu'
 
 const route = useRoute()
 const router = useRouter()
@@ -269,13 +236,9 @@ const commentLiked = ref({})
 const replyingTo = ref(null)
 const replyContent = ref('')
 const replyIsAnonymous = ref(false)
-const showShareDialog = ref(false)
 const shareUrl = ref('')
-const copySuccess = ref(false)
-const showReportDialog = ref(false)
 const reportReason = ref('')
 const reportDescription = ref('')
-const submittingReport = ref(false)
 const reportReasons = [
   '垃圾广告', '色情低俗', '暴力血腥', '政治敏感',
   '违法犯罪', '谣言虚假', '侵犯隐私', '其他违规'
@@ -525,29 +488,91 @@ const handleContentClick = (event) => {
   if (target.tagName === 'IMG') { currentImageUrl.value = target.src; showImageViewer.value = true }
 }
 
-const copyShareUrl = async () => {
-  try {
-    await navigator.clipboard.writeText(shareUrl.value)
-    copySuccess.value = true
-    setTimeout(() => { copySuccess.value = false }, 2000)
-  } catch (error) { /* ignore */ }
+const openShareDialog = () => {
+  const finalUrl = shareUrl.value || `${window.location.origin}/article/${article.value?.id}`
+  shareUrl.value = finalUrl
+  jcOpenHtml({
+    title: '分享文章',
+    width: 440,
+    size: 'sm',
+    content: `
+      <div style="font-size:13px;color:var(--campus-text-secondary,#6b7280);margin-bottom:8px;">复制链接，分享给朋友</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input readonly class="jc-modal__input" data-share-url value="${escAttr(finalUrl)}" style="flex:1;" />
+        <button data-share-copy type="button" style="flex-shrink:0;padding:10px 16px;border:none;border-radius:10px;background:var(--campus-primary,#4f6ef7);color:#fff;font-weight:600;cursor:pointer;">复制</button>
+      </div>
+      <div data-share-tip style="display:none;color:var(--campus-success,#22c55e);font-size:13px;margin-top:8px;">已复制到剪贴板</div>
+    `,
+    onMount: (el) => {
+      const copyBtn = el.querySelector('[data-share-copy]')
+      const tip = el.querySelector('[data-share-tip]')
+      copyBtn.addEventListener('click', async () => {
+        const input = el.querySelector('[data-share-url]')
+        try {
+          await navigator.clipboard.writeText(input ? input.value : finalUrl)
+          tip.style.display = 'block'
+          setTimeout(() => { tip.style.display = 'none' }, 2000)
+        } catch (e) { /* ignore */ }
+      })
+    },
+    buttons: [{ text: '关闭', type: 'primary', action: () => jcCloseAll() }]
+  })
+}
+
+const escAttr = (s) => String(s == null ? '' : s).replace(/"/g, '&quot;').replace(/</g, '&lt;')
+
+const openReportDialog = () => {
+  reportReason.value = ''
+  reportDescription.value = ''
+  const radios = reportReasons.map((r) => `
+    <button type="button" data-report-reason="${escAttr(r)}" style="cursor:pointer;font-size:13px;padding:6px 12px;border-radius:99px;border:1px solid var(--campus-border,#e6e9f2);color:var(--campus-text,#0f172a);background:transparent;transition:all .15s;">${r}</button>
+  `).join('')
+
+  jcOpenHtml({
+    title: '举报文章',
+    width: 520,
+    size: 'md',
+    content: `
+      <div style="font-size:13px;line-height:1.6;color:var(--campus-text-secondary,#6b7280);margin-bottom:12px;">感谢您对平台环境的维护。我们会认真审核每一条举报，并在3个工作日内处理。</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;" data-rep-label>请选择举报原因 <span style="color:#f56c6c;">*</span></div>
+      <div data-report-reasons style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">${radios}</div>
+      <textarea data-report-desc class="jc-modal__input" rows="4" maxlength="500" placeholder="请详细描述您举报的原因，包括具体内容和违规证据..."></textarea>
+    `,
+    onMount: (el) => {
+      el.querySelectorAll('[data-report-reason]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          el.querySelectorAll('[data-report-reason]').forEach((b) => {
+            b.style.background = 'transparent'
+            b.style.color = 'var(--campus-text,#0f172a)'
+            b.style.borderColor = 'var(--campus-border,#e6e9f2)'
+          })
+          btn.style.background = 'var(--campus-primary,#4f6ef7)'
+          btn.style.color = '#fff'
+          btn.style.borderColor = 'var(--campus-primary,#4f6ef7)'
+          reportReason.value = btn.getAttribute('data-report-reason')
+        })
+      })
+    },
+    buttons: [
+      { text: '取消', type: 'default', action: () => jcCloseAll() },
+      { text: '提交举报', type: 'danger', action: function () {
+        reportDescription.value = (this.modalContent && this.modalContent.querySelector('[data-report-desc]')) ? this.modalContent.querySelector('[data-report-desc]').value : ''
+        submitReport()
+      } }
+    ]
+  })
 }
 
 const submitReport = async () => {
   if (!reportReason.value) { showSuccess('请选择举报原因'); return }
   if (!reportDescription.value.trim()) { showSuccess('请填写详细说明'); return }
-  submittingReport.value = true
   try {
     await http.post('/reports', { target_type: 'article', target_id: article.value.id, reason: reportReason.value, description: reportDescription.value.trim() })
     showSuccess('举报已提交，感谢您的反馈')
-    closeReportDialog()
-  } catch (error) { /* ignore */ } finally { submittingReport.value = false }
-}
-
-const closeReportDialog = () => {
-  showReportDialog.value = false
-  reportReason.value = ''
-  reportDescription.value = ''
+    reportReason.value = ''
+    reportDescription.value = ''
+    jcCloseAll()
+  } catch (error) { /* ignore */ }
 }
 
 const formatDate = (date) => new Date(date).toLocaleString('zh-CN')

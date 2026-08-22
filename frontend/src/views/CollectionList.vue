@@ -5,7 +5,7 @@
         <div class="collection-card-title">
           <el-icon class="mr-2"><Folder /></el-icon>
           <span class="font-medium">我的收藏夹</span>
-          <el-button type="primary" class="ml-auto" @click="createDialog = true">
+          <el-button type="primary" class="ml-auto" @click="openCreateDialog">
             <el-icon class="mr-1"><Plus /></el-icon>
             新建收藏夹
           </el-button>
@@ -52,7 +52,7 @@
             <el-button type="primary" link size="small" @click="viewCollection(collection.id)">
               查看
             </el-button>
-            <el-button type="warning" link size="small" @click="editCollection(collection)">
+            <el-button type="warning" link size="small" @click="openEditDialog(collection)">
               编辑
             </el-button>
             <el-button type="danger" link size="small" @click="deleteCollection(collection.id)">
@@ -62,97 +62,15 @@
         </el-card>
       </div>
     </el-card>
-
-    <!-- 创建收藏夹对话框 -->
-    <el-dialog v-model="createDialog" title="新建收藏夹" width="500px">
-      <el-form ref="createForm" :model="newCollection">
-        <el-form-item
-          label="收藏夹名称"
-          prop="name"
-          :rules="[{ required: true, message: '请输入名称', trigger: 'blur' }]"
-        >
-          <el-input v-model="newCollection.name" placeholder="请输入收藏夹名称"></el-input>
-        </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input
-            v-model="newCollection.description"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入描述"
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="公开收藏夹" prop="is_public">
-          <el-switch v-model="newCollection.is_public"></el-switch>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="createDialog = false">取消</el-button>
-        <el-button type="primary" @click="createCollection">创建</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 编辑收藏夹对话框 -->
-    <el-dialog v-model="editDialog" title="编辑收藏夹" width="500px">
-      <el-form ref="editForm" :model="editCollectionData">
-        <el-form-item
-          label="收藏夹名称"
-          prop="name"
-          :rules="[{ required: true, message: '请输入名称', trigger: 'blur' }]"
-        >
-          <el-input v-model="editCollectionData.name" placeholder="请输入收藏夹名称"></el-input>
-        </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input
-            v-model="editCollectionData.description"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入描述"
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="公开收藏夹" prop="is_public">
-          <el-switch v-model="editCollectionData.is_public"></el-switch>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="editDialog = false">取消</el-button>
-        <el-button type="primary" @click="updateCollection">保存</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 收藏夹详情对话框 -->
-    <el-dialog v-model="viewDialog" :title="currentCollection.name || '收藏夹详情'" width="800px">
-      <el-empty v-if="!collectionArticles.length" description="暂无收藏文章"></el-empty>
-      <el-list v-else>
-        <el-list-item v-for="item in collectionArticles" :key="item.id">
-          <div class="article-row">
-            <div>
-              <div class="article-title">{{ item.article.title }}</div>
-              <div class="text-secondary article-note">{{ item.note || '无备注' }}</div>
-            </div>
-            <div class="article-actions">
-              <el-button type="primary" link size="small" @click="$router.push(`/article/${item.article.id}`)">
-                查看
-              </el-button>
-              <el-button type="danger" link size="small" @click="removeArticle(item.article.id)">
-                移除
-              </el-button>
-            </div>
-          </div>
-        </el-list-item>
-      </el-list>
-      <template #footer>
-        <el-button @click="viewDialog = false">关闭</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
 import { Folder, Plus, Document } from '@element-plus/icons-vue'
 import { collectionApi } from '@/api'
 import { success, error, confirm } from '@/utils/message'
+import { jcOpenHtml, jcFieldsConfig, jcCloseAll } from '@/utils/jcu'
 
 export default {
   name: 'CollectionList',
@@ -160,19 +78,6 @@ export default {
     const loading = ref(true)
     const errorMsg = ref('')
     const collections = ref([])
-    const createDialog = ref(false)
-    const editDialog = ref(false)
-    const viewDialog = ref(false)
-    const createForm = ref(null)
-    const editForm = ref(null)
-    const newCollection = ref({
-      name: '',
-      description: '',
-      is_public: false
-    })
-    const editCollectionData = ref({})
-    const currentCollection = ref({})
-    const collectionArticles = ref([])
 
     const loadCollections = async () => {
       loading.value = true
@@ -192,16 +97,38 @@ export default {
       }
     }
 
-    const createCollection = async () => {
-      const valid = await createForm.value?.validate().catch(() => false)
-      if (!valid) return
+    const openCreateDialog = () => {
+      const cfg = jcFieldsConfig([
+        { name: 'name', label: '收藏夹名称', placeholder: '请输入收藏夹名称', required: true },
+        { name: 'description', label: '描述', type: 'textarea', placeholder: '请输入描述' },
+        { name: 'is_public', label: '公开收藏夹', type: 'text', placeholder: '填写 1 公开 / 0 私密（默认公开）' }
+      ])
+      jcOpenHtml({
+        title: '新建收藏夹',
+        content: cfg.html,
+        width: 480,
+        size: 'sm',
+        buttons: [
+          { text: '取消', type: 'default', action: () => jcCloseAll() },
+          {
+            text: '创建',
+            type: 'primary',
+            action: () => {
+              if (!cfg.validate(document)) return
+              const v = cfg.collect(document)
+              createCollection({ name: v.name, description: v.description || '', is_public: v.is_public !== '0' })
+              jcCloseAll()
+            }
+          }
+        ]
+      })
+    }
+
+    const createCollection = async (payload) => {
       try {
-        const res = await collectionApi.createCollection(newCollection.value)
+        const res = await collectionApi.createCollection(payload)
         if (res.data.success) {
           collections.value.push(res.data.data)
-          createDialog.value = false
-          newCollection.value = { name: '', description: '', is_public: false }
-          createForm.value?.resetFields()
           success('创建成功')
         }
       } catch (err) {
@@ -210,22 +137,39 @@ export default {
       }
     }
 
-    const editCollection = (collection) => {
-      editCollectionData.value = { ...collection }
-      editDialog.value = true
+    const openEditDialog = (collection) => {
+      const cfg = jcFieldsConfig([
+        { name: 'name', label: '收藏夹名称', placeholder: '请输入收藏夹名称', value: collection.name, required: true },
+        { name: 'description', label: '描述', type: 'textarea', placeholder: '请输入描述', value: collection.description || '' },
+        { name: 'is_public', label: '是否公开（填 1/0）', type: 'text', value: collection.is_public ? '1' : '0' }
+      ])
+      jcOpenHtml({
+        title: '编辑收藏夹',
+        content: cfg.html,
+        width: 480,
+        size: 'sm',
+        buttons: [
+          { text: '取消', type: 'default', action: () => jcCloseAll() },
+          {
+            text: '保存',
+            type: 'primary',
+            action: () => {
+              if (!cfg.validate(document)) return
+              const v = cfg.collect(document)
+              updateCollection({ ...collection, name: v.name, description: v.description || '', is_public: v.is_public !== '0' })
+              jcCloseAll()
+            }
+          }
+        ]
+      })
     }
 
-    const updateCollection = async () => {
-      const valid = await editForm.value?.validate().catch(() => false)
-      if (!valid) return
+    const updateCollection = async (payload) => {
       try {
-        const res = await collectionApi.updateCollection(editCollectionData.value.id, editCollectionData.value)
+        const res = await collectionApi.updateCollection(payload.id, payload)
         if (res.data.success) {
-          const index = collections.value.findIndex(c => c.id === editCollectionData.value.id)
-          if (index !== -1) {
-            collections.value[index] = res.data.data
-          }
-          editDialog.value = false
+          const index = collections.value.findIndex(c => c.id === payload.id)
+          if (index !== -1) collections.value[index] = res.data.data
           success('保存成功')
         }
       } catch (err) {
@@ -251,28 +195,76 @@ export default {
     }
 
     const viewCollection = async (collectionId) => {
+      let currentCollection = null
+      let collectionArticles = []
       try {
         const res = await collectionApi.getCollection(collectionId)
         if (res.data.success) {
-          currentCollection.value = res.data.data.collection
-          collectionArticles.value = res.data.data.articles
-          viewDialog.value = true
+          currentCollection = res.data.data.collection
+          collectionArticles = res.data.data.articles || []
         }
       } catch (err) {
         error('加载收藏夹详情失败')
         console.error('加载收藏夹详情失败:', err)
+        return
       }
+
+      if (!collectionArticles.length) {
+        jcOpenHtml({
+          title: currentCollection?.name || '收藏夹详情',
+          content: '<div style="text-align:center;color:var(--jc-text-light,#888);padding:20px 0;">暂无收藏文章</div>',
+          width: 640,
+          size: 'md',
+          buttons: [{ text: '关闭', type: 'primary', action: () => jcCloseAll() }]
+        })
+        return
+      }
+
+      const rows = collectionArticles.map((item) => {
+        const id = item.article.id
+        const title = (item.article.title || '').replace(/</g, '&lt;')
+        const note = (item.note || '无备注').replace(/</g, '&lt;')
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--jc-border,#eef1f7);">
+          <div style="min-width:0;flex:1;">
+            <div style="font-weight:600;">${title}</div>
+            <div style="font-size:12px;color:var(--jc-text-light,#888);">${note}</div>
+          </div>
+          <div style="flex-shrink:0;">
+            <a href="/article/${id}" style="margin-right:10px;">查看</a>
+            <span data-jc-remove="${id}" style="cursor:pointer;color:var(--jc-danger,#ef4444);">移除</span>
+          </div>
+        </div>`
+      }).join('')
+      const containerId = 'jc-collection-view'
+      const content = `<div id="${containerId}">${rows}</div>`
+
+      jcOpenHtml({
+        title: currentCollection?.name || '收藏夹详情',
+        content,
+        width: 680,
+        size: 'md',
+        onMount: (root) => {
+          root.addEventListener('click', (ev) => {
+            const target = ev.target.closest('[data-jc-remove]')
+            if (!target) return
+            const articleId = Number(target.getAttribute('data-jc-remove'))
+            confirm('确定要从此收藏夹移除该文章吗？').then((ok) => {
+              if (!ok) return
+              removeArticle(currentCollection.id, articleId)
+                .then(() => {
+                  success('移除成功')
+                  target.closest('[style*="border-bottom"]').remove()
+                })
+                .catch(() => error('移除文章失败'))
+            })
+          })
+        },
+        buttons: [{ text: '关闭', type: 'primary', action: () => jcCloseAll() }]
+      })
     }
 
-    const removeArticle = async (articleId) => {
-      try {
-        await collectionApi.removeArticleFromCollection(currentCollection.value.id, articleId)
-        collectionArticles.value = collectionArticles.value.filter(a => a.article.id !== articleId)
-        success('移除成功')
-      } catch (err) {
-        error('移除文章失败')
-        console.error('移除文章失败:', err)
-      }
+    const removeArticle = async (collectionId, articleId) => {
+      await collectionApi.removeArticleFromCollection(collectionId, articleId)
     }
 
     onMounted(() => {
@@ -283,18 +275,9 @@ export default {
       loading,
       errorMsg,
       collections,
-      createDialog,
-      editDialog,
-      viewDialog,
-      createForm,
-      editForm,
-      newCollection,
-      editCollectionData,
-      currentCollection,
-      collectionArticles,
       loadCollections,
-      createCollection,
-      editCollection,
+      openCreateDialog,
+      openEditDialog,
       updateCollection,
       deleteCollection,
       viewCollection,

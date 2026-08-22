@@ -74,65 +74,6 @@
         />
       </div>
     </el-card>
-
-    <!-- 话题详情弹窗 -->
-    <el-dialog
-      v-model="topicDialog"
-      width="800px"
-      :title="selectedTopic ? (selectedTopic.display_name || selectedTopic.name) : ''"
-    >
-      <template v-if="selectedTopic">
-        <div class="topic-dialog-header mb-4">
-          <el-avatar :size="40" class="topic-avatar mr-2">
-            <el-icon :size="22"><PriceTag /></el-icon>
-          </el-avatar>
-          <el-button
-            type="primary"
-            :plain="!isFollowing"
-            @click="followTopic"
-          >
-            <el-icon class="mr-1">
-              <Star v-if="isFollowing" />
-              <StarFilled v-else />
-            </el-icon>
-            {{ isFollowing ? '已关注' : '关注' }}
-          </el-button>
-        </div>
-
-        <div class="mb-4 text-secondary">{{ selectedTopic.description }}</div>
-
-        <el-divider class="my-4" />
-
-        <div class="topic-articles-title mb-2">相关文章</div>
-        <el-list v-if="topicArticles.length" class="topic-articles-list">
-          <el-list-item
-            v-for="articleTopic in topicArticles"
-            :key="articleTopic.id"
-            class="topic-article-item"
-          >
-            <div class="topic-article-main">
-              <div class="topic-article-title">{{ articleTopic.article.title }}</div>
-              <div class="topic-article-sub text-secondary">
-                {{ articleTopic.article.user.display_name || articleTopic.article.user.username }}
-                · {{ formatDate(articleTopic.article.created_at) }}
-              </div>
-            </div>
-            <el-button
-              link
-              type="primary"
-              @click="goArticle(articleTopic.article.id)"
-            >
-              查看
-            </el-button>
-          </el-list-item>
-        </el-list>
-        <el-empty v-else description="暂无相关文章" />
-      </template>
-
-      <template #footer>
-        <el-button type="primary" plain @click="topicDialog = false">关闭</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -144,11 +85,11 @@ import {
   TrendCharts,
   Document,
   User,
-  PriceTag,
-  Star,
-  StarFilled
+  PriceTag
 } from '@element-plus/icons-vue'
 import { topicApi } from '@/api'
+import { error } from '@/utils/message'
+import { jcOpenHtml, jcCloseAll } from '@/utils/jcu'
 
 export default {
   name: 'TopicList',
@@ -158,9 +99,6 @@ export default {
     const page = ref(1)
     const limit = ref(20)
     const total = ref(0)
-    const topicDialog = ref(false)
-    const selectedTopic = ref(null)
-    const topicArticles = ref([])
     const isFollowing = ref(false)
 
     const totalPages = computed(() => {
@@ -179,37 +117,100 @@ export default {
       }
     }
 
+    const escapeHtml = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+
     const viewTopic = async (topicId) => {
       try {
         const res = await topicApi.getTopic(topicId)
         if (res.data.success) {
-          selectedTopic.value = res.data.data.topic
-          topicArticles.value = res.data.data.articles || []
-          topicDialog.value = true
+          const topic = res.data.data.topic
+          const articles = res.data.data.articles || []
 
-          const followedRes = await topicApi.getFollowedTopics()
-          const followedList = (followedRes.data.success && followedRes.data.data) || []
-          isFollowing.value = followedList.some(f => f.topic_id === topicId)
+          let following = false
+          try {
+            const followedRes = await topicApi.getFollowedTopics()
+            const followedList = (followedRes.data.success && followedRes.data.data) || []
+            following = followedList.some(f => f.topic_id === topicId)
+          } catch (err) {
+            following = false
+          }
+          isFollowing.value = following
+
+          const name = topic.display_name || topic.name
+          const desc = topic.description || ''
+
+          const articlesHtml = articles.length
+            ? articles.map((at) => {
+                const art = at.article || {}
+                const title = escapeHtml(art.title || '')
+                const author = escapeHtml(art.user?.display_name || art.user?.username || '')
+                const date = escapeHtml(art.created_at ? formatDate(art.created_at) : '')
+                return `<div data-jc-article="${art.id ?? ''}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--jc-border,#eef1f7);cursor:pointer;">
+                  <div style="min-width:0;flex:1;">
+                    <div style="font-weight:600;color:var(--jc-text,#333);">${title}</div>
+                    <div style="font-size:12px;color:var(--jc-text-light,#888);">${author} · ${date}</div>
+                  </div>
+                  <span style="flex-shrink:0;color:var(--jc-primary,#4f6ef7);font-size:13px;">查看</span>
+                </div>`
+              }).join('')
+            : '<div style="text-align:center;color:var(--jc-text-light,#888);padding:20px 0;">暂无相关文章</div>'
+
+          const content = `<div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;">
+              <div style="font-size:1.1rem;font-weight:700;color:var(--jc-text,#333);">${escapeHtml(name)}</div>
+              <button data-jc-follow data-following="${following ? '1' : '0'}" style="flex-shrink:0;cursor:pointer;border:none;border-radius:var(--jc-radius,10px);padding:7px 16px;font-size:13px;font-weight:600;background:${following ? 'var(--jc-surface,#fff)' : 'var(--jc-primary,#4f6ef7)'};color:${following ? 'var(--jc-primary,#4f6ef7)' : '#fff'};border:1px solid var(--jc-primary,#4f6ef7);">${following ? '已关注' : '关注'}</button>
+            </div>
+            ${desc ? `<div style="color:var(--jc-text-light,#888);font-size:13px;margin-bottom:14px;line-height:1.6;">${escapeHtml(desc)}</div>` : ''}
+            <div style="height:1px;background:var(--jc-border,#eef1f7);margin:4px 0 12px;"></div>
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px;color:var(--jc-text,#333);">相关文章</div>
+            <div>${articlesHtml}</div>
+          </div>`
+
+          jcOpenHtml({
+            title: name || '话题详情',
+            content,
+            width: 680,
+            size: 'md',
+            buttons: [{ text: '关闭', type: 'primary', action: () => jcCloseAll() }],
+            onMount: (root) => {
+              const followBtn = root.querySelector('[data-jc-follow]')
+              if (followBtn) {
+                followBtn.addEventListener('click', async () => {
+                  const current = followBtn.getAttribute('data-following') === '1'
+                  try {
+                    if (current) {
+                      await topicApi.unfollowTopic(topicId)
+                      isFollowing.value = false
+                      followBtn.setAttribute('data-following', '0')
+                      followBtn.textContent = '关注'
+                      followBtn.style.background = 'var(--jc-primary,#4f6ef7)'
+                      followBtn.style.color = '#fff'
+                      followBtn.style.border = '1px solid var(--jc-primary,#4f6ef7)'
+                    } else {
+                      await topicApi.followTopic(topicId)
+                      isFollowing.value = true
+                      followBtn.setAttribute('data-following', '1')
+                      followBtn.textContent = '已关注'
+                      followBtn.style.background = 'var(--jc-surface,#fff)'
+                      followBtn.style.color = 'var(--jc-primary,#4f6ef7)'
+                      followBtn.style.border = '1px solid var(--jc-primary,#4f6ef7)'
+                    }
+                  } catch (err) {
+                    error('关注操作失败，请稍后再试')
+                  }
+                })
+              }
+              root.addEventListener('click', (ev) => {
+                const target = ev.target.closest('[data-jc-article]')
+                if (!target) return
+                const articleId = target.getAttribute('data-jc-article')
+                if (articleId) router.push('/article/' + articleId)
+              })
+            }
+          })
         }
       } catch (error) {
         console.error('加载话题详情失败:', error)
-      }
-    }
-
-    const followTopic = async () => {
-      const topicId = selectedTopic.value?.id
-      if (!topicId) return
-
-      try {
-        if (isFollowing.value) {
-          await topicApi.unfollowTopic(topicId)
-          isFollowing.value = false
-        } else {
-          await topicApi.followTopic(topicId)
-          isFollowing.value = true
-        }
-      } catch (error) {
-        console.error('关注操作失败:', error)
       }
     }
 
@@ -225,10 +226,6 @@ export default {
       }
     }
 
-    const goArticle = (articleId) => {
-      router.push(`/article/${articleId}`)
-    }
-
     const formatDate = (date) => {
       return new Date(date).toLocaleDateString('zh-CN')
     }
@@ -242,22 +239,15 @@ export default {
       page,
       total,
       totalPages,
-      topicDialog,
-      selectedTopic,
-      topicArticles,
       isFollowing,
       Collection,
       TrendCharts,
       Document,
       User,
       PriceTag,
-      Star,
-      StarFilled,
       loadTopics,
       viewTopic,
-      followTopic,
       showHotTopics,
-      goArticle,
       formatDate
     }
   }
@@ -340,37 +330,5 @@ export default {
 .topic-stat-tag {
   display: inline-flex;
   align-items: center;
-}
-
-.topic-dialog-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: space-between;
-}
-
-.topic-articles-title {
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.topic-article-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.topic-article-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.topic-article-title {
-  font-weight: 500;
-  color: var(--campus-text);
-}
-
-.topic-article-sub {
-  font-size: 0.85rem;
 }
 </style>
