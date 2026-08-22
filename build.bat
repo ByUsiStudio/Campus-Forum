@@ -35,7 +35,7 @@ set GO111MODULE=on
 set GOFLAGS=-mod=mod
 
 :: Set ldflags for version injection
-set LDFLAGS=-X forum/controllers.FrontendVersion=%VERSION% -X forum/controllers.BackendVersion=%VERSION% -X forum/controllers.SwaggerVersion=%VERSION%
+set LDFLAGS=-X forum/controllers.FrontendVersion=%VERSION% -X forum/controllers.BackendVersion=%VERSION%
 
 echo    - Building Windows-AMD64...
 set GOOS=windows
@@ -78,6 +78,7 @@ if errorlevel 1 (
 )
 echo    [OK] npm install
 
+set VITE_APP_VERSION=%VERSION%
 call npm run build
 if errorlevel 1 (
     echo    [FAIL] npm run build
@@ -85,7 +86,15 @@ if errorlevel 1 (
 )
 echo    [OK] npm run build
 
+:: Clear env var
+set "VITE_APP_VERSION="
+
 move /y dist "%ROOT_DIR%\build\web" >nul 2>&1
+
+:: Copy version.json to build directory (用于后端在未注入版本号时回退读取)
+echo    - Copying version.json...
+copy /y "%ROOT_DIR%\version.json" "%ROOT_DIR%\build\version.json" >nul 2>&1
+echo    [OK] version.json
 
 :: Create zip archive
 echo.

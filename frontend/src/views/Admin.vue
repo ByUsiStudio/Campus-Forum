@@ -1,17 +1,13 @@
 <template>
-  <!-- 管理后台外壳 -->
   <el-container v-if="isInitialized && isAdmin" class="admin-shell">
-  <!-- 移动端侧栏遮罩 -->
   <div v-if="isMobile && drawerOpen" class="drawer-mask" @click="drawerOpen = false"></div>
 
-  <!-- 侧边栏 -->
   <el-aside
     :width="(isMobile ? 260 : (sidebarCollapsed ? 64 : 260)) + 'px'"
     class="admin-aside"
     :class="{ 'is-open': drawerOpen, 'is-mobile': isMobile }"
   >
     <div class="aside-inner">
-        <!-- Logo 区域 -->
         <div class="drawer-header">
           <div class="d-flex align-center">
             <el-icon :size="30" class="logo-icon" color="#fff">
@@ -39,7 +35,6 @@
 
         <el-divider class="aside-divider" />
 
-        <!-- 导航菜单 -->
         <el-menu
           :collapse="sidebarCollapsed && !isMobile"
           :default-active="activeMenu"
@@ -71,7 +66,6 @@
           </el-menu-item>
         </el-menu>
 
-        <!-- 底部：版本信息 + 返回首页 -->
         <div class="aside-footer">
           <el-divider class="aside-divider" />
           <div v-if="!sidebarCollapsed || isMobile" class="version-info">
@@ -79,8 +73,14 @@
               <el-icon :size="14" class="mr-1"><InfoFilled /></el-icon>
               <span class="version-label">版本信息</span>
             </div>
-            <div class="version-text">前端: {{ frontendVersion }}</div>
-            <div class="version-text">后端: {{ backendVersion }}</div>
+            <div class="version-row">
+              <span class="version-key">前端</span>
+              <el-tag size="small" effect="dark" class="version-tag">{{ frontendVersion }}</el-tag>
+            </div>
+            <div class="version-row">
+              <span class="version-key">后端</span>
+              <el-tag size="small" effect="dark" class="version-tag backend">{{ backendVersion }}</el-tag>
+            </div>
           </div>
           <el-menu
             :collapse="sidebarCollapsed && !isMobile"
@@ -105,7 +105,6 @@
     </el-aside>
 
     <el-container class="admin-body">
-      <!-- 顶部栏 -->
       <el-header height="64px" class="admin-header">
         <el-button
           class="d-lg-none menu-toggle"
@@ -127,7 +126,6 @@
 
         <div class="flex-spacer" />
 
-        <!-- 搜索框 -->
         <el-input
           v-model="searchQuery"
           placeholder="搜索..."
@@ -139,7 +137,6 @@
           </template>
         </el-input>
 
-        <!-- 通知按钮 -->
         <el-badge
           :value="notificationCount"
           :max="99"
@@ -151,7 +148,6 @@
           </el-button>
         </el-badge>
 
-        <!-- 用户菜单 -->
         <el-dropdown trigger="click" class="admin-user-dropdown">
           <div class="user-trigger">
             <el-avatar :size="32" class="user-avatar">
@@ -397,6 +393,10 @@ const loadVersion = async () => {
   try {
     const response = await api.get('/version')
     backendVersion.value = response.data.backend?.version || response.data.backend_version || response.data.version || 'unknown'
+    // 若前端未注入构建版本，则回退使用后端上报的前端版本
+    if (frontendVersion.value === 'unknown' || frontendVersion.value === '') {
+      frontendVersion.value = response.data.frontend?.version || 'unknown'
+    }
   } catch (error) {
     backendVersion.value = '获取失败'
     console.error('加载后端版本失败', error)
@@ -552,6 +552,30 @@ watch(() => route.path, () => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.version-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.version-key {
+  color: #fff;
+  opacity: 0.75;
+  font-size: 0.75rem;
+}
+
+.version-tag {
+  font-weight: 600;
+  border: none;
+}
+
+.version-tag.backend {
+  background: #606266;
+  color: #fff;
 }
 
 .footer-menu {

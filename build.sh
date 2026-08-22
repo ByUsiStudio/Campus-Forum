@@ -18,7 +18,7 @@ echo "复制 config.json..."
 cp "$SCRIPT_DIR/backend/config.json" "$SCRIPT_DIR/build/config.json" || { echo "❌ 复制 config.json 失败"; exit 1; }
 echo "✅ config.json"
 
-LDFLAGS="-X forum/controllers.FrontendVersion=${VERSION} -X forum/controllers.BackendVersion=${VERSION} -X forum/controllers.SwaggerVersion=${VERSION}"
+LDFLAGS="-X forum/controllers.FrontendVersion=${VERSION} -X forum/controllers.BackendVersion=${VERSION}"
 
 compile() {
     local target="$1"
@@ -52,9 +52,12 @@ echo "  编译前端"
 echo "========================================"
 cd "$SCRIPT_DIR/frontend"
 npm ci
-npm run build
+VITE_APP_VERSION=${VERSION} npm run build
 
 mv dist "$SCRIPT_DIR/build/web"
+
+# 拷贝 version.json 用于后端在未注入版本号时回退读取
+cp "$SCRIPT_DIR/version.json" "$SCRIPT_DIR/build/version.json"
 
 # 创建压缩包
 echo ""
