@@ -334,6 +334,36 @@ func DeleteArticle(c *gin.Context) {
 		return
 	}
 
+	// 普通用户删除自己的文章走审核流：提交删除申请，等待管理员审核
+	if role != "admin" && role != "system" {
+		var req struct {
+			Reason string `json:"reason"`
+		}
+		_ = c.ShouldBindJSON(&req)
+
+		// 若已存在待处理的删除申请，避免重复提交
+		var existing models.DeletionRequest
+		database.DB.Where("article_id = ? AND status = ?", article.ID, "pending").First(&existing)
+		if existing.ID > 0 {
+			c.JSON(http.StatusOK, gin.H{"message": "删除申请已提交，等待管理员审核"})
+			return
+		}
+
+		deletionRequest := models.DeletionRequest{
+			ArticleID: article.ID,
+			UserID:    article.UserID,
+			Reason:    req.Reason,
+			Status:    "pending",
+		}
+		if err := database.DB.Create(&deletionRequest).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "提交删除申请失败"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "删除申请已提交，等待管理员审核"})
+		return
+	}
+
 	// 软删除：将状态设置为 deleted
 	article.Status = "deleted"
 	if err := database.DB.Save(&article).Error; err != nil {
@@ -452,8 +482,8 @@ func GetMyArticles(c *gin.Context) {
 	var articles []models.Article
 	var total int64
 
-	database.DB.Model(&models.Article{}).Where("user_id = ? AND status != ?", userID, "deleted").Count(&total)
-	database.DB.Where("user_id = ? AND status != ?", userID, "deleted").Preload("User").Preload("Category").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&articles)
+	database.DB.Model(&models.Article{}).Where("user_id = ? AND status = ?", userID, "published").Count(&total)
+	database.DB.Where("user_id = ? AND status = ?", userID, "published").Preload("User").Preload("Category").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&articles)
 
 	for i := range articles {
 		var likeCount int64

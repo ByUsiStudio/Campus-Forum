@@ -25,7 +25,7 @@ func GetTopics(c *gin.Context) {
 	}
 
 	var total int64
-	database.DB.Model(&models.Topic{}).Count(&total)
+	query.Model(&models.Topic{}).Count(&total)
 	query.Offset(offset).Limit(limit).Find(&topics)
 
 	c.JSON(200, gin.H{

@@ -1,8 +1,8 @@
-﻿import api from './http'
+import api from './http'
 
-// 璁よ瘉鐩稿叧API
+// 认证相关API
 export const authApi = {
-  // 鐢ㄦ埛娉ㄥ唽
+  // 用户注册
 register: (data) => api.post('/auth/register', {
   username: data.username,
   qq_number: data.qq_number,
@@ -10,23 +10,24 @@ register: (data) => api.post('/auth/register', {
   password: data.password
 }),
 
-  // 鐢ㄦ埛鐧诲綍
+  // 用户登录
   login: (data) => api.post('/auth/login', data),
 
-  // 鍒濆鍖栫鐞嗗憳
+  // 初始化管理员
   initAdmin: (data) => api.post('/auth/init-admin', data),
 
-  // 妫€鏌ョ郴缁熸槸鍚﹀凡鍒濆鍖?  checkInit: () => api.get('/auth/check-init'),
+  // 检查系统是否已初始化
+  checkInit: () => api.get('/auth/check-init'),
 
-  // 鍙戦€佸瘑鐮侀噸缃獙璇佺爜
+  // 发送密码重置验证码
   sendResetCode: (data) => api.post('/password/reset-code', data),
 
-  // 閲嶇疆瀵嗙爜
+  // 重置密码
   resetPassword: (data) => api.post('/password/reset', data),
 
-  // 鑾峰彇褰撳墠鐢ㄦ埛淇℃伅
+  // 获取当前用户信息
   getProfile: () => api.get('/profile'),
 
-  // 鏇存柊褰撳墠鐢ㄦ埛淇℃伅
+  // 更新当前用户信息
   updateProfile: (data) => api.put('/profile', data),
 }

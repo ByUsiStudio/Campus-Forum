@@ -33,6 +33,14 @@ export const useUserStore = defineStore('user', () => {
     else localStorage.removeItem('user')
   }
 
+  /** 拉取最新完整资料并以之为准 */
+  async function refreshProfile() {
+    if (!token.value) return null
+    const { data } = await http.get('/profile')
+    setUser(data)
+    return data
+  }
+
   /** 初始化：从本地缓存恢复用户，再向后端拉取最新资料 */
   async function initUser() {
     const cached = localStorage.getItem('user')
@@ -62,5 +70,5 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('token_expires_at')
   }
 
-  return { token, user, ready, isLoggedIn, isAdmin, persist, setUser, initUser, logout }
+  return { token, user, ready, isLoggedIn, isAdmin, persist, setUser, refreshProfile, initUser, logout }
 })

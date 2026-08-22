@@ -97,7 +97,22 @@ func UpdateSiteConfig(c *gin.Context) {
 	}
 
 	database.DB.Save(&config)
-	c.JSON(http.StatusOK, gin.H{"message": "更新成功", "config": config})
+
+	// 不返回 SMTP 明文密码，仅返回是否已设置标记
+	c.JSON(http.StatusOK, gin.H{
+		"message":               "更新成功",
+		"config":                gin.H{
+			"site_title":             config.SiteTitle,
+			"icp_number":             config.ICPNumber,
+			"public_security_number": config.PublicSecurityNumber,
+			"smtp_host":              config.SMTPHost,
+			"smtp_port":              config.SMTPPort,
+			"smtp_username":          config.SMTPUsername,
+			"smtp_from":              config.SMTPFrom,
+			"smtp_from_name":         config.SMTPFromName,
+			"smtp_password_set":      config.SMTPPassword != "",
+		},
+	})
 }
 
 func TestSMTPConfig(c *gin.Context) {

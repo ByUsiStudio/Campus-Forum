@@ -231,7 +231,7 @@
       :close-on-click-modal="false"
     >
       <template v-if="selectedReport">
-        <el-descriptions :column="2" border>
+        <el-descriptions :column="narrow ? 1 : 2" border>
           <el-descriptions-item label="举报人">
             <div class="d-flex align-center">
               <el-avatar :size="32" class="mr-2">
@@ -310,7 +310,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   Refresh,
   Search,
@@ -341,6 +341,10 @@ export default {
     const totalPages = computed(() => Math.ceil(totalReports.value / pageSize.value))
     const viewDialog = ref(false)
     const selectedReport = ref(null)
+    const narrow = ref(window.innerWidth < 576)
+
+    const updateNarrow = () => { narrow.value = window.innerWidth < 576 }
+    window.addEventListener('resize', updateNarrow)
 
     const filters = ref({
       search: '',
@@ -505,6 +509,10 @@ export default {
       loadReports()
     })
 
+    onUnmounted(() => {
+      window.removeEventListener('resize', updateNarrow)
+    })
+
     return {
       loading,
       reports,
@@ -518,6 +526,7 @@ export default {
       targetTypeOptions,
       viewDialog,
       selectedReport,
+      narrow,
       debounceSearch,
       loadReports,
       refreshData,

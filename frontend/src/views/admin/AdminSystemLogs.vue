@@ -377,6 +377,19 @@ export default {
   margin-top: 16px;
 }
 
+@media (max-width: 575px) {
+  .pagination-row {
+    justify-content: flex-start;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+  .pagination-row :deep(.el-pagination) {
+    white-space: nowrap;
+  }
+}
+
 .mb-6 {
   margin-bottom: 24px;
 }

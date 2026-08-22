@@ -1,12 +1,16 @@
 <template>
   <!-- 管理后台外壳 -->
   <el-container v-if="isInitialized && isAdmin" class="admin-shell">
-    <!-- 侧边栏 -->
-    <el-aside
-      :width="(sidebarCollapsed && !isMobile ? 64 : 260) + 'px'"
-      class="admin-aside"
-    >
-      <div class="aside-inner">
+  <!-- 移动端侧栏遮罩 -->
+  <div v-if="isMobile && drawerOpen" class="drawer-mask" @click="drawerOpen = false"></div>
+
+  <!-- 侧边栏 -->
+  <el-aside
+    :width="(isMobile ? 260 : (sidebarCollapsed ? 64 : 260)) + 'px'"
+    class="admin-aside"
+    :class="{ 'is-open': drawerOpen, 'is-mobile': isMobile }"
+  >
+    <div class="aside-inner">
         <!-- Logo 区域 -->
         <div class="drawer-header">
           <div class="d-flex align-center">
@@ -417,6 +421,11 @@ onUnmounted(() => {
 })
 
 watch(() => route.path, loadDeletionCount)
+
+// 路由变化时关闭移动端抽屉
+watch(() => route.path, () => {
+  if (isMobile.value) drawerOpen.value = false
+})
 </script>
 
 <style scoped>
@@ -428,6 +437,28 @@ watch(() => route.path, loadDeletionCount)
   background: #409eff;
   transition: width 0.2s;
   overflow: hidden;
+}
+
+/* 移动端：侧边栏变为离屏抽屉 */
+.admin-aside.is-mobile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1000;
+  height: 100vh;
+  transform: translateX(-100%);
+  transition: transform 0.28s ease;
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.2);
+}
+.admin-aside.is-mobile.is-open {
+  transform: translateX(0);
+}
+.drawer-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .aside-inner {
@@ -682,6 +713,12 @@ watch(() => route.path, loadDeletionCount)
   }
   .admin-main {
     padding-bottom: 72px !important;
+  }
+}
+
+@media (max-width: 575px) {
+  .admin-main {
+    padding: 12px;
   }
 }
 </style>

@@ -1,31 +1,34 @@
-﻿import api from './http'
+import api from './http'
 
-// 鐢ㄦ埛鐩稿叧API
+// 用户相关API
 export const userApi = {
-  // 鑾峰彇鐢ㄦ埛鍏紑淇℃伅
+  // 获取用户公开信息
   getUserByID: (id) => api.get(`/users/${id}`),
 
-  // 鑾峰彇鐢ㄦ埛鏂囩珷鍒楄〃
+  // 获取用户文章列表
   getUserArticles: (id, params = {}) => api.get(`/users/${id}/articles`, { params }),
 
-  // 鑾峰彇鐢ㄦ埛澶磋
+  // 获取用户头衔
   getUserTitles: (id) => api.get(`/users/${id}/titles`),
 }
 
-// 绛惧埌鐩稿叧API
+// 签到相关API
 export const signinApi = {
-  // 鐢ㄦ埛绛惧埌
+  // 用户签到
   signIn: () => api.post('/signin'),
 
-  // 鑾峰彇绛惧埌鐘舵€?  getSignInStatus: () => api.get('/signin/status'),
+  // 获取签到状态
+  getSignInStatus: () => api.get('/signin/status'),
 
-  // 鑾峰彇绛惧埌鍘嗗彶
+  // 获取签到历史
   getSignInHistory: (params = {}) => api.get('/signin/history', { params }),
 
-  // 鑾峰彇绛惧埌鎺掕姒?  getSignInRankings: (params = {}) => api.get('/signin/rankings', { params }),
+  // 获取签到排行榜
+  getSignInRankings: (params = {}) => api.get('/signin/rankings', { params }),
 
-  // 鑾峰彇绛惧埌閰嶇疆
+  // 获取签到配置
   getSignInConfig: () => api.get('/signin/config'),
 
-  // 鏇存柊绛惧埌閰嶇疆锛堢鐞嗗憳锛?  updateSignInConfig: (data) => api.put('/signin/config', data),
+  // 更新签到配置（管理员）
+  updateSignInConfig: (data) => api.put('/signin/config', data),
 }

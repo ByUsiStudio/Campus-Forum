@@ -41,10 +41,26 @@ Authorization: Bearer <token>
 Authorization: Bearer <token>
 ```
 
+**查询参数**:
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| page | int | 页码，默认 1 |
+| page_size | int | 每页数量，默认 20，上限 100 |
+| status | string | 按状态过滤：pending / resolved / rejected |
+| search | string | 按举报理由/描述/举报人用户名/昵称模糊搜索 |
+| target_type | string | 按目标类型过滤：article / comment / user |
+
 **响应**:
 ```json
 {
-  "reports": [...]
+  "reports": [...],
+  "total": 100,
+  "page": 1,
+  "page_size": 20,
+  "total_pages": 5,
+  "pending_count": 10,
+  "resolved_count": 80,
+  "rejected_count": 10
 }
 ```
 

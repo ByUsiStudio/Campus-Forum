@@ -233,6 +233,16 @@ export default {
   max-width: 200px;
 }
 
+@media (max-width: 575px) {
+  .category-select {
+    width: 100%;
+    max-width: 100%;
+  }
+  .filter-spacer {
+    display: none;
+  }
+}
+
 .filter-spacer {
   flex: 1;
 }

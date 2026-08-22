@@ -354,7 +354,7 @@ Authorization: Bearer <token>
 
 **GET** `/api/my/articles`
 
-获取当前用户的文章列表（需认证）。
+获取当前用户已发布的文章列表（需认证）。仅返回 `published` 状态的文章，草稿请用下方 `/api/my/drafts`。
 
 **Headers**:
 ```

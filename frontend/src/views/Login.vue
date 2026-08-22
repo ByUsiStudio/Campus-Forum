@@ -69,7 +69,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
 import { authApi } from '@/api'
 import { useUserStore } from '@/stores/user'
-import { success, error } from '@/utils/message'
+import { success, error as showError } from '@/utils/message'
 
 export default {
   name: 'Login',
@@ -118,6 +118,9 @@ export default {
 
         userStore.persist(loginRes)
 
+        // 拉取完整资料字段（qq_number/signature/created_at 等），避免字段缺失
+        userStore.refreshProfile().catch(() => {})
+
         success('登录成功')
 
         // 登录成功后跳转：优先回到被拦截的目标页，否则回首页
@@ -129,7 +132,7 @@ export default {
         }
       } catch (err) {
         error.value = err.response?.data?.error || '登录失败'
-        error(error.value)
+        showError(error.value)
       } finally {
         loading.value = false
       }

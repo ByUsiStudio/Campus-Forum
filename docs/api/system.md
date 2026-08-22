@@ -122,20 +122,33 @@ Authorization: Bearer <token>
 **请求体**:
 ```json
 {
-  "site_name": "string",
-  "site_description": "string",
-  "smtp_enabled": true,
+  "site_title": "string",
+  "icp_number": "string",
+  "public_security_number": "string",
   "smtp_host": "string",
   "smtp_port": 587,
   "smtp_username": "string",
-  "smtp_password": "string"
+  "smtp_password": "string",
+  "smtp_from": "string",
+  "smtp_from_name": "string"
 }
 ```
 
-**响应**:
+**响应**（不会返回 SMTP 明文密码，仅返回是否已设置的标记）:
 ```json
 {
-  "message": "更新成功"
+  "message": "更新成功",
+  "config": {
+    "site_title": "string",
+    "icp_number": "string",
+    "public_security_number": "string",
+    "smtp_host": "string",
+    "smtp_port": 587,
+    "smtp_username": "string",
+    "smtp_from": "string",
+    "smtp_from_name": "string",
+    "smtp_password_set": true
+  }
 }
 ```
 

@@ -1,7 +1,7 @@
 <template>
   <el-popover
     v-model:visible="menuOpen"
-    :width="400"
+    :width="popoverWidth"
     placement="bottom-end"
     trigger="click"
     :show-arrow="false"
@@ -95,7 +95,12 @@ export default {
     const menuOpen = ref(false)
     const notifications = ref([])
     const unreadCount = ref(0)
+    const popoverWidth = ref(400)
     let pollInterval = null
+
+    const updatePopoverWidth = () => {
+      popoverWidth.value = window.innerWidth < 440 ? Math.min(400, window.innerWidth - 24) : 400
+    }
 
     const loadNotifications = async () => {
       try {
@@ -178,6 +183,8 @@ export default {
     }
 
     onMounted(() => {
+      updatePopoverWidth()
+      window.addEventListener('resize', updatePopoverWidth)
       const token = localStorage.getItem('token')
       if (token) {
         loadNotifications()
@@ -189,6 +196,7 @@ export default {
     })
 
     onUnmounted(() => {
+      window.removeEventListener('resize', updatePopoverWidth)
       if (pollInterval) {
         clearInterval(pollInterval)
       }
@@ -198,6 +206,7 @@ export default {
       menuOpen,
       notifications,
       unreadCount,
+      popoverWidth,
       handleClick,
       markAllRead,
       goToNotifications,

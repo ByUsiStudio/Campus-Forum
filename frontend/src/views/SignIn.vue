@@ -46,19 +46,19 @@
 
           <!-- 签到统计 -->
           <el-row :gutter="16" class="mt-4 stats-row">
-            <el-col :span="8">
+            <el-col :xs="8" :sm="8" :md="8" :lg="8">
               <div class="stat-item">
                 <div class="stat-value text-primary">{{ status.total_coins || status.total_points || 0 }}</div>
                 <div class="stat-label text-secondary">累计币</div>
               </div>
             </el-col>
-            <el-col :span="8">
+            <el-col :xs="8" :sm="8" :md="8" :lg="8">
               <div class="stat-item">
                 <div class="stat-value text-primary">{{ status.sign_in_days || 0 }}</div>
                 <div class="stat-label text-secondary">连续天数</div>
               </div>
             </el-col>
-            <el-col :span="8">
+            <el-col :xs="8" :sm="8" :md="8" :lg="8">
               <div class="stat-item">
                 <div class="stat-value text-primary">{{ status.total_sign_ins || 0 }}</div>
                 <div class="stat-label text-secondary">累计次数</div>
@@ -70,7 +70,7 @@
 
       <!-- 本周本月统计 -->
       <el-row :gutter="16" class="mb-4">
-        <el-col :span="12">
+        <el-col :xs="24" :sm="12" :md="12" :lg="12">
           <el-card class="card-surface" shadow="never">
             <div class="text-center small-card-pad">
               <div class="week-icon mb-4"><el-icon :size="20"><Calendar /></el-icon></div>
@@ -79,7 +79,7 @@
             </div>
           </el-card>
         </el-col>
-        <el-col :span="12">
+        <el-col :xs="24" :sm="12" :md="12" :lg="12">
           <el-card class="card-surface" shadow="never">
             <div class="text-center small-card-pad">
               <div class="month-icon mb-4"><el-icon :size="20"><Calendar /></el-icon></div>
@@ -252,7 +252,6 @@ const status = ref({
   sign_in_days: 0,
   total_sign_ins: 0,
   max_continuous_days: 0,
-  total_points: 0,
   month_sign_in_count: 0,
   week_sign_in_count: 0
 })

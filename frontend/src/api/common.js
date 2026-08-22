@@ -1,23 +1,25 @@
-﻿import api from './http'
+import api from './http'
 
-// 閫氱敤API
+// 通用API
 export const commonApi = {
-  // 鑾峰彇鐗堟湰淇℃伅
+  // 获取版本信息
   getVersion: () => api.get('/version'),
 
-  // 鑾峰彇鍒嗗尯鍒楄〃
+  // 获取分区列表
   getCategories: () => api.get('/categories'),
 
-  // 鑾峰彇鍏憡
+  // 获取公告
   getAnnouncement: () => api.get('/announcement'),
 
-  // 鑾峰彇渚ц竟鏍忛厤缃?  getSidebarConfig: () => api.get('/sidebar-config'),
+  // 获取侧边栏配置
+  getSidebarConfig: () => api.get('/sidebar-config'),
 
-  // 鑾峰彇缃戠珯閰嶇疆
+  // 获取网站配置
   getSiteConfig: () => api.get('/site-config'),
 
-  // 鑾峰彇鎵€鏈夊ご琛?  getTitles: () => api.get('/titles'),
+  // 获取所有头衔
+  getTitles: () => api.get('/titles'),
 
-  // 妫€鏌ョ鐞嗗憳鏉冮檺
+  // 检查管理员权限
   checkAdmin: () => api.get('/admin/check'),
 }

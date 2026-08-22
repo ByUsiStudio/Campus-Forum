@@ -289,4 +289,17 @@ export default {
   gap: 8px;
   margin-top: 12px;
 }
+
+/* 移动端：分段选择器过长时允许横向滚动，避免溢出 */
+@media (max-width: 575px) {
+  .leaderboard-control-row .el-segmented {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 1;
+  }
+  .leaderboard-controls {
+    gap: 8px;
+  }
+}
 </style>

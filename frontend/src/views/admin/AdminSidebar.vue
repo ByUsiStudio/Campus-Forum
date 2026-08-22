@@ -18,7 +18,7 @@
         </el-col>
         <el-col :xs="24" :sm="10">
           <el-input
-            v-model="newItem.url"
+            v-model="newItem.link"
             placeholder="例如：https://example.com"
             clearable
           />
@@ -58,7 +58,7 @@
             <span class="font-weight-medium">{{ row.title }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="url" label="链接地址" min-width="220" show-overflow-tooltip />
+        <el-table-column prop="link" label="链接地址" min-width="220" show-overflow-tooltip />
         <el-table-column label="操作" width="100" align="center">
           <template #default="{ row, $index }">
             <el-button
@@ -99,7 +99,7 @@ import { success, error } from '@/utils/message'
 const sidebarItems = ref([])
 const newItem = ref({
   title: '',
-  url: ''
+  link: ''
 })
 const saving = ref(false)
 
@@ -114,7 +114,7 @@ const loadSidebarConfig = async () => {
 }
 
 const addSidebarItem = () => {
-  if (!newItem.value.title || !newItem.value.url) {
+  if (!newItem.value.title || !newItem.value.link) {
     error('请填写标题和链接地址')
     return
   }
@@ -122,12 +122,12 @@ const addSidebarItem = () => {
   sidebarItems.value.push({
     id: Date.now(),
     title: newItem.value.title,
-    url: newItem.value.url
+    link: newItem.value.link
   })
 
   newItem.value = {
     title: '',
-    url: ''
+    link: ''
   }
 }
 

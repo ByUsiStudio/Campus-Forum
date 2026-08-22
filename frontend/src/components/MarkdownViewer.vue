@@ -164,6 +164,14 @@ md.use(mark)
 
 md.use(taskLists, { enabled: true, label: true })
 
+// 将 markdown 表格包裹进可横向滚动的容器，避免窄屏溢出/截断
+md.renderer.rules.table_open = function () {
+  return '<div class="table-scroll"><table>'
+}
+md.renderer.rules.table_close = function () {
+  return '</table></div>'
+}
+
 const renderMath = (content) => {
   let result = content
 
@@ -334,6 +342,12 @@ const renderedContent = computed(() => {
 .markdown-viewer :deep(li > ul),
 .markdown-viewer :deep(li > ol) {
   margin: 4px 0;
+}
+
+.markdown-viewer :deep(.table-scroll) {
+  overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .markdown-viewer :deep(table) {

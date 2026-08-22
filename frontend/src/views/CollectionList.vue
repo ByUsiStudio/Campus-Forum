@@ -386,10 +386,17 @@ export default {
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  gap: 8px;
+}
+
+.article-row > div:first-child {
+  min-width: 0;
+  flex: 1;
 }
 
 .article-title {
   font-weight: 500;
+  word-break: break-word;
 }
 
 .article-note {

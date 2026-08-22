@@ -48,6 +48,8 @@ func GetReports(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 	status := c.Query("status")
+	search := c.Query("search")
+	targetType := c.Query("target_type")
 
 	if page < 1 {
 		page = 1
@@ -62,6 +64,15 @@ func GetReports(c *gin.Context) {
 	if status != "" {
 		query = query.Where("status = ?", status)
 	}
+	if targetType != "" {
+		query = query.Where("target_type = ?", targetType)
+	}
+	if search != "" {
+		like := "%" + search + "%"
+		query = query.Joins("JOIN users ON users.id = reports.reporter_id").
+			Where("reports.reason LIKE ? OR reports.description LIKE ? OR users.username LIKE ? OR users.display_name LIKE ?",
+				like, like, like, like)
+	}
 
 	var total int64
 	var reports []models.Report
@@ -69,11 +80,21 @@ func GetReports(c *gin.Context) {
 	query.Count(&total)
 	query.Preload("Reporter").Preload("Handler").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&reports)
 
+	// 状态统计（不受分页影响）
+	var pendingCount, resolvedCount, rejectedCount int64
+	database.DB.Model(&models.Report{}).Where("status = ?", "pending").Count(&pendingCount)
+	database.DB.Model(&models.Report{}).Where("status = ?", "resolved").Count(&resolvedCount)
+	database.DB.Model(&models.Report{}).Where("status = ?", "rejected").Count(&rejectedCount)
+
 	c.JSON(http.StatusOK, gin.H{
-		"reports":     reports,
-		"total":       total,
-		"page":        page,
-		"total_pages": (total + int64(pageSize) - 1) / int64(pageSize),
+		"reports":         reports,
+		"total":           total,
+		"page":            page,
+		"page_size":       pageSize,
+		"total_pages":     (total + int64(pageSize) - 1) / int64(pageSize),
+		"pending_count":   pendingCount,
+		"resolved_count":  resolvedCount,
+		"rejected_count":  rejectedCount,
 	})
 }
 

@@ -1,34 +1,38 @@
 <template>
-  <div class="grid-layout">
-    <div class="sidebar">
-      <Sidebar />
-    </div>
-    
-    <div class="main-content">
-      <el-card class="category-card mb-4">
-        <span class="category-title">{{ categoryName }}</span>
-      </el-card>
-      
-      <ArticleList :articles="articles" />
-      
-      <div class="pagination-bar" v-if="totalPages > 1">
-        <el-button
-          @click="prevPage"
-          :disabled="page === 1"
-          plain
-        >
-          上一页
-        </el-button>
-        <span class="page-info">第 {{ page }} / {{ totalPages }} 页</span>
-        <el-button
-          @click="nextPage"
-          :disabled="page === totalPages"
-          plain
-        >
-          下一页
-        </el-button>
-      </div>
-    </div>
+  <div class="page-container">
+    <el-row :gutter="16">
+      <!-- 侧边栏 - 桌面端显示 -->
+      <el-col :xs="0" :sm="0" :md="6" :lg="6" class="sidebar-col">
+        <Sidebar />
+      </el-col>
+
+      <!-- 主内容 -->
+      <el-col :xs="24" :sm="24" :md="18" :lg="18">
+        <el-card class="category-card mb-4">
+          <span class="category-title">{{ categoryName }}</span>
+        </el-card>
+
+        <ArticleList :articles="articles" />
+
+        <div class="pagination-bar" v-if="totalPages > 1">
+          <el-button
+            @click="prevPage"
+            :disabled="page === 1"
+            plain
+          >
+            上一页
+          </el-button>
+          <span class="page-info">第 {{ page }} / {{ totalPages }} 页</span>
+          <el-button
+            @click="nextPage"
+            :disabled="page === totalPages"
+            plain
+          >
+            下一页
+          </el-button>
+        </div>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
@@ -108,8 +112,8 @@ export default {
 </script>
 
 <style scoped>
-.main-content {
-  min-width: 0;
+.sidebar-col {
+  display: block;
 }
 
 .category-card {
@@ -135,5 +139,11 @@ export default {
 .page-info {
   font-size: 0.875rem;
   color: var(--campus-text-secondary);
+}
+
+@media (max-width: 991px) {
+  .sidebar-col {
+    display: none;
+  }
 }
 </style>

@@ -395,8 +395,8 @@ export default {
       try {
         const targetId = targetUserId.value || user.value.id
         const friendsRes = await friendApi.getMutualFriends(targetId)
-        followingCount.value = friendsRes.data.friends?.length || 0
-        followersCount.value = friendsRes.data.friends?.length || 0
+        followingCount.value = friendsRes.data.mutual_friends?.length || friendsRes.data.friends?.length || 0
+        followersCount.value = friendsRes.data.mutual_friends?.length || friendsRes.data.friends?.length || 0
       } catch (err) {
         console.error('加载好友数据失败', err)
       }
