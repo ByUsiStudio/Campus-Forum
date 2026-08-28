@@ -78,7 +78,7 @@
 
           <el-form-item v-if="!isInit" label="确认密码" prop="confirmPassword">
             <el-input
-              v-model="confirmPassword"
+              v-model="form.confirmPassword"
               type="password"
               placeholder="请再次输入密码"
               show-password
@@ -125,9 +125,9 @@ export default {
       username: '',
       qq_number: '',
       display_name: '',
-      password: ''
+      password: '',
+      confirmPassword: ''
     })
-    const confirmPassword = ref('')
     const error = ref('')
     const success = ref('')
     const loading = ref(false)
@@ -210,7 +210,6 @@ export default {
       form,
       formRef,
       rules,
-      confirmPassword,
       error,
       success,
       loading,
