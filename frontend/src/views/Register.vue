@@ -134,7 +134,7 @@ export default {
     const isInit = ref(false)
 
     const validateConfirmPassword = (rule, value, callback) => {
-      if (!isInit.value && value !== form.value.password) {
+      if (value !== form.value.password) {
         callback(new Error('两次输入的密码不一致'))
       } else {
         callback()
@@ -175,7 +175,6 @@ export default {
       loading.value = true
 
       try {
-        // 构造提交数据，剔除确认密码字段
         const payload = {
           username: form.value.username,
           qq_number: form.value.qq_number,
@@ -345,7 +344,6 @@ export default {
   width: 100%;
 }
 
-/* 移动端：缩小内边距、卡片贴边、字段单列 */
 @media (max-width: 768px) {
   .auth-page-center {
     min-height: calc(100vh - 40px);
